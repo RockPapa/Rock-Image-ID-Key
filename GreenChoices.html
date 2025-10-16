@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Green Choices</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .nav-btn {
+    position: absolute;
+    background: transparent; /* invisible */
+    border: none; /* no rectangle */
+    cursor: pointer;
+  }
+  .nav-btn:active {
+    opacity: 0.4; /* subtle flash when tapped */
+    transform: scale(0.96);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="images/green_choices.jpg" alt="Green Choices" class="background-img">
+
+    <!-- Row 1 -->
+    <button class="nav-btn" style="left:12%; top:14.5%; width:36%; height:19%;" onclick="navigate('ChloriteSchist.html')"></button>
+    <button class="nav-btn" style="left:51%; top:14.5%; width:36%; height:19%;" onclick="navigate('Siltstone.html')"></button>
+
+    <!-- Row 2 -->
+    <button class="nav-btn" style="left:12%; top:36.3%; width:36%; height:19%;" onclick="navigate('Serpentinite.html')"></button>
+    <button class="nav-btn" style="left:49.5%; top:36.3%; width:36%; height:19%;" onclick="navigate('EpidoteGranofels.html')"></button>
+
+    <!-- Row 3 -->
+    <button class="nav-btn" style="left:12.5%; top:57%; width:36%; height:19%;" onclick="navigate('Greenstone.html')"></button>
+    <button class="nav-btn" style="left:51%; top:57%; width:36%; height:19%;" onclick="navigate('Unakite.html')"></button>
+
+    <!-- Row 4 -->
+    <button class="nav-btn" style="left:12.5%; top:79%; width:36%; height:19%;" onclick="navigate('Dunite.html')"></button>
+    <button class="nav-btn" style="left:51%; top:79%; width:36%; height:19%;" onclick="navigate('Metabasalt.html')"></button>
+  </div>
+
+  <script>
+    function navigate(page) {
+      window.location.href = page;
+    }
+  </script>
+</body>
+</html>

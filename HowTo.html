@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How To ID a Rock</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: black;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* === Darker Transparent Blue Highlight Buttons === */
+  .highlight-btn {
+    position: absolute;
+    background-color: rgba(0, 60, 180, 0.35); /* darker blue tone */
+    border: 2px solid rgba(0, 90, 200, 0.7);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+  }
+
+  .highlight-btn:hover {
+    background-color: rgba(0, 70, 220, 0.55);
+    transform: scale(1.03);
+  }
+
+  /* Button positions */
+  #btn1 {
+    top: 21.6%;
+    left: 4.3%;
+    width: 55%;
+    height: 2%;
+  }
+
+  #btn2 {
+    top: 30.8%;
+    left: 23%;
+    width: 24%;
+    height: 2%;
+  }
+
+  #btn3 {
+    top: 37%;
+    left: 4%;
+    width: 72%;
+    height: 2%;
+  }
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <img src="images/how_to_id_a_rock.jpg" alt="How to Identify a Rock">
+
+    <!-- Highlight buttons -->
+    <button id="btn1" class="highlight-btn" onclick="window.location.href='https://rockd.org'"></button>
+    <button id="btn2" class="highlight-btn" onclick="window.location.href='RockIndex.html'"></button>
+    <button id="btn3" class="highlight-btn" onclick="window.location.href='FourChoices.html'"></button>
+  </div>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ContentView Web</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* like scaledToFit */
+    display: block;
+  }
+  .button {
+    position: absolute;
+    left: 50%;
+    top: 86.8%; /* same as geo.size.height * 0.868 */
+    transform: translate(-50%, -50%);
+    width: 80%;  /* phone default */
+    height: 16.6%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease-in, box-shadow 0.1s ease-in;
+  }
+  .button:active {
+    transform: translate(-50%, -50%) scale(0.92);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+  @media (min-width: 600px) {
+    .button {
+      width: 550px;
+      height: 200px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="images/intro_image.jpg" alt="Intro" class="background-img">
+
+    <button class="button" onclick="goNext()"></button>
+  </div>
+
+<script>
+  function goNext() {
+    // Play click sound
+    const click = new Audio("click.mp3"); // optional, add your own sound file
+    click.play();
+
+    // Navigate to next screen
+    window.location.href = "fourchoices.html";
+  }
+</script>
+</body>
+</html>

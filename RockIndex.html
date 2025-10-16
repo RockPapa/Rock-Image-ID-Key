@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rock Index</title>
+<style>
+  body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: rgba(0, 128, 255, 0.15);
+  }
+
+  header {
+    position: sticky;
+    top: 0;
+    background: #004080;
+    color: white;
+    padding: 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  #searchBox {
+    width: 90%;
+    margin: 1rem auto;
+    display: block;
+    padding: 0.6rem;
+    font-size: 1rem;
+    border: 2px solid #004080;
+    border-radius: 8px;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  li {
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid #ccc;
+  }
+
+  li a {
+    text-decoration: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #003366;
+    display: block;
+  }
+
+  li a:hover {
+    color: #ff3333;
+  }
+</style>
+</head>
+<body>
+  <header>Rock Index</header>
+
+  <input type="text" id="searchBox" placeholder="Search rocks..." onkeyup="filterList()">
+
+  <ul id="rockList">
+    <li><a href="Amphibolite.html">Amphibolite</a></li>
+    <li><a href="Andesite.html">Andesite</a></li>
+    <li><a href="Asbestos.html">Asbestos</a></li>
+    <li><a href="Basalt.html">Basalt</a></li>
+    <li><a href="BiotiteGneiss.html">Biotite Gneiss</a></li>
+    <li><a href="Breccia.html">Breccia</a></li>
+    <li><a href="Chert.html">Chert</a></li>
+    <li><a href="ChloriteSchist.html">Chlorite Schist</a></li>
+    <li><a href="Coal.html">Coal</a></li>
+    <li><a href="Conglomerate.html">Conglomerate</a></li>
+    <li><a href="Coquina.html">Coquina</a></li>
+    <li><a href="Dacite.html">Dacite</a></li>
+    <li><a href="Diabase.html">Diabase</a></li>
+    <li><a href="Diorite.html">Diorite</a></li>
+    <li><a href="Dolomite.html">Dolomite</a></li>
+    <li><a href="Dunite.html">Dunite</a></li>
+    <li><a href="EpidoteGranofels.html">Epidote Granofels</a></li>
+    <li><a href="FelsicMetatuff.html">Felsic Metatuff</a></li>
+    <li><a href="FelsicTuff.html">Felsic Tuff</a></li>
+    <li><a href="Gabbro.html">Gabbro</a></li>
+    <li><a href="Granite.html">Granite</a></li>
+    <li><a href="GraniteGneiss.html">Granite Gneiss</a></li>
+    <li><a href="Graywacke.html">Graywacke</a></li>
+    <li><a href="Greenstone.html">Greenstone</a></li>
+    <li><a href="HematiteQuartzite.html">Hematite Quartzite</a></li>
+    <li><a href="Kaolinite.html">Kaolinite</a></li>
+    <li><a href="Lahar.html">Lahar</a></li>
+    <li><a href="Limestone.html">Limestone</a></li>
+    <li><a href="Magnetite.html">Magnetite</a></li>
+    <li><a href="Marble.html">Marble</a></li>
+    <li><a href="Meatgraywacke.html">Meatgraywacke</a></li>
+    <li><a href="Metabasalt.html">Metabasalt</a></li>
+    <li><a href="Migmatite.html">Migmatite</a></li>
+    <li><a href="Obsidian.html">Obsidian</a></li>
+    <li><a href="Peridotite.html">Peridotite</a></li>
+    <li><a href="Phyllite.html">Phyllite</a></li>
+    <li><a href="Quartz.html">Quartz</a></li>
+    <li><a href="Quartzite.html">Quartzite</a></li>
+    <li><a href="Rhyolite.html">Rhyolite</a></li>
+    <li><a href="Sandstone.html">Sandstone</a></li>
+    <li><a href="Schist.html">Schist</a></li>
+    <li><a href="Serpentinite.html">Serpentinite</a></li>
+    <li><a href="Shale.html">Shale</a></li>
+    <li><a href="Siltstone.html">Siltstone</a></li>
+    <li><a href="Slate.html">Slate</a></li>
+    <li><a href="Soapstone.html">Soapstone</a></li>
+    <li><a href="TurbiditeSandstone.html">Turbidite Sandstone</a></li>
+    <li><a href="Unakite.html">Unakite</a></li>
+  </ul>
+
+<script>
+function filterList() {
+  const input = document.getElementById("searchBox");
+  const filter = input.value.toLowerCase();
+  const ul = document.getElementById("rockList");
+  const li = ul.getElementsByTagName("li");
+
+  for (let i = 0; i < li.length; i++) {
+    const a = li[i].getElementsByTagName("a")[0];
+    if (a.textContent.toLowerCase().includes(filter)) {
+      li[i].style.display = "";
+    } else {
+      li[i].style.display = "none";
+    }
+  }
+}
+</script>
+</body>
+</html>

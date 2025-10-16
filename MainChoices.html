@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Main Choices</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* scaledToFit */
+    display: block;
+  }
+  .nav-btn {
+    position: absolute;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease-in, box-shadow 0.1s ease-in;
+  }
+  .nav-btn:active {
+    transform: scale(0.92);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="images/main_choices.jpg" alt="Main Choices" class="background-img">
+
+    <!-- Button 1: VisibleChoices -->
+    <button class="nav-btn" style="
+      left: 50%; top: 13.2%;
+      width: 90%; height: 16%;
+      transform: translate(-50%, -50%);
+    " onclick="navigate('visiblechoices.html')"></button>
+
+    <!-- Button 2: NonVisibleChoices -->
+    <button class="nav-btn" style="
+      left: 50%; top: 60%;
+      width: 90%; height: 18%;
+      transform: translate(-50%, -50%);
+    " onclick="navigate('nonvisiblechoices.html')"></button>
+  </div>
+
+<script>
+  function navigate(page) {
+    // Optional: add sound effect if desired
+    // const click = new Audio("sounds/click.mp3");
+    // click.play();
+
+    window.location.href = page;
+  }
+</script>
+</body>
+</html>

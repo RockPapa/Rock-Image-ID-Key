@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quartz</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background-color: black;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .container {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* --- Chatified Blue Button --- */
+  .nav-btn {
+    position: absolute;
+    top: 8%; /* ✅ lowered from 11% to 8% */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 600px;
+    height: 65px;
+    background: linear-gradient(180deg, #1b4fd6 0%, #002b80 100%);
+    color: #ffffff;
+    border: 1.5px solid #001f5f;
+    border-radius: 8px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-align: center;
+    line-height: 65px;
+    cursor: pointer;
+    box-shadow: 0 0 14px rgba(0, 85, 255, 0.45);
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.2s ease,
+      background 0.3s ease;
+    z-index: 5;
+    animation: gentlePulse 4s infinite ease-in-out;
+  }
+
+  .nav-btn:hover {
+    transform: translateX(-50%) scale(1.04);
+    background: linear-gradient(180deg, #2a6bff 0%, #0035a5 100%);
+    box-shadow: 0 0 22px rgba(0,120,255,0.7);
+  }
+
+  .nav-btn:active {
+    transform: translateX(-50%) scale(0.96);
+    box-shadow: 0 0 10px rgba(0,50,160,0.6) inset;
+    background: linear-gradient(180deg, #001a60 0%, #002b80 100%);
+  }
+
+  @keyframes gentlePulse {
+    0% { box-shadow: 0 0 10px rgba(0,80,255,0.35); }
+    50% { box-shadow: 0 0 18px rgba(0,120,255,0.55); }
+    100% { box-shadow: 0 0 10px rgba(0,80,255,0.35); }
+  }
+</style>
+</head>
+
+<body>
+  <div class="container">
+    <img src="images/quartz.jpg" alt="Quartz">
+    <button class="nav-btn" onclick="navigate('QuartzDes.html')">TAP FOR DESCRIPTION</button>
+  </div>
+
+  <script>
+    function navigate(page) {
+      window.location.href = page;
+    }
+  </script>
+</body>
+</html>

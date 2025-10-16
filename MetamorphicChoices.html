@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metamorphic Choices</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  /* --- Transparent Buttons --- */
+  .nav-btn {
+    position: absolute;
+    background: transparent; /* fully invisible */
+    border: none;            /* remove borders */
+    cursor: pointer;
+  }
+  .nav-btn:active {
+    transform: scale(0.96);  /* subtle tap feedback */
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="images/metamorphic_choices.jpg" alt="Metamorphic Choices" class="background-img">
+
+    <!-- Row 1 -->
+    <button class="nav-btn" style="left:16%; top:13.7%; width:33%; height:19%;" onclick="navigate('GraniteGneiss.html')"></button>
+    <button class="nav-btn" style="left:50%; top:13.7%; width:34%; height:19%;" onclick="navigate('Metabasalt.html')"></button>
+
+    <!-- Row 2 -->
+    <button class="nav-btn" style="left:16%; top:36.3%; width:33%; height:19%;" onclick="navigate('BiotiteGneiss.html')"></button>
+    <button class="nav-btn" style="left:49.5%; top:36.3%; width:34%; height:19%;" onclick="navigate('FelsicMetatuff.html')"></button>
+
+    <!-- Row 3 -->
+    <button class="nav-btn" style="left:17%; top:59.5%; width:33%; height:19%;" onclick="navigate('Amphibolite.html')"></button>
+    <button class="nav-btn" style="left:51%; top:59.5%; width:33%; height:19%;" onclick="navigate('Schist.html')"></button>
+
+    <!-- Row 4 -->
+    <button class="nav-btn" style="left:17%; top:82%; width:33%; height:19%;" onclick="navigate('Migmatite.html')"></button>
+    <button class="nav-btn" style="left:51%; top:81%; width:33%; height:19%;" onclick="navigate('Serpentinite.html')"></button>
+  </div>
+
+  <script>
+    function navigate(page) {
+      window.location.href = page;
+    }
+  </script>
+</body>
+</html>

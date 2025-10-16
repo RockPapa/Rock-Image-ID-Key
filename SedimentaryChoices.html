@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Igneous Choices</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .container {
+    position: relative;
+    width: 95vmin;
+    aspect-ratio: 390 / 844;  /* iPhone 14 shape */
+    max-height: 95vh;
+    max-width: 95vw;
+    overflow: hidden;
+    padding-top: 5%;
+    box-sizing: border-box;
+  }
+
+  .background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    pointer-events: none; /* <– allows clicks to pass THROUGH image */
+  }
+
+  .nav-btn {
+    position: absolute;
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    z-index: 10; /* <– ensures buttons are ABOVE image */
+  }
+
+  .nav-btn:focus,
+  .nav-btn:active {
+    outline: none;
+    background: transparent;
+    transform: scale(0.94);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="images/sedimentary_choices.jpg" alt="Igneous Choices" class="background-img">
+
+    <!-- Row 1 -->
+    <button class="nav-btn" style="left:12%; top:13%; width:33%; height:15%;" onclick="navigate('Sandstone.html')"></button>
+    <button class="nav-btn" style="left:51%; top:13%; width:34%; height:15%;" onclick="navigate('Conglomerate.html')"></button>
+
+    <!-- Row 2 -->
+    <button class="nav-btn" style="left:12%; top:34%; width:33%; height:16%;" onclick="navigate('TurbiditeSandstone.html')"></button>
+    <button class="nav-btn" style="left:49.5%; top:34%; width:34%; height:16%;" onclick="navigate('Graywacke.html')"></button>
+
+    <!-- Row 3 -->
+    <button class="nav-btn" style="left:12.5%; top:51%; width:33%; height:17%;" onclick="navigate('Breccia.html')"></button>
+    <button class="nav-btn" style="left:51%; top:51%; width:33%; height:17%;" onclick="navigate('Lahar.html')"></button>
+
+    <!-- Row 4 -->
+    <button class="nav-btn" style="left:12.5%; top:74%; width:33%; height:17%;" onclick="navigate('BandedIron.html')"></button>
+    <button class="nav-btn" style="left:51%; top:74%; width:33%; height:17%;" onclick="navigate('Coquina.html')"></button>
+  </div>
+
+  <script>
+    function navigate(page) {
+      console.log("Navigating to:", page); // for debugging
+      window.location.href = page;
+    }
+  </script>
+</body>
+</html>

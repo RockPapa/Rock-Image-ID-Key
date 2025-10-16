@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>White Choices</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .nav-btn {
+    position: absolute;
+    background: transparent; /* invisible buttons */
+    border: none; /* no border */
+    cursor: pointer;
+  }
+  .nav-btn:active {
+    transform: scale(0.92);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="images/white_choices.jpg" alt="White Choices" class="background-img">
+
+    <!-- Row 1 -->
+    <button class="nav-btn" style="left:13.5%; top:13%; width:36%; height:19%;" onclick="navigate('Kaolinite.html')"></button>
+    <button class="nav-btn" style="left:51%; top:14.5%; width:36%; height:19%;" onclick="navigate('Sandstone.html')"></button>
+
+    <!-- Row 2 -->
+    <button class="nav-btn" style="left:12.5%; top:35%; width:36%; height:19%;" onclick="navigate('FelsicTuff.html')"></button>
+    <button class="nav-btn" style="left:49.5%; top:36.3%; width:36%; height:19%;" onclick="navigate('Dolomite.html')"></button>
+
+    <!-- Row 3 -->
+    <button class="nav-btn" style="left:12.8%; top:56.5%; width:36%; height:19%;" onclick="navigate('Marble.html')"></button>
+    <button class="nav-btn" style="left:51%; top:57%; width:36%; height:19%;" onclick="navigate('Soapstone.html')"></button>
+
+    <!-- Row 4 -->
+    <button class="nav-btn" style="left:12.5%; top:78%; width:36%; height:19%;" onclick="navigate('Rhyolite.html')"></button>
+    <button class="nav-btn" style="left:51%; top:78%; width:36%; height:19%;" onclick="navigate('Quartz.html')"></button>
+  </div>
+
+  <script>
+    function navigate(page) {
+      window.location.href = page;
+    }
+  </script>
+</body>
+</html>

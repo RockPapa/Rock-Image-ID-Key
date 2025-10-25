@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rock Image ID Key Intro</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .background-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .button {
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    height: 3%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease-in, box-shadow 0.1s ease-in;
+  }
+
+  .button:active {
+    transform: translate(-50%, -50%) scale(0.95);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  }
+
+  @media (min-width: 600px) {
+    .button {
+      width: 550px;
+      height: 80px;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <img src="images/intro_image.jpg" alt="Intro" class="background-img">
+
+    <!-- DONATE BUTTON -->
+    <button class="button" style="top: 40%;" onclick="goDonate()"></button>
+
+    <!-- FREE WEB VERSION BUTTON -->
+    <button class="button" style="top: 62%;" onclick="goWeb()"></button>
+  </div>
+
+<script>
+  function playClick() {
+    const click = new Audio("click.mp3");
+    click.play();
+  }
+
+  function goDonate() {
+    playClick();
+    // Opens your FINAL PayPal donation link
+    window.open("https://www.paypal.com/donate/?hosted_button_id=JGCGLFCNBF6ZY", "_blank");
+  }
+
+  function goWeb() {
+    playClick();
+    // Opens the free web version
+    window.location.href = "FourChoices.html";
+  }
+</script>
+</body>
+</html>

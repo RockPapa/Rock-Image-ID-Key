@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GeoForge Labs – Botanical Gardens Geology Map</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0b0e12;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color: white;
+  }
+
+  #app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  /* Map DIV w/ background-image */
+  #map {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    width: 100%;
+    height: 92%;
+    background-image: url('images/sbg_base_map.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: auto;
+    touch-action: none;
+
+    will-change: transform;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  #map.dragging {
+    transition: none !important;
+  }
+
+  #titleBox {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    background: rgba(0,0,0,0.55);
+    padding: 6px 10px;
+    border-radius: 8px;
+    z-index: 5;
+    font-size: 12px;
+    line-height: 1.25;
+    user-select: none;
+    max-width: 72vw;
+  }
+
+  #readout {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    background: rgba(0,0,0,0.55);
+    padding: 6px 10px;
+    border-radius: 8px;
+    z-index: 5;
+    font-size: 12px;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  #zoomHud {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translate3d(-50%, 0, 0);
+    display: flex;
+    gap: 10px;
+    background: rgba(0,0,0,0.50);
+    padding: 8px 14px;
+    border-radius: 14px;
+    z-index: 10;
+    user-select: none;
+  }
+
+  .zoomBtn {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.7);
+    border: 2px solid #36e07a;
+    color: white;
+    font-size: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+    touch-action: none;
+  }
+  .zoomBtn:active { transform: scale(0.95); }
+
+  .markerPin {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    background: #e53935;
+    border-radius: 50% 50% 50% 0;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    z-index: 9;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+  }
+
+  .markerPin::after {
+    content: "";
+    position: absolute;
+    inset: -10px;
+  }
+
+  .markerPin span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(45deg);
+    color: white;
+    font-weight: 800;
+    font-size: 12px;
+    line-height: 1;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    pointer-events: none;
+  }
+
+  .markerPin:active {
+    transform: translate(-50%, -50%) rotate(-45deg) scale(0.93);
+  }
+
+  @media (max-width: 420px) {
+    #map { height: 90%; }
+    .zoomBtn { width: 48px; height: 48px; font-size: 28px; }
+    .markerPin { width: 24px; height: 24px; }
+    .markerPin span { font-size: 11px; }
+  }
+</style>
+</head>
+
+<body>
+<div id="app">
+
+  <div id="map" aria-label="Botanical Gardens Map"></div>
+
+  <div id="titleBox">
+    <strong style="font-size:13px;">EcoForge Labs</strong><br>
+    <span style="font-size:11px;">Botanical Gardens Geology Map</span><br>
+    <span style="font-size:10px; opacity:0.85;">Drag map to move around</span>
+  </div>
+
+  <div id="readout">Click map for coordinates</div>
+
+  <div id="zoomHud">
+    <div id="zoomOut" class="zoomBtn">−</div>
+    <div id="zoomIn"  class="zoomBtn">+</div>
+  </div>
+
+  <!-- RED PIN #5 -->
+  <div id="marker1" class="markerPin" title="Stop 5"><span>5</span></div>
+
+</div>
+
+<script>
+const mapDiv  = document.getElementById("map");
+const readout = document.getElementById("readout");
+const zoomIn  = document.getElementById("zoomIn");
+const zoomOut = document.getElementById("zoomOut");
+
+/* ---------- Load underlying image to get aspect ratio ---------- */
+let imgW = 1, imgH = 1, imgAspect = 1;
+const preImg = new Image();
+
+/* ✅ FIX: preload the SAME image used in CSS */
+preImg.src = "images/sbg_base_map.png";
+
+preImg.onload = () => {
+  imgW = preImg.naturalWidth;
+  imgH = preImg.naturalHeight;
+  imgAspect = imgW / imgH;
+  updateTransform();
+  updateMarkers();
+};
+preImg.onerror = () => alert("Map image not found. Ensure images/sbg_base_map.png is in the same folder.");
+
+/* ---------- Zoom / Pan state ---------- */
+let scale = 1;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 5;
+const ZOOM_STEP = 0.2;
+
+let panX = 0;
+let panY = 0;
+
+let needsUpdate = false;
+function requestUpdate() {
+  if (needsUpdate) return;
+  needsUpdate = true;
+  requestAnimationFrame(() => {
+    needsUpdate = false;
+    updateTransform();
+  });
+}
+
+function getFittedRect() {
+  const rect = mapDiv.getBoundingClientRect();
+  const cw = rect.width, ch = rect.height;
+  const cAspect = cw / ch;
+
+  let drawW, drawH, offX, offY;
+  if (cAspect > imgAspect) {
+    drawH = ch;
+    drawW = ch * imgAspect;
+    offX = (cw - drawW) / 2;
+    offY = 0;
+  } else {
+    drawW = cw;
+    drawH = cw / imgAspect;
+    offX = 0;
+    offY = (ch - drawH) / 2;
+  }
+  return { left: rect.left + offX, top: rect.top + offY, width: drawW, height: drawH };
+}
+
+function updateTransform() {
+  mapDiv.style.transform =
+    `translate3d(calc(-50% + ${panX}px), calc(-50% + ${panY}px), 0) scale(${scale})`;
+  updateMarkers();
+}
+
+/* ---------- Zoom buttons ---------- */
+zoomIn.onclick = () => {
+  scale = Math.min(MAX_ZOOM, scale + ZOOM_STEP);
+  requestUpdate();
+};
+zoomOut.onclick = () => {
+  scale = Math.max(MIN_ZOOM, scale - ZOOM_STEP);
+  requestUpdate();
+};
+
+/* ---------- Drag-to-pan ---------- */
+let dragging = false;
+let lastX = 0;
+let lastY = 0;
+
+function startDrag(x, y) {
+  dragging = true;
+  lastX = x;
+  lastY = y;
+  mapDiv.classList.add("dragging");
+}
+function endDrag() {
+  dragging = false;
+  mapDiv.classList.remove("dragging");
+}
+function dragMove(x, y) {
+  if (!dragging) return;
+  panX += (x - lastX);
+  panY += (y - lastY);
+  lastX = x;
+  lastY = y;
+  requestUpdate();
+}
+
+/* Mouse */
+mapDiv.addEventListener("mousedown", e => {
+  e.preventDefault();
+  startDrag(e.clientX, e.clientY);
+});
+window.addEventListener("mouseup", endDrag);
+window.addEventListener("mousemove", e => dragMove(e.clientX, e.clientY));
+
+/* Touch */
+mapDiv.addEventListener("touchstart", e => {
+  const t = e.touches[0];
+  startDrag(t.clientX, t.clientY);
+}, {passive:false});
+mapDiv.addEventListener("touchend", endDrag, {passive:true});
+mapDiv.addEventListener("touchmove", e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  dragMove(t.clientX, t.clientY);
+}, {passive:false});
+
+/* ---------- Normalized coordinate readout ---------- */
+mapDiv.addEventListener("click", (e) => {
+  const fit = getFittedRect();
+  const x = e.clientX - fit.left;
+  const y = e.clientY - fit.top;
+  const nx = x / fit.width;
+  const ny = y / fit.height;
+  if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
+  readout.textContent = `nx=${nx.toFixed(3)}, ny=${ny.toFixed(3)}`;
+});
+
+/* ---------- Anchored markers ---------- */
+const markers = [
+  {
+    el: document.getElementById("marker1"),
+    nx: 0.52,
+    ny: 0.36,
+    onClick: () => window.location.href = "GraniteGneissSpot.html"
+  }
+];
+
+markers.forEach(m => {
+  m.el.addEventListener("click", e => {
+    e.stopPropagation();
+    m.onClick && m.onClick();
+  });
+});
+
+function updateMarkers() {
+  const fit = getFittedRect();
+  markers.forEach(m => {
+    const x = fit.left + m.nx * fit.width;
+    const y = fit.top  + m.ny * fit.height;
+    m.el.style.left = `${x}px`;
+    m.el.style.top  = `${y}px`;
+  });
+}
+
+window.addEventListener("resize", updateMarkers);
+window.addEventListener("orientationchange", updateMarkers);
+
+/* ---------- Initialize ---------- */
+updateTransform();
+updateMarkers();
+</script>
+</body>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ChatiCopter – WaxBall v3</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #000;
+      height: 100%;
+    }
+    canvas {
+      display: block;
+      background: #000;
+      touch-action: manipulation; /* helps mobile not do weird scrolling */
+    }
+
+    /* Little info box in top-left */
+    #hud {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      padding: 6px 8px;
+      background: rgba(0,0,0,0.55);
+      color: #fff;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 10px;
+      border-radius: 6px;
+      line-height: 1.25;
+      pointer-events: none;
+      max-width: 260px;
+    }
+
+    /* Show/Hide controls button in top-right */
+    #controlsToggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 20;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    /* Bottom control bar (big arrows + altitude buttons) */
+    #controls {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 10;
+      pointer-events: auto;
+    }
+
+    .ctrl-btn {
+      min-width: 160px;
+      min-height: 160px;
+      padding: 10px 16px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.65);
+      color: #fff;
+      font-size: 56px;
+      font-weight: 700;
+      text-align: center;
+      cursor: pointer;
+      touch-action: manipulation;
+    }
+
+    .ctrl-btn.alt {
+      min-width: 200px;
+      min-height: 120px;
+      font-size: 40px;
+      font-weight: 600;
+    }
+
+    .ctrl-btn:active {
+      background: rgba(0,0,0,0.9);
+      transform: scale(0.95);
+    }
+  </style>
+</head>
+
+<body>
+<canvas id="view"></canvas>
+
+<div id="hud">
+  <strong>ChatiCopter – WaxBall v3</strong><br>
+  Mac: ↑ / ↓ = forward/back, ← / → = turn, R/F = altitude, H = home, M = engine, C = toggle controls<br>
+  iPhone/iPad: big buttons for left, forward, right, altitude up/down.<br>
+  iOS = bigger & faster copter, Desktop = smaller & smoother.<br>
+  Rotor shadow is lighter on iOS, darker on desktop. 🚁
+</div>
+
+<button id="controlsToggle">Hide Controls</button>
+
+<!-- Bottom giant controls: LEFT, UP (forward), RIGHT, ALT UP, ALT DOWN -->
+<div id="controls">
+  <button class="ctrl-btn" data-key="arrowleft">◀</button>
+  <button class="ctrl-btn" data-key="arrowup">▲</button>
+  <button class="ctrl-btn" data-key="arrowright">▶</button>
+  <button class="ctrl-btn alt" data-key="r">Up</button>
+  <button class="ctrl-btn alt" data-key="f">Down</button>
+</div>
+
+<script>
+/* ===========================
+   BASIC CANVAS SETUP
+   =========================== */
+
+const canvas = document.getElementById("view");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+/* ===========================
+   IMAGES: MAP + HELICOPTER
+   =========================== */
+
+const mapImg = new Image();
+mapImg.src = "images/StitchMap.png";        // your stitched terrain image
+
+const heliImg = new Image();
+heliImg.src = "images/chaticopter.png";     // your rotor-less chaticopter
+
+/* ===========================
+   SOUND: HELICOPTER ENGINE
+   =========================== */
+
+const heliSound = new Audio("images/helicopter.wav");
+heliSound.loop = true;
+heliSound.volume = 0.4;
+
+let soundStarted = false;  // have we attempted to play at least once?
+let soundOn = true;        // is engine "on" logically?
+
+function startSoundIfNeeded() {
+  // Only try to start once user has interacted (mobile browser rule)
+  if (!soundStarted && soundOn) {
+    heliSound.play().catch(()=>{});
+    soundStarted = true;
+  }
+}
+
+/* ===========================
+   WORLD / CAMERA STATE
+   =========================== */
+
+// Full map dimensions (filled after map loads)
+let mapWidth = 0, mapHeight = 0;
+
+// Helicopter world position
+let heliX = 0, heliY = 0;
+
+// Yaw / heading of copter (radians)
+let heading = 0;
+
+// "Altitude" representation (actually zoom in/out)
+let zoom = 2.0;
+
+// Camera center (what part of map we're looking at)
+let cameraX = 0, cameraY = 0;
+
+// Screen position (pixel coords) of helicopter
+let screenX = 0, screenY = 0;
+
+// Extra spinner just for rotor blur effect (independent of heading)
+let rotorAngle = 0;  // this will spin every frame
+
+/* ===========================
+   DEVICE-BASED SETTINGS
+   =========================== */
+
+// Simple iOS detection by userAgent
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+// Helicopter image size: bigger on iPhone/iPad
+const heliSize = isIOS ? 250 : 80;
+
+// Forward speed: zoom on phones, smoother on desktop
+const forwardSpeed = isIOS ? 1.5 : 0.7;
+
+// Turning + zoom speed (same on all devices for now)
+const turnSpeed = 0.008;
+const zoomSpeed = 0.02;
+
+console.log("Device detected:",
+  isIOS
+    ? "iOS – heliSize=250, forwardSpeed=1.5"
+    : "Non-iOS – heliSize=80, forwardSpeed=0.7"
+);
+
+/* ===========================
+   INPUT STATE
+   =========================== */
+
+const keys = {};   // stores which keys are "held down"
+const home = {     // spawn / home base in world coords
+  x: 0,
+  y: 0,
+  heading: 0,
+  zoom: 2.0
+};
+
+function resetHome() {
+  // Reset helicopter and camera to center of map
+  heliX = home.x;
+  heliY = home.y;
+  heading = home.heading;
+  zoom = home.zoom;
+  cameraX = heliX;
+  cameraY = heliY;
+}
+
+/* ===========================
+   KEYBOARD CONTROLS
+   =========================== */
+
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+
+  // M = engine on/off toggle
+  if (k === 'm') {
+    soundOn = !soundOn;
+    if (soundOn) startSoundIfNeeded();
+    else heliSound.pause();
+    return;
+  }
+
+  // H = go back to home position
+  if (k === 'h') {
+    resetHome();
+    return;
+  }
+
+  // C = show/hide on-screen big buttons (handy on Mac)
+  if (k === 'c') {
+    toggleControls();
+    return;
+  }
+
+  // Mark this key as pressed
+  keys[k] = true;
+  startSoundIfNeeded();
+
+  // Prevent arrow keys from scrolling page
+  if (["arrowup","arrowdown","arrowleft","arrowright"].includes(k))
+    e.preventDefault();
+});
+
+window.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+/* ===========================
+   ON-SCREEN BUTTONS (MOBILE)
+   =========================== */
+
+const ctrlButtons = document.querySelectorAll(".ctrl-btn");
+
+ctrlButtons.forEach(btn => {
+  const key = btn.dataset.key.toLowerCase(); // e.g. "arrowup", "r", etc.
+
+  function down(e) {
+    e.preventDefault();
+    keys[key] = true;
+    startSoundIfNeeded();
+  }
+  function up(e) {
+    e.preventDefault();
+    keys[key] = false;
+  }
+
+  // Touch events for iPhone/iPad
+  btn.addEventListener("touchstart", down, {passive:false});
+  btn.addEventListener("touchend", up);
+
+  // Mouse events for desktop
+  btn.addEventListener("mousedown", down);
+  btn.addEventListener("mouseup", up);
+  btn.addEventListener("mouseleave", () => { keys[key] = false; });
+});
+
+/* ===========================
+   CONTROLS SHOW/HIDE TOGGLE
+   =========================== */
+
+const controlsDiv = document.getElementById("controls");
+const toggleBtn   = document.getElementById("controlsToggle");
+let controlsVisible = true;  // start with controls visible
+
+function toggleControls() {
+  controlsVisible = !controlsVisible;
+  controlsDiv.style.display = controlsVisible ? "flex" : "none";
+  toggleBtn.textContent = controlsVisible ? "Hide Controls" : "Show Controls";
+}
+
+toggleBtn.addEventListener("click", () => {
+  toggleControls();
+});
+
+/* ===========================
+   UPDATE: PHYSICS & CAMERA
+   =========================== */
+
+let mapLoaded = false, heliLoaded = false;
+
+function update() {
+  if (!mapLoaded) return;   // nothing to do until map is ready
+
+  // R/F keys (or on-screen Up/Down buttons) change altitude (zoom level)
+  if (keys['r']) zoom -= zoomSpeed; // "up" = zoom out (see more map)
+  if (keys['f']) zoom += zoomSpeed; // "down" = zoom in (closer view)
+  zoom = Math.max(1.2, Math.min(3.0, zoom)); // clamp zoom range
+
+  // Left/Right arrow = change heading
+  if (keys['arrowleft'])  heading -= turnSpeed;
+  if (keys['arrowright']) heading += turnSpeed;
+
+  // Forward/backward movement along current heading
+  let move = 0;
+  if (keys['arrowup'])   move = 1;   // forward
+  if (keys['arrowdown']) move = -1;  // backward (keyboard only)
+
+  if (move !== 0) {
+    // Move helicopter in world coordinates
+    heliX += Math.sin(heading) * forwardSpeed * move;
+    heliY += -Math.cos(heading) * forwardSpeed * move;
+
+    // Keep helicopter within map boundaries
+    heliX = Math.max(0, Math.min(mapWidth,  heliX));
+    heliY = Math.max(0, Math.min(mapHeight, heliY));
+  }
+
+  // Camera "follow" logic: keeps copter near center, but allows look-ahead
+  const viewW = Math.min(mapWidth,  canvas.width  / zoom);
+  const viewH = Math.min(mapHeight, canvas.height / zoom);
+  const margin = Math.min(canvas.width, canvas.height) * 0.25;
+
+  // Where is Chaticopter on screen relative to camera?
+  let tX = heliX - cameraX + canvas.width / 2;
+  let tY = heliY - cameraY + canvas.height / 2;
+
+  // If copter gets too close to edges, move camera
+  if (tX < margin)                      cameraX -= (margin - tX);
+  if (tX > canvas.width - margin)       cameraX += (tX - (canvas.width - margin));
+  if (tY < margin)                      cameraY -= (margin - tY);
+  if (tY > canvas.height - margin)      cameraY += (tY - (canvas.height - margin));
+
+  // Clamp camera into valid map area
+  cameraX = Math.max(viewW/2,  Math.min(mapWidth - viewW/2,  cameraX));
+  cameraY = Math.max(viewH/2,  Math.min(mapHeight - viewH/2, cameraY));
+
+  // Final screen position of helicopter
+  screenX = heliX - cameraX + canvas.width  / 2;
+  screenY = heliY - cameraY + canvas.height / 2;
+
+  // Adjust volume if sound is running (could tie to altitude later if desired)
+  if (soundStarted && soundOn) {
+    heliSound.volume = 0.4;
+  }
+
+  // Spin the rotor every update (independent of heading)
+  rotorAngle += 0.25; // bigger = faster rotor blur
+}
+
+/* ===========================
+   BACKGROUND DRAW: MAP IMAGE
+   =========================== */
+
+function drawBackground() {
+  // Clear screen
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  if (!mapLoaded) return;
+
+  const viewW = Math.min(mapWidth,  canvas.width  / zoom);
+  const viewH = Math.min(mapHeight, canvas.height / zoom);
+
+  let sx = cameraX - viewW/2;
+  let sy = cameraY - viewH/2;
+
+  // Make sure source rectangle stays inside map
+  sx = Math.max(0, Math.min(mapWidth  - viewW, sx));
+  sy = Math.max(0, Math.min(mapHeight - viewH, sy));
+
+  const destW = viewW * zoom;
+  const destH = viewH * zoom;
+
+  const dx = (canvas.width  - destW) / 2;
+  const dy = (canvas.height - destH) / 2;
+
+  // Draw the visible part of the map
+  ctx.drawImage(mapImg, sx, sy, viewW, viewH, dx, dy, destW, destH);
+}
+
+/* ===========================
+   ROTOR SHADOW BLUR
+   (4 streaks spinning fast)
+   =========================== */
+
+function drawRotorShadow() {
+  // How big/long the blur is, relative to helicopter size
+  const shadowRadius = heliSize * 0.9;    // reach of each streak
+  const shadowWidth  = heliSize * 0.16;   // thickness of streak
+  const blurAmount   = 25;                // softness of blur
+
+  ctx.save();
+  ctx.translate(screenX, screenY);   // center under helicopter
+  ctx.rotate(rotorAngle);            // spin blur around center
+
+  // Different shadow strength depending on platform:
+  //   iOS  -> lighter (0.30)
+  //   Desk -> darker (0.55)
+  const shadowOpacity = isIOS ? 0.30 : 0.55;
+  ctx.fillStyle = `rgba(0, 0, 0, ${shadowOpacity})`;
+  ctx.filter = `blur(${blurAmount}px)`;
+
+  // Draw 4 streaks: up, right, down, left
+  for (let i = 0; i < 4; i++) {
+    ctx.rotate(Math.PI / 2); // 90 degrees each time
+    ctx.fillRect(
+      -shadowWidth / 2,  // center horizontally on origin
+      -shadowRadius,     // start above center
+      shadowWidth,       // streak thickness
+      shadowRadius * 2   // full length through center
+    );
+  }
+
+  ctx.restore();
+  // ctx.restore() also restores the previous filter state.
+}
+
+/* ===========================
+   HELICOPTER DRAW
+   =========================== */
+
+function drawHelicopter() {
+  if (!heliLoaded) return;
+
+  // 1) Draw spinning rotor shadow blur under helicopter
+  drawRotorShadow();
+
+  // 2) Draw helicopter sprite on top
+  const half = heliSize / 2;
+  ctx.save();
+  ctx.translate(screenX, screenY);
+  ctx.rotate(heading);  // rotate chopper sprite to its heading
+  ctx.drawImage(heliImg, -half, -half, heliSize, heliSize);
+  ctx.restore();
+}
+
+/* ===========================
+   MAIN DRAW + LOOP
+   =========================== */
+
+function draw() {
+  drawBackground();
+  drawHelicopter();
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ===========================
+   START WHEN IMAGES ARE READY
+   =========================== */
+
+function maybeStart() {
+  if (mapLoaded && heliLoaded) {
+    // Initialize map size
+    mapWidth  = mapImg.width;
+    mapHeight = mapImg.height;
+
+    // Home position = center of map
+    home.x = mapWidth  / 2;
+    home.y = mapHeight / 2;
+
+    resetHome();
+    loop();   // start the animation
+  }
+}
+
+mapImg.onload = () => { mapLoaded = true; maybeStart(); };
+heliImg.onload = () => { heliLoaded = true; maybeStart(); };
+</script>
+</body>
+</html>

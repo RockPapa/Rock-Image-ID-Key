@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Car Game – iPad Version</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #game {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+
+    #scene {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    /* Player car (color chosen at start) */
+    #car {
+      position: absolute;
+      width: 84px;    /* starting width; slider will change it */
+      height: auto;
+      transform-origin: 50% 50%;
+      z-index: 2;
+    }
+
+    /* NPC blue cars */
+    #npcCar1,
+    #npcCar2,
+    #npcCar3 {
+      position: absolute;
+      width: 84px;
+      height: auto;
+      transform-origin: 50% 50%;
+      z-index: 2;
+      opacity: 0.95;
+    }
+
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 3;
+      padding: 8px 10px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
+      border-radius: 8px;
+    }
+
+    #speedSlider,
+    #sizeSlider {
+      width: 200px;
+    }
+
+    #ui div {
+      margin-bottom: 4px;
+    }
+
+    /* Toggle button to hide/show touch controls */
+    #toggleButtons {
+      margin-top: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.4);
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #toggleButtons:hover {
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* Color selection overlay */
+    #colorMenu {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 4;
+      background: rgba(0, 0, 0, 0.85);
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 16px 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(0,0,0,0.7);
+    }
+
+    #colorMenu h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+
+    #colorMenu p {
+      margin: 0 0 10px 0;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+
+    #colorMenu button {
+      margin: 4px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    #colorMenu button[data-color="red"]    { background:#b22222; color:#fff; }
+    #colorMenu button[data-color="blue"]   { background:#1e90ff; color:#fff; }
+    #colorMenu button[data-color="yellow"] { background:#ffd700; color:#000; }
+    #colorMenu button[data-color="orange"] { background:#ff8c00; color:#000; }
+    #colorMenu button[data-color="green"]  { background:#228b22; color:#fff; }
+
+    #colorMenu button:hover {
+      filter: brightness(1.15);
+    }
+
+    /* ==== TOUCH CONTROLS (iPad-friendly layout) ==== */
+    #touchControls {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      transform: translateY(-50%);
+      z-index: 3;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 24px;
+      padding-right: 24px;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .touch-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* FORCE right column inward by 100px */
+    #touchControls .touch-column:last-child {
+      margin-right: 100px;
+    }
+
+    /* 200% bigger: 96 x 96 px */
+    .touch-btn {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: none; /* important for iOS */
+    }
+
+    .touch-btn:active {
+      background: rgba(255,255,255,0.3);
+    }
+
+    @media (min-width: 900px) {
+      #touchControls {
+        padding-left: 40px;
+        padding-right: 40px;
+      }
+      #touchControls .touch-column:last-child {
+        margin-right: 100px; /* still 100px in desktop too */
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="game">
+  <img id="scene" src="images/scene_small.jpg" alt="scene">
+
+  <!-- Player car (color set after selection) -->
+  <img id="car" src="images/car.png" alt="car">
+
+  <!-- Three random-moving blue cars -->
+  <img id="npcCar1" src="images/blue_car.png" alt="blue car 1">
+  <img id="npcCar2" src="images/blue_car.png" alt="blue car 2">
+  <img id="npcCar3" src="images/blue_car.png" alt="blue car 3">
+
+  <!-- UI sliders + hide-buttons toggle -->
+  <div id="ui">
+    <div>Car Speed: <span id="speedValue"></span></div>
+    <input type="range" id="speedSlider" min="60" max="360" value="180">
+
+    <div style="margin-top:8px;">Car Size: <span id="sizeValue"></span> px</div>
+    <input type="range" id="sizeSlider" min="50" max="150" value="84">
+
+    <button id="toggleButtons">Hide Buttons</button>
+  </div>
+
+  <!-- Color choice overlay -->
+  <div id="colorMenu">
+    <h2>Choose Your Car Color</h2>
+    <p>Pick a color, then drive with the arrow keys or buttons!</p>
+    <div>
+      <button data-color="red">Red</button>
+      <button data-color="blue">Blue</button>
+      <button data-color="yellow">Yellow</button>
+      <button data-color="orange">Orange</button>
+      <button data-color="green">Green</button>
+    </div>
+  </div>
+
+  <!-- TOUCH CONTROLS: UPDATED LAYOUT -->
+  <div id="touchControls">
+    <!-- LEFT SIDE: Right above Left -->
+    <div class="touch-column">
+      <button class="touch-btn" id="btnRight">▶</button>
+      <button class="touch-btn" id="btnLeft">◀</button>
+    </div>
+
+    <!-- RIGHT SIDE: Up above Down -->
+    <div class="touch-column">
+      <button class="touch-btn" id="btnUp">▲</button>
+      <button class="touch-btn" id="btnDown">▼</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const game        = document.getElementById("game");
+  const scene       = document.getElementById("scene");
+  const car         = document.getElementById("car");
+  const npcCar1     = document.getElementById("npcCar1");
+  const npcCar2     = document.getElementById("npcCar2");
+  const npcCar3     = document.getElementById("npcCar3");
+  const speedSlider = document.getElementById("speedSlider");
+  const speedValue  = document.getElementById("speedValue");
+  const sizeSlider  = document.getElementById("sizeSlider");
+  const sizeValue   = document.getElementById("sizeValue");
+  const colorMenu   = document.getElementById("colorMenu");
+  const toggleButtons = document.getElementById("toggleButtons");
+  const touchControls = document.getElementById("touchControls");
+
+  // Touch buttons
+  const btnUp    = document.getElementById("btnUp");
+  const btnDown  = document.getElementById("btnDown");
+  const btnLeft  = document.getElementById("btnLeft");
+  const btnRight = document.getElementById("btnRight");
+
+  let worldW = 0;
+  let worldH = 0;
+
+  // Player car world coords
+  let carWorldX = 0;
+  let carWorldY = 0;
+
+  // NPC state (3 blue cars)
+  const npcs = [
+    { img: npcCar1, x: 0, y: 0, angle:   0, speed: 120, turnTimer: 0 },
+    { img: npcCar2, x: 0, y: 0, angle: 180, speed: 120, turnTimer: 0 },
+    { img: npcCar3, x: 0, y: 0, angle:  90, speed: 120, turnTimer: 0 }
+  ];
+
+  // Camera
+  let camX = 0;
+  let camY = 0;
+
+  // Player angle
+  let carAngle = 0;
+
+  const rotationSpeed = 160;
+  let driveSpeed = 180;
+
+  // Car sizes (updated by slider)
+  let carWidth  = 84;
+  let carHeight = 36;
+
+  let npcWidth  = 84;
+  let npcHeight = 36;
+
+  // Controls
+  let leftPressed = false;
+  let rightPressed = false;
+  let forwardPressed = false;
+  let backwardPressed = false;
+
+  let crashed = false;
+  let gameStarted = false;   // becomes true after color chosen
+  let lastColorKey = "red";  // remember chosen color
+
+  // Color options for player car (use your filenames)
+  const carColors = {
+    red:    "images/car.png",
+    blue:   "images/blue_car.png",
+    yellow: "images/car_yellow.png",
+    orange: "images/car_orange.png",
+    green:  "images/car_greed.png"
+  };
+
+  const engineSound = new Audio("images/car_sound.mp3");
+  engineSound.loop = true;
+
+  const crashSound = new Audio("images/skid.mp3");
+
+  // 🔓 Unlock crash sound on first touch (iPad/iPhone Safari)
+  document.addEventListener("touchstart", () => {
+    crashSound.play().catch(() => {});
+    crashSound.pause();
+    crashSound.currentTime = 0;
+  }, { once: true });
+
+  // ---- Color selection ----
+
+  function chooseColor(colorKey) {
+    lastColorKey = colorKey in carColors ? colorKey : "red";
+    const src = carColors[lastColorKey];
+    car.src = src;
+    gameStarted = true;
+    colorMenu.style.display = "none";
+  }
+
+  // Hook up color buttons
+  colorMenu.querySelectorAll("button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const color = btn.getAttribute("data-color");
+      chooseColor(color);
+    });
+  });
+
+  // ---- Sliders ----
+
+  function updateSpeedFromSlider() {
+    driveSpeed = parseInt(speedSlider.value, 10);
+    speedValue.textContent = driveSpeed.toString();
+  }
+
+  function updateCarSizeFromSlider() {
+    // Player
+    carWidth = parseInt(sizeSlider.value, 10);
+    car.style.width = carWidth + "px";
+    car.style.height = "auto";
+    let h = car.offsetHeight;
+    carHeight = h > 0 ? h : Math.round(carWidth * 0.43);
+
+    // NPCs same size
+    npcWidth = carWidth;
+    [npcCar1, npcCar2, npcCar3].forEach(img => {
+      img.style.width = npcWidth + "px";
+      img.style.height = "auto";
+    });
+    let nh = npcCar1.offsetHeight;
+    npcHeight = nh > 0 ? nh : Math.round(npcWidth * 0.43);
+
+    sizeValue.textContent = carWidth.toString();
+  }
+
+  speedSlider.addEventListener("input", updateSpeedFromSlider);
+  sizeSlider.addEventListener("input", updateCarSizeFromSlider);
+
+  updateSpeedFromSlider();
+  updateCarSizeFromSlider();
+
+  // ---- Engine / controls ----
+
+  function startEngine() {
+    if (crashed || !gameStarted) return;
+    if (engineSound.paused) {
+      engineSound.play().catch(() => {});
+    }
+  }
+
+  function stopEngine() {
+    if (!forwardPressed && !backwardPressed) {
+      engineSound.pause();
+      engineSound.currentTime = 0;
+    }
+  }
+
+  // ---- Bounds helpers ----
+
+  function carBounds() {
+    const halfW = carWidth / 2;
+    const halfH = carHeight / 2;
+    return {
+      left:   carWorldX - halfW,
+      right:  carWorldX + halfW,
+      top:    carWorldY - halfH,
+      bottom: carWorldY + halfH
+    };
+  }
+
+  function npcBounds(npc) {
+    const halfW = npcWidth / 2;
+    const halfH = npcHeight / 2;
+    return {
+      left:   npc.x - halfW,
+      right:  npc.x + halfW,
+      top:    npc.y - halfH,
+      bottom: npc.y + halfH
+    };
+  }
+
+  function carIsInsideWorld() {
+    const padding = 20;
+    const b = carBounds();
+    return (
+      b.left   >= padding &&
+      b.right  <= worldW - padding &&
+      b.top    >= padding &&
+      b.bottom <= worldH - padding
+    );
+  }
+
+  function carHitsNpcCars() {
+    const b = carBounds();
+    for (const npc of npcs) {
+      const nb = npcBounds(npc);
+      const noOverlap =
+        b.right  < nb.left  ||
+        b.left   > nb.right ||
+        b.bottom < nb.top   ||
+        b.top    > nb.bottom;
+      if (!noOverlap) return true;
+    }
+    return false;
+  }
+
+  // ---- Crash ----
+
+  function triggerCrash() {
+    if (crashed) return;
+    crashed = true;
+
+    leftPressed = rightPressed = forwardPressed = backwardPressed = false;
+    stopEngine();
+
+    crashSound.currentTime = 0;
+    crashSound.play().catch(() => {});
+
+    car.src = "images/crash.png";
+
+    setTimeout(() => {
+      const src = carColors[lastColorKey] || carColors.red;
+      car.src = src;
+
+      carWorldX = worldW / 2;
+      carWorldY = worldH / 2;
+
+      setTimeout(() => crashed = false, 4000);
+    }, 2000);
+  }
+
+  // ---- Keyboard Input ----
+
+  window.addEventListener("keydown", (e) => {
+    if (!gameStarted) return;  // ignore keys until color chosen
+
+    if (e.key === "ArrowLeft")  { leftPressed = true;  e.preventDefault(); }
+    if (e.key === "ArrowRight") { rightPressed = true; e.preventDefault(); }
+    if (e.key === "ArrowUp")    { forwardPressed = true; startEngine(); e.preventDefault(); }
+    if (e.key === "ArrowDown")  { backwardPressed = true; startEngine(); e.preventDefault(); }
+  });
+
+  window.addEventListener("keyup", (e) => {
+    if (!gameStarted) return;
+
+    if (e.key === "ArrowLeft")  { leftPressed = false;  e.preventDefault(); }
+    if (e.key === "ArrowRight") { rightPressed = false; e.preventDefault(); }
+    if (e.key === "ArrowUp")    { forwardPressed = false; stopEngine(); e.preventDefault(); }
+    if (e.key === "ArrowDown")  { backwardPressed = false; stopEngine(); e.preventDefault(); }
+  });
+
+  // ---- TOUCH BUTTON HELPERS ----
+
+  function addPressHandlers(element, onPress, onRelease) {
+    element.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (!gameStarted) return;
+      onPress();
+      element.setPointerCapture(e.pointerId);
+    });
+
+    function endHandler(e) {
+      e.preventDefault();
+      onRelease();
+    }
+
+    element.addEventListener("pointerup", endHandler);
+    element.addEventListener("pointercancel", endHandler);
+    element.addEventListener("pointerleave", endHandler);
+  }
+
+  // Wire buttons
+  addPressHandlers(
+    btnUp,
+    () => { forwardPressed = true; startEngine(); },
+    () => { forwardPressed = false; stopEngine(); }
+  );
+
+  addPressHandlers(
+    btnDown,
+    () => { backwardPressed = true; startEngine(); },
+    () => { backwardPressed = false; stopEngine(); }
+  );
+
+  addPressHandlers(
+    btnLeft,
+    () => { leftPressed = true; },
+    () => { leftPressed = false; }
+  );
+
+  addPressHandlers(
+    btnRight,
+    () => { rightPressed = true; },
+    () => { rightPressed = false; }
+  );
+
+  // ---- Hide / Show touch controls toggle ----
+  toggleButtons.addEventListener("click", () => {
+    if (touchControls.style.display === "none") {
+      touchControls.style.display = "flex";
+      toggleButtons.textContent = "Hide Buttons";
+    } else {
+      touchControls.style.display = "none";
+      toggleButtons.textContent = "Show Buttons";
+    }
+  });
+
+  // ---- NPC Movement ----
+
+  function updateNpcs(dt) {
+    const padding = 40;
+
+    for (const npc of npcs) {
+      npc.turnTimer -= dt;
+      if (npc.turnTimer <= 0) {
+        const turn = (Math.random() - 0.5) * 120;
+        npc.angle += turn;
+        npc.speed = 80 + Math.random() * 120;
+        npc.turnTimer = 0.8 + Math.random() * 1.2;
+      }
+
+      const rad = npc.angle * Math.PI / 180;
+      npc.x += Math.cos(rad) * npc.speed * dt;
+      npc.y += Math.sin(rad) * npc.speed * dt;
+
+      let bounced = false;
+
+      if (npc.x < padding) {
+        npc.x = padding;
+        npc.angle += 120;
+        bounced = true;
+      } else if (npc.x > worldW - padding) {
+        npc.x = worldW - padding;
+        npc.angle += 120;
+        bounced = true;
+      }
+
+      if (npc.y < padding) {
+        npc.y = padding;
+        npc.angle += 120;
+        bounced = true;
+      } else if (npc.y > worldH - padding) {
+        npc.y = worldH - padding;
+        npc.angle += 120;
+        bounced = true;
+      }
+
+      if (bounced) {
+        npc.turnTimer = 0.5;
+      }
+    }
+  }
+
+  // ---- Drawing / camera ----
+
+  function updatePositions() {
+    const vw = game.clientWidth;
+    const vh = game.clientHeight;
+
+    camX = carWorldX - vw / 2;
+    camY = carWorldY - vh / 2;
+
+    camX = Math.max(0, Math.min(camX, worldW - vw));
+    camY = Math.max(0, Math.min(camY, worldH - vh));
+
+    scene.style.left = -camX + "px";
+    scene.style.top  = -camY + "px";
+
+    // Player
+    const drawX = carWorldX - camX - carWidth / 2;
+    const drawY = carWorldY - camY - carHeight / 2;
+    car.style.left = drawX + "px";
+    car.style.top  = drawY + "px";
+    car.style.transform = `rotate(${carAngle}deg)`;
+
+    // NPCs
+    for (const npc of npcs) {
+      const npcDrawX = npc.x - camX - npcWidth / 2;
+      const npcDrawY = npc.y - camY - npcHeight / 2;
+      npc.img.style.left = npcDrawX + "px";
+      npc.img.style.top  = npcDrawY + "px";
+      npc.img.style.transform = `rotate(${npc.angle}deg)`;
+    }
+  }
+
+  // ---- Main loop ----
+
+  let last = null;
+  function loop(t) {
+    if (last === null) last = t;
+    const dt = (t - last) / 1000;
+    last = t;
+
+    if (!crashed && gameStarted) {
+      if (leftPressed)  carAngle -= rotationSpeed * dt;
+      if (rightPressed) carAngle += rotationSpeed * dt;
+
+      const rad = carAngle * Math.PI / 180;
+
+      if (forwardPressed) {
+        carWorldX += Math.cos(rad) * driveSpeed * dt;
+        carWorldY += Math.sin(rad) * driveSpeed * dt;
+      }
+      if (backwardPressed) {
+        carWorldX -= Math.cos(rad) * driveSpeed * dt;
+        carWorldY -= Math.sin(rad) * driveSpeed * dt;
+      }
+
+      updateNpcs(dt);
+
+      if (!carIsInsideWorld() || carHitsNpcCars()) {
+        triggerCrash();
+      }
+    }
+
+    updatePositions();
+    requestAnimationFrame(loop);
+  }
+
+  // ---- Startup ----
+
+  scene.onload = () => {
+    worldW = scene.naturalWidth;
+    worldH = scene.naturalHeight;
+
+    // Player in center
+    carWorldX = worldW / 2;
+    carWorldY = worldH / 2;
+
+    // NPC starting positions
+    npcs[0].x = worldW / 2 + 300;
+    npcs[0].y = worldH / 2 - 200;
+
+    npcs[1].x = worldW / 2 - 350;
+    npcs[1].y = worldH / 2 + 150;
+
+    npcs[2].x = worldW / 2 + 100;
+    npcs[2].y = worldH / 2 + 250;
+
+    updateCarSizeFromSlider();
+    updatePositions();
+    requestAnimationFrame(loop);
+  };
+</script>
+
+</body>
+</html>

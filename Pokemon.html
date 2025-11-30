@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Pokemon Battle Ultra – Multi-Choice</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+    canvas {
+      display: block;
+      background: #000;
+    }
+
+    /* ===== Onscreen Controls & Toggle ===== */
+    #toggleControls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      cursor: pointer;
+      z-index: 20;
+    }
+
+    #touchControls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-sizing: border-box;
+      z-index: 15;
+      pointer-events: auto;
+    }
+
+    .controlColumn {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .controlColumn.rightCol {
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .bigTouchBtn {
+      width: 180px;
+      height: 80px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 24px;
+      border: 2px solid #444;
+      color: #fff;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      touch-action: none;
+    }
+    .bigTouchBtn:active {
+      background: rgba(255,255,255,0.15);
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+
+<!-- Toggle + Onscreen buttons for iPad -->
+<button id="toggleControls">Hide Controls</button>
+
+<div id="touchControls">
+  <div class="controlColumn leftCol">
+    <button class="bigTouchBtn" id="btnUp">Up</button>
+    <button class="bigTouchBtn" id="btnDown">Down</button>
+  </div>
+  <div class="controlColumn rightCol">
+    <button class="bigTouchBtn" id="btnShoot">Shoot</button>
+    <button class="bigTouchBtn" id="btnSpecial">Special</button>
+  </div>
+</div>
+
+<script>
+// =============================
+// CANVAS SETUP
+// =============================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', () => {
+  resize();
+  if (player1) positionPlayers();
+});
+
+// Simple time helper
+function now() {
+  return performance.now();
+}
+
+// =============================
+// IMAGES (BACKGROUND + POKEMON)
+// =============================
+const bgImg = new Image();
+let bgLoaded = false;
+bgImg.onload = () => { bgLoaded = true; };
+bgImg.src = 'images/field_background.png';
+
+// Pokémon catalog: id, name, image file, shot colors
+const POKEMON = [
+  { id: 'peek',   name: 'Pikachu',    file: 'peek.png',   colorNormal: 'yellow',     colorSpecial: 'gold' },
+  { id: 'char',   name: 'Charmander', file: 'char.png',   colorNormal: 'orangered', colorSpecial: 'red' },
+  { id: 'jiggly', name: 'Jigglypuff', file: 'jiggly.png', colorNormal: 'pink',       colorSpecial: 'hotpink' },
+  { id: 'eevee',  name: 'Eevee',      file: 'eevee.png',  colorNormal: 'white',      colorSpecial: 'khaki' },
+  { id: 'mew',    name: 'Mew',        file: 'mew.png',    colorNormal: 'violet',     colorSpecial: 'magenta' },
+  { id: 'bulb',   name: 'Bulbasaur',  file: 'bulb.png',   colorNormal: 'lightgreen', colorSpecial: 'green' },
+  { id: 'noi',    name: 'Noibat',     file: 'noi.png',    colorNormal: 'cyan',       colorSpecial: 'deepskyblue' },
+  { id: 'squirt', name: 'Squirtle',   file: 'squirt.png', colorNormal: 'deepskyblue',colorSpecial: 'blue' }
+];
+
+const sprites = {};
+let spritesLoaded = 0;
+POKEMON.forEach(p => {
+  const img = new Image();
+  img.onload = () => { spritesLoaded++; };
+  img.src = 'images/' + p.file;   // same style as bgImg
+  sprites[p.id] = img;
+});
+
+// =============================
+// GAME STATE
+// =============================
+let gamePhase = 'modeSelect';   // 'modeSelect', 'selectP1', 'selectP2', 'battle', 'gameOver'
+let gameMode  = 'single';       // 'single' or 'two'
+
+let selectedP1 = null;          // Pokémon object for P1
+let selectedP2 = null;          // Pokémon object for P2
+
+let player1 = null;             // right side
+let player2 = null;             // left side (AI or human)
+
+let shots = [];                 // projectile list
+let explosions = [];            // 💥
+let powerups = [];              // ❤️ / 🛡
+
+let keys = {};
+let gameOver = false;
+let winner = null;
+
+// Shot / special timers
+let lastShotP1 = 0;
+let lastSpecialP1 = 0;
+let lastShotP2 = 0;
+let lastSpecialP2 = 0;
+
+// Cooldowns (ms)
+const SHOT_COOLDOWN_NORMAL   = 250;
+const SPECIAL_COOLDOWN       = 3000;
+
+// AI shooting interval
+const AI_SHOT_MIN = 700;
+const AI_SHOT_MAX = 1500;
+let lastAIShotTime = 0;
+
+// Powerup interval
+const POWERUP_MIN = 5000;
+const POWERUP_MAX = 9000;
+let lastPowerupTime = 0;
+
+// For simple AI movement
+let aiDir = 1;  // 1 down, -1 up
+
+// =============================
+// ONSCREEN CONTROLS / TOGGLE
+// =============================
+const toggleControlsBtn = document.getElementById('toggleControls');
+const touchControls     = document.getElementById('touchControls');
+const btnUp             = document.getElementById('btnUp');
+const btnDown           = document.getElementById('btnDown');
+const btnShoot          = document.getElementById('btnShoot');
+const btnSpecial        = document.getElementById('btnSpecial');
+
+let controlsVisible = true;
+
+toggleControlsBtn.onclick = () => {
+  controlsVisible = !controlsVisible;
+  touchControls.style.display = controlsVisible ? 'flex' : 'none';
+  toggleControlsBtn.textContent = controlsVisible ? 'Hide Controls' : 'Show Controls';
+};
+
+/* Helper to set/unset keys for touch */
+function setKeyHold(key, holding) {
+  keys[key] = holding;
+}
+
+/* Touch/mouse mapping for Up/Down movement (P1) */
+function addHoldButtonLogic(element, keyCode) {
+  // Touch events
+  element.addEventListener('touchstart', ev => {
+    ev.preventDefault();
+    setKeyHold(keyCode, true);
+  });
+  element.addEventListener('touchend', ev => {
+    ev.preventDefault();
+    setKeyHold(keyCode, false);
+  });
+  element.addEventListener('touchcancel', ev => {
+    ev.preventDefault();
+    setKeyHold(keyCode, false);
+  });
+
+  // Mouse events (for testing on desktop)
+  element.addEventListener('mousedown', ev => {
+    ev.preventDefault();
+    setKeyHold(keyCode, true);
+  });
+  window.addEventListener('mouseup', ev => {
+    setKeyHold(keyCode, false);
+  });
+}
+
+// Wire Up/Down to ArrowUp / ArrowDown
+addHoldButtonLogic(btnUp,   'ArrowUp');
+addHoldButtonLogic(btnDown, 'ArrowDown');
+
+/* Fire / Special buttons (instant press actions) */
+function addTapButtonLogic(element, actionFn) {
+  element.addEventListener('touchstart', ev => {
+    ev.preventDefault();
+    actionFn();
+  });
+  element.addEventListener('click', ev => {
+    ev.preventDefault();
+    actionFn();
+  });
+}
+
+// Map to same behavior as J/K keys for P1
+addTapButtonLogic(btnShoot, () => {
+  if (gamePhase === 'battle') {
+    fireShotFromPlayer(player1, 1, false);
+  }
+});
+addTapButtonLogic(btnSpecial, () => {
+  if (gamePhase === 'battle') {
+    fireShotFromPlayer(player1, 1, true);
+  }
+});
+
+// =============================
+// PLAYER CREATION & POSITION
+// =============================
+function createPlayer(pokemon, side) {
+  return {
+    pokemon,                   // reference to POKEMON entry
+    x: 0,
+    y: 0,
+    w: 0,
+    h: 0,
+    hp: 5,
+    maxHp: 5,
+    shield: false,
+    side,                      // 'left' or 'right'
+    isAI: (side === 'left' && gameMode === 'single')
+  };
+}
+
+function positionPlayers() {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  const spriteW = w * 0.18;
+  const spriteH = spriteW * 0.8;
+
+  if (player1) {
+    player1.w = spriteW;
+    player1.h = spriteH;
+    player1.x = w * 0.72;
+    player1.y = h * 0.55;
+  }
+
+  if (player2) {
+    player2.w = spriteW;
+    player2.h = spriteH;
+    player2.x = w * 0.10;
+    player2.y = h * 0.55;
+  }
+}
+
+function resetBattleState() {
+  shots = [];
+  explosions = [];
+  powerups = [];
+  gameOver = false;
+  winner = null;
+
+  lastShotP1 = lastSpecialP1 = 0;
+  lastShotP2 = lastSpecialP2 = 0;
+  lastAIShotTime = now();
+  lastPowerupTime = now();
+
+  aiDir = 1;
+
+  if (player1) {
+    player1.hp = player1.maxHp;
+    player1.shield = false;
+  }
+  if (player2) {
+    player2.hp = player2.maxHp;
+    player2.shield = false;
+  }
+
+  positionPlayers();
+}
+
+// Called after both Pokémon are chosen
+function startBattle() {
+  player1 = createPlayer(selectedP1, 'right');
+  player2 = createPlayer(selectedP2, 'left');
+
+  resetBattleState();
+  gamePhase = 'battle';
+}
+
+// =============================
+// INPUT HANDLERS (KEYBOARD)
+// =============================
+window.addEventListener('keydown', (e) => {
+  // MODE SELECT SCREEN
+  if (gamePhase === 'modeSelect') {
+    if (e.code === 'Digit1') {
+      gameMode = 'single';
+      gamePhase = 'selectP1';
+      return;
+    }
+    if (e.code === 'Digit2') {
+      gameMode = 'two';
+      gamePhase = 'selectP1';
+      return;
+    }
+  }
+
+  // POKEMON SELECTION SCREENS
+  if (gamePhase === 'selectP1' || gamePhase === 'selectP2') {
+    const idx = digitToPokemonIndex(e.code);
+    if (idx !== null) {
+      if (gamePhase === 'selectP1') {
+        selectedP1 = POKEMON[idx];
+
+        if (gameMode === 'single') {
+          const candidates = POKEMON;
+          selectedP2 = candidates[Math.floor(Math.random() * candidates.length)];
+          startBattle();
+        } else {
+          gamePhase = 'selectP2';
+        }
+      } else { // selectP2
+        selectedP2 = POKEMON[idx];
+        startBattle();
+      }
+    }
+    return;
+  }
+
+  // GAME OVER SCREEN
+  if (gamePhase === 'gameOver') {
+    if (e.code === 'KeyR') {
+      gamePhase = 'modeSelect';
+    }
+    return;
+  }
+
+  // BATTLE PHASE INPUT
+  if (gamePhase === 'battle') {
+    keys[e.code] = true;
+
+    // Player 1 fire (J) & special (K)
+    if (e.code === 'KeyJ') fireShotFromPlayer(player1, 1, false);
+    if (e.code === 'KeyK') fireShotFromPlayer(player1, 1, true);
+
+    // Player 2 fire (F/G) only in 2-player mode
+    if (gameMode === 'two') {
+      if (e.code === 'KeyF') fireShotFromPlayer(player2, 2, false);
+      if (e.code === 'KeyG') fireShotFromPlayer(player2, 2, true);
+    }
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+});
+
+// Map Digit1..Digit8 -> POKEMON index
+function digitToPokemonIndex(code) {
+  const map = {
+    Digit1: 0,
+    Digit2: 1,
+    Digit3: 2,
+    Digit4: 3,
+    Digit5: 4,
+    Digit6: 5,
+    Digit7: 6,
+    Digit8: 7
+  };
+  return map.hasOwnProperty(code) ? map[code] : null;
+}
+
+// =============================
+// SHOOTING & POWERUPS
+// =============================
+function fireShotFromPlayer(player, owner, special) {
+  const t = now();
+  if (!player) return;
+
+  if (owner === 1) {
+    if (special) {
+      if (t - lastSpecialP1 < SPECIAL_COOLDOWN) return;
+      lastSpecialP1 = t;
+    } else {
+      if (t - lastShotP1 < SHOT_COOLDOWN_NORMAL) return;
+      lastShotP1 = t;
+    }
+  } else if (owner === 2) {
+    if (special) {
+      if (t - lastSpecialP2 < SPECIAL_COOLDOWN) return;
+      lastSpecialP2 = t;
+    } else {
+      if (t - lastShotP2 < SHOT_COOLDOWN_NORMAL) return;
+      lastShotP2 = t;
+    }
+  }
+
+  const baseSpeed = canvas.width * 0.01;
+  const speed = special ? baseSpeed * 1.5 : baseSpeed;
+  const baseRadius = canvas.width * 0.015;
+  const radius = special ? baseRadius * 1.9 : baseRadius;
+  const damage = special ? 2 : 1;
+
+  const dir = (player.side === 'right') ? -1 : 1;
+
+  const x = (player.side === 'right') ? player.x : player.x + player.w;
+  const y = player.y + player.h * 0.3;
+
+  const colorNormal  = player.pokemon.colorNormal;
+  const colorSpecial = player.pokemon.colorSpecial;
+
+  shots.push({
+    owner,       // 1 or 2
+    x,
+    y,
+    vx: dir * speed,
+    vy: 0,
+    r: radius,
+    damage,
+    special,
+    color: special ? colorSpecial : colorNormal
+  });
+}
+
+// AI shooting for player2 when single-player
+function maybeAIShoot() {
+  if (!player2 || !player2.isAI) return;
+  const t = now();
+  const elapsed = t - lastAIShotTime;
+  const randomInterval = AI_SHOT_MIN + Math.random() * (AI_SHOT_MAX - AI_SHOT_MIN);
+  if (elapsed >= randomInterval) {
+    fireShotFromPlayer(player2, 2, false);
+    lastAIShotTime = t;
+  }
+}
+
+// Spawn powerups periodically
+function maybeSpawnPowerup() {
+  const t = now();
+  const elapsed = t - lastPowerupTime;
+  const randomInterval = POWERUP_MIN + Math.random() * (POWERUP_MAX - POWERUP_MIN);
+  if (elapsed < randomInterval) return;
+
+  lastPowerupTime = t;
+
+  const type = Math.random() < 0.5 ? 'heal' : 'shield';
+  const r = canvas.width * 0.02;
+
+  powerups.push({
+    x: canvas.width * 0.5,
+    y: canvas.height * (0.3 + Math.random() * 0.4),
+    r,
+    type
+  });
+}
+
+function addExplosion(x, y) {
+  explosions.push({
+    x,
+    y,
+    created: now(),
+    life: 400  // ms
+  });
+}
+
+// =============================
+// COLLISION HELPERS
+// =============================
+function circlesCollide(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  const r  = a.r + b.r;
+  return dx * dx + dy * dy <= r * r;
+}
+
+function shotHitsPlayer(shot, pl) {
+  if (!pl) return false;
+  return (
+    shot.x >= pl.x &&
+    shot.x <= pl.x + pl.w &&
+    shot.y >= pl.y &&
+    shot.y <= pl.y + pl.h
+  );
+}
+
+// =============================
+// UPDATE
+// =============================
+function update(dt) {
+  if (gamePhase !== 'battle') return;
+  if (!player1 || !player2) return;
+  if (gameOver) return;
+
+  const moveSpeed = canvas.height * 0.4 * dt;
+
+  // Player 1 movement (arrow keys or onscreen buttons)
+  if (keys['ArrowUp'])   player1.y -= moveSpeed;
+  if (keys['ArrowDown']) player1.y += moveSpeed;
+  clampPlayerVertical(player1);
+
+  // Player 2 movement
+  if (player2.isAI) {
+    // Simple bounce AI
+    player2.y += aiDir * moveSpeed * 0.7;
+    const minY = 0;
+    const maxY = canvas.height - player2.h;
+    if (player2.y < minY) { player2.y = minY; aiDir = 1; }
+    if (player2.y > maxY) { player2.y = maxY; aiDir = -1; }
+  } else {
+    if (keys['KeyW']) player2.y -= moveSpeed;
+    if (keys['KeyS']) player2.y += moveSpeed;
+    clampPlayerVertical(player2);
+  }
+
+  maybeAIShoot();
+  maybeSpawnPowerup();
+
+  // Move shots
+  shots.forEach(s => {
+    s.x += s.vx;
+    s.y += s.vy;
+  });
+  // Remove off-screen shots
+  shots = shots.filter(s => s.x + s.r > -50 && s.x - s.r < canvas.width + 50);
+
+  // Shot vs shot (owner 1 vs owner 2)
+  for (let i = 0; i < shots.length; i++) {
+    for (let j = i + 1; j < shots.length; j++) {
+      const a = shots[i];
+      const b = shots[j];
+      if (a.owner !== b.owner && circlesCollide(a, b)) {
+        addExplosion((a.x + b.x) / 2, (a.y + b.y) / 2);
+        shots.splice(j, 1);
+        shots.splice(i, 1);
+        i--;
+        break;
+      }
+    }
+  }
+
+  // Shots vs players
+  for (let i = shots.length - 1; i >= 0; i--) {
+    const s = shots[i];
+
+    if (s.owner === 1 && shotHitsPlayer(s, player2)) {
+      shots.splice(i, 1);
+
+      if (player2.shield) {
+        player2.shield = false;
+        addExplosion(player2.x + player2.w * 0.6, player2.y + player2.h * 0.3);
+      } else {
+        player2.hp -= s.damage;
+        addExplosion(player2.x + player2.w * 0.6, player2.y + player2.h * 0.3);
+        if (player2.hp <= 0) {
+          player2.hp = 0;
+          gameOver = true;
+          winner = player1.pokemon.name;
+          gamePhase = 'gameOver';
+        }
+      }
+    } else if (s.owner === 2 && shotHitsPlayer(s, player1)) {
+      shots.splice(i, 1);
+
+      if (player1.shield) {
+        player1.shield = false;
+        addExplosion(player1.x + player1.w * 0.3, player1.y + player1.h * 0.3);
+      } else {
+        player1.hp -= s.damage;
+        addExplosion(player1.x + player1.w * 0.3, player1.y + player1.h * 0.3);
+        if (player1.hp <= 0) {
+          player1.hp = 0;
+          gameOver = true;
+          winner = player2.pokemon.name;
+          gamePhase = 'gameOver';
+        }
+      }
+    }
+  }
+
+  // Powerups vs shots
+  for (let i = powerups.length - 1; i >= 0; i--) {
+    const p = powerups[i];
+    let collectedBy = null;
+
+    for (let j = shots.length - 1; j >= 0; j--) {
+      const s = shots[j];
+      const dx = s.x - p.x;
+      const dy = s.y - p.y;
+      if (dx*dx + dy*dy <= (s.r + p.r)**2) {
+        collectedBy = s.owner;
+        shots.splice(j, 1);
+        break;
+      }
+    }
+
+    if (collectedBy) {
+      if (p.type === 'heal') {
+        if (collectedBy === 1 && player1.hp < player1.maxHp) player1.hp++;
+        if (collectedBy === 2 && player2.hp < player2.maxHp) player2.hp++;
+      } else if (p.type === 'shield') {
+        if (collectedBy === 1) player1.shield = true;
+        if (collectedBy === 2) player2.shield = true;
+      }
+      addExplosion(p.x, p.y);
+      powerups.splice(i, 1);
+    }
+  }
+
+  // Update explosions
+  const t = now();
+  explosions = explosions.filter(e => t - e.created < e.life);
+}
+
+function clampPlayerVertical(pl) {
+  if (!pl) return;
+  pl.y = Math.max(0, Math.min(canvas.height - pl.h, pl.y));
+}
+
+// =============================
+// DRAW
+// =============================
+function drawBackground() {
+  if (bgLoaded) {
+    ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = '#224422';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+}
+
+function drawPokemonSprite(player) {
+  if (!player || !player.pokemon) return;
+  const img = sprites[player.pokemon.id];
+
+  if (img && img.complete && img.naturalWidth > 0) {
+    if (player.side === 'left') {
+      // mirror horizontally (face right)
+      ctx.save();
+      ctx.translate(player.x + player.w, player.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, player.w, player.h);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, player.x, player.y, player.w, player.h);
+    }
+  } else {
+    // fallback rectangle
+    ctx.fillStyle = 'gray';
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+  }
+}
+
+function drawShots() {
+  shots.forEach(s => {
+    ctx.fillStyle = s.color;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawExplosions() {
+  const t = now();
+  explosions.forEach(e => {
+    const ratio = 1 - (t - e.created) / e.life;
+    const size = 40 + 30 * ratio;
+    ctx.save();
+    ctx.font = size + 'px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha = ratio;
+    ctx.fillText('💥', e.x, e.y);
+    ctx.restore();
+  });
+}
+
+function drawPowerups() {
+  powerups.forEach(p => {
+    ctx.save();
+    ctx.font = (p.r * 1.8) + 'px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const icon = p.type === 'heal' ? '❤️' : '🛡️';
+    ctx.fillText(icon, p.x, p.y);
+    ctx.restore();
+  });
+}
+
+function drawHPBars() {
+  if (!player1 || !player2) return;
+
+  const barWidth  = canvas.width * 0.25;
+  const barHeight = 20;
+
+  // Player2 (left) HP
+  ctx.fillStyle = 'black';
+  ctx.fillRect(20, 20, barWidth, barHeight);
+  ctx.fillStyle = 'red';
+  ctx.fillRect(20, 20, barWidth * (player2.hp / player2.maxHp), barHeight);
+  ctx.fillStyle = 'white';
+  ctx.font = '16px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText(player2.pokemon.name + ' HP: ' + player2.hp, 25, 35);
+  if (player2.shield) ctx.fillText('🛡 Shield', 25, 55);
+
+  // Player1 (right) HP
+  ctx.fillStyle = 'black';
+  ctx.fillRect(canvas.width - barWidth - 20, 20, barWidth, barHeight);
+  ctx.fillStyle = 'lime';
+  ctx.fillRect(canvas.width - barWidth - 20, 20,
+               barWidth * (player1.hp / player1.maxHp), barHeight);
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'right';
+  ctx.fillText(player1.pokemon.name + ' HP: ' + player1.hp,
+               canvas.width - 25, 35);
+  if (player1.shield) ctx.fillText('🛡 Shield', canvas.width - 25, 55);
+}
+
+// Draw mode select screen
+function drawModeSelect() {
+  drawBackground();
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.font = '40px Arial';
+  ctx.fillText('POKÉMON BATTLE ULTRA', canvas.width/2, canvas.height/2 - 80);
+
+  ctx.font = '28px Arial';
+  ctx.fillText('Press 1 for SINGLE PLAYER (P1 vs AI)', canvas.width/2, canvas.height/2);
+  ctx.fillText('Press 2 for TWO PLAYER (P1 vs P2)', canvas.width/2, canvas.height/2 + 40);
+
+  ctx.font = '20px Arial';
+  ctx.fillText('Then choose your Pokémon!', canvas.width/2, canvas.height/2 + 90);
+}
+
+// Draw selection screen (P1 or P2)
+function drawSelectionScreen(forPlayer) {
+  drawBackground();
+
+  ctx.fillStyle = 'rgba(0,0,0,0.7)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.font = '36px Arial';
+  ctx.fillText(`Player ${forPlayer}: Choose Your Pokémon`, canvas.width/2, canvas.height/2 - 120);
+
+  ctx.font = '22px Arial';
+  const startY = canvas.height/2 - 40;
+  const lineH = 28;
+
+  const lines = [
+    'Press number keys 1–8 to choose:',
+    '1) Pikachu      2) Charmander',
+    '3) Jigglypuff   4) Eevee',
+    '5) Mew          6) Bulbasaur',
+    '7) Noibat       8) Squirtle'
+  ];
+
+  lines.forEach((line, i) => {
+    ctx.fillText(line, canvas.width/2, startY + i*lineH);
+  });
+}
+
+// Draw battle/game
+function drawBattle() {
+  drawBackground();
+
+  drawPokemonSprite(player1);
+  drawPokemonSprite(player2);
+
+  drawShots();
+  drawPowerups();
+  drawExplosions();
+  drawHPBars();
+
+  // Controls hint bar at bottom
+  ctx.fillStyle = 'rgba(0,0,0,0.5)';
+  ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+  ctx.fillStyle = 'white';
+  ctx.font = '18px Arial';
+  ctx.textAlign = 'center';
+
+  if (gameMode === 'single') {
+    ctx.fillText(
+      `Single Player – P1 (${player1.pokemon.name}): Arrow Up/Down or buttons to move, J/button = shoot, K/button = special. P2 (${player2.pokemon.name}) is AI.`,
+      canvas.width/2, canvas.height - 50
+    );
+  } else {
+    ctx.fillText(
+      `Two Player – P1 (${player1.pokemon.name}): Arrow Up/Down or buttons, J/K or buttons to attack. P2 (${player2.pokemon.name}): W/S move, F shoot, G special.`,
+      canvas.width/2, canvas.height - 50
+    );
+  }
+}
+
+// Draw game over
+function drawGameOver() {
+  drawBattle();
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = 'white';
+  ctx.textAlign = 'center';
+  ctx.font = '48px Arial';
+  ctx.fillText(`${winner} Wins!`, canvas.width/2, canvas.height/2 - 20);
+
+  ctx.font = '28px Arial';
+  ctx.fillText('Press R to go back to mode select', canvas.width/2, canvas.height/2 + 40);
+}
+
+// =============================
+// MAIN LOOP
+// =============================
+let lastTime = now();
+
+function loop() {
+  const current = now();
+  const dt = (current - lastTime) / 1000;
+  lastTime = current;
+
+  // Update
+  update(dt);
+
+  // Draw according to phase
+  if (gamePhase === 'modeSelect') {
+    drawModeSelect();
+  } else if (gamePhase === 'selectP1') {
+    drawSelectionScreen(1);
+  } else if (gamePhase === 'selectP2') {
+    drawSelectionScreen(2);
+  } else if (gamePhase === 'battle') {
+    drawBattle();
+  } else if (gamePhase === 'gameOver') {
+    drawGameOver();
+  }
+
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>

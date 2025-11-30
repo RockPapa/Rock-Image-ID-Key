@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pokémon Battle – Button Mode Select</title>
+  <style>
+    body {
+      background: #111;
+      margin: 0;
+      overflow: hidden;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0px;
+      margin-bottom: 4px;
+      font-size: 32px;
+    }
+
+    #menu {
+      font-size: 18px;
+      margin: 0;
+      padding: 0;
+    }
+
+    canvas {
+      background: black;
+      display: block;
+      margin: -5px auto 10px auto;
+      border: 4px solid white;
+    }
+
+    .pokeButton {
+      display: inline-block;
+      margin: 6px;
+      padding: 8px 10px;
+      border: 2px solid white;
+      border-radius: 10px;
+      cursor: pointer;
+      width: 120px;
+      background: #444;
+      font-size: 16px;
+    }
+    .pokeButton:hover {
+      background: #666;
+    }
+
+    .modeBtn {
+      display: inline-block;
+      margin: 4px 8px;
+      padding: 4px 10px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    #toggleControls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 6px 12px;
+      font-size: 14px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      cursor: pointer;
+      z-index: 20;
+      display: block;
+    }
+
+    #touchControls {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 10px;
+      box-sizing: border-box;
+      z-index: 15;
+    }
+
+    .controlColumn {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .controlColumn.rightCol {
+      justify-content: center;
+      align-items: flex-end;
+    }
+
+    .bigTouchBtn {
+      width: 190px;
+      height: 90px;
+      background: rgba(0,0,0,0.7);
+      border-radius: 24px;
+      border: 2px solid #444;
+      color: #fff;
+      font-size: 26px;
+      font-weight: bold;
+      cursor: pointer;
+      touch-action: none;
+    }
+    .bigTouchBtn:active {
+      background: rgba(255,255,255,0.15);
+    }
+  </style>
+</head>
+<body>
+  <h1>Pokémon Battle</h1>
+  <div id="menu"></div>
+  <canvas id="game" width="900" height="450"></canvas>
+
+  <button id="toggleControls">Hide Controls</button>
+
+  <div id="touchControls">
+    <div class="controlColumn leftCol">
+      <button class="bigTouchBtn" id="btnJump">Jump</button>
+    </div>
+    <div class="controlColumn rightCol">
+      <button class="bigTouchBtn" id="btnFire">Fire</button>
+    </div>
+  </div>
+
+<script>
+/* =========================================================
+   🎵 AUDIO (MUSIC + GUNSHOT)
+========================================================= */
+const music = new Audio("images/music.mp3");
+music.loop = true;
+let musicStarted = false;
+
+function startMusic() {
+  if (!musicStarted) {
+    music.play().then(() => musicStarted = true).catch(()=>{});
+  } else if (music.paused) {
+    music.play().catch(()=>{});
+  }
+}
+function stopMusic() {
+  if (musicStarted) {
+    music.pause();
+    music.currentTime = 0;
+  }
+}
+
+// GUN SOUND (for every shot)
+const gunSound = new Audio("images/gun.mp3");
+
+
+/* =========================================================
+   CANVAS & UI
+========================================================= */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const menu = document.getElementById("menu");
+
+const toggleControlsBtn = document.getElementById("toggleControls");
+const touchControls = document.getElementById("touchControls");
+const btnJump = document.getElementById("btnJump");
+const btnFire = document.getElementById("btnFire");
+
+let controlsVisible = true;
+toggleControlsBtn.onclick = () => {
+  controlsVisible = !controlsVisible;
+  touchControls.style.display = controlsVisible ? "flex" : "none";
+  toggleControlsBtn.textContent = controlsVisible ? "Hide Controls" : "Show Controls";
+};
+
+
+/* =========================================================
+   🔴 RED-LIGHT #1:
+   SINGLE PLAYER (PLAYER 1) JUMP & SHOOT CONTROLS
+========================================================= */
+const P1_JUMP_KEY_CODE = "Space";   // 1-PLAYER: JUMP with Space bar
+const P1_FIRE_KEY      = "ArrowUp"; // 1-PLAYER: FIRE with UP arrow
+
+const P1_SHOOT_INTERVAL = 30;       // bigger number = slower shooting
+const P1_MAX_SHOTS      = 20;       // total bullets for Player 1
+
+// vertical movement limits for Player 1
+const P1_MIN_Y = 70;
+const P1_MAX_Y = canvas.height - 220;
+const P1_VERT_SPEED = 4;
+
+// jump speed for Player 1
+const P1_JUMP_SPEED = 6;
+
+
+/* =========================================================
+   🔴 RED-LIGHT #2:
+   OPPONENT (AI) MOVE & SHOOT DIFFICULTY
+========================================================= */
+const AI_VERT_UP_SPEED           = 4;
+const AI_VERT_DOWN_SPEED         = 3;
+const AI_VERT_TOP_HOLD_FRAMES    = 55;
+const AI_VERT_BOTTOM_HOLD_FRAMES = 3;
+
+const AI_SHOOT_INTERVAL_AIR      = 50;
+const AI_SHOOT_INTERVAL_GROUND   = 50;
+
+
+/* =========================================================
+   GAME STATE
+========================================================= */
+let gameState = "modeSelect";
+let isTwoPlayer = false;
+let player1 = null;
+let player2 = null;
+
+let p1ShootTimer = 0;
+let p1AmmoRemaining = P1_MAX_SHOTS;
+
+const projectiles = [];
+const explosions = [];
+let keysDown = {};
+
+let aiShootTimer = 0;
+let aiVertState = "up";
+let aiVertHoldTimer = 0;
+
+
+/* =========================================================
+   IMAGES — LOADED EXACTLY LIKE BACKGROUND (GITHUB SAFE)
+========================================================= */
+
+const backgroundImage = new Image();
+let bgLoaded = false;
+backgroundImage.onload = () => bgLoaded = true;
+backgroundImage.src = "images/background.png";
+
+// Lowercase filenames for GitHub (make sure your files are named this way)
+const pokemonList = [
+  { id: "peek",   file: "peek.png",   label: "Peek",   projectile: "yellow" },
+  { id: "char",   file: "char.png",   label: "Char",   projectile: "orange" },
+  { id: "jiggly", file: "jiggly.png", label: "Jiggly", projectile: "purple" },
+  { id: "mew",    file: "mew.png",    label: "Mew",    projectile: "purple" },
+  { id: "eevee",  file: "eevee.png",  label: "Eevee",  projectile: "white" }
+];
+
+const pokemonImages = {};
+let spritesLoaded = 0;
+const totalSprites = pokemonList.length;
+
+pokemonList.forEach(p => {
+  const img = new Image();
+  img.onload = () => {
+    spritesLoaded++;
+    // If you ever want to wait for all sprites:
+    // if (spritesLoaded === totalSprites && bgLoaded) { ... }
+  };
+  img.src = "images/" + p.file;   // same style as backgroundImage
+  pokemonImages[p.id] = img;
+});
+
+
+/* =========================================================
+   MENUS & PLAYER CREATION
+========================================================= */
+function showModeSelectionMenu() {
+  menu.innerHTML =
+    'Select Game Mode<br><br>' +
+    '<button class="modeBtn" id="mode1Btn">1 PLAYER</button>' +
+    '<button class="modeBtn" id="mode2Btn">2 PLAYER</button>';
+
+  document.getElementById("mode1Btn").onclick = () => {
+    isTwoPlayer = false;
+    showSelectionScreen(1);
+  };
+  document.getElementById("mode2Btn").onclick = () => {
+    isTwoPlayer = true;
+    showSelectionScreen(1);
+  };
+}
+showModeSelectionMenu();
+
+function showSelectionScreen(n) {
+  gameState = "selectingP" + n;
+  menu.innerHTML = `PLAYER ${n}: CHOOSE YOUR POKÉMON<br><br>`;
+
+  pokemonList.forEach(p => {
+    const div = document.createElement("div");
+    div.className = "pokeButton";
+    div.textContent = p.label;
+    div.onclick = () => choosePokemon(n, p);
+    menu.appendChild(div);
+  });
+}
+
+function makePlayerFromPokemon(pokemon, x, facing) {
+  return {
+    id: pokemon.id,
+    label: pokemon.label,
+    img: pokemonImages[pokemon.id],
+    projectileColor: pokemon.projectile,
+    x: x,
+    y: canvas.height - 260,
+    width: 150,
+    height: 150,
+    facing: facing,
+    hp: 100
+  };
+}
+
+function choosePokemon(n, pokemon) {
+  if (n === 1) {
+    player1 = makePlayerFromPokemon(pokemon, 120, 1);
+    player1.y = P1_MAX_Y;
+
+    if (isTwoPlayer) {
+      showSelectionScreen(2);
+    } else {
+      const others = pokemonList.filter(p => p.id !== pokemon.id);
+      const rand = others[Math.floor(Math.random() * others.length)];
+      player2 = makePlayerFromPokemon(rand, canvas.width - 270, -1);
+      startBattle();
+    }
+  } else {
+    player2 = makePlayerFromPokemon(pokemon, canvas.width - 270, -1);
+    startBattle();
+  }
+}
+
+function startBattle() {
+  gameState = "battle";
+  projectiles.length = 0;
+  explosions.length = 0;
+
+  p1ShootTimer = P1_SHOOT_INTERVAL;
+  p1AmmoRemaining = P1_MAX_SHOTS;
+
+  aiShootTimer = 0;
+  aiVertState = "up";
+  aiVertHoldTimer = 0;
+
+  p1IsJumping = false;
+  p1JumpDirection = "up";
+
+  player1.hp = 100;
+  player2.hp = 100;
+
+  player2.y = canvas.height - 260;
+  player1.y = P1_MAX_Y;
+
+  startMusic();
+
+  menu.innerHTML =
+    `${player1.label.toUpperCase()} VS ${player2.label.toUpperCase()}<br>` +
+    `<small>1P: Space=Jump, ↑=Fire. &nbsp; 2P: P1 W/S+F, P2 ←/→+L. Touch: Jump & Fire</small>`;
+}
+
+function resetToModeSelect() {
+  stopMusic();
+  gameState = "modeSelect";
+  player1 = player2 = null;
+  projectiles.length = 0;
+  explosions.length = 0;
+  showModeSelectionMenu();
+}
+
+
+/* =========================================================
+   PLAYER 1 SHOOT / JUMP HELPERS
+========================================================= */
+let p1IsJumping = false;
+let p1JumpDirection = "up";
+
+function attemptP1Fire() {
+  if (p1AmmoRemaining > 0 && p1ShootTimer >= P1_SHOOT_INTERVAL) {
+    shootProjectile(player1, true);
+    p1ShootTimer = 0;
+    p1AmmoRemaining--;
+  }
+}
+function attemptP1Jump() {
+  if (!p1IsJumping && player1.y >= P1_MAX_Y - 2) {
+    p1IsJumping = true;
+    p1JumpDirection = "up";
+  }
+}
+
+
+/* =========================================================
+   SHOOT PROJECTILE (WITH GUN SOUND)
+========================================================= */
+function shootProjectile(player, isPlayer1) {
+  if (!player) return;
+
+  // gunshot each time someone fires
+  try { gunSound.cloneNode().play(); } catch(e){}
+
+  const radius = 12;
+  const speed = 7;
+  const vx = isPlayer1 ? speed : -speed;
+
+  const x = isPlayer1 ? (player.x + player.width) : player.x;
+  const y = player.y + player.height / 2;
+
+  projectiles.push({
+    x: x,
+    y: y,
+    vx: vx,
+    r: radius,
+    owner: isPlayer1 ? 1 : 2,
+    color: getColorForPokemon(player)
+  });
+}
+
+
+/* =========================================================
+   KEYBOARD INPUT
+========================================================= */
+document.addEventListener("keydown", (e) => {
+  if (gameState === "gameOver") {
+    if (e.key.toLowerCase() === "r") resetToModeSelect();
+    return;
+  }
+
+  keysDown[e.key] = true;
+
+  if (gameState === "battle") {
+    // 1-PLAYER MODE: use RED-LIGHT keys above
+    if (!isTwoPlayer) {
+      if (e.code === P1_JUMP_KEY_CODE) {   // usually "Space"
+        e.preventDefault();
+        attemptP1Jump();
+      }
+      if (e.key === P1_FIRE_KEY) {         // usually "ArrowUp"
+        e.preventDefault();
+        attemptP1Fire();
+      }
+    }
+
+    // Extra: F still fires P1 (for 2-player mode)
+    if (e.key.toLowerCase() === "f") {
+      attemptP1Fire();
+    }
+
+    // 2-PLAYER: P2 fire key
+    if (isTwoPlayer && e.key.toLowerCase() === "l") {
+      shootProjectile(player2, false);
+    }
+  }
+});
+
+document.addEventListener("keyup", (e) => {
+  keysDown[e.key] = false;
+});
+
+// Touch buttons map to same helpers
+btnFire.addEventListener("touchstart", ev => { ev.preventDefault(); attemptP1Fire(); });
+btnFire.addEventListener("click",      ev => { ev.preventDefault(); attemptP1Fire(); });
+
+btnJump.addEventListener("touchstart", ev => { ev.preventDefault(); attemptP1Jump(); });
+btnJump.addEventListener("click",      ev => { ev.preventDefault(); attemptP1Jump(); });
+
+
+/* =========================================================
+   PROJECTILES & COLLISIONS
+========================================================= */
+function getColorForPokemon(player) {
+  return player.projectileColor;
+}
+
+function hitsPlayer(p, plr) {
+  return (
+    p.x + p.r > plr.x &&
+    p.x - p.r < plr.x + plr.width &&
+    p.y + p.r > plr.y &&
+    p.y - p.r < plr.y + plr.height
+  );
+}
+
+function updateProjectiles() {
+  for (let p of projectiles) p.x += p.vx;
+
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i];
+
+    if (p.x < -50 || p.x > canvas.width + 50) {
+      projectiles.splice(i, 1);
+      continue;
+    }
+
+    if (p.owner === 1 && hitsPlayer(p, player2)) {
+      player2.hp = Math.max(0, player2.hp - 20);
+      explosions.push({ x: p.x, y: p.y, timer: 20 });
+      projectiles.splice(i, 1);
+      continue;
+    }
+
+    if (p.owner === 2 && hitsPlayer(p, player1)) {
+      player1.hp = Math.max(0, player1.hp - 20);
+      explosions.push({ x: p.x, y: p.y, timer: 20 });
+      projectiles.splice(i, 1);
+      continue;
+    }
+  }
+
+  // projectile vs projectile
+  for (let i = 0; i < projectiles.length; i++) {
+    for (let j = i + 1; j < projectiles.length; j++) {
+      const a = projectiles[i], b = projectiles[j];
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      if (Math.sqrt(dx*dx + dy*dy) < a.r + b.r) {
+        explosions.push({ x: (a.x+b.x)/2, y: (a.y+b.y)/2, timer: 20 });
+        projectiles.splice(j, 1);
+        projectiles.splice(i, 1);
+        i--;
+        break;
+      }
+    }
+  }
+
+  if (player1.hp <= 0 || player2.hp <= 0) endGame();
+}
+
+function updateExplosions() {
+  for (let i = explosions.length - 1; i >= 0; i--) {
+    explosions[i].timer--;
+    if (explosions[i].timer <= 0) explosions.splice(i, 1);
+  }
+}
+
+
+/* =========================================================
+   END GAME
+========================================================= */
+function endGame() {
+  if (gameState !== "battle") return;
+  gameState = "gameOver";
+
+  projectiles.length = 0;
+
+  let msg = "";
+  if (player1.hp <= 0 && player2.hp <= 0) msg = "It's a TIE!";
+  else if (player1.hp <= 0) msg = `Player 2 WINS with ${player2.label}!`;
+  else msg = `Player 1 WINS with ${player1.label}!`;
+
+  menu.innerHTML = msg + "<br><small>Press R to restart</small>";
+}
+
+
+/* =========================================================
+   PLAYER MOVEMENT (P1 & P2)
+========================================================= */
+function updatePlayers() {
+  const speed = 4;
+
+  // Player 1 vertical + jump
+  if (!p1IsJumping) {
+    if (keysDown["w"] || keysDown["W"]) player1.y -= P1_VERT_SPEED;
+    if (keysDown["s"] || keysDown["S"]) player1.y += P1_VERT_SPEED;
+  }
+
+  if (p1IsJumping) {
+    if (p1JumpDirection === "up") {
+      player1.y -= P1_JUMP_SPEED;
+      if (player1.y <= P1_MIN_Y) {
+        player1.y = P1_MIN_Y;
+        p1JumpDirection = "down";
+      }
+    } else {
+      player1.y += P1_JUMP_SPEED;
+      if (player1.y >= P1_MAX_Y) {
+        player1.y = P1_MAX_Y;
+        p1IsJumping = false;
+      }
+    }
+  }
+
+  player1.y = Math.max(P1_MIN_Y, Math.min(player1.y, P1_MAX_Y));
+
+  // Player 2 (only in 2-player mode) moves left/right
+  if (isTwoPlayer) {
+    if (keysDown["ArrowLeft"])  player2.x -= speed;
+    if (keysDown["ArrowRight"]) player2.x += speed;
+  }
+
+  player2.x = Math.max(
+    canvas.width/2 - player2.width/2,
+    Math.min(player2.x, canvas.width - player2.width)
+  );
+}
+
+
+/* =========================================================
+   AI MOVEMENT & SHOOTING (RED-LIGHT #2 used here)
+========================================================= */
+function updateAI() {
+  if (isTwoPlayer || gameState !== "battle") return;
+
+  let interval = (aiVertState === "down" || aiVertState === "bottomHold")
+                  ? AI_SHOOT_INTERVAL_GROUND
+                  : AI_SHOOT_INTERVAL_AIR;
+
+  aiShootTimer++;
+  if (aiShootTimer > interval) {
+    shootProjectile(player2, false);
+    aiShootTimer = 0;
+  }
+
+  const minY = 40;
+  const maxY = canvas.height - 220;
+
+  switch (aiVertState) {
+    case "up":
+      player2.y -= AI_VERT_UP_SPEED;
+      if (player2.y <= minY) {
+        player2.y = minY;
+        aiVertState = "topHold";
+        aiVertHoldTimer = AI_VERT_TOP_HOLD_FRAMES;
+      }
+      break;
+
+    case "topHold":
+      aiVertHoldTimer--;
+      if (aiVertHoldTimer <= 0) aiVertState = "down";
+      break;
+
+    case "down":
+      player2.y += AI_VERT_DOWN_SPEED;
+      if (player2.y >= maxY) {
+        player2.y = maxY;
+        aiVertState = "bottomHold";
+        aiVertHoldTimer = AI_VERT_BOTTOM_HOLD_FRAMES;
+      }
+      break;
+
+    case "bottomHold":
+      aiVertHoldTimer--;
+      if (aiVertHoldTimer <= 0) aiVertState = "up";
+      break;
+  }
+
+  player2.y = Math.max(minY, Math.min(player2.y, maxY));
+}
+
+
+/* =========================================================
+   DRAWING
+========================================================= */
+function drawHealthBars() {
+  const w = 250, h = 20, m = 30;
+  const hpColor = r => r>0.6?"#0f0":r>0.3?"#ff0":"#f00";
+
+  let r1 = player1.hp / 100;
+  let r2 = player2.hp / 100;
+
+  ctx.strokeStyle = "white";
+  ctx.strokeRect(m, m, w, h);
+  ctx.fillStyle = hpColor(r1);
+  ctx.fillRect(m, m, w*r1, h);
+  ctx.fillStyle = "white";
+  ctx.textAlign = "left";
+  ctx.fillText(`P1 ${player1.label} HP: ${player1.hp}/100`, m, m-3);
+
+  const x2 = canvas.width - w - m;
+  ctx.strokeRect(x2, m, w, h);
+  ctx.fillStyle = hpColor(r2);
+  ctx.fillRect(x2+w*(1-r2), m, w*r2, h);
+  ctx.textAlign = "right";
+  ctx.fillText(`P2 ${player2.label} HP: ${player2.hp}/100`, canvas.width-m, m-3);
+}
+
+function drawAmmoInfo() {
+  ctx.fillStyle = "white";
+  ctx.font = "16px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(`P1 Ammo: ${p1AmmoRemaining}/${P1_MAX_SHOTS}`, 30, 65);
+}
+
+function drawPokemon(p) {
+  ctx.save();
+  if (p.facing === -1) {
+    ctx.translate(p.x + p.width/2, 0);
+    ctx.scale(-1,1);
+    ctx.drawImage(p.img, -p.width/2, p.y, p.width, p.height);
+  } else {
+    ctx.drawImage(p.img, p.x, p.y, p.width, p.height);
+  }
+  ctx.restore();
+}
+
+function drawBattle() {
+  if (bgLoaded) ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+  else {
+    ctx.fillStyle = "#003300";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+  }
+
+  drawPokemon(player1);
+  drawPokemon(player2);
+
+  for (let p of projectiles) {
+    ctx.beginPath();
+    ctx.fillStyle = p.color;
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.font = "28px Arial";
+  ctx.textAlign = "center";
+  for (let e of explosions) ctx.fillText("💥", e.x, e.y);
+
+  drawHealthBars();
+  drawAmmoInfo();
+}
+
+
+/* =========================================================
+   MAIN GAME LOOP
+========================================================= */
+function gameLoop() {
+  if (gameState === "battle") {
+    if (p1ShootTimer < P1_SHOOT_INTERVAL) p1ShootTimer++;
+    updatePlayers();
+    updateAI();
+    updateProjectiles();
+    updateExplosions();
+    drawBattle();
+  }
+  else if (gameState === "gameOver") {
+    drawBattle();
+    updateExplosions();
+  }
+  else {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if (bgLoaded) ctx.drawImage(backgroundImage,0,0,canvas.width,canvas.height);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+</script>
+</body>
+</html>

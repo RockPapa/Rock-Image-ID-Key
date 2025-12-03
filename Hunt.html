@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>Ranger Hunt – Griz & Score</title>
+
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    overflow: hidden;
+    width: 100%; height: 100%;
+    background: #000;
+    touch-action: none;
+    /* NO TEXT CALLOUT ANYWHERE */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  canvas { display: block; }
+
+  #hint {
+    position: absolute; left: 10px; top: 10px;
+    background: rgba(255,255,255,0.85);
+    font-family: system-ui, -apple-system, sans-serif;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 14px;
+  }
+
+  /* ===== ON-SCREEN CONTROLS & TOGGLE ===== */
+
+  #controlsToggle {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    z-index: 20;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: none;
+    background: rgba(0,0,0,0.55);
+    color: #fff;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #touchControls {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
+  }
+
+  #touchControls.hidden {
+    display: none;
+  }
+
+  .ctrl-btn {
+    position: absolute;
+    pointer-events: auto;
+    border-radius: 999px;
+    border: none;
+    background: rgba(80, 170, 255, 0.75);  /* semi-transparent blue “glass” */
+    color: #003459;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: none;
+    /* NO TEXT SELECTION / CALLOUT ON BUTTONS */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+  }
+
+  .ctrl-btn:active {
+    transform: translateY(1px) scale(0.97);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    background: rgba(80, 170, 255, 0.95);
+  }
+
+  /* ***** RED-LIGHT: sizes & positions ***** */
+  /* 25% smaller than 56px → 42px */
+  .ctrl-btn.dir {
+    width: 55px;
+    height: 55px;
+    font-size: 18px;
+    line-height: 42px;
+    text-align: center;
+  }
+
+  /* D-pad on RIGHT side */
+  #btnLeft  { bottom: 80px; right: 120px; }
+  #btnRight { bottom: 80px; right: 20px;  }
+  #btnUp    { bottom: 150px; right: 70px; }
+  #btnDown  { bottom: 10px; right: 70px;  }
+
+  /* FIRE button on LEFT */
+  #btnShoot {
+    width: 100px;
+    height: 100px;
+    font-size: 14px;
+    bottom: 35px;
+    left: 25px;
+  }
+</style>
+</head>
+
+<body>
+<canvas id="scene"></canvas>
+
+<div id="hint">
+  Ranger Hunt – Name, Score, Lives<br>
+  Move: Arrows/WASD/On-screen • Shoot: Space / FIRE / Tap • Toggle Controls: top-right • Restart: R / Tap at Game Over
+</div>
+
+<button id="controlsToggle">Controls: ON</button>
+
+<div id="touchControls">
+  <button class="ctrl-btn dir" id="btnUp">▲</button>
+  <button class="ctrl-btn dir" id="btnDown">▼</button>
+  <button class="ctrl-btn dir" id="btnLeft">◀</button>
+  <button class="ctrl-btn dir" id="btnRight">▶</button>
+  <button class="ctrl-btn" id="btnShoot">FIRE</button>
+</div>
+
+<script>
+const canvas = document.getElementById("scene");
+const ctx    = canvas.getContext("2d");
+
+const forestImg = new Image();
+forestImg.src   = "images/forest.png";
+let forestReady = false;
+forestImg.onload = () => forestReady = true;
+
+const rangerImg = new Image();
+rangerImg.src   = "images/ranger.png";
+let rangerReady = false;
+rangerImg.onload = () => rangerReady = true;
+
+const RANGER_SCALE   = 1.44;
+const COLLISION_TRIM = 0.40;
+
+const bearImg  = new Image();  // griz50 diagonal
+bearImg.src    = "images/griz50.png";
+let bearReady  = false;
+
+const bear2Img = new Image();  // griz35 lane
+bear2Img.src   = "images/griz35.png";
+let bear2Ready = false;
+
+const bear3Img = new Image();  // griz25 bouncing
+bear3Img.src   = "images/griz25.png";
+let bear3Ready = false;
+
+let nextBearTime1 = 0;
+let nextBearTime2 = 0;
+let nextBearTime3 = 0;
+
+bearImg.onload  = () => { bearReady  = true; resetBear1(); };
+bear2Img.onload = () => { bear2Ready = true; nextBearTime2 = Date.now() + 2500; };
+bear3Img.onload = () => { bear3Ready = true; nextBearTime3 = Date.now() + 4000; };
+
+const shootSound  = new Audio("images/gun.mp3");
+shootSound.volume = 1.0;
+const roarSound   = new Audio("images/roar.mp3");
+roarSound.volume  = 1.0;
+const birdSound   = new Audio("images/bird.mp3");
+birdSound.volume  = 1.0;
+const screamSound = new Audio("images/scream.mp3");
+screamSound.volume = 0.2;
+
+let W, H;
+
+let score = 0;
+const START_LIVES = 10;
+let lives = START_LIVES;
+let gameOver = false;
+
+const POINTS_BEAR1 = 30;
+const POINTS_BEAR2 = 20;
+const POINTS_BEAR3 = 10;
+
+let playerName = "Ranger";
+function askPlayerName() {
+  const n = prompt("Enter your ranger name:", playerName) || playerName;
+  const trimmed = n.trim();
+  playerName = trimmed.length ? trimmed : "Ranger";
+}
+
+function addScore(points) {
+  if (!gameOver) score += points;
+}
+function loseLife() {
+  if (gameOver) return;
+  lives -= 1;
+  if (lives <= 0) gameOver = true;
+}
+
+function resetGame() {
+  score = 0;
+  lives = START_LIVES;
+  gameOver = false;
+  bullets.length = 0;
+
+  bear.active  = false;
+  bear2.active = false;
+  bear3.active = false;
+
+  nextBearTime1 = Date.now() + 1000;
+  nextBearTime2 = Date.now() + 2000;
+  nextBearTime3 = Date.now() + 3000;
+
+  player.x = W * 0.5;
+  player.y = H * 0.70;
+}
+
+const player = {
+  x: 200,
+  y: 300,
+  r: 18,
+  speed: 3.3,
+  lastShot: 0,
+  shotCooldownMs: 140,
+  facing: 1
+};
+
+const MUZZLE_RX = 0.52;
+const MUZZLE_RY = -0.23;
+function getMuzzle() {
+  const size = player.r * 4.8 * RANGER_SCALE;
+  return {
+    x: player.x + MUZZLE_RX * size * player.facing,
+    y: player.y + MUZZLE_RY * size
+  };
+}
+
+const keys = {};
+window.addEventListener("keydown", e => {
+  keys[e.key.toLowerCase()] = true;
+
+  if (gameOver && (e.key === "r" || e.key === "R")) {
+    resetGame();
+    return;
+  }
+
+  if (e.key === "ArrowLeft" || e.key === "a")  player.facing = -1;
+  if (e.key === "ArrowRight"|| e.key === "d")  player.facing =  1;
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    shoot(player.facing, 0);
+  }
+});
+window.addEventListener("keyup", e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+let touchActive = false, tx = 0, ty = 0;
+canvas.addEventListener("touchstart", e => {
+  e.preventDefault();
+  if (gameOver) { resetGame(); return; }
+  const t = e.touches[0];
+  tx = t.clientX; ty = t.clientY;
+  touchActive = true;
+},{passive:false});
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  tx = t.clientX; ty = t.clientY;
+},{passive:false});
+canvas.addEventListener("touchend", e => {
+  e.preventDefault();
+  touchActive = false;
+},{passive:false});
+
+canvas.addEventListener("click", e => {
+  if (gameOver) { resetGame(); return; }
+  const mx = e.clientX, my = e.clientY;
+  const m  = getMuzzle();
+  const dx = mx - m.x, dy = my - m.y;
+  const d  = Math.hypot(dx, dy) || 1;
+  const ux = dx / d,  uy = dy / d;
+  player.facing = (ux < 0 ? -1 : 1);
+  shoot(ux, uy);
+});
+
+const controlsToggle = document.getElementById("controlsToggle");
+const touchControls  = document.getElementById("touchControls");
+const btnUp    = document.getElementById("btnUp");
+const btnDown  = document.getElementById("btnDown");
+const btnLeft  = document.getElementById("btnLeft");
+const btnRight = document.getElementById("btnRight");
+const btnShoot = document.getElementById("btnShoot");
+
+let controlsEnabled = true;
+let controlUp = false, controlDown = false, controlLeft = false, controlRight = false;
+
+function setControlsVisibility() {
+  if (controlsEnabled) {
+    touchControls.classList.remove("hidden");
+    controlsToggle.textContent = "Controls: ON";
+  } else {
+    touchControls.classList.add("hidden");
+    controlsToggle.textContent = "Controls: OFF";
+    controlUp = controlDown = controlLeft = controlRight = false;
+  }
+}
+controlsToggle.addEventListener("click", () => {
+  controlsEnabled = !controlsEnabled;
+  setControlsVisibility();
+});
+
+function bindHoldButton(button, setter) {
+  if (!button) return;
+
+  // Extra guard: stop iOS long-press from triggering callout
+  button.addEventListener("touchstart", e => {
+    e.preventDefault();
+  }, {passive:false});
+
+  button.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    if (!controlsEnabled) return;
+    setter(true);
+  });
+  const clear = e => {
+    e.preventDefault();
+    setter(false);
+  };
+  button.addEventListener("pointerup", clear);
+  button.addEventListener("pointerleave", clear);
+  button.addEventListener("pointercancel", clear);
+}
+bindHoldButton(btnUp,    v => controlUp    = v);
+bindHoldButton(btnDown,  v => controlDown  = v);
+bindHoldButton(btnLeft,  v => controlLeft  = v);
+bindHoldButton(btnRight, v => controlRight = v);
+
+if (btnShoot) {
+  btnShoot.addEventListener("touchstart", e => {
+    e.preventDefault();
+  }, {passive:false});
+  btnShoot.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    if (!controlsEnabled) return;
+    shoot(player.facing, 0);
+  });
+}
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  player.x = W * 0.5;
+  player.y = H * 0.70;
+
+  if (!bear.active  && bearReady  && !nextBearTime1) nextBearTime1 = Date.now() + 5000;
+  if (!bear2.active && bear2Ready && !nextBearTime2) nextBearTime2 = Date.now() + 5000;
+  if (!bear3.active && bear3Ready && !nextBearTime3) nextBearTime3 = Date.now() + 5000;
+}
+window.addEventListener("resize", resize);
+
+function updatePlayer() {
+  const up    = keys["arrowup"]   || keys["w"] || controlUp;
+  const down  = keys["arrowdown"] || keys["s"] || controlDown;
+  const left  = keys["arrowleft"] || keys["a"] || controlLeft;
+  const right = keys["arrowright"]|| keys["d"] || controlRight;
+
+  let vx = 0, vy = 0;
+  if (left)  { vx -= 1; player.facing = -1; }
+  if (right) { vx += 1; player.facing =  1; }
+  if (up)    vy -= 1;
+  if (down)  vy += 1;
+
+  const mag = Math.hypot(vx, vy);
+  if (mag > 0) {
+    vx = vx / mag * player.speed;
+    vy = vy / mag * player.speed;
+    player.x += vx;
+    player.y += vy;
+  }
+
+  if (touchActive) {
+    const dx = tx - player.x, dy = ty - player.y;
+    const d  = Math.hypot(dx, dy);
+    if (d > 2) {
+      player.x += dx / d * player.speed;
+      player.y += dy / d * player.speed;
+      if (dx < -2) player.facing = -1;
+      else if (dx > 2) player.facing = 1;
+    }
+  }
+
+  const top    = H * 0.48;
+  const bottom = H * 0.89;
+  player.x = Math.max(player.r, Math.min(W - player.r, player.x));
+  player.y = Math.max(top,       Math.min(bottom,      player.y));
+}
+
+const bullets = [];
+const BULLET_SPEED   = 7;
+const BULLET_RADIUS  = 3;
+const BULLET_LIFE_MS = 1400;
+
+function shoot(ux, uy) {
+  if (gameOver) return;
+  const now = Date.now();
+  if (now - player.lastShot < player.shotCooldownMs) return;
+  player.lastShot = now;
+
+  shootSound.currentTime = 0;
+  shootSound.play();
+
+  const m = getMuzzle();
+  bullets.push({
+    x: m.x,
+    y: m.y,
+    vx: ux * BULLET_SPEED,
+    vy: uy * BULLET_SPEED,
+    born: now
+  });
+}
+
+function updateBullets() {
+  const now = Date.now();
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += b.vx;
+    b.y += b.vy;
+    if (now - b.born > BULLET_LIFE_MS) bullets.splice(i, 1);
+  }
+}
+
+const bear = { x:0,y:0,width:0,height:0,vx:-4.0,vy:1.4,active:false,hasScared:false };
+function resetBear1() {
+  if (!bearReady || !W || !H) return;
+  const desiredHeight = H * 0.26;
+  const aspect        = bearImg.width / bearImg.height;
+  bear.height = desiredHeight;
+  bear.width  = desiredHeight * aspect;
+
+  bear.x = W + bear.width * 0.5;
+  bear.y = H * 0.55;
+  bear.vx = -4.0;
+  bear.vy =  1.4;
+
+  bear.active    = true;
+  bear.hasScared = false;
+  nextBearTime1  = 0;
+
+  roarSound.currentTime = 0;
+  roarSound.play();
+}
+function updateBear1() {
+  const now = Date.now();
+  if (!bear.active && bearReady && nextBearTime1 && now >= nextBearTime1) resetBear1();
+  if (!bear.active || !bearReady) return;
+
+  bear.x += bear.vx;
+  bear.y += bear.vy;
+
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    if (b.x > bear.x - bear.width/2 && b.x < bear.x + bear.width/2 &&
+        b.y > bear.y - bear.height/2 && b.y < bear.y + bear.height/2) {
+      bullets.splice(i,1);
+      bear.active = false;
+      bear.hasScared = false;
+      addScore(POINTS_BEAR1);
+      nextBearTime1 = now + 5000;
+      return;
+    }
+  }
+  if (!bear.hasScared) checkRangerBearContact(bear);
+  if (bear.x < -bear.width || bear.y > H + bear.height) {
+    bear.active = false;
+    bear.hasScared = false;
+    nextBearTime1 = now + 5000;
+  }
+}
+
+const bear2 = { x:0,y:0,width:0,height:0,vx:3.8,vy:0,active:false,hasScared:false };
+function resetBear2() {
+  if (!bear2Ready || !W || !H) return;
+  const desiredHeight = H * 0.20;
+  const aspect        = bear2Img.width / bear2Img.height;
+  bear2.height = desiredHeight;
+  bear2.width  = desiredHeight * aspect;
+
+  bear2.x = -bear2.width * 0.5;
+  bear2.y = H * 0.65;
+  bear2.vx = 3.8;
+  bear2.vy = 0;
+
+  bear2.active = true;
+  bear2.hasScared = false;
+  nextBearTime2 = 0;
+
+  roarSound.currentTime = 0;
+  roarSound.play();
+}
+function updateBear2() {
+  const now = Date.now();
+  if (!bear2.active && bear2Ready && nextBearTime2 && now >= nextBearTime2) resetBear2();
+  if (!bear2.active || !bear2Ready) return;
+
+  bear2.x += bear2.vx;
+
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    if (b.x > bear2.x - bear2.width/2 && b.x < bear2.x + bear2.width/2 &&
+        b.y > bear2.y - bear2.height/2 && b.y < bear2.y + bear2.height/2) {
+      bullets.splice(i,1);
+      bear2.active = false;
+      bear2.hasScared = false;
+      addScore(POINTS_BEAR2);
+      nextBearTime2 = now + 5000;
+      return;
+    }
+  }
+  if (!bear2.hasScared) checkRangerBearContact(bear2);
+  if (bear2.x > W + bear2.width) {
+    bear2.active = false;
+    bear2.hasScared = false;
+    nextBearTime2 = now + 5000;
+  }
+}
+
+const bear3 = { x:0,y:0,width:0,height:0,vx:0,vy:0,active:false,hasScared:false };
+function resetBear3() {
+  if (!bear3Ready || !W || !H) return;
+
+  const baseHeight      = H * 0.18;
+  const increasedHeight = baseHeight * 1.20;
+  const aspect          = bear3Img.width / bear3Img.height;
+  bear3.height = increasedHeight;
+  bear3.width  = increasedHeight * aspect * 1.10;
+
+  bear3.x = W * (0.25 + 0.5 * Math.random());
+  bear3.y = H * (0.35 + 0.3 * Math.random());
+
+  const speed = 2.8;
+  const angle = Math.random() * Math.PI * 2;
+  bear3.vx = Math.cos(angle) * speed;
+  bear3.vy = Math.sin(angle) * speed;
+
+  bear3.active = true;
+  bear3.hasScared = false;
+  nextBearTime3 = 0;
+
+  birdSound.currentTime = 0;
+  birdSound.play();
+}
+function updateBear3() {
+  const now = Date.now();
+  if (!bear3.active && bear3Ready && nextBearTime3 && now >= nextBearTime3) resetBear3();
+  if (!bear3.active || !bear3Ready) return;
+
+  bear3.x += bear3.vx;
+  bear3.y += bear3.vy;
+
+  const leftBound   = W * 0.05;
+  const rightBound  = W * 0.95;
+  const topBound    = H * 0.20;
+  const bottomBound = H * 0.90;
+
+  if (bear3.x - bear3.width/2 < leftBound) {
+    bear3.x = leftBound + bear3.width/2;
+    bear3.vx *= -1;
+  }
+  if (bear3.x + bear3.width/2 > rightBound) {
+    bear3.x = rightBound - bear3.width/2;
+    bear3.vx *= -1;
+  }
+  if (bear3.y - bear3.height/2 < topBound) {
+    bear3.y = topBound + bear3.height/2;
+    bear3.vy *= -1;
+  }
+  if (bear3.y + bear3.height/2 > bottomBound) {
+    bear3.y = bottomBound - bear3.height/2;
+    bear3.vy *= -1;
+  }
+
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    if (b.x > bear3.x - bear3.width/2 && b.x < bear3.x + bear3.width/2 &&
+        b.y > bear3.y - bear3.height/2 && b.y < bear3.y + bear3.height/2) {
+      bullets.splice(i,1);
+      bear3.active = false;
+      bear3.hasScared = false;
+      addScore(POINTS_BEAR3);
+      nextBearTime3 = now + 5000;
+      return;
+    }
+  }
+  if (!bear3.hasScared) checkRangerBearContact(bear3);
+}
+
+/* Helper: rounded rectangle for score banner */
+function drawRoundedRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function checkRangerBearContact(b) {
+  const size         = player.r * 4.8 * RANGER_SCALE;
+  const rangerHeight = size * (1 - COLLISION_TRIM);
+
+  const rL = player.x - size / 2;
+  const rR = player.x + size / 2;
+  const rT = player.y - rangerHeight / 2;
+  const rB = player.y + rangerHeight / 2;
+
+  const bL = b.x - b.width  / 2;
+  const bR = b.x + b.width  / 2;
+  const bT = b.y - b.height / 2;
+  const bB = b.y + b.height / 2;
+
+  const overlap =
+    rL < bR && rR > bL &&
+    rT < bB && rB > bT;
+
+  if (overlap && !b.hasScared) {
+    b.hasScared = true;
+    screamSound.currentTime = 0;
+    screamSound.play();
+    loseLife();
+  }
+}
+
+function drawHUD() {
+  ctx.save();
+  ctx.fillStyle = "white";
+  ctx.font = "16px system-ui, -apple-system, sans-serif";
+  ctx.textBaseline = "top";
+
+  ctx.fillText(playerName + " – Score: " + score, 10, 10);
+
+  const livesText = "Lives: " + lives;
+  const textWidth = ctx.measureText(livesText).width;
+  ctx.fillText(livesText, W - textWidth - 10, 10);
+
+  if (gameOver) {
+    const topY = H * 0.04;
+
+    ctx.font = "bold 36px system-ui, -apple-system, sans-serif";
+    const msg = "GAME OVER";
+    const msgW = ctx.measureText(msg).width;
+
+    ctx.font = "bold 22px system-ui, -apple-system, sans-serif";
+    const msgScore = playerName + " – Score: " + score;
+    const msgScoreW = ctx.measureText(msgScore).width;
+
+    ctx.font = "20px system-ui, -apple-system, sans-serif";
+    const msg2 = "Tap or press R to restart";
+    const msg2W = ctx.measureText(msg2).width;
+
+    const maxW = Math.max(msgW, msgScoreW, msg2W);
+    const padding = 12;
+    const lineGap1 = 40;
+    const lineGap2 = 26;
+    const y1 = topY;
+    const y2 = y1 + lineGap1;
+    const y3 = y2 + lineGap2;
+    const boxX = (W - maxW) / 2 - padding;
+    const boxY = y1 - padding;
+    const boxW = maxW + padding * 2;
+    const boxH = (y3 - y1) + 32 + padding;
+
+    ctx.fillStyle = "rgba(80, 170, 255, 0.80)";
+    drawRoundedRect(boxX, boxY, boxW, boxH, 16);
+
+    ctx.fillStyle = "black";
+
+    ctx.font = "bold 36px system-ui, -apple-system, sans-serif";
+    ctx.fillText(msg, (W - msgW) / 2, y1);
+
+    ctx.font = "bold 22px system-ui, -apple-system, sans-serif";
+    ctx.fillText(msgScore, (W - msgScoreW) / 2, y2);
+
+    ctx.font = "20px system-ui, -apple-system, sans-serif";
+    ctx.fillText(msg2, (W - msg2W) / 2, y3);
+  }
+  ctx.restore();
+}
+
+function drawRanger() {
+  if (!rangerReady) return;
+  const size = player.r * 4.8 * RANGER_SCALE;
+  ctx.save();
+  ctx.translate(player.x, player.y);
+  ctx.scale(player.facing, 1);
+  ctx.drawImage(rangerImg, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+function drawBear1() {
+  if (!bearReady || !bear.active) return;
+  ctx.save();
+  ctx.translate(bear.x, bear.y);
+  ctx.drawImage(bearImg, -bear.width/2, -bear.height/2, bear.width, bear.height);
+  ctx.restore();
+}
+function drawBear2() {
+  if (!bear2Ready || !bear2.active) return;
+  ctx.save();
+  ctx.translate(bear2.x, bear2.y);
+  ctx.drawImage(bear2Img, -bear2.width/2, -bear2.height/2, bear2.width, bear2.height);
+  ctx.restore();
+}
+function drawBear3() {
+  if (!bear3Ready || !bear3.active) return;
+  ctx.save();
+  ctx.translate(bear3.x, bear3.y);
+  ctx.drawImage(bear3Img, -bear3.width/2, -bear3.height/2, bear3.width, bear3.height);
+  ctx.restore();
+}
+function drawBullets() {
+  ctx.fillStyle = "red";
+  for (const b of bullets) {
+    ctx.beginPath();
+    ctx.arc(b.x, b.y, BULLET_RADIUS, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+function draw() {
+  ctx.clearRect(0,0,W,H);
+  if (forestReady) ctx.drawImage(forestImg,0,0,W,H);
+  drawBear1();
+  drawBear2();
+  drawBear3();
+  drawBullets();
+  drawRanger();
+  drawHUD();
+}
+
+function loop() {
+  if (!gameOver) {
+    updatePlayer();
+    updateBear1();
+    updateBear2();
+    updateBear3();
+    updateBullets();
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+askPlayerName();
+resize();
+setControlsVisibility();
+loop();
+</script>
+</body>
+</html>

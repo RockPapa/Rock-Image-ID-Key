@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Idaho Drive – Gate & Wacky Cars</title>
+<style>
+  body {
+    margin: 0;
+    background: #000;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    background: #000;
+  }
+  #ui {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    z-index: 10;
+  }
+  #ui label {
+    display: inline-block;
+    width: 70px;
+  }
+  #ui .row {
+    margin: 2px 0;
+  }
+  #carSpeed {
+    width: 170px;
+  }
+
+  /* Overlays for start and game over */
+  #startScreen,
+  #gameOverScreen {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+  }
+  .panel {
+    background: #111;
+    border-radius: 12px;
+    padding: 18px 22px;
+    color: #fff;
+    text-align: center;
+    box-shadow: 0 0 18px rgba(0,0,0,0.8);
+    min-width: 260px;
+  }
+  .panel h2 {
+    margin-top: 0;
+    margin-bottom: 10px;
+  }
+  .panel label {
+    display: block;
+    margin-bottom: 10px;
+  }
+  .panel input {
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid #555;
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 4px;
+  }
+  .panel button {
+    margin-top: 8px;
+    padding: 6px 14px;
+    border-radius: 8px;
+    border: none;
+    background: #29a329;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .panel button:hover {
+    background: #2fbd2f;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="ui">
+  <div class="row">
+    <label for="carSpeed">Speed</label>
+    <input id="carSpeed" type="range" min="0.01" max="2.0" step="0.05" value="0.6">
+  </div>
+</div>
+
+<!-- Start screen -->
+<div id="startScreen">
+  <div class="panel">
+    <h2>Idaho Drive</h2>
+    <label>
+      Driver Name:
+      <input id="playerNameInput" type="text" placeholder="Enter your name">
+    </label>
+    <button id="startButton">Start Game</button>
+  </div>
+</div>
+
+<!-- Game over screen -->
+<div id="gameOverScreen" style="display:none;">
+  <div class="panel">
+    <h2>Game Over</h2>
+    <p id="finalMessage"></p>
+    <button id="restartButton">Play Again</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// Controls
+//  Arrow keys  = drive car
+//  + / =       = zoom in
+//  -           = zoom out
+//  SPACE       = tailgater challenge
+//  Wacky cars  = crash you in the green square
+//  Score       = start 100, -5 per flub, game ends at 0
+// ============================================================
+
+const CAR_SIZE_DEFAULT  = 0.09;  // <--- smaller starting car
+const CAR_SPEED_DEFAULT = 0.08;
+
+// Base driving feel (scaled by speedScale)
+const BASE_ACCEL   = 0.30;
+const BASE_BRAKE   = 0.55;
+const BASE_MAX_FWD = 8;
+const BASE_MAX_REV = -3;
+const TURN_RATE    = 0.045;
+const FRICTION     = 0.93;
+
+// Speed scale from slider
+let speedScale = CAR_SPEED_DEFAULT;
+
+// Base car size in map pixels (height = length)
+let BASE_CAR_W = 60;
+let BASE_CAR_H = 120;
+
+// Size scale – fixed now (no slider)
+let carScale = CAR_SIZE_DEFAULT;
+
+// Zoom parameters
+let zoom = 1.0;
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 10.0;
+const ZOOM_STEP = 0.15;
+
+// Special zoom for gate view
+let gateZoom = MAX_ZOOM;
+let gateCenterX = 0;
+let gateCenterY = 0;
+let inGateView = false;
+let zoomBeforeGate = MAX_ZOOM;
+
+// ---------- SCORE & GAME STATE ----------
+let score = 100;
+const PENALTY = 5;
+let playerName = "Driver";
+let gameStarted = false;
+let gameOver = false;
+
+function losePoints(reason) {
+  if (gameOver) return;
+  score = Math.max(0, score - PENALTY);
+}
+
+// Images
+const bg = new Image();
+bg.src = "images/town.png";
+
+const CAR_NORMAL_SRC = "images/blue_car.png";
+const CAR_CRASH_SRC  = "images/crash.png";
+
+const carImg = new Image();
+carImg.src = CAR_NORMAL_SRC;   // player car
+
+// Tailgater red car sprite
+const carRedImg = new Image();
+carRedImg.src = "images/car_red.png";
+let carRedReady = false;
+carRedImg.onload = () => {
+  carRedReady = true;
+};
+
+// Wacky chaos car sprites (inside the green square)
+const chaosCars = [
+  { img: new Image(), x: 0, y: 0, angle: 0, speed: 0, turnTimer: 0 },
+  { img: new Image(), x: 0, y: 0, angle: 0, speed: 0, turnTimer: 0 },
+  { img: new Image(), x: 0, y: 0, angle: 0, speed: 0, turnTimer: 0 }
+];
+
+chaosCars[0].img.src = "images/car_red.png";
+chaosCars[1].img.src = "images/car_yellow.png";
+chaosCars[2].img.src = "images/car_orange.png";
+
+let chaosCarsReady = false;
+
+// Sounds
+const engineSound = new Audio("images/car_sound.mp3");
+engineSound.loop = true;
+engineSound.volume = 0.4;
+
+const skidSound = new Audio("images/skid.mp3");
+skidSound.volume = 0.8;
+
+const ambulanceSound = new Audio("images/ambulance.mp3");
+ambulanceSound.volume = 0.9;
+
+// Gate lock / challenge sounds
+const gateBuzzIn = new Audio("images/buzz_in.mp3");
+gateBuzzIn.volume = 0.8;
+
+const gateBuzzOut = new Audio("images/buzz_out.mp3");
+gateBuzzOut.volume = 0.8;
+
+let engineStarted = false;
+let lastOnRoadTime = performance.now();
+let lastSkidTime = 0;
+const SKID_DELAY_MS = 4000;
+const SKID_COOLDOWN_MS = 3000;
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let MAP_W = 0, MAP_H = 0;
+
+// Player car (map coordinates)
+const car = { x: 0, y: 0, angle: 0, speed: 0 };
+
+// Red car that follows, sirens, maze-collides, then passes
+const redCar = {
+  x: 0,
+  y: 0,
+  angle: 0,
+  tailDistance: 80,
+  followLerp: 0.20,
+  mode: "follow",
+  followStartTime: 0,
+  passStartTime: 0,
+  visible: true,
+  ambulancePlayed: false,
+  basePassSpeed: 8,
+  passAngle: 0
+};
+
+const AMBULANCE_TRIGGER_MS = 5000;
+const PASS_START_MS        = 6000;
+const PASS_DURATION_MS     = 3000;
+
+// Challenge state for player
+let playerFrozenUntil = 0;
+let spacePressedBeforeCollision = false;
+let collisionResolved = false;
+
+// Maze collision state for red car
+let redCarFrozenUntil = 0;
+let redCarFrozen = false;
+
+// BLUE CAR MAZE TIMING
+let blueMazeGraceUntil = 0;
+
+// ====== CENTRAL GATE (BIG GREEN-BORDERED BLACK RECTANGLE) ======
+let gateInnerMinX = 0;
+let gateInnerMaxX = 0;
+let gateInnerMinY = 0;
+let gateInnerMaxY = 0;
+
+let gateRedMinX = 0;
+let gateRedMaxX = 0;
+let gateRedMinY = 0;
+let gateRedMaxY = 0;
+
+// Doors along the border (map coords)
+let entranceDoor = { x1: 0, y1: 0, x2: 0, y2: 0 }; // bottom edge gap
+let exitDoor     = { x1: 0, y1: 0, x2: 0, y2: 0 }; // right edge gap
+
+// Gate challenge timer (Option 3)
+let gateChallengeActive = false;
+let gateChallengeStart  = 0;
+let exitDoorOpen        = false; // becomes true after 10 seconds inside
+
+// Crash state for collisions with wacky cars
+let chaosCrashActive = false;
+let chaosCrashUntil  = 0;
+
+// ----- DOM refs for UI overlays -----
+const startScreen      = document.getElementById("startScreen");
+const gameOverScreen   = document.getElementById("gameOverScreen");
+const playerNameInput  = document.getElementById("playerNameInput");
+const startButton      = document.getElementById("startButton");
+const restartButton    = document.getElementById("restartButton");
+const finalMessageElem = document.getElementById("finalMessage");
+
+// Start button: set name, start the game
+startButton.addEventListener("click", () => {
+  const name = playerNameInput.value.trim();
+  playerName = name || "Driver";
+  score = 100;
+  gameStarted = true;
+  gameOver = false;
+  startScreen.style.display = "none";
+});
+
+// Restart button: reset state, hide game over, immediately start again
+restartButton.addEventListener("click", () => {
+  resetGameState();
+  score = 100;
+  gameStarted = true;
+  gameOver = false;
+  gameOverScreen.style.display = "none";
+});
+
+// Helper: trigger game over once
+function triggerGameOver() {
+  if (gameOver) return;
+  gameOver = true;
+  car.speed = 0;
+  playerFrozenUntil = Infinity;
+  finalMessageElem.textContent = playerName + ", your final score is " + score + "!";
+  gameOverScreen.style.display = "flex";
+}
+
+function isInsideGateInner(x, y) {
+  return (
+    x >= gateInnerMinX && x <= gateInnerMaxX &&
+    y >= gateInnerMinY && y <= gateInnerMaxY
+  );
+}
+
+const keys = {};
+window.addEventListener("keydown", (e) => {
+  if (["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","=","+","-"," "].includes(e.key)) {
+    e.preventDefault();
+  }
+  keys[e.key] = true;
+
+  if (e.code === "Space" || e.key === " ") {
+    spacePressedBeforeCollision = true;
+  }
+
+  if (!engineStarted && (e.key === "ArrowUp" || e.key === "ArrowDown" ||
+                         e.key === "ArrowLeft" || e.key === "ArrowRight")) {
+    engineStarted = true;
+    engineSound.play().catch(err => console.warn("Engine play blocked:", err));
+  }
+
+  if (e.key === "=" || e.key === "+") {
+    zoom = Math.min(MAX_ZOOM, zoom + ZOOM_STEP);
+  }
+  if (e.key === "-") {
+    zoom = Math.max(MIN_ZOOM, zoom - ZOOM_STEP);
+  }
+});
+window.addEventListener("keyup", (e) => { keys[e.key] = false; });
+
+document.getElementById("carSpeed").addEventListener("input", (e) => {
+  speedScale = parseFloat(e.target.value);
+});
+
+// Resize canvas
+function resize() {
+  if (!MAP_W || !MAP_H) return;
+
+  const aspectMap = MAP_W / MAP_H;
+  const aspectWin = window.innerWidth / window.innerHeight;
+
+  if (aspectWin > aspectMap) {
+    canvas.height = window.innerHeight;
+    canvas.width  = canvas.height * aspectMap;
+  } else {
+    canvas.width  = window.innerWidth;
+    canvas.height = canvas.width / aspectMap;
+  }
+}
+window.addEventListener("resize", resize);
+
+// Hidden canvas for pixel color detection
+const detectCanvas = document.createElement("canvas");
+const detectCtx    = detectCanvas.getContext("2d");
+let detectionReady = false;
+
+function prepareDetectionCanvas() {
+  detectCanvas.width  = MAP_W;
+  detectCanvas.height = MAP_H;
+  detectCtx.drawImage(bg, 0, 0);
+  detectionReady = true;
+}
+
+// ----- ROAD / MAZE / GATE PIXEL HELPERS -----
+function isRoadPixel(px, py) {
+  if (!detectionReady) return true;
+  if (px < 0 || py < 0 || px >= MAP_W || py >= MAP_H) return false;
+
+  try {
+    const d = detectCtx.getImageData(px|0, py|0, 1, 1).data;
+    const r = d[0], g = d[1], b = d[2];
+    // Dark-ish roads
+    return (r < 50 && g < 50 && b < 50);
+  } catch (e) {
+    console.warn("Pixel read error:", e);
+    return true;
+  }
+}
+
+function isMazeWall(px, py) {
+  if (!detectionReady) return false;
+  if (px < 0 || py < 0 || px >= MAP_W || py >= MAP_H) return false;
+
+  try {
+    const d = detectCtx.getImageData(px|0, py|0, 1, 1).data;
+    const r = d[0], g = d[1], b = d[2];
+
+    const isRed =
+      r > 200 &&
+      g < 140 &&
+      b < 140 &&
+      (r - Math.max(g, b) > 30);
+
+    if (!isRed) return false;
+
+    // ignore central gate border area (now green, but keep guard)
+    if (
+      px >= gateRedMinX && px <= gateRedMaxX &&
+      py >= gateRedMinY && py <= gateRedMaxY
+    ) {
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    console.warn("Maze pixel read error:", e);
+    return false;
+  }
+}
+
+// --- Door helpers (approx rectangles along edges) ---
+function isInEntranceDoor(px, py) {
+  const tol = 4; // vertical thickness tolerance
+  return (
+    px >= entranceDoor.x1 && px <= entranceDoor.x2 &&
+    py >= entranceDoor.y1 - tol && py <= entranceDoor.y1 + tol
+  );
+}
+
+function isInExitDoor(px, py) {
+  const tol = 4; // horizontal thickness tolerance
+  return (
+    py >= exitDoor.y1 && py <= exitDoor.y2 &&
+    px >= exitDoor.x1 - tol && px <= exitDoor.x1 + tol
+  );
+}
+
+// ====== GATE WALL + GREEN BORDER DETECTION ======
+function isGateRedWall(px, py) {
+  if (!detectionReady) return false;
+  if (px < gateRedMinX || px > gateRedMaxX || py < gateRedMinY || py > gateRedMaxY) return false;
+
+  try {
+    const d = detectCtx.getImageData(px|0, py|0, 1, 1).data;
+    const r = d[0], g = d[1], b = d[2];
+
+    // Detect pure/neon green wall (approx 0,255,0)
+    const isGreenWall =
+      r < 20 &&   // very low red
+      g > 240 &&  // bright green
+      b < 20;     // very low blue
+
+    if (!isGreenWall) return false;
+
+    // Entrance door is ALWAYS open (no wall there)
+    if (isInEntranceDoor(px, py)) return false;
+
+    // Exit door opens only after 10-second challenge completes
+    if (exitDoorOpen && isInExitDoor(px, py)) return false;
+
+    return true;
+  } catch (e) {
+    console.warn("Gate wall pixel error:", e);
+    return false;
+  }
+}
+
+// Auto-detect the green-bordered square that defines the gate.
+function findGreenBoundary() {
+  const w = MAP_W, h = MAP_H;
+  if (!w || !h) return null;
+
+  let minX = w, maxX = -1;
+  let minY = h, maxY = -1;
+
+  try {
+    const img = detectCtx.getImageData(0, 0, w, h).data;
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4;
+        const r = img[i], g = img[i+1], b = img[i+2];
+
+        const isGreen =
+          r < 20 &&
+          g > 240 &&
+          b < 20;
+
+        if (isGreen) {
+          if (x < minX) minX = x;
+          if (x > maxX) maxX = x;
+          if (y < minY) minY = y;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("findGreenBoundary error:", e);
+    return null;
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return null;
+  }
+
+  return { minX, maxX, minY, maxY };
+}
+
+// --------------- BLUE CAR ROAD & MAZE CHECKS ----------------
+function carHasAnyRoadContact() {
+  const w = BASE_CAR_W * carScale;
+  const h = BASE_CAR_H * carScale;
+
+  const samples = [
+    {x:  0,       y:  h * 0.40},
+    {x: -w * 0.3, y:  h * 0.30},
+    {x:  w * 0.3, y:  h * 0.30},
+    {x:  0,       y:  0},
+    {x:  0,       y: -h * 0.30},
+  ];
+
+  for (const s of samples) {
+    const cosA = Math.cos(car.angle);
+    const sinA = Math.sin(car.angle);
+
+    const wx = car.x + s.x * cosA - s.y * sinA;
+    const wy = car.y + s.x * sinA + s.y * cosA;
+
+    if (isRoadPixel(wx, wy)) return true;
+  }
+  return false;
+}
+
+function blueCarTouchesMazeWall() {
+  const w = BASE_CAR_W * carScale;
+  const h = BASE_CAR_H * carScale;
+
+  const samples = [
+    {x:  0,       y:  h * 0.40},
+    {x: -w * 0.3, y:  h * 0.30},
+    {x:  w * 0.3, y:  h * 0.30},
+    {x:  0,       y:  0},
+    {x: -w * 0.3, y: -h * 0.30},
+    {x:  w * 0.3, y: -h * 0.30},
+  ];
+
+  for (const s of samples) {
+    const cosA = Math.cos(car.angle);
+    const sinA = Math.sin(car.angle);
+
+    const wx = car.x + s.x * cosA - s.y * sinA;
+    const wy = car.y + s.x * sinA + s.y * cosA;
+
+    if (isMazeWall(wx, wy)) return true;
+  }
+  return false;
+}
+
+function blueCarHitsGateWall() {
+  const w = BASE_CAR_W * carScale;
+  const h = BASE_CAR_H * carScale;
+
+  const samples = [
+    {x:  0,       y:  h * 0.40},
+    {x: -w * 0.4, y:  0},
+    {x:  w * 0.4, y:  0},
+    {x:  0,       y: -h * 0.40},
+  ];
+
+  for (const s of samples) {
+    const cosA = Math.cos(car.angle);
+    const sinA = Math.sin(car.angle);
+
+    const wx = car.x + s.x * cosA - s.y * sinA;
+    const wy = car.y + s.x * sinA + s.y * cosA;
+
+    if (isGateRedWall(wx, wy)) return true;
+  }
+  return false;
+}
+
+function redCarTouchesMazeWall() {
+  const w = BASE_CAR_W * carScale;
+  const h = BASE_CAR_H * carScale;
+
+  const samples = [
+    {x:  0,       y:  h * 0.40},
+    {x: -w * 0.3, y:  h * 0.30},
+    {x:  w * 0.3, y:  h * 0.30},
+    {x:  0,       y:  0},
+    {x: -w * 0.3, y: -h * 0.30},
+    {x:  w * 0.3, y: -h * 0.30},
+  ];
+
+  for (const s of samples) {
+    const cosA = Math.cos(redCar.angle);
+    const sinA = Math.sin(redCar.angle);
+
+    const wx = redCar.x + s.x * cosA - s.y * sinA;
+    const wy = redCar.y + s.x * sinA + s.y * cosA;
+
+    if (isMazeWall(wx, wy)) return true;
+  }
+  return false;
+}
+
+// ---- Tailgater red car helpers ----
+function initRedCar() {
+  const now = performance.now();
+  const targetX = car.x - Math.cos(car.angle) * redCar.tailDistance;
+  const targetY = car.y - Math.sin(car.angle) * redCar.tailDistance;
+  redCar.x = targetX;
+  redCar.y = targetY;
+  redCar.angle = car.angle;
+  redCar.mode = "follow";
+  redCar.visible = true;
+  redCar.followStartTime = now;
+  redCar.passStartTime = 0;
+  redCar.ambulancePlayed = false;
+  redCar.passAngle = car.angle;
+
+  spacePressedBeforeCollision = false;
+  collisionResolved = false;
+  playerFrozenUntil = 0;
+  redCarFrozen = false;
+  redCarFrozenUntil = 0;
+  blueMazeGraceUntil = 0;
+}
+
+function updateRedCar(now) {
+  if (!carRedReady || !redCar.visible) return;
+
+  if (redCarFrozen) {
+    if (now >= redCarFrozenUntil) {
+      redCarFrozen = false;
+    } else {
+      return;
+    }
+  }
+
+  if (redCarTouchesMazeWall()) {
+    redCarFrozen = true;
+    redCarFrozenUntil = now + 2000;
+    skidSound.currentTime = 0;
+    skidSound.play().catch(err => console.warn("Maze skid play blocked:", err));
+    return;
+  }
+
+  if (redCar.mode === "follow") {
+    const targetX = car.x - Math.cos(car.angle) * redCar.tailDistance;
+    const targetY = car.y - Math.sin(car.angle) * redCar.tailDistance;
+
+    redCar.x += (targetX - redCar.x) * redCar.followLerp;
+    redCar.y += (targetY - redCar.y) * redCar.followLerp;
+    redCar.angle = car.angle;
+
+    const followElapsed = now - redCar.followStartTime;
+
+    if (!redCar.ambulancePlayed && followElapsed >= AMBULANCE_TRIGGER_MS) {
+      redCar.ambulancePlayed = true;
+      ambulanceSound.currentTime = 0;
+      ambulanceSound.play().catch(err => console.warn("Ambulance play blocked:", err));
+    }
+
+    if (followElapsed >= PASS_START_MS) {
+      redCar.mode = "pass";
+      redCar.passStartTime = now;
+      redCar.passAngle = car.angle;
+    }
+
+  } else if (redCar.mode === "pass") {
+    const speedBoostBase = redCar.basePassSpeed + Math.abs(car.speed) * 1.5;
+    const speedBoost     = speedBoostBase * 0.6;
+
+    redCar.x += Math.cos(redCar.passAngle) * speedBoost;
+    redCar.y += Math.sin(redCar.passAngle) * speedBoost;
+    redCar.angle = redCar.passAngle;
+
+    if (!collisionResolved) {
+      const dx = car.x - redCar.x;
+      const dy = car.y - redCar.y;
+      const dist = Math.hypot(dx, dy);
+      const collisionDist = (BASE_CAR_H * carScale) * 0.6;
+
+      if (dist < collisionDist) {
+        if (!spacePressedBeforeCollision) {
+          const nowLocal = performance.now();
+          playerFrozenUntil = nowLocal + 3000;
+          skidSound.currentTime = 0;
+          skidSound.play().catch(err => console.warn("Skid play blocked:", err));
+          // SCORE penalty: ambulance hit
+          losePoints("ambulance");
+        }
+        collisionResolved = true;
+      }
+    }
+
+    if (now - redCar.passStartTime >= PASS_DURATION_MS) {
+      redCar.visible = false;
+    }
+  }
+}
+
+// ====== WACKY CHAOS CARS (inside green square) ======
+function initChaosCars() {
+  if (gateInnerMaxX <= gateInnerMinX || gateInnerMaxY <= gateInnerMinY) {
+    chaosCarsReady = false;
+    return;
+  }
+
+  const margin = 40;
+  const minX = gateInnerMinX + margin;
+  const maxX = gateInnerMaxX - margin;
+  const minY = gateInnerMinY + margin;
+  const maxY = gateInnerMaxY - margin;
+
+  for (const c of chaosCars) {
+    c.x = minX + Math.random() * (maxX - minX);
+    c.y = minY + Math.random() * (maxY - minY);
+    c.angle = Math.random() * Math.PI * 2;
+    // SLOWER speeds now: 60–100 px/s instead of 120+.
+    c.speed = 60 + Math.random() * 40;
+    c.turnTimer = 0.5 + Math.random() * 1.0;
+  }
+
+  chaosCarsReady = true;
+}
+
+function updateChaosCars(dt) {
+  if (!chaosCarsReady) return;
+
+  const margin = 35;
+
+  const minX = gateInnerMinX + margin;
+  const maxX = gateInnerMaxX - margin;
+  const minY = gateInnerMinY + margin;
+  const maxY = gateInnerMaxY - margin;
+
+  for (const c of chaosCars) {
+    c.turnTimer -= dt;
+    if (c.turnTimer <= 0) {
+      const turn = (Math.random() - 0.5) * (Math.PI * 0.7); // -126° to +126°
+      c.angle += turn;
+      // SLOWER speed reset as well: 60–120 px/s
+      c.speed = 60 + Math.random() * 60;
+      c.turnTimer = 0.5 + Math.random() * 1.0;
+    }
+
+    c.x += Math.cos(c.angle) * c.speed * dt;
+    c.y += Math.sin(c.angle) * c.speed * dt;
+
+    let bounced = false;
+
+    if (c.x < minX) {
+      c.x = minX;
+      c.angle = Math.PI - c.angle;
+      bounced = true;
+    } else if (c.x > maxX) {
+      c.x = maxX;
+      c.angle = Math.PI - c.angle;
+      bounced = true;
+    }
+
+    if (c.y < minY) {
+      c.y = minY;
+      c.angle = -c.angle;
+      bounced = true;
+    } else if (c.y > maxY) {
+      c.y = maxY;
+      c.angle = -c.angle;
+      bounced = true;
+    }
+
+    if (bounced) {
+      c.turnTimer = 0.3;
+    }
+  }
+}
+
+// Crash when blue car hits any chaos car
+function checkChaosCollisions(now) {
+  if (!chaosCarsReady || gameOver) return;
+
+  // If we're already in a crash animation, see if it is done
+  if (chaosCrashActive) {
+    if (now >= chaosCrashUntil) {
+      chaosCrashActive = false;
+      carImg.src = CAR_NORMAL_SRC;
+    }
+    return; // don't start a new crash until this one is done
+  }
+
+  const collisionDist = (BASE_CAR_H * carScale) * 0.6;
+
+  for (const c of chaosCars) {
+    const dx = car.x - c.x;
+    const dy = car.y - c.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < collisionDist) {
+      chaosCrashActive = true;
+      chaosCrashUntil  = now + 1200; // 1.2 seconds of crash image
+
+      // 3 second freeze
+      const freezeEnd = now + 3000;
+      playerFrozenUntil = Math.max(playerFrozenUntil, freezeEnd);
+      car.speed = 0;
+
+      skidSound.currentTime = 0;
+      skidSound.play().catch(()=>{});
+
+      carImg.src = CAR_CRASH_SRC;
+
+      // SCORE penalty: crash into wacky car
+      losePoints("chaos");
+
+      break;
+    }
+  }
+}
+
+// MAIN LOOP
+let lastFrameTime = null;
+
+function resetGameState() {
+  zoom = MAX_ZOOM;
+
+  car.x = MAP_W * 0.014;
+  car.y = MAP_H * 0.131;
+  car.angle = 0;
+  car.speed = 0;
+
+  lastOnRoadTime = performance.now();
+  lastSkidTime = 0;
+
+  playerFrozenUntil = 0;
+  spacePressedBeforeCollision = false;
+  collisionResolved = false;
+  redCarFrozen = false;
+  redCarFrozenUntil = 0;
+  blueMazeGraceUntil = 0;
+
+  gateChallengeActive = false;
+  exitDoorOpen = false;
+  inGateView = false;
+
+  chaosCrashActive = false;
+  chaosCrashUntil = 0;
+  carImg.src = CAR_NORMAL_SRC;
+
+  initRedCar();
+  initChaosCars();
+}
+
+function start() {
+  resetGameState();
+  requestAnimationFrame(loop);
+}
+
+function loop() {
+  const now = performance.now();
+
+  let dt = 0.016;
+  if (lastFrameTime !== null) {
+    dt = (now - lastFrameTime) / 1000;
+  }
+  lastFrameTime = now;
+
+  // UPDATE only if the game is started and not over
+  if (gameStarted && !gameOver) {
+    updateRedCar(now);
+    updateChaosCars(dt);
+    checkChaosCollisions(now);
+
+    const ACCEL   = BASE_ACCEL   * speedScale;
+    const BRAKE   = BASE_BRAKE   * speedScale;
+    const MAX_FWD = BASE_MAX_FWD * speedScale;
+    const MAX_REV = BASE_MAX_REV * speedScale;
+
+    let playerFrozen = now < playerFrozenUntil;
+
+    if (!playerFrozen) {
+      if (keys["ArrowUp"])    car.speed = Math.min(car.speed + ACCEL, MAX_FWD);
+      if (keys["ArrowDown"])  car.speed = Math.max(car.speed - BRAKE, MAX_REV);
+      if (keys["ArrowLeft"])  car.angle -= TURN_RATE;
+      if (keys["ArrowRight"]) car.angle += TURN_RATE;
+    } else {
+      car.speed = 0;
+    }
+
+    car.speed *= FRICTION;
+
+    const prevX = car.x;
+    const prevY = car.y;
+
+    car.x += Math.cos(car.angle) * car.speed;
+    car.y += Math.sin(car.angle) * car.speed;
+
+    car.x = Math.min(Math.max(car.x, 0), MAP_W - 1);
+    car.y = Math.min(Math.max(car.y, 0), MAP_H - 1);
+
+    const wasInsideGate   = isInsideGateInner(prevX, prevY);
+    const isInsideGateNow = isInsideGateInner(car.x, car.y);
+
+    // ---- Gate challenge & zoom behaviour ----
+    if (!wasInsideGate && isInsideGateNow) {
+      // entering inner black square
+      gateChallengeActive = true;
+      gateChallengeStart  = now;
+      exitDoorOpen        = false;
+
+      // store zoom and switch to gate view
+      zoomBeforeGate = zoom;
+      zoom = gateZoom;
+      inGateView = true;
+
+      gateBuzzIn.currentTime = 0;
+      gateBuzzIn.play().catch(()=>{});
+    }
+
+    if (wasInsideGate && !isInsideGateNow) {
+      // leaving inner black square
+      inGateView = false;
+      zoom = zoomBeforeGate;
+
+      // and challenge state
+      if (gateChallengeActive) {
+        gateChallengeActive = false;
+        exitDoorOpen = false;
+      }
+    }
+
+    if (gateChallengeActive && !exitDoorOpen) {
+      if (now - gateChallengeStart >= 10000) {
+        exitDoorOpen = true;
+        gateBuzzOut.currentTime = 0;
+        gateBuzzOut.play().catch(()=>{});
+      }
+    }
+
+    // Green wall collisions (respecting open doors)
+    if (blueCarHitsGateWall()) {
+      car.x = prevX;
+      car.y = prevY;
+      car.speed = 0;
+    }
+
+    const onRoad = carHasAnyRoadContact();
+    const offRoad = !onRoad;
+
+    if (onRoad) lastOnRoadTime = now;
+
+    if (offRoad && !playerFrozen) {
+      car.speed *= 0.85;
+      const offDuration = now - lastOnRoadTime;
+      const sinceLastSkid = now - lastSkidTime;
+      if (offDuration > SKID_DELAY_MS && sinceLastSkid > SKID_COOLDOWN_MS) {
+        lastSkidTime = now;
+        skidSound.currentTime = 0;
+        skidSound.play().catch(err => console.warn("Off-road skid play blocked:", err));
+        // SCORE penalty: off-road long enough to skid
+        losePoints("offroad");
+      }
+    }
+
+    // BLUE CAR MAZE : 1s freeze, 3s grace
+    if (blueCarTouchesMazeWall()) {
+      if (now >= blueMazeGraceUntil) {
+        const freezeEnd = now + 1000;
+        playerFrozenUntil = Math.max(playerFrozenUntil, freezeEnd);
+
+        blueMazeGraceUntil = now + 1000 + 3000;
+
+        skidSound.currentTime = 0;
+        skidSound.play().catch(err => console.warn("Blue-car maze skid blocked:", err));
+
+        // SCORE penalty: hit red maze wall
+        losePoints("maze");
+      }
+    }
+
+    // Check for game over condition
+    if (score <= 0 && !gameOver) {
+      triggerGameOver();
+    }
+  }
+
+  // ----- CAMERA & DRAWING -----
+  if (inGateView) {
+    zoom = gateZoom;
+  }
+
+  const viewW = MAP_W / zoom;
+  const viewH = MAP_H / zoom;
+
+  // Camera center: gate when inGateView, otherwise the car
+  const camX = inGateView ? gateCenterX : car.x;
+  const camY = inGateView ? gateCenterY : car.y;
+
+  let sx = camX - viewW / 2;
+  let sy = camY - viewH / 2;
+
+  sx = Math.max(0, Math.min(sx, MAP_W - viewW));
+  sy = Math.max(0, Math.min(sy, MAP_H - viewH));
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(bg, sx, sy, viewW, viewH, 0, 0, canvas.width, canvas.height);
+
+  const screenScale = canvas.width / viewW;
+  const carDrawW = BASE_CAR_W * carScale * screenScale;
+  const carDrawH = BASE_CAR_H * carScale * screenScale;
+
+  const carScreenX = (car.x - sx) * screenScale;
+  const carScreenY = (car.y - sy) * screenScale;
+
+  // Draw chaos cars in the square
+  if (chaosCarsReady) {
+    const chaosDrawW = carDrawW;
+    const chaosDrawH = carDrawH;
+    for (const c of chaosCars) {
+      const cxScreen = (c.x - sx) * screenScale;
+      const cyScreen = (c.y - sy) * screenScale;
+
+      ctx.save();
+      ctx.translate(cxScreen, cyScreen);
+      ctx.rotate(c.angle);
+      ctx.drawImage(c.img, -chaosDrawW/2, -chaosDrawH/2, chaosDrawW, chaosDrawH);
+      ctx.restore();
+    }
+  }
+
+  // Tailgater red car
+  if (carRedReady && redCar.visible) {
+    const redCarDrawW = BASE_CAR_W * carScale * screenScale;
+    const redCarDrawH = BASE_CAR_H * carScale * screenScale;
+    const redCarScreenX = (redCar.x - sx) * screenScale;
+    const redCarScreenY = (redCar.y - sy) * screenScale;
+
+    ctx.save();
+    ctx.translate(redCarScreenX, redCarScreenY);
+    ctx.rotate(redCar.angle);
+    ctx.drawImage(carRedImg, -redCarDrawW/2, -redCarDrawH/2, redCarDrawW, redCarDrawH);
+    ctx.restore();
+  }
+
+  // Player car
+  ctx.save();
+  ctx.translate(carScreenX, carScreenY);
+  ctx.rotate(car.angle);
+  ctx.drawImage(carImg, -carDrawW/2, -carDrawH/2, carDrawW, carDrawH);
+  ctx.restore();
+
+  // ON/OFF ROAD text
+  const onRoadNow = carHasAnyRoadContact();
+  ctx.font = "bold 32px Arial";
+  ctx.textAlign = "center";
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "#000";
+  ctx.fillStyle = onRoadNow ? "#6F6" : "#F66";
+  const msg = onRoadNow ? "ON ROAD" : "OFF ROAD";
+  ctx.strokeText(msg, canvas.width/2, 40);
+  ctx.fillText(msg,   canvas.width/2, 40);
+
+  // SCORE display (top-left)
+  ctx.font = "20px Arial";
+  ctx.textAlign = "left";
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#000";
+  ctx.fillStyle = "#FFD700";
+  const scoreText = "Score: " + score;
+  ctx.strokeText(scoreText, 20, 30);
+  ctx.fillText(scoreText,   20, 30);
+
+  ctx.font = "18px Arial";
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#FFF";
+  ctx.fillText(
+    "Arrows drive • SPACE=tailgater challenge • Flubs cost 5 points • Gate: enter bottom, wait 10s, exit right • Wacky cars CRASH you (3s freeze)",
+    canvas.width/2,
+    canvas.height - 20
+  );
+
+  requestAnimationFrame(loop);
+}
+
+// INIT
+let bgReady = false;
+let carReady = false;
+
+bg.onload = () => {
+  bgReady = true;
+  MAP_W = bg.width;
+  MAP_H = bg.height;
+  if (carReady) finishInit();
+};
+
+// IMPORTANT: only first onload sizes the car
+carImg.onload = () => {
+  if (carReady) return;
+  carReady = true;
+  const ratio = carImg.width / carImg.height;
+  BASE_CAR_H = 120;
+  BASE_CAR_W = BASE_CAR_H * ratio;
+  if (bgReady) finishInit();
+};
+
+function finishInit() {
+  resize();
+  prepareDetectionCanvas();
+
+  // ---- Auto-detect the green-bordered gate square from the image ----
+  const B = findGreenBoundary();
+
+  if (B) {
+    // Outer border box (green frame)
+    gateRedMinX = B.minX;
+    gateRedMaxX = B.maxX;
+    gateRedMinY = B.minY;
+    gateRedMaxY = B.maxY;
+
+    // Inner black area where the car is considered "inside the pen".
+    const marginFactor = 0.075; // 7.5% inset on each side
+
+    gateInnerMinX = B.minX + (B.maxX - B.minX) * marginFactor;
+    gateInnerMaxX = B.maxX - (B.maxX - B.minX) * marginFactor;
+    gateInnerMinY = B.minY + (B.maxY - B.minY) * marginFactor;
+    gateInnerMaxY = B.maxY - (B.maxY - B.minY) * marginFactor;
+
+    // Gate center for camera
+    gateCenterX = (B.minX + B.maxX) / 2;
+    gateCenterY = (B.minY + B.maxY) / 2;
+
+    // ---- Define doors based on this box ----
+    const DOOR_FRACTION = 0.18;
+
+    // Entrance: bottom edge center gap
+    const bottomY       = B.maxY;
+    const bottomLen     = B.maxX - B.minX;
+    const entranceWidth = bottomLen * DOOR_FRACTION;
+    const bottomCenterX = (B.minX + B.maxX) / 2;
+
+    entranceDoor.y1 = entranceDoor.y2 = bottomY;
+    entranceDoor.x1 = bottomCenterX - entranceWidth / 2;
+    entranceDoor.x2 = bottomCenterX + entranceWidth / 2;
+
+    // Exit: right edge center gap
+    const rightX       = B.maxX;
+    const rightLen     = B.maxY - B.minY;
+    const exitHeight   = rightLen * DOOR_FRACTION;
+    const rightCenterY = (B.minY + B.maxY) / 2;
+
+    exitDoor.x1 = exitDoor.x2 = rightX;
+    exitDoor.y1 = rightCenterY - exitHeight / 2;
+    exitDoor.y2 = rightCenterY + exitHeight / 2;
+
+    // ---- Compute gateZoom so the green square fills the screen ----
+    const gateWidth  = B.maxX - B.minX;
+    const gateHeight = B.maxY - B.minY;
+    const marginZoom = 1.15; // little extra space around
+
+    const zoomW = MAP_W / (gateWidth * marginZoom);
+    const zoomH = MAP_H / (gateHeight * marginZoom);
+    gateZoom = Math.min(zoomW, zoomH);
+    gateZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, gateZoom));
+  } else {
+    // Fallback if the green border is not found: disable the gate
+    gateInnerMinX = 0;
+    gateInnerMaxX = -1;
+    gateInnerMinY = 0;
+    gateInnerMaxY = -1;
+
+    gateRedMinX = 0;
+    gateRedMaxX = -1;
+    gateRedMinY = 0;
+    gateRedMaxY = -1;
+
+    gateCenterX = MAP_W / 2;
+    gateCenterY = MAP_H / 2;
+    gateZoom    = MAX_ZOOM;
+  }
+
+  start();
+}
+</script>
+
+</body>
+</html>

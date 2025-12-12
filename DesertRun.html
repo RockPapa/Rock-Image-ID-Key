@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Man Run in Desert</title>
+<style>
+  body { margin:0; overflow:hidden; background:#000; }
+  canvas { display:block; background:#222; }
+</style>
+</head>
+<body>
+<canvas id="gameCanvas" width="900" height="400"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// ------------------------------
+// BACKGROUND
+// ------------------------------
+const bgImg = new Image();
+bgImg.src = "images/desert.png";
+let bgLoaded = false;
+
+let bgX = 0;
+let scrollSpeed = 2;
+let autoScroll = false;
+
+// ------------------------------
+// SCORE + TIMER
+// ------------------------------
+let score = 200;
+const screamSound = new Audio("images/scream.mp3");
+let hitCooldown = 0;
+const hitCooldownFrames = 30;
+
+const gameDurationSeconds = 5 * 60;
+let gameStartTime = null;
+let remainingSeconds = gameDurationSeconds;
+let gameOver = false;
+
+// ------------------------------
+// HERO SPRITES
+// ------------------------------
+const totalFrames = 8;
+const standRightImg = new Image(); standRightImg.src = "images/stand_right.png";
+const standLeftImg  = new Image(); standLeftImg.src  = "images/stand_left.png";
+
+const rightFrames = [];
+const leftFrames  = [];
+let framesLoaded = 0;
+
+// 2 stands + 16 run + fire + bird
+const extraImages = 3;
+const totalNeeded = 2 + (totalFrames * 2) + extraImages;
+
+for (let i=1;i<=totalFrames;i++){
+  const img=new Image();
+  img.src=`images/${i}.png`;
+  img.onload=()=>framesLoaded++;
+  rightFrames.push(img);
+}
+for (let i=1;i<=totalFrames;i++){
+  const img=new Image();
+  img.src=`images/left${i}.png`;
+  img.onload=()=>framesLoaded++;
+  leftFrames.push(img);
+}
+standRightImg.onload=()=>framesLoaded++;
+standLeftImg.onload =()=>framesLoaded++;
+
+bgImg.onload = () => { bgLoaded = true; requestAnimationFrame(animate); };
+
+// ------------------------------
+// HERO MOTION + PHYSICS
+// ------------------------------
+let frameIndex = 0;
+let tick = 0;
+let frameDelay = 6;
+
+let runnerW = 240, runnerH = 280;
+let runnerX = (canvas.width-runnerW)/2;
+let runnerY = canvas.height-runnerH-0.5;
+
+let vx = 0;
+const moveSpeed = 4.0;
+let lastDirection = "right";
+const keys = { ArrowLeft:false, ArrowRight:false };
+
+let velocityY = 0;
+const jumpStrength = -20;
+const gravity = 0.35;
+const groundFeetY = runnerY + runnerH;
+let canJump = true;
+
+// 🔴 RED-LIGHT: landing “feet width”
+const heroFootSpanFrac = 0.35;
+
+// ------------------------------
+// CRITTER TRAFFIC CONTROL
+// ------------------------------
+let activeCritter = "buffalo";
+
+// ------------------------------
+// BUFFALO
+// ------------------------------
+const buffaloImg = new Image(); buffaloImg.src="images/buffalo.png";
+let buffaloW=300, buffaloH=200;
+let buffaloX=canvas.width+200, buffaloY=canvas.height-200;
+let buffaloSpeed=3.2;
+const buffaloSound=new Audio("images/buffalo_sound.mp3");
+let buffaloReadyToSound=true;
+
+// ------------------------------
+// DEER (right -> left)
+// ------------------------------
+const deerImg=new Image(); deerImg.src="images/deer.png";
+let deerW=270, deerH=200;
+let deerX=canvas.width+700, deerY=canvas.height-200;
+let deerSpeed=3.2;
+const deerSound=new Audio("images/deer_sound.mp3");
+let deerReadyToSound=true;
+
+// ------------------------------
+// BIRD
+// ------------------------------
+const birdImg=new Image(); birdImg.src="images/bird.png";
+birdImg.onload=()=>framesLoaded++;
+let birdW=140, birdH=100;
+let birdX=-400;
+let birdSpeed=3.0;
+
+// 🔴 RED-LIGHT: bird flight band (higher = safer)
+const birdMinYFrac = 0.02;
+const birdMaxYFrac = 0.10;
+let birdY = canvas.height * birdMinYFrac;
+
+const birdSound=new Audio("images/bird_sound.mp3");
+let birdReadyToSound=true;
+
+// ------------------------------
+// FIRE SOUND
+// ------------------------------
+const fireSound=new Audio("images/fire_sound.mp3");
+fireSound.loop=true;
+fireSound.play().catch(()=> {
+  window.addEventListener("keydown", ()=>fireSound.play().catch(()=>{}), {once:true});
+});
+
+// ------------------------------
+// ROCK PLATFORMS (normalized)
+// ------------------------------
+const rockPlatforms = [
+  { normX: 0.105, topY: 0.47, width: 0.03, height: 0.04, color:"rgba(0,255,0,0.35)" },
+  { normX: 0.37,  topY: 0.47, width: 0.03, height: 0.04, color:"rgba(255,0,0,0.35)" },
+  { normX: 0.59,  topY: 0.47, width: 0.03, height: 0.04, color:"rgba(0,0,255,0.35)" },
+  { normX: 0.855, topY: 0.44, width: 0.03, height: 0.04, color:"rgba(255,255,0,0.35)" },
+];
+
+// ------------------------------
+// FIRE IMAGE + SPOTS
+// ------------------------------
+const fireImg=new Image(); fireImg.src="images/fire.png";
+fireImg.onload=()=>framesLoaded++;
+
+const fireSpots = [
+  { normX:0.48, topY:0.72, widthNorm:0.04, heightNorm:0.30 },
+  { normX:0.80, topY:0.72, widthNorm:0.04, heightNorm:0.30 },
+];
+
+// ------------------------------
+// GOLD PRIZE
+// ------------------------------
+const goldImg = new Image(); goldImg.src = "images/gold.png";
+goldImg.onload = () => framesLoaded++;
+
+// 🔴 RED-LIGHT: gold placement (normalized to background width/height)
+const goldSpots = [
+  { normX: 0.92, topY: 0.58, widthNorm: 0.06, heightNorm: 0.22 },
+];
+
+// 🔴 RED-LIGHT: gold pile size (0.25 = 75% smaller)
+const goldDrawScale = 0.25;
+
+
+// Win flag
+let gotGold = false;
+
+// ------------------------------
+// TRUMPET (win sound)
+// ------------------------------
+const trumpetSound = new Audio("images/trumpet.mp3");
+let trumpetPlayed = false;
+
+
+
+// ------------------------------
+// HELPERS
+// ------------------------------
+function rectsOverlap(a,b){
+  return a && b &&
+    a.x < b.x+b.w && a.x+a.w > b.x &&
+    a.y < b.y+b.h && a.y+a.h > b.y;
+}
+function makeTinyHitbox(x,y,w,h,scale){
+  const hw=w*scale, hh=h*scale;
+  return { x:x+(w-hw)/2, y:y+(h-hh)/2, w:hw, h:hh };
+}
+const buffaloHitScale=0.5, deerHitScale=0.3, fireHitScale=0.0025, birdHitScale=0.15, goldHitScale=0.6; // 🔴 RED-LIGHT: fire hitbox
+const heroHitScaleX=0.35, heroHitScaleY=0.95;
+function makeHeroHitbox(x,y,w,h){
+  const hw=w*heroHitScaleX, hh=h*heroHitScaleY;
+  return { x:x+(w-hw)/2, y:y+(h-hh), w:hw, h:hh };
+}
+function applyHitIfNeeded(collided){
+  if (collided && hitCooldown<=0){
+    score=Math.max(0, score-10);
+    screamSound.currentTime=0;
+    screamSound.play().catch(()=>{});
+    hitCooldown=hitCooldownFrames;
+  }
+}
+
+// ------------------------------
+// INPUT
+// ------------------------------
+window.addEventListener("keydown",(e)=>{
+  if (gameOver) return;
+
+  if (e.code==="Space"){ e.preventDefault(); autoScroll=!autoScroll; return; }
+  if (e.code==="ArrowRight"){ keys.ArrowRight=true; vx=moveSpeed; lastDirection="right"; }
+  if (e.code==="ArrowLeft"){ keys.ArrowLeft=true; vx=-moveSpeed; lastDirection="left"; }
+  if (e.code==="ArrowUp" && canJump){ velocityY=jumpStrength; canJump=false; }
+});
+window.addEventListener("keyup",(e)=>{
+  if (gameOver) return;
+  if (e.code==="ArrowRight") keys.ArrowRight=false;
+  if (e.code==="ArrowLeft")  keys.ArrowLeft=false;
+
+  if (keys.ArrowRight && !keys.ArrowLeft) vx=moveSpeed;
+  else if (keys.ArrowLeft && !keys.ArrowRight) vx=-moveSpeed;
+  else vx=0;
+});
+
+// ------------------------------
+// MAIN LOOP
+// ------------------------------
+function animate(){
+  if (!bgLoaded || framesLoaded < totalNeeded){
+    requestAnimationFrame(animate);
+    return;
+  }
+
+  // TIMER
+  const now = performance.now()/1000;
+  if (gameStartTime===null) gameStartTime=now;
+  remainingSeconds = Math.max(0, gameDurationSeconds - (now-gameStartTime));
+  if (!gameOver && remainingSeconds<=0){
+    gameOver=true; vx=0; autoScroll=false;
+  }
+
+  if (hitCooldown>0) hitCooldown--;
+
+  // SCALE
+  const scale = canvas.height / bgImg.height;
+  const imgW  = bgImg.width * scale;
+  const imgH  = canvas.height;
+
+  // ✅ FIX #1: SCROLL FIRST (so everything uses SAME bgX)
+  if (!gameOver){
+    let scrollDir = 0;
+    if (vx > 0) scrollDir = -1;
+    else if (vx < 0) scrollDir = 1;
+    else if (autoScroll) scrollDir = -1;
+
+    bgX += scrollDir * scrollSpeed;
+
+    if (bgX <= -imgW) bgX += imgW;
+    if (bgX >=  imgW) bgX -= imgW;
+  }
+
+  // CLEAR + DRAW BG
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(bgImg, bgX, 0, imgW, imgH);
+  ctx.drawImage(bgImg, bgX + imgW, 0, imgW, imgH);
+
+  // FIRE (uses current bgX)
+  const fireHazardRects = [];
+  const fireScale = 0.40;
+  for (const spot of fireSpots){
+    const fullW = spot.widthNorm * imgW;
+    const fireW = fullW * fireScale;
+    const fireH = spot.heightNorm * imgH;
+
+    const fireX = bgX + spot.normX * imgW + (fullW-fireW)/2;
+    const fireY = spot.topY * imgH;
+
+    ctx.drawImage(fireImg, fireX, fireY, fireW, fireH);
+    fireHazardRects.push(makeTinyHitbox(fireX, fireY, fireW, fireH, fireHitScale));
+
+    const fireX2 = fireX + imgW;
+    ctx.drawImage(fireImg, fireX2, fireY, fireW, fireH);
+    fireHazardRects.push(makeTinyHitbox(fireX2, fireY, fireW, fireH, fireHitScale));
+  }
+
+  // GOLD (uses current bgX)
+  const goldPrizeRects = [];
+  for (const spot of goldSpots){
+    const fullW = spot.widthNorm * imgW;
+    const fullH = spot.heightNorm * imgH;
+
+    // 75% smaller (scale to 25%) and center within the original spot box
+    const goldW = fullW * goldDrawScale;
+    const goldH = fullH * goldDrawScale;
+
+    const goldX = bgX + spot.normX * imgW + (fullW - goldW) / 2;
+    const goldY = spot.topY * imgH + (fullH - goldH) / 2;
+
+    ctx.drawImage(goldImg, goldX, goldY, goldW, goldH);
+    goldPrizeRects.push(makeTinyHitbox(goldX, goldY, goldW, goldH, goldHitScale));
+
+    const goldX2 = goldX + imgW;
+    ctx.drawImage(goldImg, goldX2, goldY, goldW, goldH);
+    goldPrizeRects.push(makeTinyHitbox(goldX2, goldY, goldW, goldH, goldHitScale));
+  }
+
+
+  // PLATFORMS (build + draw using current bgX)
+  const platformRects = [];
+  for (const rock of rockPlatforms){
+    const rockW = rock.width * imgW;
+    const rockH = rock.height * imgH;
+    const baseX = bgX + rock.normX * imgW;
+    const topY  = rock.topY * imgH;
+
+    platformRects.push({ x:baseX,       y:topY, w:rockW, h:rockH, color:rock.color });
+    platformRects.push({ x:baseX+imgW,  y:topY, w:rockW, h:rockH, color:rock.color });
+  }
+  for (const r of platformRects){
+    ctx.fillStyle = r.color;
+    ctx.fillRect(r.x, r.y, r.w, r.h);
+  }
+
+  // HERO X MOVE
+  if (!gameOver){
+    runnerX += vx;
+    if (runnerX < 0) runnerX = 0;
+    if (runnerX > canvas.width-runnerW) runnerX = canvas.width-runnerW;
+  }
+
+  // JUMP/FALL + LANDING
+  const prevBottom = runnerY + runnerH;
+  if (!gameOver){
+    runnerY += velocityY;
+    velocityY += gravity;
+  }
+
+  const heroBottom = runnerY + runnerH;
+  let onPlatformNow=false, onGroundNow=false;
+
+  if (!gameOver && velocityY >= 0){
+    let bestPlat=null, bestTop=Infinity;
+
+    const footSpanW = runnerW * heroFootSpanFrac;
+    const footLeft  = runnerX + (runnerW-footSpanW)/2;
+    const footRight = footLeft + footSpanW;
+
+    for (const rect of platformRects){
+      const fallingPast = prevBottom <= rect.y && heroBottom >= rect.y;
+      const feetOverlap = (footRight > rect.x) && (footLeft < rect.x + rect.w);
+
+      if (fallingPast && feetOverlap && rect.y < bestTop){
+        bestTop = rect.y;
+        bestPlat = rect;
+      }
+    }
+    if (bestPlat){
+      runnerY = bestPlat.y - runnerH;
+      velocityY = 0;
+      onPlatformNow = true;
+    }
+  }
+
+  if (!onPlatformNow && heroBottom >= groundFeetY){
+    runnerY = groundFeetY - runnerH;
+    velocityY = 0;
+    onGroundNow = true;
+  }
+
+  canJump = onPlatformNow || onGroundNow;
+
+  // HERO ANIM
+  const inAir = !onPlatformNow && !onGroundNow;
+  let currentImage;
+  if (inAir){
+    currentImage = lastDirection==="right" ? standRightImg : standLeftImg;
+  } else if (vx===0 || gameOver){
+    frameIndex=0; tick=0;
+    currentImage = lastDirection==="right" ? standRightImg : standLeftImg;
+  } else {
+    tick++;
+    if (tick % frameDelay === 0) frameIndex = (frameIndex+1) % totalFrames;
+    currentImage = vx>0 ? rightFrames[frameIndex] : leftFrames[frameIndex];
+  }
+  ctx.drawImage(currentImage, runnerX, runnerY, runnerW, runnerH);
+  const heroRect = makeHeroHitbox(runnerX, runnerY, runnerW, runnerH);
+
+  // BUFFALO
+  ctx.drawImage(buffaloImg, buffaloX, buffaloY, buffaloW, buffaloH);
+  const buffaloRect = makeTinyHitbox(buffaloX, buffaloY, buffaloW, buffaloH, buffaloHitScale);
+  if (!gameOver && activeCritter==="buffalo"){
+    buffaloX -= buffaloSpeed;
+    if (buffaloReadyToSound && buffaloX < canvas.width-50){
+      buffaloSound.currentTime=0; buffaloSound.play().catch(()=>{});
+      buffaloReadyToSound=false;
+    }
+    if (buffaloX < -buffaloW-200){
+      buffaloX = canvas.width + 800 + Math.random()*800;
+      buffaloReadyToSound = true;
+      activeCritter = "deer";
+    }
+  }
+
+  // DEER
+  ctx.drawImage(deerImg, deerX, deerY, deerW, deerH);
+  const deerRect = makeTinyHitbox(deerX, deerY, deerW, deerH, deerHitScale);
+  if (!gameOver && activeCritter==="deer"){
+    if (deerReadyToSound && deerX < canvas.width-50){
+      deerSound.currentTime=0; deerSound.play().catch(()=>{});
+      deerReadyToSound=false;
+    }
+    deerX -= deerSpeed;
+    if (deerX < -deerW-200){
+      deerX = canvas.width + 800 + Math.random()*800;
+      deerReadyToSound = true;
+      activeCritter = "buffalo";
+    }
+  }
+
+  // BIRD
+  ctx.drawImage(birdImg, birdX, birdY, birdW, birdH);
+  const birdRect = makeTinyHitbox(birdX, birdY, birdW, birdH, birdHitScale);
+  if (!gameOver){
+    if (birdReadyToSound && birdX > 0){
+      birdSound.currentTime=0; birdSound.play().catch(()=>{});
+      birdReadyToSound=false;
+    }
+    birdX += birdSpeed;
+    if (birdX > canvas.width + 200){
+      birdX = -800 - Math.random()*800;
+      birdY = canvas.height*birdMinYFrac + Math.random()*(canvas.height*(birdMaxYFrac-birdMinYFrac));
+      birdReadyToSound = true;
+    }
+  }
+
+  // COLLISIONS
+  let collided = false;
+  if (!gameOver){
+    // WIN: grab the gold
+    for (const gr of goldPrizeRects){
+      if (rectsOverlap(heroRect, gr)){
+        gotGold = true;
+        gameOver = true;
+        vx = 0;
+        autoScroll = false;
+
+        // Play trumpet once when gold is grabbed
+        if (!trumpetPlayed){
+          trumpetPlayed = true;
+          trumpetSound.currentTime = 0;
+          trumpetSound.play().catch(()=>{});
+        }
+        break;
+      }
+    }
+
+    if (!gameOver && rectsOverlap(heroRect, buffaloRect)) collided = true;
+    if (rectsOverlap(heroRect, deerRect))    collided = true;
+    if (rectsOverlap(heroRect, birdRect))    collided = true;
+    for (const fr of fireHazardRects){
+      if (rectsOverlap(heroRect, fr)){ collided = true; break; }
+    }
+    if (!gameOver) applyHitIfNeeded(collided);
+  }
+
+  // HUD
+  ctx.fillStyle="black";
+  ctx.font="20px Arial";
+  ctx.textAlign="start";
+  ctx.fillText("Score: "+score, 20, 30);
+  const m=Math.floor(remainingSeconds/60);
+  const s=Math.floor(remainingSeconds%60);
+  ctx.fillText("Time: "+m+":"+String(s).padStart(2,"0"), 20, 60);
+
+  // WIN / GAME OVER MESSAGE
+  if (gotGold){
+    ctx.save();
+
+    // Light-blue banner behind the win text
+    const boxW = 560;
+    const boxH = 92;
+    const boxX = (canvas.width - boxW) / 2;
+    const boxY = (canvas.height / 2) - (boxH / 2) - 10;
+
+    ctx.fillStyle = "#bfe9ff";
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+
+    ctx.font = "48px Arial";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#000";
+    ctx.fillText("YOU GOT THE GOLD!", canvas.width/2, boxY + 62);
+
+    ctx.restore();
+  } else if (gameOver && remainingSeconds<=0){
+    ctx.save();
+    ctx.font = "42px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("TIME\'S UP!", canvas.width/2, canvas.height/2);
+    ctx.restore();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

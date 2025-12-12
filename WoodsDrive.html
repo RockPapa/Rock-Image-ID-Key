@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Jeep Driving Segment</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: black;
+  }
+
+  #video {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 1;
+  }
+
+  #gameCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2;
+  }
+
+  #gameover {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 5;
+    display: none;
+    font-family: Arial, sans-serif;
+    color: white;
+    text-align: center;
+    padding-top: 30vh;
+  }
+
+  /* ⭐ START SCREEN OVERLAY ⭐ */
+  #startScreen {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    color: white;
+  }
+
+  #startBox {
+    background: rgba(0,0,0,0.75);
+    border: 2px solid #00bfff;
+    border-radius: 14px;
+    padding: 20px 26px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+  }
+
+  #startBox h1 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 28px;
+  }
+
+  #startBox p {
+    margin: 6px 0;
+    font-size: 15px;
+    line-height: 1.4;
+  }
+
+  #startBox ul {
+    text-align: left;
+    padding-left: 20px;
+    margin-top: 4px;
+    margin-bottom: 10px;
+    font-size: 14px;
+  }
+
+  #playerNameInput {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 16px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin: 4px 0 10px 0;
+  }
+
+  #startButton {
+    padding: 10px 22px;
+    font-size: 18px;
+    border-radius: 10px;
+    border: none;
+    background: #00bfff;
+    color: #000;
+    cursor: pointer;
+  }
+
+  #startButton:hover {
+    background: #33ccff;
+  }
+
+  /* ⭐ ONSCREEN IPAD CONTROLS ⭐ */
+
+  #touchControls {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 10px;
+    z-index: 4;
+    pointer-events: none; /* buttons re-enable it */
+  }
+
+  #brakeContainer,
+  #steerContainer {
+    position: absolute;
+    bottom: 10px;
+    pointer-events: auto;
+  }
+
+  /* Brake button on bottom-left */
+  #brakeContainer {
+    left: 10px;
+  }
+
+  /* Left/Right arrows stacked on bottom-right */
+  #steerContainer {
+    right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .ctrl-btn {
+    min-width: 140px;
+    min-height: 120px;
+    padding: 10px 16px;
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.7);
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 38px;
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .ctrl-btn.brake-btn {
+    font-size: 30px;
+    font-weight: 700;
+    min-width: 180px;
+  }
+
+  .ctrl-btn:active {
+    background: rgba(0,0,0,0.9);
+    transform: scale(0.95);
+  }
+
+  /* Slightly smaller buttons on smaller screens */
+  @media (max-width: 900px) {
+    .ctrl-btn {
+      min-width: 120px;
+      min-height: 100px;
+      font-size: 32px;
+    }
+    .ctrl-btn.brake-btn {
+      min-width: 160px;
+      font-size: 26px;
+    }
+  }
+
+  /* ⭐ TOGGLE BUTTON FOR CONTROLS ⭐ */
+  #toggleCtrlBtn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 4;
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.8);
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    cursor: pointer;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  #toggleCtrlBtn:hover {
+    background: rgba(0,0,0,0.85);
+  }
+</style>
+</head>
+<body>
+
+<!-- ⭐ START SCREEN ⭐ -->
+<div id="startScreen">
+  <div id="startBox">
+    <h1>Jeep Animal Run</h1>
+    <p><strong>Driver name:</strong></p>
+    <input id="playerNameInput" type="text" placeholder="Type your name (or leave as Driver)" />
+
+    <p><strong>Rules:</strong></p>
+    <ul>
+      <li>Use the <strong>Left / Right Arrow</strong> keys (or onscreen arrows) to steer.</li>
+      <li>You <strong>must hit an arrow key at least once every 3 seconds</strong> or you crash.</li>
+      <li>When an animal crosses the road, hit the <strong>Space Bar</strong> or the big <strong>BRAKE</strong> button.</li>
+      <li>If you don’t steer, hit an animal, or leave the road, you crash.</li>
+      <li>Your score climbs the longer you survive. The animals get faster over time!</li>
+    </ul>
+
+    <p>Press the button below when you’re ready to drive.</p>
+    <button id="startButton" onclick="beginGame()">Start Driving</button>
+  </div>
+</div>
+
+<video id="video"
+       src="images/road.mp4"
+       muted
+       loop
+       playsinline
+       preload="auto"
+       autoplay></video>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="gameover">
+  <h1>CRASH!</h1>
+  <p>Score: <span id="finalscore"></span></p>
+  <button onclick="restartGame()">Restart</button>
+</div>
+
+<!-- ⭐ ONSCREEN TOUCH CONTROLS ⭐ -->
+<div id="touchControls">
+  <div id="brakeContainer">
+    <button id="brakeBtn" class="ctrl-btn brake-btn">BRAKE</button>
+  </div>
+  <div id="steerContainer">
+    <button id="leftBtn" class="ctrl-btn steer-btn">◀</button>
+    <button id="rightBtn" class="ctrl-btn steer-btn">▶</button>
+  </div>
+</div>
+
+<!-- ⭐ TOGGLE BUTTON ⭐ -->
+<button id="toggleCtrlBtn">Hide Controls</button>
+
+<script>
+let video = document.getElementById("video");
+let canvas = document.getElementById("gameCanvas");
+let ctx = canvas.getContext("2d");
+
+let w, h;
+
+function resizeCanvas() {
+  w = canvas.width = window.innerWidth;
+  h = canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ================================
+//       START / PLAYER NAME
+// ================================
+let playerName = "Driver";
+let gameReady = false;  // only true after user leaves start screen
+
+function beginGame() {
+  const input = document.getElementById("playerNameInput");
+  let name = input.value.trim();
+  if (name === "") {
+    name = "Driver";
+  }
+  playerName = name;
+
+  const startScreen = document.getElementById("startScreen");
+  if (startScreen) {
+    startScreen.style.display = "none";
+  }
+
+  gameReady = true;
+
+  video.playbackRate = VIDEO_SPEED;
+  video.play().catch(()=>{});
+
+  startGame();
+}
+
+let dashImg = new Image();
+dashImg.src = "images/dash.png";
+
+let deerImg = new Image();
+deerImg.src = "images/right_deer.png";
+
+let rockImg = new Image();
+rockImg.src = "images/rock.png";
+
+let buffaloImg = new Image();
+buffaloImg.src = "images/right_buffalo.png";
+
+
+// ================================
+//          SOUNDS
+// ================================
+let crashSound = new Audio("images/crash.mp3");
+crashSound.volume = 0.1;
+
+let carSound = new Audio("images/car_sound.mp3");
+carSound.loop = true;
+carSound.volume = 0.45;
+
+let skidSound = new Audio("images/skid.mp3");
+skidSound.volume = 0.45;
+
+let buffaloSound = new Audio("images/buffalo_sound.mp3");
+buffaloSound.volume = 0.6;
+
+let deerSound = new Audio("images/deer_sound.mp3");
+deerSound.volume = 0.6;
+
+let rockSound = new Audio("images/rock_sound.mp3");
+rockSound.volume = 0.65;
+
+
+// ================================
+//         GAME VARS
+// ================================
+let engineStarted = false;
+
+let dashW, dashH, dashX, dashY;
+let rectW, rectH;
+let carX;
+
+let vx = 0;
+let speed = 0.7;
+let friction = 0.92;
+
+let score = 0;
+let running = false;
+
+let touchLeft = false;
+let touchRight = false;
+let braking = false;
+
+let noSteerTimer = 0;
+let noSteerLimit = 3.0;
+
+let elapsedTime = 0;
+let difficultyMultiplier = 1.0;
+
+
+// ================================
+//        DEER VARS
+// ================================
+let deerActive = false;
+let deerDangerous = false;
+let deerX = 0;
+let deerY = 0;
+let deerW = 0;
+let deerH = 0;
+let deerSpeedX = 0;
+let deerNextAppearTime = 6.0;
+
+let deerSoundPlayed = false;
+
+
+// ================================
+//        ROCK VARS
+// ================================
+let rockActive = false;
+let rockDangerous = false;
+let rockX = 0;
+let rockY = 0;
+let rockW = 0;
+let rockH = 0;
+let rockSpeedX = 0;
+let rockSpeedY = 0;
+let rockAppearTime = 3.0;
+
+let rockSoundPlayed = false;
+
+
+// ================================
+//        ⭐ BUFFALO VARS ⭐
+// ================================
+let buffaloActive = false;
+let buffaloDangerous = false;
+let buffaloX = 0;
+let buffaloY = 0;
+let buffaloW = 0;
+let buffaloH = 0;
+let buffaloSpeedX = 0;
+let buffaloNextTime = 8.0;
+
+let buffaloSoundPlayed = false;
+
+
+// ================================
+//       TUNING SECTION
+// ================================
+let VIDEO_SPEED = 0.8;
+
+let JEEP_RECT_WIDTH_SCALE  = 0.03;
+let JEEP_RECT_HEIGHT_SCALE = 0.06;
+
+let ROAD_LEFT_BOUND_PCT  = 0.08;
+let ROAD_RIGHT_BOUND_PCT = 0.92;
+
+let DEER_WIDTH_SCALE   = 0.32 * 1.20;
+let DEER_HEIGHT_FACTOR = 0.35;
+let DEER_SPEED_SCALE   = 0.012;
+
+let ROCK_WIDTH_SCALE    = 0.10;
+let ROCK_START_HEIGHT   = 0.35;
+let ROCK_ANGLE_DEGREES  = 8;
+let ROCK_SPEED_SCALE    = 0.010;
+
+let BUFFALO_WIDTH_SCALE   = 0.38;
+let BUFFALO_HEIGHT_FACTOR = 0.40;
+let BUFFALO_SPEED_SCALE   = 0.007;
+
+
+// ================================
+//       SIZE HELPERS
+// ================================
+function updateDeerSize() {
+  deerH = deerW * (deerImg.naturalHeight / deerImg.naturalWidth || 0.6);
+}
+function updateRockSize() {
+  rockH = rockW * (rockImg.naturalHeight / rockImg.naturalWidth || 0.6);
+}
+function updateBuffaloSize() {
+  buffaloH = buffaloW * (buffaloImg.naturalHeight / buffaloImg.naturalWidth || 0.6);
+}
+
+
+// ================================
+//   BRAKE TOGGLE (SPACE / BUTTON)
+// ================================
+function toggleBrake() {
+  if (!gameReady) return;
+
+  braking = !braking;
+
+  if (braking) {
+    skidSound.currentTime = 0;
+    skidSound.play().catch(()=>{});
+
+    video.pause();
+    carSound.pause();
+
+    deerDangerous = false;
+    rockDangerous = false;
+    buffaloDangerous = false;
+  } else {
+    video.play().catch(()=>{});
+    carSound.play().catch(()=>{});
+  }
+}
+
+
+// ================================
+//   CONTROLS TOGGLE (BUTTON / ↑)
+// ================================
+const touchControlsDiv = document.getElementById("touchControls");
+const brakeBtn = document.getElementById("brakeBtn");
+const leftBtn  = document.getElementById("leftBtn");
+const rightBtn = document.getElementById("rightBtn");
+const toggleCtrlBtn = document.getElementById("toggleCtrlBtn");
+
+let controlsVisible = true;
+
+function toggleControlsVisibility() {
+  controlsVisible = !controlsVisible;
+  touchControlsDiv.style.display = controlsVisible ? "block" : "none";
+  toggleCtrlBtn.textContent = controlsVisible ? "Hide Controls" : "Show Controls";
+}
+
+toggleCtrlBtn.addEventListener("click", () => {
+  toggleControlsVisibility();
+});
+
+
+// ================================
+//          INPUT HANDLING
+// ================================
+window.addEventListener("keydown", e => {
+
+  if (!gameReady) return;
+
+  if (!engineStarted) {
+    engineStarted = true;
+    carSound.play().catch(()=>{});
+  }
+
+  // Up arrow = toggle controls
+  if (e.key === "ArrowUp") {
+    e.preventDefault();
+    toggleControlsVisibility();
+    return;
+  }
+
+  if (e.key === " ") {
+    e.preventDefault();
+    toggleBrake();
+    return;
+  }
+
+  if (e.key === "ArrowLeft")  { touchLeft = true;  noSteerTimer = 0; }
+  if (e.key === "ArrowRight") { touchRight = true; noSteerTimer = 0; }
+
+  if (video.paused && !braking) tryStartVideoAndGame();
+});
+
+window.addEventListener("keyup", e => {
+  if (e.key === "ArrowLeft")  touchLeft = false;
+  if (e.key === "ArrowRight") touchRight = false;
+});
+
+
+// ================================
+//      TOUCH / ONSCREEN BTNS
+// ================================
+function attachButton(btn, onDown, onUp) {
+  if (!btn) return;
+
+  btn.addEventListener("touchstart", e => {
+    e.preventDefault();
+    onDown();
+  }, {passive:false});
+
+  btn.addEventListener("touchend", e => {
+    e.preventDefault();
+    if (onUp) onUp();
+  });
+
+  btn.addEventListener("mousedown", e => {
+    e.preventDefault();
+    onDown();
+  });
+
+  btn.addEventListener("mouseup", e => {
+    e.preventDefault();
+    if (onUp) onUp();
+  });
+
+  btn.addEventListener("mouseleave", () => {
+    if (onUp) onUp();
+  });
+}
+
+attachButton(brakeBtn, () => {
+  if (!gameReady) return;
+  toggleBrake();
+}, null);
+
+attachButton(leftBtn, () => {
+  if (!gameReady) return;
+  touchLeft = true;
+  noSteerTimer = 0;
+}, () => {
+  touchLeft = false;
+});
+
+attachButton(rightBtn, () => {
+  if (!gameReady) return;
+  touchRight = true;
+  noSteerTimer = 0;
+}, () => {
+  touchRight = false;
+});
+
+window.addEventListener("touchstart", e => {
+  if (!gameReady) return;
+
+  if (!engineStarted) {
+    engineStarted = true;
+    carSound.play().catch(()=>{});
+  }
+
+  if (video.paused && !braking) tryStartVideoAndGame();
+});
+
+video.addEventListener("canplay", tryStartVideoAndGame);
+
+function tryStartVideoAndGame() {
+  if (!gameReady) return;
+  video.playbackRate = VIDEO_SPEED;
+  video.play().catch(()=>{});
+  if (!running) startGame();
+}
+
+
+// ================================
+//           START GAME
+// ================================
+function startGame() {
+  dashW = w;
+  dashH = h * 0.30;
+  dashY = h - dashH;
+
+  carX = w/2;
+
+  rectW = w * JEEP_RECT_WIDTH_SCALE;
+  rectH = dashH * JEEP_RECT_HEIGHT_SCALE;
+
+  vx = 0;
+  score = 0;
+  elapsedTime = 0;
+  noSteerTimer = 0;
+  difficultyMultiplier = 1.0;
+
+  deerActive = false;
+  rockActive = false;
+  buffaloActive = false;
+
+  deerDangerous = false;
+  rockDangerous = false;
+  buffaloDangerous = false;
+
+  deerW = w * DEER_WIDTH_SCALE;
+  rockW = w * ROCK_WIDTH_SCALE;
+  buffaloW = w * BUFFALO_WIDTH_SCALE;
+
+  deerSoundPlayed = false;
+  buffaloSoundPlayed = false;
+  rockSoundPlayed = false;
+
+  running = true;
+  requestAnimationFrame(loop);
+}
+
+
+// ================================
+//             CRASH
+// ================================
+function doCrash() {
+  crashSound.currentTime = 0;
+  crashSound.play().catch(()=>{});
+  carSound.pause();
+  running = false;
+
+  document.getElementById("finalscore").textContent = Math.floor(score);
+  document.getElementById("gameover").style.display = "block";
+}
+
+
+// ================================
+//             LOOP
+// ================================
+function loop() {
+  if (!running) return;
+
+  if (braking) {
+    draw();
+    return requestAnimationFrame(loop);
+  }
+
+  elapsedTime += 1/60;
+  difficultyMultiplier += 0.00012;
+
+  let leftRoad  = w * ROAD_LEFT_BOUND_PCT;
+  let rightRoad = w * ROAD_RIGHT_BOUND_PCT;
+
+  if (!touchLeft && !touchRight) noSteerTimer += 1/60;
+  if (noSteerTimer >= noSteerLimit) return doCrash();
+
+
+  // ROCK
+  if (!rockActive && elapsedTime >= rockAppearTime) {
+    rockActive = true;
+    rockDangerous = true;
+
+    rockW = w * ROCK_WIDTH_SCALE;
+    updateRockSize();
+
+    rockX = w + rockW;
+    rockY = h * ROCK_START_HEIGHT;
+
+    let angle = ROCK_ANGLE_DEGREES * Math.PI/180;
+    let sp = w * ROCK_SPEED_SCALE;
+
+    rockSpeedX = -sp * Math.cos(angle) * difficultyMultiplier;
+    rockSpeedY =  sp * Math.sin(angle) * difficultyMultiplier;
+
+    rockSoundPlayed = false;
+  }
+
+  if (rockActive) {
+    rockX += rockSpeedX;
+    rockY += rockSpeedY;
+
+    if (!rockSoundPlayed) {
+      let rockCenter = rockX + rockW / 2;
+      if (rockCenter > leftRoad && rockCenter < rightRoad) {
+        rockSoundPlayed = true;
+        rockSound.currentTime = 0;
+        rockSound.play().catch(()=>{});
+      }
+    }
+
+    if (rockX + rockW < 0 || rockY > h) {
+      rockActive = false;
+      rockDangerous = false;
+      rockAppearTime = elapsedTime + 4 + Math.random()*3;
+    }
+  }
+
+
+  // DEER
+  if (!deerActive && elapsedTime >= deerNextAppearTime) {
+    deerActive = true;
+    deerDangerous = true;
+
+    deerW = w * DEER_WIDTH_SCALE;
+    deerX = -deerW;
+    deerY = h * DEER_HEIGHT_FACTOR;
+    deerSpeedX = w * DEER_SPEED_SCALE * difficultyMultiplier;
+
+    deerSoundPlayed = false;
+  }
+
+  if (deerActive) {
+    deerX += deerSpeedX;
+    updateDeerSize();
+
+    if (!deerSoundPlayed) {
+      let deerCenter = deerX + deerW / 2;
+      if (deerCenter > leftRoad && deerCenter < rightRoad) {
+        deerSoundPlayed = true;
+        deerSound.currentTime = 0;
+        deerSound.play().catch(()=>{});
+      }
+    }
+
+    if (deerX > w + deerW) {
+      deerActive = false;
+      deerDangerous = false;
+      deerNextAppearTime = elapsedTime + 4 + Math.random()*3;
+    }
+  }
+
+
+  // BUFFALO
+  if (!buffaloActive && elapsedTime >= buffaloNextTime) {
+    buffaloActive = true;
+    buffaloDangerous = true;
+
+    buffaloW = w * BUFFALO_WIDTH_SCALE;
+    buffaloX = -buffaloW;
+    buffaloY = h * BUFFALO_HEIGHT_FACTOR;
+    buffaloSpeedX = w * BUFFALO_SPEED_SCALE * difficultyMultiplier;
+
+    buffaloSoundPlayed = false;
+  }
+
+  if (buffaloActive) {
+    buffaloX += buffaloSpeedX;
+    updateBuffaloSize();
+
+    if (!buffaloSoundPlayed) {
+      let buffaloCenter = buffaloX + buffaloW / 2;
+      if (buffaloCenter > leftRoad && buffaloCenter < rightRoad) {
+        buffaloSoundPlayed = true;
+        buffaloSound.currentTime = 0;
+        buffaloSound.play().catch(()=>{});
+      }
+    }
+
+    if (buffaloX > w + buffaloW) {
+      buffaloActive = false;
+      buffaloDangerous = false;
+      buffaloNextTime = elapsedTime + 5 + Math.random()*3;
+    }
+  }
+
+
+  // CAR MOTION
+  if (touchLeft)  vx -= speed;
+  if (touchRight) vx += speed;
+
+  vx *= friction;
+  carX += vx;
+
+  score += 0.2;
+
+
+  // JEEP RECTANGLE
+  let rectLeft   = carX - rectW/2;
+  let rectRight  = carX + rectW/2;
+  let rectTop    = dashY;
+  let rectBottom = dashY + rectH;
+
+
+  // COLLISIONS
+  if (rockActive && rockDangerous) {
+    let L = rockX;
+    let R = rockX + rockW;
+    let T = rockY;
+    let B = rockY + rockH;
+    if (R > rectLeft && L < rectRight && B > rectTop && T < rectBottom)
+      return doCrash();
+  }
+
+  if (deerActive && deerDangerous) {
+    let L = deerX;
+    let R = deerX + deerW;
+    let T = deerY;
+    let B = deerY + deerH;
+    if (R > rectLeft && L < rectRight && B > rectTop && T < rectBottom)
+      return doCrash();
+  }
+
+  if (buffaloActive && buffaloDangerous) {
+    let L = buffaloX;
+    let R = buffaloX + buffaloW;
+    let T = buffaloY;
+    let B = buffaloY + buffaloH;
+    if (R > rectLeft && L < rectRight && B > rectTop && T < rectBottom)
+      return doCrash();
+  }
+
+  // ROAD EDGE
+  if (rectLeft < leftRoad || rectRight > rightRoad) return doCrash();
+
+  draw();
+  requestAnimationFrame(loop);
+}
+
+
+// ================================
+//              DRAW
+// ================================
+function draw() {
+  ctx.clearRect(0,0,w,h);
+
+  dashX = carX - dashW/2;
+  ctx.drawImage(dashImg, dashX, dashY, dashW, dashH);
+
+  if (rockActive)
+    ctx.drawImage(rockImg, rockX, rockY, rockW, rockH);
+
+  if (deerActive)
+    ctx.drawImage(deerImg, deerX, deerY, deerW, deerH);
+
+  if (buffaloActive)
+    ctx.drawImage(buffaloImg, buffaloX, buffaloY, buffaloW, buffaloH);
+
+  ctx.font = "32px Arial";
+  ctx.fillStyle = "white";
+  ctx.fillText(playerName + ": " + Math.floor(score), 20, 40);
+}
+
+
+// ================================
+//          RESTART
+// ================================
+function restartGame() {
+  document.getElementById("gameover").style.display = "none";
+  running = false;
+  engineStarted = false;
+  startGame();
+}
+</script>
+
+</body>
+</html>

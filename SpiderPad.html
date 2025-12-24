@@ -1,0 +1,1293 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Get Treasure — Outside Segment</title>
+  <style>
+    html,body{margin:0;height:100%;overflow:hidden;background:#111}
+    canvas{display:block;width:100vw;height:100vh}
+
+    #hud{
+      position:fixed;left:10px;top:10px;z-index:5;
+      color:#fff;font:14px system-ui;background:rgba(0,0,0,.45);
+      padding:8px 10px;border-radius:10px;user-select:none
+    }
+
+    /* =========================
+       📱 TOUCH CONTROLS + TOGGLE
+       (IMPORTANT: toggle is ALWAYS visible)
+       ========================= */
+    #touchToggle{
+      position: fixed;
+      left: 10px;
+      top: 56px;
+      z-index: 9999;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 0;
+      background: rgba(0,0,0,0.50);
+      color: #fff;
+      font: 14px system-ui;
+      user-select:none;
+      cursor: pointer;
+    }
+
+    #touchControls{
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 9998;
+      padding: 14px;
+      display: none;          /* controlled by toggle */
+      pointer-events: none;   /* buttons enable pointer */
+    }
+
+    .tcRow{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:14px;
+      pointer-events:none;
+    }
+
+    .tcPad{
+      display:grid;
+      grid-template-columns:64px 64px 64px;
+      grid-template-rows:64px 64px;
+      gap:10px;
+      pointer-events:none;
+    }
+
+    .tcActions{
+      display:grid;
+      grid-template-columns:96px 96px;
+      grid-template-rows:64px 64px;
+      gap:10px;
+      pointer-events:none;
+    }
+
+    .tcBtn{
+      width:100%;
+      height:100%;
+      border-radius:16px;
+      border:0;
+      background:rgba(0,0,0,0.45);
+      color:rgba(255,255,255,0.95);
+      font:18px system-ui;
+      pointer-events:auto;
+      touch-action:none;
+      user-select:none;
+    }
+    .tcBtn:active{ background:rgba(255,255,255,0.20); }
+    .tcSmall{ font-size:14px; }
+    .tcWide{ grid-column: span 2; }
+  </style>
+</head>
+<body>
+<canvas id="c" tabindex="0"></canvas>
+
+<div id="hud">
+  ↑/↓ move • ←/→ turn • SAFE ZONE at Oasis/Fort • TREASURE → FORT → STUN GUN • SPACE = ZAP • R = Restart
+</div>
+
+<!-- =========================
+     📱 On-screen controls UI
+     ========================= -->
+<button id="touchToggle">📱 Controls: OFF</button>
+
+<div id="touchControls">
+  <div class="tcRow">
+
+    <!-- Left: move + turn pad -->
+    <div class="tcPad">
+      <button class="tcBtn" data-hold="ArrowLeft">⟲</button>
+      <button class="tcBtn" data-hold="ArrowUp">▲</button>
+      <button class="tcBtn" data-hold="ArrowRight">⟳</button>
+
+      <button class="tcBtn tcSmall" data-tap="KeyR">R</button>
+      <button class="tcBtn" data-hold="ArrowDown">▼</button>
+      <button class="tcBtn tcSmall" data-tap="Space">ZAP</button>
+    </div>
+
+    <!-- Right: bigger buttons -->
+    <div class="tcActions">
+      <button class="tcBtn" data-hold="ArrowLeft">TURN ⟲</button>
+      <button class="tcBtn" data-hold="ArrowRight">TURN ⟳</button>
+      <button class="tcBtn tcWide tcSmall" data-tap="Space">ZAP</button>
+      <button class="tcBtn tcWide tcSmall" data-tap="KeyR">RESTART</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// =========================
+// 🔴 TOP TWEAK KNOBS
+// =========================
+const NEXT_LEVEL_URL = "forest.html";
+
+// HEALTH
+const MAX_HEALTH   = 100;
+const HIT_DAMAGE   = 20;
+const HEALTH_BAR_X = 14;
+const HEALTH_BAR_Y = 64;
+const HEALTH_BAR_W = 240;
+const HEALTH_BAR_H = 18;
+
+// TREASURE
+let TREASURE_X = 1;
+let TREASURE_Y = 0.001;
+let TREASURE_W = 0.30;
+let TREASURE_H = 0.30;
+const TREASURE_PICKUP_DIST = 0.55;
+const TREASURE_MSG_MS      = 4500;
+const DELIVER_MSG_MS       = 4500;
+
+// OASIS / FORT (SAFE ZONE)
+let OASIS_X = 9.5;
+let OASIS_Y = 0.001;
+let OASIS_W = 0.40;
+let OASIS_H = 0.15;
+const SAFE_RADIUS = 0.95;
+
+// SPIDERS
+const MAIN_SPIDER_SPEED = 1.0;
+const MAIN_CATCH_DIST   = 0.25;
+
+const GUARD_ORBIT_RADIUS = 1.00;
+const GUARD_ORBIT_SPEED  = 6.0;
+const GUARD_CATCH_DIST   = 0.25;
+
+const NUM_DECOY_ROAMERS  = 6;
+const NUM_GHOST_CHASERS  = 4;
+
+// STUN GUN
+const ZAP_KEY = "Space";
+const ZAP_RANGE = 6.5;
+const ZAP_FOV   = 0.18;
+const ZAP_COOLDOWN_MS = 450;
+
+// =========================
+// AUDIO FILES
+// =========================
+const OUT_MUSIC = new Audio("images/air.mp3");
+OUT_MUSIC.loop = true;
+OUT_MUSIC.preload = "auto";
+OUT_MUSIC.volume = 0.10;
+
+const HISS   = new Audio("images/hiss.mp3");
+const SCREAM = new Audio("images/scream.mp3");
+HISS.preload="auto"; SCREAM.preload="auto";
+HISS.volume=0.90; SCREAM.volume=0.95;
+
+function playOneShot(a){
+  try{
+    const b = a.cloneNode();
+    b.volume = a.volume ?? 1;
+    b.play().catch(()=>{});
+  }catch(e){}
+}
+
+let musicStarted=false;
+function startOutsideMusic(){
+  if(musicStarted) return;
+  musicStarted=true;
+  OUT_MUSIC.play().catch(()=>{});
+}
+
+function playZap(){
+  try{
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = "square";
+    o.frequency.value = 520;
+    g.gain.value = 0.05;
+    o.connect(g); g.connect(ac.destination);
+    o.start();
+    o.frequency.exponentialRampToValueAtTime(160, ac.currentTime + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.10);
+    o.stop(ac.currentTime + 0.11);
+    setTimeout(()=>ac.close(), 150);
+  }catch(e){}
+}
+
+addEventListener("pointerdown", startOutsideMusic, {once:true});
+addEventListener("keydown", startOutsideMusic, {once:true});
+
+(() => {
+  const c = document.getElementById("c");
+  const ctx = c.getContext("2d");
+
+  // =========================
+  // IMAGES
+  // =========================
+  const spiderImg = new Image();
+  spiderImg.src = "images/spider.png";
+
+  const treasureImg = new Image();
+  treasureImg.src = "images/treasure.png";
+
+  const oasisImg = new Image();
+  oasisImg.src = "images/oasis.png";
+  oasisImg.onerror = () => { oasisImg.src = "images/fort.png"; };
+
+  const lambImg = new Image();
+  lambImg.src = "images/lambchop.png";
+
+  // =========================
+  // WORLD MAP (walls OFF for outside)
+  // =========================
+  const worldMap = [
+    [2,2,2,2,2,2,2,2,2,2,2,2],
+    [2,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,2],
+    [2,0,0,0,1,1,1,0,0,0,0,2],
+    [2,0,0,0,1,0,1,0,0,0,0,2],
+    [2,0,0,0,1,1,1,0,0,0,0,2],
+    [2,0,0,0,0,0,0,0,0,0,0,2],
+    [2,2,2,2,2,2,2,2,2,2,2,2],
+  ];
+  const mapH = worldMap.length;
+  const mapW = worldMap[0].length;
+
+  function resize(){ c.width = innerWidth; c.height = innerHeight; }
+  addEventListener("resize", resize);
+  resize();
+
+  setTimeout(() => c.focus(), 0);
+  c.addEventListener("pointerdown", () => c.focus());
+
+  // =========================
+  // PLAYER
+  // =========================
+  let posX = 3.5, posY = 3.5;
+  let dirX = -1, dirY = 0;
+  let planeX = 0, planeY = 0.66;
+
+  // =========================
+  // KEYS (anti-hung)
+  // =========================
+  const keys = new Set();
+  const BLOCKED = new Set(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"]);
+  function clearKeys(){ keys.clear(); }
+  addEventListener("blur", clearKeys);
+  addEventListener("pagehide", clearKeys);
+  document.addEventListener("visibilitychange", () => { if(document.hidden) clearKeys(); });
+
+  // =========================
+  // 📱 TOUCH CONTROLS (WORKS ON DESKTOP TOO)
+  // =========================
+  const TOUCH_STORE_KEY = "spiderland2_touch_controls";
+
+  const touchToggle = document.getElementById("touchToggle");
+  const touchControls = document.getElementById("touchControls");
+
+  function isCoarsePointer(){
+    return (window.matchMedia && matchMedia("(pointer: coarse)").matches) ||
+           ("ontouchstart" in window) ||
+           (navigator.maxTouchPoints > 0);
+  }
+
+  function loadTouchEnabled(){
+    const saved = localStorage.getItem(TOUCH_STORE_KEY);
+    if(saved === "on")  return true;
+    if(saved === "off") return false;
+    // default ON for iPad/touch, default OFF for desktop
+    return isCoarsePointer();
+  }
+
+  let touchEnabled = loadTouchEnabled();
+
+  function applyTouchUI(){
+    touchControls.style.display = touchEnabled ? "block" : "none";
+    touchToggle.textContent = touchEnabled ? "📱 Controls: ON" : "📱 Controls: OFF";
+  }
+
+  function setTouchEnabled(v){
+    touchEnabled = !!v;
+    localStorage.setItem(TOUCH_STORE_KEY, touchEnabled ? "on" : "off");
+
+    // release held virtual keys when turning off
+    if(!touchEnabled){
+      keys.delete("ArrowUp");
+      keys.delete("ArrowDown");
+      keys.delete("ArrowLeft");
+      keys.delete("ArrowRight");
+    }
+    applyTouchUI();
+    c.focus();
+  }
+
+  touchToggle.addEventListener("click", () => setTouchEnabled(!touchEnabled));
+
+  function bindHold(btn, code){
+    const down = (e) => {
+      if(!touchEnabled) return;
+      e.preventDefault();
+      startOutsideMusic();
+      keys.add(code);
+      c.focus();
+    };
+    const up = (e) => {
+      e.preventDefault();
+      keys.delete(code);
+    };
+    btn.addEventListener("pointerdown", down, {passive:false});
+    btn.addEventListener("pointerup", up, {passive:false});
+    btn.addEventListener("pointercancel", up, {passive:false});
+    btn.addEventListener("pointerleave", up, {passive:false});
+  }
+
+  function bindTap(btn, code){
+    btn.addEventListener("pointerdown", (e) => {
+      if(!touchEnabled) return;
+      e.preventDefault();
+      startOutsideMusic();
+      c.focus();
+      if(code === "Space") tryZap(performance.now());
+      if(code === "KeyR")  resetAll();
+    }, {passive:false});
+  }
+
+  document.querySelectorAll(".tcBtn").forEach(btn => {
+    const hold = btn.getAttribute("data-hold");
+    const tap  = btn.getAttribute("data-tap");
+    if(hold) bindHold(btn, hold);
+    if(tap)  bindTap(btn, tap);
+  });
+
+  applyTouchUI();
+
+  // =========================
+  // UTIL
+  // =========================
+  function rand(a,b){ return a + Math.random()*(b-a); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function dist2(ax, ay, bx, by){
+    const dx=ax-bx, dy=ay-by;
+    return dx*dx + dy*dy;
+  }
+
+  // walls off for outside
+  function isWall(x,y){
+    const SHOW_WALLS = false;
+    if(!SHOW_WALLS) return false;
+    const mx = Math.floor(x), my = Math.floor(y);
+    if(mx<0||my<0||mx>=mapW||my>=mapH) return true;
+    return worldMap[my][mx] > 0;
+  }
+
+  function playerIsSafe(){
+    return dist2(posX,posY,OASIS_X,OASIS_Y) <= (SAFE_RADIUS*SAFE_RADIUS);
+  }
+
+  const SAFE_BORDER = 0.10;
+  function clampOutsideOasis(x, y, extra){
+    const r = SAFE_RADIUS + SAFE_BORDER + (extra || 0);
+    const r2 = r*r;
+    if(dist2(x,y,OASIS_X,OASIS_Y) >= r2) return {x,y};
+    const ox = x - OASIS_X, oy = y - OASIS_Y;
+    const d = Math.hypot(ox, oy) || 1;
+    return { x: OASIS_X + (ox/d)*r, y: OASIS_Y + (oy/d)*r };
+  }
+
+  function randomOpenSpot(avoidOasis=true){
+    for(let tries=0; tries<250; tries++){
+      const x = rand(1.2, mapW-1.2);
+      const y = rand(1.2, mapH-1.2);
+      if(isWall(x,y)) continue;
+      if(avoidOasis && dist2(x,y,OASIS_X,OASIS_Y) < (SAFE_RADIUS+0.25)*(SAFE_RADIUS+0.25)) continue;
+      return {x,y};
+    }
+    return {x:2.5,y:2.5};
+  }
+
+  // =========================
+  // GAME STATE
+  // =========================
+  let health = MAX_HEALTH;
+  let gameOver = false;
+
+  let hasTreasure = false;
+  let treasureDelivered = false;
+  let hasStunGun = false;
+
+  let gotTreasureUntil = 0;
+  let deliveredUntil   = 0;
+
+  let nextZapAt = 0;
+
+  const PLAYER_FREEZE_MS = 1200;
+  const CAUGHT_FLASH_MS  = 900;
+  let playerFrozenUntil = 0;
+  let caughtUntil = 0;
+  let caughtActive = false;
+
+  const SOUND_COOLDOWN_MS = 1400;
+  const SCREAM_DELAY_MS   = 110;
+  let lastCatchSoundAt = -1e9;
+
+  // =========================
+  // SPIDERS
+  // =========================
+  const mainSpider = { x:8.5, y:5.5, zapped:false };
+
+  const guardSpider = {
+    x: TREASURE_X,
+    y: TREASURE_Y,
+    angle: 0,
+    zapped: false
+  };
+
+  const DECOY_SIZE = 0.75;
+  const DECOY_SPEED_MIN = 0.35;
+  const DECOY_SPEED_MAX = 0.70;
+  const DECOY_TURN_RATE = 2.2;
+  const decoySpiders = [];
+
+  const GHOST_SIZE = 0.78;
+  const GHOST_SPEED = 0.95;
+  const ghostSpiders = [];
+
+  const LAMB_SIZE = 0.95;
+  const LAMB_SPEED_MIN = 0.30;
+  const LAMB_SPEED_MAX = 0.55;
+  const LAMB_TURN_RATE = 1.6;
+  const lamb = { x:4.5, y:6.0, ang:0, speed:0.40 };
+
+  for(let i=0;i<NUM_DECOY_ROAMERS;i++){
+    const p = randomOpenSpot(true);
+    decoySpiders.push({
+      x:p.x, y:p.y,
+      ang:rand(0,Math.PI*2),
+      speed:rand(DECOY_SPEED_MIN, DECOY_SPEED_MAX),
+      zapped:false
+    });
+  }
+  for(let i=0;i<NUM_GHOST_CHASERS;i++){
+    const p = randomOpenSpot(true);
+    ghostSpiders.push({ x:p.x, y:p.y, zapped:false });
+  }
+  {
+    const p = randomOpenSpot(true);
+    lamb.x=p.x; lamb.y=p.y;
+    lamb.ang=rand(0,Math.PI*2);
+    lamb.speed=rand(LAMB_SPEED_MIN, LAMB_SPEED_MAX);
+  }
+
+  function allSpidersZapped(){
+    if(!mainSpider.zapped) return false;
+    if(!guardSpider.zapped) return false;
+    for(const s of decoySpiders) if(!s.zapped) return false;
+    for(const s of ghostSpiders) if(!s.zapped) return false;
+    return true;
+  }
+
+  // =========================
+  // DAMAGE
+  // =========================
+  function applyDamage(amount){
+    if(gameOver) return;
+    health = Math.max(0, health - amount);
+    if(health <= 0){
+      gameOver = true;
+      playerFrozenUntil = performance.now() + 1e12;
+    }
+  }
+
+  function triggerHit(nowMs){
+    if(gameOver) return;
+    if(playerIsSafe()) return;
+    if(caughtActive) return;
+    caughtActive = true;
+
+    applyDamage(HIT_DAMAGE);
+    caughtUntil = nowMs + CAUGHT_FLASH_MS;
+    playerFrozenUntil = nowMs + PLAYER_FREEZE_MS;
+
+    if(nowMs - lastCatchSoundAt > SOUND_COOLDOWN_MS){
+      playOneShot(HISS);
+      setTimeout(() => playOneShot(SCREAM), SCREAM_DELAY_MS);
+      lastCatchSoundAt = nowMs;
+    }
+  }
+
+  // =========================
+  // TREASURE STATE
+  // =========================
+  function updateTreasureState(nowMs){
+    if(!hasTreasure && !treasureDelivered){
+      const d2 = dist2(posX, posY, TREASURE_X, TREASURE_Y);
+      if(d2 <= TREASURE_PICKUP_DIST*TREASURE_PICKUP_DIST){
+        hasTreasure = true;
+        gotTreasureUntil = nowMs + TREASURE_MSG_MS;
+      }
+    }
+
+    if(hasTreasure && !treasureDelivered && playerIsSafe()){
+      treasureDelivered = true;
+      hasTreasure = false;
+      deliveredUntil = nowMs + DELIVER_MSG_MS;
+      hasStunGun = true;
+    }
+  }
+
+  // =========================
+  // STUN GUN
+  // =========================
+  function tryZap(nowMs){
+    if(!hasStunGun) return;
+    if(gameOver) return;
+    if(nowMs < nextZapAt) return;
+
+    nextZapAt = nowMs + ZAP_COOLDOWN_MS;
+    playZap();
+
+    const fx = dirX, fy = dirY;
+    const candidates = [];
+
+    if(!mainSpider.zapped) candidates.push(mainSpider);
+    if(!guardSpider.zapped) candidates.push(guardSpider);
+    for(const s of decoySpiders) if(!s.zapped) candidates.push(s);
+    for(const s of ghostSpiders) if(!s.zapped) candidates.push(s);
+
+    let best = null;
+    let bestD = 1e9;
+
+    for(const s of candidates){
+      const dx = s.x - posX;
+      const dy = s.y - posY;
+      const d  = Math.hypot(dx, dy);
+      if(d > ZAP_RANGE) continue;
+
+      const ux = dx / (d || 1);
+      const uy = dy / (d || 1);
+      const dot = clamp(ux*fx + uy*fy, -1, 1);
+      const ang = Math.acos(dot);
+      if(ang > ZAP_FOV) continue;
+
+      if(d < bestD){
+        bestD = d;
+        best = s;
+      }
+    }
+
+    if(best){
+      best.zapped = true;
+      if(allSpidersZapped()){
+        setTimeout(() => { window.location.href = NEXT_LEVEL_URL; }, 650);
+      }
+    }
+  }
+
+  // =========================
+  // UPDATES
+  // =========================
+  function updateMainSpider(dt, nowMs){
+    if(mainSpider.zapped) return;
+    if(gameOver) return;
+
+    const safe = playerIsSafe();
+    const dx = posX - mainSpider.x;
+    const dy = posY - mainSpider.y;
+    const d  = Math.hypot(dx, dy) || 1;
+
+    if(!safe && d < MAIN_CATCH_DIST){
+      triggerHit(nowMs);
+      mainSpider.x = posX - (dx/d) * 0.28;
+      mainSpider.y = posY - (dy/d) * 0.28;
+      return;
+    }
+
+    let nx = mainSpider.x + (dx/d) * MAIN_SPIDER_SPEED * dt;
+    let ny = mainSpider.y + (dy/d) * MAIN_SPIDER_SPEED * dt;
+
+    const cl = clampOutsideOasis(nx, ny, 0.0);
+    nx = cl.x; ny = cl.y;
+
+    if(!isWall(nx, mainSpider.y)) mainSpider.x = nx;
+    if(!isWall(mainSpider.x, ny)) mainSpider.y = ny;
+  }
+
+  function updateGuardSpider(dt, nowMs){
+    if(guardSpider.zapped) return;
+    if(gameOver) return;
+
+    guardSpider.angle += GUARD_ORBIT_SPEED * dt;
+    guardSpider.x = TREASURE_X + Math.cos(guardSpider.angle) * GUARD_ORBIT_RADIUS;
+    guardSpider.y = TREASURE_Y + Math.sin(guardSpider.angle) * GUARD_ORBIT_RADIUS;
+
+    if(!playerIsSafe()){
+      const dx = posX - guardSpider.x;
+      const dy = posY - guardSpider.y;
+      const d  = Math.hypot(dx, dy);
+      if(d < GUARD_CATCH_DIST){
+        triggerHit(nowMs);
+        guardSpider.x = posX - (dx/(d||1)) * 0.28;
+        guardSpider.y = posY - (dy/(d||1)) * 0.28;
+      }
+    }
+  }
+
+  function updateDecoys(dt){
+    for(const d of decoySpiders){
+      if(d.zapped) continue;
+
+      d.ang += rand(-DECOY_TURN_RATE, DECOY_TURN_RATE) * dt;
+      const vx = Math.cos(d.ang) * d.speed;
+      const vy = Math.sin(d.ang) * d.speed;
+
+      let nx = d.x + vx*dt;
+      let ny = d.y + vy*dt;
+
+      if(nx < 1.05 || nx > mapW-1.05){ d.ang = Math.PI - d.ang; nx = clamp(nx, 1.05, mapW-1.05); }
+      if(ny < 1.05 || ny > mapH-1.05){ d.ang = -d.ang;          ny = clamp(ny, 1.05, mapH-1.05); }
+
+      const cl = clampOutsideOasis(nx, ny, 0.05);
+      nx = cl.x; ny = cl.y;
+
+      if(!isWall(nx, d.y)) d.x = nx; else d.ang += Math.PI*0.5;
+      if(!isWall(d.x, ny)) d.y = ny; else d.ang += Math.PI*0.5;
+
+      if(Math.random() < 0.02) d.speed = rand(DECOY_SPEED_MIN, DECOY_SPEED_MAX);
+    }
+  }
+
+  function updateGhosts(dt){
+    const safe = playerIsSafe();
+    for(const g of ghostSpiders){
+      if(g.zapped) continue;
+
+      const dx = posX - g.x;
+      const dy = posY - g.y;
+      const d  = Math.hypot(dx, dy) || 1;
+
+      let nx = g.x + (dx/d) * GHOST_SPEED * dt;
+      let ny = g.y + (dy/d) * GHOST_SPEED * dt;
+
+      const cl = clampOutsideOasis(nx, ny, 0.00);
+      nx = cl.x; ny = cl.y;
+
+      if(safe){
+        nx = g.x + (nx - g.x) * 0.35;
+        ny = g.y + (ny - g.y) * 0.35;
+      }
+
+      if(!isWall(nx, g.y)) g.x = nx;
+      if(!isWall(g.x, ny)) g.y = ny;
+    }
+  }
+
+  function updateLamb(dt){
+    lamb.ang += rand(-LAMB_TURN_RATE, LAMB_TURN_RATE) * dt;
+    const vx = Math.cos(lamb.ang) * lamb.speed;
+    const vy = Math.sin(lamb.ang) * lamb.speed;
+
+    let nx = lamb.x + vx*dt;
+    let ny = lamb.y + vy*dt;
+
+    if(nx < 1.05 || nx > mapW-1.05){ lamb.ang = Math.PI - lamb.ang; nx = clamp(nx, 1.05, mapW-1.05); }
+    if(ny < 1.05 || ny > mapH-1.05){ lamb.ang = -lamb.ang;          ny = clamp(ny, 1.05, mapH-1.05); }
+
+    const cl = clampOutsideOasis(nx, ny, 0.05);
+    nx = cl.x; ny = cl.y;
+
+    if(!isWall(nx, lamb.y)) lamb.x = nx; else lamb.ang += Math.PI*0.5;
+    if(!isWall(lamb.x, ny)) lamb.y = ny; else lamb.ang += Math.PI*0.5;
+
+    if(Math.random() < 0.02) lamb.speed = rand(LAMB_SPEED_MIN, LAMB_SPEED_MAX);
+  }
+
+  // =========================
+  // RENDER LOOK (sky + floor)
+  // =========================
+  const SKY_ZENITH  = { r: 10,  g: 35,  b: 95  };
+  const SKY_HORIZON = { r: 185, g: 225, b: 255 };
+  const SKY_CURVE_POWER   = 0.55;
+  const SKY_GLOW_STRENGTH = 0.22;
+  const SKY_GLOW_FRAC     = 0.10;
+
+  const SKY_SPOT_ENABLED   = true;
+  const SKY_SPOT_X_FRAC    = 0.22;
+  const SKY_SPOT_Y_FRAC    = 0.18;
+  const SKY_SPOT_R_FRAC    = 0.10;
+  const SKY_SPOT_STRENGTH  = 0.85;
+
+  const HORIZON_BAND_PX = 28;
+  const HORIZON_COLOR = { r: 145, g: 165, b: 185 };
+  const HORIZON_HAZE_STRENGTH = 0.35;
+
+  const TEX_W = 64, TEX_H = 64;
+  const FORCE_FLOOR_TEX = 2;
+
+  function clamp255(v){ return v<0?0:(v>255?255:(v|0)); }
+  function setTexPixel(tex, x, y, r,g,b,a=255){
+    const i = (y*TEX_W + x)*4;
+    tex[i]=r; tex[i+1]=g; tex[i+2]=b; tex[i+3]=a;
+  }
+
+  const floorTex = Array.from({length: 3}, () => new Uint8ClampedArray(TEX_W*TEX_H*4));
+
+  // grass
+  (() => {
+    const tex = floorTex[0];
+    for(let y=0;y<TEX_H;y++){
+      for(let x=0;x<TEX_W;x++){
+        const noise = ((x*17 + y*29) % 31) - 15;
+        const blade = (((x ^ (y*3)) & 7) === 0) ? 18 : 0;
+        let r = 40 + noise - blade;
+        let g = 120 + noise + blade;
+        let b = 45 + noise - blade;
+        setTexPixel(tex, x,y, clamp255(r), clamp255(g), clamp255(b), 255);
+      }
+    }
+  })();
+
+  // dirt
+  (() => {
+    const tex = floorTex[1];
+    for(let y=0;y<TEX_H;y++){
+      for(let x=0;x<TEX_W;x++){
+        const noise = ((x*23 + y*11) % 27) - 13;
+        const peb = (((x+2*y) & 15) === 0) ? 25 : 0;
+        let r = 95 + noise + peb;
+        let g = 70 + noise;
+        let b = 45 + noise - peb;
+        setTexPixel(tex, x,y, clamp255(r), clamp255(g), clamp255(b), 255);
+      }
+    }
+  })();
+
+  // stone base color = (225,142,8)
+  (() => {
+    const tex = floorTex[2];
+    const STONE_R = 225, STONE_G = 142, STONE_B = 8;
+    const STONE_NOISE = 18;
+    const STONE_CRACK = 35;
+
+    for(let y=0;y<TEX_H;y++){
+      for(let x=0;x<TEX_W;x++){
+        const noise = (((x*13 + y*19) % 25) - 12) / 12;
+        const crack = ((x%16===0)||(y%16===0)) ? -1 : 0;
+
+        const r = STONE_R + noise*STONE_NOISE + crack*STONE_CRACK;
+        const g = STONE_G + noise*STONE_NOISE + crack*STONE_CRACK;
+        const b = STONE_B + noise*STONE_NOISE + crack*STONE_CRACK;
+
+        setTexPixel(tex, x,y, clamp255(r), clamp255(g), clamp255(b), 255);
+      }
+    }
+  })();
+
+  function floorTexForCell(mx, my){
+    if(FORCE_FLOOR_TEX !== null) return FORCE_FLOOR_TEX;
+    if(mx<0||my<0||mx>=mapW||my>=mapH) return 0;
+    const v = worldMap[my][mx];
+    if(v > 0) return 2;
+    return (((mx*7 + my*11) & 7) === 0) ? 1 : 0;
+  }
+
+  function drawSkyGradient(data, w, h){
+    const half = (h/2) | 0;
+    const glowWidthPx = Math.max(8, (half * SKY_GLOW_FRAC) | 0);
+
+    for(let y=0; y<half; y++){
+      const t = y / Math.max(1, half-1);
+      const u = Math.pow(t, SKY_CURVE_POWER);
+
+      let r = (SKY_ZENITH.r  + (SKY_HORIZON.r  - SKY_ZENITH.r)  * u) | 0;
+      let g = (SKY_ZENITH.g  + (SKY_HORIZON.g  - SKY_ZENITH.g)  * u) | 0;
+      let b = (SKY_ZENITH.b  + (SKY_HORIZON.b  - SKY_ZENITH.b)  * u) | 0;
+
+      const distToH = (half - 1) - y;
+      const glow = Math.max(0, 1 - distToH / glowWidthPx);
+      const glow2 = glow * glow;
+      r = (r + (255 - r) * glow2 * SKY_GLOW_STRENGTH) | 0;
+      g = (g + (255 - g) * glow2 * SKY_GLOW_STRENGTH) | 0;
+      b = (b + (255 - b) * glow2 * SKY_GLOW_STRENGTH) | 0;
+
+      const row = y*w*4;
+      const baseR = r, baseG = g, baseB = b;
+
+      for(let x=0; x<w; x++){
+        let rr = baseR, gg = baseG, bb = baseB;
+
+        if (SKY_SPOT_ENABLED){
+          const spotX = w * SKY_SPOT_X_FRAC;
+          const spotY = half * SKY_SPOT_Y_FRAC;
+          const spotR = half * SKY_SPOT_R_FRAC;
+          const dx = x - spotX;
+          const dy = y - spotY;
+          const d2 = dx*dx + dy*dy;
+          if (d2 < spotR*spotR){
+            const d = Math.sqrt(d2);
+            let k = 1 - (d / spotR);
+            k = k * k;
+            const amt = SKY_SPOT_STRENGTH * k;
+            rr = (rr + (255 - rr) * amt) | 0;
+            gg = (gg + (250 - gg) * amt) | 0;
+            bb = (bb + (230 - bb) * amt) | 0;
+          }
+        }
+
+        const i = row + x*4;
+        data[i]   = rr;
+        data[i+1] = gg;
+        data[i+2] = bb;
+        data[i+3] = 255;
+      }
+    }
+  }
+
+  function drawHorizonBand(data, w, h){
+    const half = (h/2) | 0;
+    const band = Math.max(6, Math.min(HORIZON_BAND_PX|0, half-2));
+    const baseY = half - 1;
+
+    for(let x=0; x<w; x++){
+      const t = x / Math.max(1, w-1);
+      const ridge = Math.floor(
+        (Math.sin(t * Math.PI * 2) * 0.35 +
+         Math.sin(t * Math.PI * 6 + 1.7) * 0.20) * (band * 0.55)
+      );
+      const topY = baseY - (band + ridge);
+
+      for(let y = Math.max(0, topY); y < baseY; y++){
+        const i = (y*w + x)*4;
+        data[i]   = HORIZON_COLOR.r;
+        data[i+1] = HORIZON_COLOR.g;
+        data[i+2] = HORIZON_COLOR.b;
+        data[i+3] = 255;
+      }
+
+      const hazeRows = Math.max(8, (band*0.6)|0);
+      for(let k=0; k<hazeRows; k++){
+        const y = baseY - 1 - k;
+        if(y < 0) break;
+        const a = (1 - k / Math.max(1, hazeRows-1));
+        const haze = a*a * HORIZON_HAZE_STRENGTH;
+
+        const i = (y*w + x)*4;
+        const r = data[i], g = data[i+1], b = data[i+2];
+        data[i]   = (r + (255 - r) * haze) | 0;
+        data[i+1] = (g + (255 - g) * haze) | 0;
+        data[i+2] = (b + (255 - b) * haze) | 0;
+      }
+    }
+  }
+
+  function drawFloorCasting(data, w, h){
+    const half = (h/2) | 0;
+
+    const rayDirX0 = dirX - planeX;
+    const rayDirY0 = dirY - planeY;
+    const rayDirX1 = dirX + planeX;
+    const rayDirY1 = dirY + planeY;
+
+    const camHeight = 0.5;
+
+    for(let y = half; y < h; y++){
+      const p = y - half;
+      if(p === 0) continue;
+
+      const rowDistance = (camHeight * h) / p;
+
+      const floorStepX = rowDistance * (rayDirX1 - rayDirX0) / w;
+      const floorStepY = rowDistance * (rayDirY1 - rayDirY0) / w;
+
+      let floorX = posX + rowDistance * rayDirX0;
+      let floorY = posY + rowDistance * rayDirY0;
+
+      const FOG_NEAR = 0.8;
+      const FOG_FAR  = 9.0;
+      const NEAR_DIM = 0.78;
+      const HAZE_R = 195, HAZE_G = 210, HAZE_B = 225;
+
+      let fog = (rowDistance - FOG_NEAR) / (FOG_FAR - FOG_NEAR);
+      fog = clamp(fog, 0, 1);
+      fog = fog * fog;
+
+      const yRow = y*w*4;
+      for(let x=0; x<w; x++){
+        const cellX = floorX | 0;
+        const cellY = floorY | 0;
+
+        const texId = floorTexForCell(cellX, cellY);
+        const tex = floorTex[texId];
+
+        const tx = ((TEX_W * (floorX - cellX)) | 0) & (TEX_W - 1);
+        const ty = ((TEX_H * (floorY - cellY)) | 0) & (TEX_H - 1);
+
+        const ti = (ty*TEX_W + tx) * 4;
+
+        let r = tex[ti], g = tex[ti+1], b = tex[ti+2];
+
+        r = (r * NEAR_DIM) | 0;
+        g = (g * NEAR_DIM) | 0;
+        b = (b * NEAR_DIM) | 0;
+
+        r = (r + (HAZE_R - r) * fog) | 0;
+        g = (g + (HAZE_G - g) * fog) | 0;
+        b = (b + (HAZE_B - b) * fog) | 0;
+
+        const i = yRow + x*4;
+        data[i]=r; data[i+1]=g; data[i+2]=b; data[i+3]=255;
+
+        floorX += floorStepX;
+        floorY += floorStepY;
+      }
+    }
+  }
+
+  // =========================
+  // SPRITE DRAW (billboard)
+  // =========================
+  function drawSprite(img, spriteX, spriteY, w, h, sizeW=1.0, sizeH=1.0, minDist=0.25){
+    if(!img.complete || img.naturalWidth <= 0) return;
+
+    const relX = spriteX - posX;
+    const relY = spriteY - posY;
+
+    const invDet = 1.0 / (planeX * dirY - dirX * planeY);
+    const transformX = invDet * ( dirY * relX - dirX * relY);
+    const transformY = invDet * (-planeY * relX + planeX * relY);
+
+    if(transformY <= minDist) return;
+
+    const screenX = (w / 2) * (1 + transformX / transformY);
+
+    const baseH = Math.abs((h / transformY));
+    const spriteH = baseH * sizeH;
+    const spriteW = baseH * sizeW;
+
+    const drawX = (screenX - spriteW / 2) | 0;
+    const drawY = ((h / 2) - spriteH / 2) | 0;
+
+    ctx.drawImage(img, drawX, drawY, spriteW, spriteH);
+  }
+
+  // =========================
+  // UI
+  // =========================
+  function drawHealthBar(){
+    const frac = Math.max(0, Math.min(1, health / MAX_HEALTH));
+    const x=HEALTH_BAR_X, y=HEALTH_BAR_Y, bw=HEALTH_BAR_W, bh=HEALTH_BAR_H;
+
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.fillRect(x-6, y-6, bw+12, bh+12);
+
+    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.fillRect(x, y, bw, bh);
+
+    ctx.fillStyle = "rgba(255,0,0,0.95)";
+    ctx.fillRect(x, y, Math.floor(bw*frac), bh);
+
+    ctx.font = "12px system-ui";
+    ctx.textAlign="left";
+    ctx.textBaseline="bottom";
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillText(`HEALTH: ${Math.round(health)} / ${MAX_HEALTH}`, x, y-8);
+  }
+
+  function drawCaughtOverlay(w,h, nowMs){
+    if(nowMs > caughtUntil) return;
+    ctx.fillStyle="rgba(0,0,0,0.25)";
+    ctx.fillRect(0,0,w,h);
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillStyle="rgba(255,255,255,0.95)";
+    ctx.font="bold 44px system-ui";
+    ctx.fillText("HIT!", w/2, h/2);
+  }
+
+  function drawTreasureMessages(w,h, nowMs){
+    const showCarryMsg = hasTreasure || (nowMs < gotTreasureUntil);
+    const showDeliverMsg = (nowMs < deliveredUntil);
+
+    if(showCarryMsg){
+      ctx.fillStyle="rgba(0,0,0,0.35)";
+      ctx.fillRect(0,h-70,w,70);
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,0.98)";
+      ctx.font="bold 26px system-ui";
+      ctx.fillText("YOU GOT TREASURE, GO TO THE FORT", w/2, h-38);
+    }
+
+    if(showDeliverMsg){
+      ctx.fillStyle="rgba(0,0,0,0.40)";
+      ctx.fillRect(0,h-120,w,50);
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(0,255,255,0.98)";
+      ctx.font="bold 26px system-ui";
+      ctx.fillText("TREASURE AT FORT — STUN GUN READY!", w/2, h-95);
+    }
+  }
+
+  function drawGameOver(w,h){
+    if(!gameOver) return;
+    ctx.fillStyle="rgba(0,0,0,0.45)";
+    ctx.fillRect(0,0,w,h);
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillStyle="rgba(255,80,80,0.98)";
+    ctx.font="bold 58px system-ui";
+    ctx.fillText("GAME OVER", w/2, h/2-10);
+    ctx.fillStyle="rgba(255,255,255,0.92)";
+    ctx.font="18px system-ui";
+    ctx.fillText("Press R to restart this segment", w/2, h/2+44);
+  }
+
+  function drawVictory(w,h){
+    if(!allSpidersZapped()) return;
+    ctx.fillStyle="rgba(0,0,0,0.35)";
+    ctx.fillRect(0,h-80,w,80);
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillStyle="rgba(255,255,255,0.98)";
+    ctx.font="bold 28px system-ui";
+    ctx.fillText("AREA CLEARED! Going to the forest…", w/2, h-40);
+  }
+
+  function drawMinimap(){
+    const w = c.width;
+    const scale = 12;
+    const pad = 14;
+    const mmW = mapW * scale;
+    const mmH = mapH * scale;
+    const ox = w - mmW - pad;
+    const oy = pad;
+
+    ctx.fillStyle="rgba(0,0,0,0.35)";
+    ctx.fillRect(ox-6, oy-6, mmW+12, mmH+12);
+
+    for(let y=0;y<mapH;y++){
+      for(let x=0;x<mapW;x++){
+        ctx.fillStyle = worldMap[y][x] ? "rgba(220,220,220,0.95)" : "rgba(30,30,30,0.9)";
+        ctx.fillRect(ox + x*scale, oy + y*scale, scale-1, scale-1);
+      }
+    }
+
+    const oxp = ox + OASIS_X*scale, oyp = oy + OASIS_Y*scale;
+    ctx.fillStyle="rgba(0,255,255,0.95)";
+    ctx.beginPath(); ctx.arc(oxp, oyp, 4, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle="rgba(0,255,255,0.35)";
+    ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(oxp, oyp, SAFE_RADIUS*scale, 0, Math.PI*2); ctx.stroke();
+
+    if(!treasureDelivered && !hasTreasure){
+      ctx.fillStyle="rgba(255,215,0,0.95)";
+      ctx.beginPath(); ctx.arc(ox + TREASURE_X*scale, oy + TREASURE_Y*scale, 4, 0, Math.PI*2); ctx.fill();
+    }
+
+    const px = ox + posX*scale, py = oy + posY*scale;
+    ctx.fillStyle="red";
+    ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle="red";
+    ctx.beginPath(); ctx.moveTo(px,py); ctx.lineTo(px+dirX*14, py+dirY*14); ctx.stroke();
+
+    ctx.fillStyle="rgba(255,255,0,0.95)";
+    if(!mainSpider.zapped){ ctx.beginPath(); ctx.arc(ox+mainSpider.x*scale, oy+mainSpider.y*scale, 4, 0, Math.PI*2); ctx.fill(); }
+    if(!guardSpider.zapped){ ctx.beginPath(); ctx.arc(ox+guardSpider.x*scale, oy+guardSpider.y*scale, 3, 0, Math.PI*2); ctx.fill(); }
+
+    ctx.fillStyle="rgba(255,235,0,0.55)";
+    for(const d of decoySpiders){
+      if(d.zapped) continue;
+      ctx.beginPath(); ctx.arc(ox+d.x*scale, oy+d.y*scale, 3, 0, Math.PI*2); ctx.fill();
+    }
+
+    ctx.fillStyle="rgba(255,170,0,0.75)";
+    for(const g of ghostSpiders){
+      if(g.zapped) continue;
+      ctx.beginPath(); ctx.arc(ox+g.x*scale, oy+g.y*scale, 3, 0, Math.PI*2); ctx.fill();
+    }
+  }
+
+  // =========================
+  // RESET (R)
+  // =========================
+  function resetAll(){
+    health = MAX_HEALTH;
+    gameOver = false;
+
+    hasTreasure = false;
+    treasureDelivered = false;
+    hasStunGun = false;
+
+    gotTreasureUntil = 0;
+    deliveredUntil = 0;
+
+    nextZapAt = 0;
+    playerFrozenUntil = 0;
+    caughtUntil = 0;
+    caughtActive = false;
+
+    posX = 3.5; posY = 3.5;
+    dirX = -1; dirY = 0;
+    planeX = 0; planeY = 0.66;
+
+    mainSpider.x = 8.5; mainSpider.y = 5.5; mainSpider.zapped = false;
+
+    guardSpider.angle = 0;
+    guardSpider.x = TREASURE_X;
+    guardSpider.y = TREASURE_Y;
+    guardSpider.zapped = false;
+
+    for(const d of decoySpiders){
+      const p = randomOpenSpot(true);
+      d.x=p.x; d.y=p.y;
+      d.ang=rand(0,Math.PI*2);
+      d.speed=rand(DECOY_SPEED_MIN, DECOY_SPEED_MAX);
+      d.zapped=false;
+    }
+    for(const g of ghostSpiders){
+      const p = randomOpenSpot(true);
+      g.x=p.x; g.y=p.y;
+      g.zapped=false;
+    }
+    {
+      const p = randomOpenSpot(true);
+      lamb.x=p.x; lamb.y=p.y;
+      lamb.ang=rand(0,Math.PI*2);
+      lamb.speed=rand(LAMB_SPEED_MIN, LAMB_SPEED_MAX);
+    }
+  }
+
+  // =========================
+  // KEY HANDLERS
+  // =========================
+  addEventListener("keydown", (e) => {
+    if(BLOCKED.has(e.code)) e.preventDefault();
+    keys.add(e.code);
+
+    if(e.code === "KeyR") resetAll();
+    if(e.code === ZAP_KEY) tryZap(performance.now());
+  }, {passive:false});
+
+  addEventListener("keyup", (e) => {
+    if(BLOCKED.has(e.code)) e.preventDefault();
+    keys.delete(e.code);
+  }, {passive:false});
+
+  // =========================
+  // MAIN LOOP
+  // =========================
+  let last = performance.now();
+  function frame(now){
+    const dt = Math.min(0.05, (now-last)/1000);
+    last = now;
+
+    const moveSpeed = dt * 3.0;
+    const rotSpeed  = dt * 2.0;
+
+    const frozen = (now < playerFrozenUntil) || gameOver;
+    if(!frozen && caughtActive) caughtActive = false;
+
+    if(!frozen){
+      if(keys.has("ArrowUp")){
+        const nx = posX + dirX * moveSpeed;
+        const ny = posY + dirY * moveSpeed;
+        if(!isWall(nx, posY)) posX = nx;
+        if(!isWall(posX, ny)) posY = ny;
+      }
+      if(keys.has("ArrowDown")){
+        const nx = posX - dirX * moveSpeed;
+        const ny = posY - dirY * moveSpeed;
+        if(!isWall(nx, posY)) posX = nx;
+        if(!isWall(posX, ny)) posY = ny;
+      }
+    }
+
+    if(!gameOver){
+      if(keys.has("ArrowLeft")){
+        const cos = Math.cos(rotSpeed), sin = Math.sin(rotSpeed);
+        const oldDirX = dirX;
+        dirX = dirX * cos - dirY * sin;
+        dirY = oldDirX * sin + dirY * cos;
+        const oldPlaneX = planeX;
+        planeX = planeX * cos - planeY * sin;
+        planeY = oldPlaneX * sin + planeY * cos;
+      }
+      if(keys.has("ArrowRight")){
+        const cos = Math.cos(-rotSpeed), sin = Math.sin(-rotSpeed);
+        const oldDirX = dirX;
+        dirX = dirX * cos - dirY * sin;
+        dirY = oldDirX * sin + dirY * cos;
+        const oldPlaneX = planeX;
+        planeX = planeX * cos - planeY * sin;
+        planeY = oldPlaneX * sin + planeY * cos;
+      }
+    }
+
+    updateTreasureState(now);
+    updateGuardSpider(dt, now);
+    updateMainSpider(dt, now);
+    updateDecoys(dt);
+    updateGhosts(dt);
+    updateLamb(dt);
+
+    const w = c.width, h = c.height;
+    const img = ctx.createImageData(w, h);
+    const data = img.data;
+
+    drawSkyGradient(data, w, h);
+    drawHorizonBand(data, w, h);
+    drawFloorCasting(data, w, h);
+    ctx.putImageData(img, 0, 0);
+
+    // sprites
+    drawSprite(oasisImg, OASIS_X, OASIS_Y, w, h, OASIS_W, OASIS_H, 0.35);
+
+    if(!hasTreasure && !treasureDelivered){
+      drawSprite(treasureImg, TREASURE_X, TREASURE_Y, w, h, TREASURE_W, TREASURE_H, 0.25);
+    }
+
+    drawSprite(lambImg, lamb.x, lamb.y, w, h, LAMB_SIZE, LAMB_SIZE, 0.22);
+
+    for(const d of decoySpiders){
+      if(d.zapped) continue;
+      drawSprite(spiderImg, d.x, d.y, w, h, DECOY_SIZE, DECOY_SIZE, 0.22);
+    }
+
+    for(const g of ghostSpiders){
+      if(g.zapped) continue;
+      drawSprite(spiderImg, g.x, g.y, w, h, GHOST_SIZE, GHOST_SIZE, 0.22);
+    }
+
+    if(!guardSpider.zapped){
+      drawSprite(spiderImg, guardSpider.x, guardSpider.y, w, h, 0.80, 0.80, 0.25);
+    }
+    if(!mainSpider.zapped){
+      drawSprite(spiderImg, mainSpider.x, mainSpider.y, w, h, 0.85, 0.85, 0.25);
+    }
+
+    // UI
+    drawMinimap();
+    drawHealthBar();
+    drawCaughtOverlay(w,h, now);
+
+    if(playerIsSafe()){
+      ctx.fillStyle="rgba(0,0,0,0.30)";
+      ctx.fillRect(0, h-60, w, 60);
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(0,255,255,0.95)";
+      ctx.font="bold 22px system-ui";
+      ctx.fillText("SAFE ZONE — spiders can’t hurt you here", w/2, h-30);
+    }
+
+    drawTreasureMessages(w,h, now);
+    drawVictory(w,h);
+    drawGameOver(w,h);
+
+    requestAnimationFrame(frame);
+  }
+
+  resetAll();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

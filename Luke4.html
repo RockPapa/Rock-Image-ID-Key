@@ -1,0 +1,948 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Raycaster Maze — Yellow Walls + Robots + Health + Lambchop + Teleport</title>
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#000; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; }
+  #wrap { position:relative; width:100vw; height:100vh; }
+  canvas { display:block; width:100vw; height:100vh; image-rendering: pixelated; }
+
+  #hud {
+    position:absolute; left:12px; top:54px; color:#fff; font-size:14px;
+    background:rgba(0,0,0,0.45); padding:10px 12px; border-radius:10px;
+    max-width: 520px;
+  }
+  #hud b { color:#9ff; }
+
+  /* ===== HEALTH BAR ===== */
+  #healthWrap{
+    position:absolute;
+    left:12px;
+    top:110px;
+    width:240px;
+    background:rgba(0,0,0,0.45);
+    border-radius:10px;
+    padding:8px 10px;
+    color:#fff;
+    font-size:13px;
+    user-select:none;
+  }
+  #healthRow{ display:flex; align-items:center; gap:10px; }
+  #healthLabel b{ color:#9ff; }
+  #healthOuter{
+    flex:1;
+    height:14px;
+    border-radius:999px;
+    background:rgba(255,255,255,0.18);
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,0.25);
+  }
+  #healthInner{
+    height:100%;
+    width:100%;
+    background:linear-gradient(90deg, #3cff7a, #ffd43b, #ff4b4b);
+    transform-origin:left center;
+  }
+  #healthNum{
+    width:44px;
+    text-align:right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  #mini {
+    position:absolute; right:12px; top:12px;
+    width:180px; height:180px;
+    border:2px solid rgba(255,255,255,0.35);
+    background:rgba(0,0,0,0.35);
+    border-radius:10px;
+    overflow:hidden;
+  }
+  #mini canvas { width:100%; height:100%; }
+
+  #msg {
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    color:#fff; background:rgba(0,0,0,0.70); padding:14px 16px; border-radius:12px;
+    display:none; text-align:center;
+    min-width: 280px;
+  }
+  #msg button{
+    margin-top:10px; padding:8px 12px; border-radius:10px; border:0; cursor:pointer;
+  }
+
+  /* ===== TELEPORT FADE ===== */
+  #fade {
+    position:absolute; inset:0;
+    background:#000;
+    opacity:0;
+    pointer-events:none;
+    transition: opacity 350ms ease;
+  }
+  #fade.on { opacity:1; }
+
+  /* ===== iPad / Touch Controls ===== */
+  #ctlToggle{
+    position:absolute; left:12px; top:12px;
+    z-index:9999;
+    color:#fff; font-size:14px;
+    background:rgba(0,0,0,0.55);
+    border:1px solid rgba(255,255,255,0.22);
+    padding:8px 10px; border-radius:12px;
+    user-select:none;
+  }
+  #ctlToggle:active{ transform: translateY(1px); }
+
+  #touchUI{
+    position:absolute; inset:0;
+    z-index:9998;
+    pointer-events:none; /* buttons will re-enable */
+  }
+  .pad{
+    position:absolute;
+    background:rgba(0,0,0,0.35);
+    border:1px solid rgba(255,255,255,0.16);
+    border-radius:18px;
+    padding:10px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    pointer-events:none;
+  }
+  .pad .btn{
+    pointer-events:auto;
+    display:flex; align-items:center; justify-content:center;
+    width:72px; height:72px;
+    border-radius:18px;
+    border:1px solid rgba(255,255,255,0.16);
+    background:rgba(0,0,0,0.25);
+    color:#fff;
+    font-size:18px;
+    user-select:none;
+    touch-action:none;
+  }
+  .pad .btn:active{ background:rgba(255,255,255,0.10); }
+
+  #padMove{ left:14px; bottom:14px; width:250px; height:190px; }
+  #padMove .grid{
+    display:grid;
+    grid-template-columns: 72px 72px 72px;
+    grid-template-rows: 72px 72px;
+    gap:12px;
+    justify-content:start;
+    align-content:start;
+    pointer-events:none;
+  }
+  #padMove .grid > *{ pointer-events:auto; }
+
+  #padTurn{ right:14px; bottom:14px; width:260px; height:190px; }
+  #padTurn .row{
+    display:flex; gap:12px;
+    pointer-events:none;
+  }
+  #padTurn .row > *{ pointer-events:auto; }
+  #padTurn .stack{
+    margin-top:12px;
+    display:flex; gap:12px; flex-wrap:wrap;
+    pointer-events:none;
+  }
+  #padTurn .stack > *{ pointer-events:auto; }
+
+  .wide{ width:156px !important; }
+
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+
+  <div id="hud">
+    <div><b>Raycaster Maze</b></div>
+    <div>Move: <b>WASD</b> or <b>Arrows</b> &nbsp;|&nbsp; Run: <b>Shift</b></div>
+    <div>Turn: <b>A/D</b> or <b>←/→</b> &nbsp;|&nbsp; Mouse look: <b>Click</b></div>
+    <div>Reset: <b>R</b> &nbsp;|&nbsp; Lambchop helps automatically 🐑</div>
+    <div>Exit = Shed Portal 🚪➡️</div>
+  </div>
+
+  <div id="healthWrap" aria-label="Health bar">
+    <div id="healthRow">
+      <div id="healthLabel"><b>Health</b></div>
+      <div id="healthOuter"><div id="healthInner"></div></div>
+      <div id="healthNum">100</div>
+    </div>
+  </div>
+
+  <div id="mini"><canvas id="m"></canvas></div>
+
+  <div id="msg">
+    <div id="msgText">You escaped!</div>
+    <button id="btn">Play again</button>
+  </div>
+
+
+  <!-- ===== iPad / Touch Controls ===== -->
+  <div id="ctlToggle" role="button" aria-label="Toggle touch controls">📱 Controls: OFF</div>
+
+  <div id="touchUI" aria-hidden="false">
+    <div id="padMove" class="pad" aria-label="Move controls">
+      <div class="grid">
+        <div></div>
+        <div class="btn" data-hold="w">▲</div>
+        <div></div>
+
+        <div class="btn" data-hold="a">⟲</div>
+        <div class="btn" data-hold="s">▼</div>
+        <div class="btn" data-hold="d">⟳</div>
+      </div>
+    </div>
+
+    <div id="padTurn" class="pad" aria-label="Action controls">
+      <div class="row">
+        <div class="btn" data-hold="arrowleft">TURN ⟲</div>
+        <div class="btn" data-hold="arrowright">TURN ⟳</div>
+      </div>
+      <div class="stack">
+        <div class="btn wide" data-tap="shift">RUN</div>
+        <div class="btn wide" data-tap="h">HUD</div>
+        <div class="btn wide" data-tap="r">RESET</div>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="fade"></div>
+</div>
+
+<script>
+(() => {
+  // =========================
+  // LUKE TWEAK ZONE
+  // =========================
+  const SETTINGS = {
+    fov: Math.PI / 3,
+    maxDepth: 24,
+    moveSpeed: 2.6,
+    turnSpeed: 2.4,
+    runMultiplier: 1.8,
+    wallHeight: 1.0,
+    renderScale: 1.0,
+    showMinimap: true,
+
+    // Yellow walls
+    wallYellow: { r: 255, g: 220, b: 40 },
+    shadeMin: 0.18,
+    distClamp: 0.08,
+
+    // Robots
+    robotsEnabled: true,
+    robotCount: 4,
+    robotSpeed: 1.35,
+    robotChaseRange: 999,
+    robotRadius: 0.18,
+    robotSpriteScale: 0.85,
+    robotBump: 0.22,
+
+    // Health
+    maxHealth: 100,
+    robotTouchDPS: 35,
+    regenPerSecond: 3,
+
+    // Lambchop (Hero)
+    lambEnabled: true,
+    lambSpeed: 2.2,
+    lambRadius: 0.18,
+    lambSpriteScale: 0.95,
+    lambKillDistance: 0.33,
+    lambHealsOnKill: 10,
+
+    // ✅ TELEPORT TARGET (set to "Banister.html" if that’s your exact filename)
+    teleportURL: "Banister.html",
+    teleportDelayMs:0
+  };
+
+  // =========================
+  // MAP (0 empty, 1 wall, 2 exit/shed portal)
+  // =========================
+  const MAP = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1],
+    [1,0,1,1,1,0,1,0,1,1,1,1,1,1,0,1],
+    [1,0,1,0,0,0,0,0,1,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,0,1,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,1,0,1,0,0,0,0,1],
+    [1,1,1,0,1,0,1,1,1,0,1,0,1,1,0,1],
+    [1,0,0,0,0,0,0,0,0,0,1,0,0,1,0,1],
+    [1,0,1,1,1,1,1,1,1,0,1,1,0,1,0,1],
+    [1,0,1,0,0,0,0,0,1,0,0,0,0,1,0,1],
+    [1,0,1,0,1,1,1,0,1,1,1,1,0,1,0,1],
+    [1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+    [1,0,1,1,1,0,1,1,1,1,0,1,1,1,0,1],
+    [1,0,0,0,0,0,1,0,0,0,0,0,0,1,2,1],
+    [1,0,1,1,1,1,1,0,1,1,1,1,0,1,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  ];
+  const MAP_W = MAP[0].length;
+  const MAP_H = MAP.length;
+
+  const START = { x: 1.5, y: 1.5, a: 0.0 };
+
+  // =========================
+  // CANVASES
+  // =========================
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d', { alpha:false });
+
+  const miniWrap = document.getElementById('mini');
+  const mini = document.getElementById('m');
+  const mctx = mini.getContext('2d');
+
+  const msg = document.getElementById('msg');
+  const msgText = document.getElementById('msgText');
+  const btn = document.getElementById('btn');
+
+  const fade = document.getElementById('fade');
+
+
+  const hud = document.getElementById('hud');
+  let hudShown = true;
+  function setHudShown(v){
+    hudShown = !!v;
+    hud.style.display = hudShown ? 'block' : 'none';
+  }
+  function toggleHud(){ setHudShown(!hudShown); }
+
+
+  // Health UI
+  const healthInner = document.getElementById('healthInner');
+  const healthNum = document.getElementById('healthNum');
+
+  let VIEW_W = 0, VIEW_H = 0, DPR = 1;
+
+  function resize() {
+    DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    VIEW_W = Math.max(1, Math.floor(window.innerWidth  * SETTINGS.renderScale));
+    VIEW_H = Math.max(1, Math.floor(window.innerHeight * SETTINGS.renderScale));
+
+    canvas.width  = Math.floor(VIEW_W * DPR);
+    canvas.height = Math.floor(VIEW_H * DPR);
+    canvas.style.width  = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+
+    mini.width  = 180 * DPR;
+    mini.height = 180 * DPR;
+    mctx.setTransform(DPR,0,0,DPR,0,0);
+
+    miniWrap.style.display = SETTINGS.showMinimap ? 'block' : 'none';
+  }
+  window.addEventListener('resize', resize);
+
+  // =========================
+  // INPUT
+  // =========================
+  const keys = Object.create(null);
+  window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    keys[k] = true;
+    if (k === 'r') reset();
+    if (k === 'h') toggleHud();
+  });
+  window.addEventListener('keyup', (e) => keys[e.key.toLowerCase()] = false);
+
+  // ===== Touch controls (iPad) =====
+  const touchKeys = Object.create(null);
+  const ctlToggle = document.getElementById('ctlToggle');
+  const touchUI = document.getElementById('touchUI');
+
+  const isTouch = (('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0);
+
+  let controlsEnabled = false;
+  try {
+    const saved = localStorage.getItem('luke4_controls');
+    if (saved === 'on') controlsEnabled = true;
+    else if (saved === 'off') controlsEnabled = false;
+    else controlsEnabled = isTouch; // default: ON for touch devices
+  } catch { controlsEnabled = isTouch; }
+
+  function setControlsEnabled(on){
+    controlsEnabled = !!on;
+    // Keep the toggle visible always; hide/show the button pads only.
+    touchUI.style.display = controlsEnabled ? 'block' : 'none';
+    ctlToggle.textContent = '📱 Controls: ' + (controlsEnabled ? 'ON' : 'OFF');
+    try { localStorage.setItem('luke4_controls', controlsEnabled ? 'on' : 'off'); } catch {}
+  }
+
+  ctlToggle.addEventListener('click', () => setControlsEnabled(!controlsEnabled));
+  ctlToggle.addEventListener('touchend', (e) => { e.preventDefault(); setControlsEnabled(!controlsEnabled); }, {passive:false});
+
+  function setTouchKey(k, down){ touchKeys[k] = !!down; }
+
+  function bindHoldButtons(){
+    const holdBtns = document.querySelectorAll('[data-hold]');
+    holdBtns.forEach(btn => {
+      const k = btn.getAttribute('data-hold');
+      const down = (e) => { e.preventDefault(); setTouchKey(k, true); };
+      const up   = (e) => { e.preventDefault(); setTouchKey(k, false); };
+      btn.addEventListener('pointerdown', down);
+      btn.addEventListener('pointerup', up);
+      btn.addEventListener('pointercancel', up);
+      btn.addEventListener('pointerleave', up);
+    });
+
+    const tapBtns = document.querySelectorAll('[data-tap]');
+    tapBtns.forEach(btn => {
+      const k = btn.getAttribute('data-tap');
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (k === 'r') reset();
+        else if (k === 'h') toggleHud();
+        else if (k === 'shift') { setTouchKey('shift', true); setTimeout(()=>setTouchKey('shift', false), 220); }
+      });
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        if (k === 'r') reset();
+        else if (k === 'h') toggleHud();
+        else if (k === 'shift') { setTouchKey('shift', true); setTimeout(()=>setTouchKey('shift', false), 220); }
+      }, {passive:false});
+    });
+  }
+
+  bindHoldButtons();
+  setControlsEnabled(controlsEnabled);
+
+  function down(k){ return !!(keys[k] || (controlsEnabled && touchKeys[k])); }
+
+
+  let mouseLook = false;
+  canvas.addEventListener('click', async () => {
+    try { await canvas.requestPointerLock(); } catch {}
+  });
+  document.addEventListener('pointerlockchange', () => {
+    mouseLook = (document.pointerLockElement === canvas);
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!mouseLook) return;
+    player.a += e.movementX * 0.0025;
+    normalizeAngle();
+  });
+
+  // =========================
+  // GAME STATE
+  // =========================
+  const player = { x: START.x, y: START.y, a: START.a };
+  let gameState = "PLAY"; // PLAY | WIN | LOSE | TELEPORTING
+  let health = SETTINGS.maxHealth;
+
+  function setHealth(v){
+    health = Math.max(0, Math.min(SETTINGS.maxHealth, v));
+    const pct = health / SETTINGS.maxHealth;
+    healthInner.style.width = (pct * 100).toFixed(1) + "%";
+    healthNum.textContent = String(Math.round(health));
+  }
+
+  function normalizeAngle(){
+    while (player.a < -Math.PI) player.a += Math.PI*2;
+    while (player.a >  Math.PI) player.a -= Math.PI*2;
+  }
+
+  function cellAt(x, y) {
+    const cx = Math.floor(x);
+    const cy = Math.floor(y);
+    if (cx < 0 || cy < 0 || cx >= MAP_W || cy >= MAP_H) return 1;
+    return MAP[cy][cx];
+  }
+  function isWall(x, y) { return cellAt(x,y) === 1; }
+  function isExit(x, y) { return cellAt(x,y) === 2; }
+
+  // Player collision
+  const PR = 0.18;
+  function tryMove(nx, ny) {
+    if (!isWall(nx + PR, player.y) && !isWall(nx - PR, player.y) && !isWall(nx, player.y + PR) && !isWall(nx, player.y - PR)) {
+      player.x = nx;
+    }
+    if (!isWall(player.x + PR, ny) && !isWall(player.x - PR, ny) && !isWall(player.x, ny + PR) && !isWall(player.x, ny - PR)) {
+      player.y = ny;
+    }
+  }
+
+  // =========================
+  // ASSETS
+  // =========================
+  const robotImgs = [ new Image(), new Image(), new Image(), new Image() ];
+  robotImgs[0].src = "images/robot1.png";
+  robotImgs[1].src = "images/robot2.png";
+  robotImgs[2].src = "images/robot3.png";
+  robotImgs[3].src = "images/robot4.png";
+
+  const lambImg = new Image();
+  lambImg.src = "images/Lambchop.png";
+
+  // =========================
+  // HELPERS
+  // =========================
+  function randInt(a,b){ return (a + Math.floor(Math.random()*(b-a+1))); }
+
+  function findEmptyCellFarFrom(x0, y0, minDistTiles=4) {
+    for (let tries = 0; tries < 900; tries++) {
+      const x = randInt(1, MAP_W-2) + 0.5;
+      const y = randInt(1, MAP_H-2) + 0.5;
+      if (cellAt(x,y) !== 0) continue;
+      if (Math.hypot(x-x0, y-y0) < minDistTiles) continue;
+      return {x,y};
+    }
+    for (let yy=1; yy<MAP_H-1; yy++) for (let xx=1; xx<MAP_W-1; xx++){
+      if (MAP[yy][xx]===0) return {x:xx+0.5,y:yy+0.5};
+    }
+    return {x:2.5,y:2.5};
+  }
+
+  function canMoveCircle(nx, ny, r) {
+    return (
+      !isWall(nx + r, ny) &&
+      !isWall(nx - r, ny) &&
+      !isWall(nx, ny + r) &&
+      !isWall(nx, ny - r)
+    );
+  }
+
+  function moveWithSlide(obj, nx, ny) {
+    if (canMoveCircle(nx, obj.y, obj.r)) obj.x = nx;
+    if (canMoveCircle(obj.x, ny, obj.r)) obj.y = ny;
+  }
+
+  function angleDiff(a,b){
+    let d = a - b;
+    while (d < -Math.PI) d += Math.PI*2;
+    while (d >  Math.PI) d -= Math.PI*2;
+    return d;
+  }
+
+  // =========================
+  // ROBOTS
+  // =========================
+  const robots = [];
+
+  function spawnRobots() {
+    robots.length = 0;
+    if (!SETTINGS.robotsEnabled) return;
+
+    const used = [];
+    for (let i=0;i<SETTINGS.robotCount;i++){
+      const p = findEmptyCellFarFrom(player.x, player.y, 5);
+
+      let px = p.x, py = p.y;
+      for (const u of used) {
+        const d = Math.hypot(px-u.x, py-u.y);
+        if (d < 2.0) { px += 1.0; py += 0.0; }
+      }
+      used.push({x:px,y:py});
+
+      robots.push({
+        x: px, y: py,
+        r: SETTINGS.robotRadius,
+        img: robotImgs[i % robotImgs.length]
+      });
+    }
+  }
+
+  function updateRobots(dt) {
+    if (!SETTINGS.robotsEnabled) return;
+    if (gameState !== "PLAY") return;
+
+    const speed = SETTINGS.robotSpeed;
+
+    for (const rb of robots) {
+      const dx = player.x - rb.x;
+      const dy = player.y - rb.y;
+      const dist = Math.hypot(dx,dy);
+      if (dist > SETTINGS.robotChaseRange) continue;
+
+      if (dist > 0.0001) {
+        const vx = (dx / dist) * speed;
+        const vy = (dy / dist) * speed;
+        moveWithSlide(rb, rb.x + vx*dt, rb.y + vy*dt);
+      }
+    }
+
+    // push robots apart
+    for (let i=0;i<robots.length;i++){
+      for (let j=i+1;j<robots.length;j++){
+        const a = robots[i], b = robots[j];
+        const dx = b.x-a.x, dy = b.y-a.y;
+        const d = Math.hypot(dx,dy);
+        const minD = (a.r + b.r) + 0.05;
+        if (d > 0.0001 && d < minD) {
+          const push = (minD - d) * SETTINGS.robotBump;
+          const ux = dx/d, uy = dy/d;
+          const ax = a.x - ux*push, ay = a.y - uy*push;
+          const bx = b.x + ux*push, by = b.y + uy*push;
+          if (canMoveCircle(ax, ay, a.r)) { a.x = ax; a.y = ay; }
+          if (canMoveCircle(bx, by, b.r)) { b.x = bx; b.y = by; }
+        }
+      }
+    }
+  }
+
+  // =========================
+  // LAMBCHOP (HERO)
+  // =========================
+  const lamb = { x:2.5, y:2.5, r: SETTINGS.lambRadius, img:lambImg, alive:true };
+
+  function spawnLamb() {
+    if (!SETTINGS.lambEnabled) { lamb.alive = false; return; }
+    const p = findEmptyCellFarFrom(player.x, player.y, 3);
+    lamb.x = p.x; lamb.y = p.y;
+    lamb.r = SETTINGS.lambRadius;
+    lamb.alive = true;
+  }
+
+  function nearestRobotIndex() {
+    let best = -1, bestD = Infinity;
+    for (let i=0;i<robots.length;i++){
+      const rb = robots[i];
+      const d = Math.hypot(rb.x - lamb.x, rb.y - lamb.y);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return best;
+  }
+
+  function updateLamb(dt) {
+    if (!SETTINGS.lambEnabled || !lamb.alive) return;
+    if (gameState !== "PLAY") return;
+
+    if (robots.length === 0) {
+      const dx = player.x - lamb.x;
+      const dy = player.y - lamb.y;
+      const dist = Math.hypot(dx,dy);
+      if (dist > 1.2) {
+        const vx = (dx / dist) * SETTINGS.lambSpeed * 0.7;
+        const vy = (dy / dist) * SETTINGS.lambSpeed * 0.7;
+        moveWithSlide(lamb, lamb.x + vx*dt, lamb.y + vy*dt);
+      }
+      return;
+    }
+
+    const idx = nearestRobotIndex();
+    if (idx < 0) return;
+    const target = robots[idx];
+
+    const dx = target.x - lamb.x;
+    const dy = target.y - lamb.y;
+    const dist = Math.hypot(dx,dy);
+
+    if (dist > 0.0001) {
+      const vx = (dx / dist) * SETTINGS.lambSpeed;
+      const vy = (dy / dist) * SETTINGS.lambSpeed;
+      moveWithSlide(lamb, lamb.x + vx*dt, lamb.y + vy*dt);
+    }
+
+    if (Math.hypot(target.x - lamb.x, target.y - lamb.y) <= SETTINGS.lambKillDistance) {
+      robots.splice(idx, 1);
+      if (SETTINGS.lambHealsOnKill > 0) setHealth(health + SETTINGS.lambHealsOnKill);
+    }
+  }
+
+  // =========================
+  // HEALTH
+  // =========================
+  function updateHealth(dt){
+    if (gameState !== "PLAY") return;
+
+    let touching = false;
+    for (const rb of robots) {
+      const d = Math.hypot(player.x - rb.x, player.y - rb.y);
+      if (d < (PR + rb.r) * 0.95) { touching = true; break; }
+    }
+
+    if (touching) {
+      setHealth(health - SETTINGS.robotTouchDPS * dt);
+      if (health <= 0) {
+        gameState = "LOSE";
+        msgText.textContent = "Game Over — Robots got you! 🤖💥";
+        msg.style.display = "block";
+      }
+    } else if (SETTINGS.regenPerSecond > 0) {
+      setHealth(health + SETTINGS.regenPerSecond * dt);
+    }
+  }
+
+  // =========================
+  // TELEPORT
+  // =========================
+  let teleporting = false;
+  function doTeleport() {
+    if (teleporting) return;
+    teleporting = true;
+    gameState = "TELEPORTING";
+
+    // fade out then go
+    fade.classList.add('on');
+    setTimeout(() => {
+      // IMPORTANT: This assumes Luke4.html is in the SAME folder as this file.
+      window.location.href = SETTINGS.teleportURL;
+    }, SETTINGS.teleportDelayMs);
+  }
+
+  // =========================
+  // RAYCASTING
+  // =========================
+  function castRay(angle) {
+    const sinA = Math.sin(angle);
+    const cosA = Math.cos(angle);
+    let x = player.x;
+    let y = player.y;
+
+    const step = 0.02;
+    let dist = 0;
+    let hitType = 0;
+
+    while (dist < SETTINGS.maxDepth) {
+      x += cosA * step;
+      y += sinA * step;
+      dist += step;
+
+      const c = cellAt(x,y);
+      if (c === 1 || c === 2) { hitType = c; break; }
+    }
+    return { dist, hitType };
+  }
+
+  // =========================
+  // RENDER
+  // =========================
+  let zBuffer = [];
+
+  function render() {
+    const W = VIEW_W, H = VIEW_H;
+    ctx.clearRect(0,0,W,H);
+
+    ctx.fillStyle = '#0a1020'; ctx.fillRect(0,0,W,H/2);
+    ctx.fillStyle = '#111';    ctx.fillRect(0,H/2,W,H/2);
+
+    const rays = W;
+    if (zBuffer.length !== rays) zBuffer = new Array(rays);
+
+    for (let i=0;i<rays;i++){
+      const t = (i/rays) - 0.5;
+      const rayAng = player.a + t*SETTINGS.fov;
+      const hit = castRay(rayAng);
+
+      const corrected = hit.dist * Math.cos(rayAng - player.a);
+      const dist = Math.max(SETTINGS.distClamp, corrected);
+      zBuffer[i] = dist;
+
+      const slice = (H * SETTINGS.wallHeight) / dist;
+      const top = (H/2) - (slice/2);
+      const bot = top + slice;
+
+      let shade = Math.max(0, 1 - (dist / SETTINGS.maxDepth));
+      shade = SETTINGS.shadeMin + shade * (1 - SETTINGS.shadeMin);
+
+      if (hit.hitType === 2) {
+        // Exit portal wall (green)
+        const g = Math.floor(120 + 135 * shade);
+        const r = Math.floor(40 + 40 * shade);
+        const b = Math.floor(40 + 40 * shade);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+      } else {
+        const r = Math.floor(SETTINGS.wallYellow.r * shade);
+        const g = Math.floor(SETTINGS.wallYellow.g * shade);
+        const b = Math.floor(SETTINGS.wallYellow.b * shade);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+      }
+
+      ctx.fillRect(i, top, 1, slice);
+      ctx.fillStyle = 'rgba(0,0,0,0.10)';
+      ctx.fillRect(i, bot, 1, Math.min(10, H - bot));
+    }
+
+    drawSprites(W,H);
+    if (SETTINGS.showMinimap) drawMinimap();
+  }
+
+  function spriteProject(worldX, worldY, W, H) {
+    const dx = worldX - player.x;
+    const dy = worldY - player.y;
+    const dist = Math.hypot(dx,dy);
+    const ang = Math.atan2(dy, dx);
+    const rel = angleDiff(ang, player.a);
+    return { dist, rel };
+  }
+
+  function drawSpriteStriped(img, x0, y0, spriteW, spriteH, dist, W) {
+    const colStart = Math.max(0, Math.floor(x0));
+    const colEnd   = Math.min(W-1, Math.floor(x0 + spriteW));
+    if (colEnd <= colStart) return;
+
+    const ready = img && img.complete && img.naturalWidth > 0;
+
+    for (let x = colStart; x <= colEnd; x++) {
+      if (zBuffer[x] < dist) continue;
+      const u = (x - x0) / spriteW;
+      if (u < 0 || u > 1) continue;
+
+      if (ready) {
+        const sx = Math.floor(u * img.naturalWidth);
+        ctx.drawImage(img, sx, 0, 1, img.naturalHeight, x, y0, 1, spriteH);
+      } else {
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.fillRect(x, y0, 1, spriteH);
+      }
+    }
+  }
+
+  function drawSprites(W, H) {
+    const sprites = [];
+
+    for (const rb of robots) {
+      const p = spriteProject(rb.x, rb.y, W, H);
+      if (p.dist < 0.01 || p.dist > SETTINGS.maxDepth) continue;
+      if (Math.abs(p.rel) > SETTINGS.fov * 0.55) continue;
+      sprites.push({ dist:p.dist, rel:p.rel, img:rb.img, scale:SETTINGS.robotSpriteScale });
+    }
+
+    if (SETTINGS.lambEnabled && lamb.alive) {
+      const p = spriteProject(lamb.x, lamb.y, W, H);
+      if (p.dist > 0.01 && p.dist <= SETTINGS.maxDepth && Math.abs(p.rel) <= SETTINGS.fov * 0.65) {
+        sprites.push({ dist:p.dist, rel:p.rel, img:lamb.img, scale:SETTINGS.lambSpriteScale });
+      }
+    }
+
+    sprites.sort((a,b)=> b.dist - a.dist);
+
+    for (const s of sprites) {
+      const screenX = (0.5 + (s.rel / SETTINGS.fov)) * W;
+      const dist = Math.max(SETTINGS.distClamp, s.dist);
+
+      const spriteH = (H / dist) * s.scale;
+      const spriteW = spriteH;
+
+      const x0 = screenX - spriteW/2;
+      const y0 = (H/2) - spriteH/2;
+
+      drawSpriteStriped(s.img, x0, y0, spriteW, spriteH, dist, W);
+    }
+  }
+
+  function drawMinimap() {
+    const w = 180, h = 180;
+    mctx.clearRect(0,0,w,h);
+
+    const pad = 8;
+    const cellSize = Math.min((w - pad*2)/MAP_W, (h - pad*2)/MAP_H);
+
+    mctx.fillStyle = 'rgba(0,0,0,0.35)';
+    mctx.fillRect(0,0,w,h);
+
+    for (let y=0;y<MAP_H;y++){
+      for (let x=0;x<MAP_W;x++){
+        const c = MAP[y][x];
+        if (c === 0) continue;
+        if (c === 1) mctx.fillStyle = 'rgba(255,255,255,0.25)';
+        if (c === 2) mctx.fillStyle = 'rgba(0,255,140,0.50)';
+        mctx.fillRect(pad + x*cellSize, pad + y*cellSize, cellSize, cellSize);
+      }
+    }
+
+    for (const rb of robots) {
+      const rx = pad + rb.x * cellSize;
+      const ry = pad + rb.y * cellSize;
+      mctx.fillStyle = 'rgba(255,80,80,0.95)';
+      mctx.beginPath(); mctx.arc(rx, ry, Math.max(2.5, cellSize*0.16), 0, Math.PI*2); mctx.fill();
+    }
+
+    if (SETTINGS.lambEnabled && lamb.alive) {
+      const lx = pad + lamb.x * cellSize;
+      const ly = pad + lamb.y * cellSize;
+      mctx.fillStyle = 'rgba(255,255,255,0.95)';
+      mctx.beginPath(); mctx.arc(lx, ly, Math.max(3.0, cellSize*0.18), 0, Math.PI*2); mctx.fill();
+    }
+
+    const px = pad + player.x * cellSize;
+    const py = pad + player.y * cellSize;
+
+    mctx.fillStyle = 'rgba(140,200,255,0.95)';
+    mctx.beginPath(); mctx.arc(px, py, Math.max(2.5, cellSize*0.18), 0, Math.PI*2); mctx.fill();
+
+    mctx.strokeStyle = 'rgba(140,200,255,0.95)';
+    mctx.lineWidth = 2;
+    mctx.beginPath();
+    mctx.moveTo(px, py);
+    mctx.lineTo(px + Math.cos(player.a)*cellSize*0.8, py + Math.sin(player.a)*cellSize*0.8);
+    mctx.stroke();
+  }
+
+  // =========================
+  // RESET / START
+  // =========================
+  function reset() {
+    player.x = START.x; player.y = START.y; player.a = START.a;
+    msg.style.display = 'none';
+    fade.classList.remove('on');
+    teleporting = false;
+    gameState = "PLAY";
+    setHealth(SETTINGS.maxHealth);
+    spawnRobots();
+    spawnLamb();
+  }
+  btn.addEventListener('click', reset);
+
+  // =========================
+  // UPDATE LOOP
+  // =========================
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+
+    if (gameState === "PLAY") {
+      let mv = SETTINGS.moveSpeed * dt;
+      if (down('shift')) mv *= SETTINGS.runMultiplier;
+
+      const turn = SETTINGS.turnSpeed * dt;
+
+      const forward = (down('w') || down('arrowup')) ? 1 : 0;
+      const back    = (down('s') || down('arrowdown')) ? 1 : 0;
+      const left    = (down('a') || down('arrowleft')) ? 1 : 0;
+      const right   = (down('d') || down('arrowright')) ? 1 : 0;
+
+      const turnLeft = down('arrowleft') && !down('a');
+      const turnRight= down('arrowright') && !down('d');
+
+      if (left && !down('arrowleft')) player.a -= turn;
+      if (right && !down('arrowright')) player.a += turn;
+      if (turnLeft) player.a -= turn;
+      if (turnRight) player.a += turn;
+      normalizeAngle();
+
+      const dir = (forward - back);
+      if (dir !== 0) {
+        tryMove(
+          player.x + Math.cos(player.a) * mv * dir,
+          player.y + Math.sin(player.a) * mv * dir
+        );
+      }
+
+      updateRobots(dt);
+      updateLamb(dt);
+      updateHealth(dt);
+
+      // ✅ TELEPORT TRIGGER: reaching shed/exit
+      if (isExit(player.x, player.y)) {
+        doTeleport();
+      }
+    }
+
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // boot
+  resize();
+  setHealth(SETTINGS.maxHealth);
+  reset();
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

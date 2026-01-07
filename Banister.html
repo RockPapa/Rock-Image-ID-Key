@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Raycaster Battle Arena (Portal After Boss)</title>
+<style>
+  body { margin:0; overflow:hidden; background:#000; }
+  canvas { display:block; }
+  #hudText {
+    position:fixed;
+    top:10px;
+    left:10px;
+    color:white;
+    font-family:monospace;
+    font-size:14px;
+    text-shadow:0 2px 6px rgba(0,0,0,.7);
+    user-select:none;
+    pointer-events:none;
+  }
+
+  /* =========================
+     TOUCH / iPAD CONTROLS
+  ========================= */
+  #touchToggle{
+    position:fixed; left:14px; top:14px;
+    z-index:10050;
+    font-family:monospace; font-size:14px;
+    color:#fff;
+    background:rgba(0,0,0,0.45);
+    border:1px solid rgba(255,255,255,0.18);
+    padding:8px 10px;
+    border-radius:12px;
+    backdrop-filter: blur(6px);
+    user-select:none;
+  }
+  #touchToggle button{
+    margin-left:8px;
+    font-family:monospace;
+    font-size:13px;
+    padding:6px 10px;
+    border-radius:10px;
+    border:0;
+    cursor:pointer;
+  }
+  #touchUI{
+    position:fixed; inset:0;
+    z-index:10040;
+    pointer-events:none;
+    touch-action:none;
+  }
+  .tbtn{
+    pointer-events:auto;
+    position:fixed;
+    background:rgba(0,0,0,0.35);
+    border:1px solid rgba(255,255,255,0.16);
+    color:#fff;
+    font-family:monospace;
+    font-size:18px;
+    border-radius:18px;
+    padding:18px 20px;
+    min-width:84px;
+    text-align:center;
+    user-select:none;
+    -webkit-user-select:none;
+    touch-action:none;
+    backdrop-filter: blur(6px);
+  }
+  .tbtn:active{ transform: scale(0.98); }
+  /* Left cluster */
+  #btnUp{ left:26px; bottom:142px; }
+  #btnDown{ left:26px; bottom:64px; }
+  #btnLeft{ left:128px; bottom:142px; }
+  #btnRight{ left:230px; bottom:142px; }
+  /* Right cluster */
+  #btnShoot{ right:26px; bottom:64px; min-width:180px; }
+  #btnHud{ right:26px; bottom:142px; min-width:180px; font-size:16px; }
+
+</style>
+</head>
+<body>
+
+<canvas id="game"></canvas>
+<div id="hudText">
+  <div>Move: ↑/↓ &nbsp; Turn: ←/→ &nbsp; Shoot: SPACE</div>
+</div>
+
+
+<div id="touchToggle" style="display:none;">
+  📱 Controls: <span id="touchState">ON</span>
+  <button id="touchBtn">Toggle</button>
+</div>
+
+<div id="touchUI" style="display:none;">
+  <div id="btnUp" class="tbtn">▲</div>
+  <div id="btnDown" class="tbtn">▼</div>
+  <div id="btnLeft" class="tbtn">⟲ TURN</div>
+  <div id="btnRight" class="tbtn">TURN ⟳</div>
+  <div id="btnHud" class="tbtn">HUD (H)</div>
+  <div id="btnShoot" class="tbtn">SHOOT</div>
+</div>
+
+
+<div id="endOverlay" style="
+  position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background:rgba(0,0,0,0.75); z-index:9999; font-family:monospace; color:#fff;">
+  <div style="max-width:520px; padding:18px 20px; background:rgba(0,0,0,0.85);
+              border:2px solid rgba(255,255,255,0.35); border-radius:14px; text-align:center;">
+    <div id="endTitle" style="font-size:28px; margin-bottom:8px;">GAME OVER</div>
+    <div id="endMsg" style="font-size:15px; opacity:0.9; margin-bottom:14px;">
+      Press <b>R</b> to restart, or click a button.
+    </div>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button id="btnRestart" style="font-size:16px; padding:10px 14px; border-radius:10px; border:0; cursor:pointer;">
+        Restart (R)
+      </button>
+      <button id="btnExit" style="font-size:16px; padding:10px 14px; border-radius:10px; border:0; cursor:pointer;">
+        Exit to Luke4 (Q)
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* =========================
+   BASIC SETUP
+========================= */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+addEventListener("resize", resize); resize();
+
+const TILE=64, FOV=Math.PI/3, DEPTH=900;
+
+
+/* =========================
+   END GAME / UI
+========================= */
+let gameEnded = false;
+const EXIT_URL = "Luke4.html";   // change this if you want a different “exit” page
+
+const endOverlay = document.getElementById("endOverlay");
+const endTitle   = document.getElementById("endTitle");
+const endMsg     = document.getElementById("endMsg");
+const btnRestart = document.getElementById("btnRestart");
+const btnExit    = document.getElementById("btnExit");
+
+function showEndScreen(title, msg){
+  gameEnded = true;
+  endTitle.textContent = title;
+  endMsg.innerHTML = msg;
+  endOverlay.style.display = "flex";
+}
+
+function restartGame(){
+  // hard reload is the cleanest restart for this style of game
+  location.reload();
+}
+
+function exitGame(){
+  // Use URL() so file:// and http:// both resolve correctly
+  window.location.href = new URL(EXIT_URL, window.location.href).href;
+}
+
+btnRestart.addEventListener("click", restartGame);
+btnExit.addEventListener("click", exitGame);
+
+addEventListener("keydown", (e)=>{
+  if(!gameEnded) return;
+  const k = (e.key || "").toLowerCase();
+  if(k === "r"){ e.preventDefault(); restartGame(); }
+  if(k === "q"){ e.preventDefault(); exitGame(); }
+});
+
+
+/* =========================
+   SPEEDS
+========================= */
+const CAMI_SPEED=2, TURN_SPEED=0.035, ENEMY_SPEED=0.4;
+
+/* =========================
+   MAP
+========================= */
+const map=[
+"111111111111",
+"100000000001",
+"100000000001",
+"100000000001",
+"100000000001",
+"100000000001",
+"100000000001",
+"100000000001",
+"100000000001",
+"111111111111"
+];
+const MW=map[0].length, MH=map.length;
+
+/* =========================
+   PLAYER (CAMI)
+========================= */
+const CAMI_MAX_HP = 100;
+let px=4*TILE, py=5*TILE, pa=0;
+let health = CAMI_MAX_HP;
+
+/* =========================
+   BAD GUYS
+   - enemy[0] is the BOSS (big health bar)
+========================= */
+const BOSS_MAX_HP = 120;
+const enemies=[
+  {x:2*TILE,y:2*TILE,lastShot:0,hp:BOSS_MAX_HP, isBoss:true}, // BOSS
+  {x:9*TILE,y:7*TILE,lastShot:0,hp:25, isBoss:false},
+  {x:8*TILE,y:2*TILE,lastShot:0,hp:25, isBoss:false}
+];
+
+/* =========================
+   BAD GUY MAGIC (PURPLE)
+========================= */
+const magicShots=[];
+const MAGIC_SPEED=4;
+const MAGIC_COOLDOWN=1200;
+const MAGIC_DAMAGE=5;
+
+/* =========================
+   CAMI MAGIC (RED)
+========================= */
+const camiShots=[];
+const CAMI_MAGIC_SPEED=7;
+const CAMI_MAGIC_COOLDOWN=250;
+const CAMI_MAGIC_DAMAGE=10;
+let lastCamiShot=0;
+
+/* =========================
+   BAD GUY IMAGE
+========================= */
+const badImg = new Image();
+badImg.src = "images/Badguy.png";
+
+/* =========================
+   INPUT
+========================= */
+const keys={};
+onkeydown=e=>{
+  keys[e.key]=true;
+  if(e.key === " " || e.code === "Space") {
+    shootCamiMagic();
+    e.preventDefault();
+  }
+};
+onkeyup=e=>keys[e.key]=false;
+
+
+/* =========================
+   TOUCH / iPAD CONTROLS
+========================= */
+const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+const LS_KEY = "banister_touch_controls";
+let touchEnabled = (localStorage.getItem(LS_KEY) ?? (isTouchDevice ? "on" : "off")) === "on";
+
+const touchToggle = document.getElementById("touchToggle");
+const touchUI     = document.getElementById("touchUI");
+const touchState  = document.getElementById("touchState");
+const touchBtn    = document.getElementById("touchBtn");
+
+function applyTouchUI(){
+  if(!touchToggle || !touchUI) return;
+  touchToggle.style.display = "block";
+  touchUI.style.display = touchEnabled ? "block" : "none";
+  touchState.textContent = touchEnabled ? "ON" : "OFF";
+  localStorage.setItem(LS_KEY, touchEnabled ? "on" : "off");
+}
+touchBtn?.addEventListener("click", ()=>{
+  touchEnabled = !touchEnabled;
+  applyTouchUI();
+});
+
+function bindHoldButton(el, keyName){
+  if(!el) return;
+  const down = (ev)=>{
+    if(!touchEnabled) return;
+    ev.preventDefault();
+    keys[keyName] = true;
+  };
+  const up = (ev)=>{
+    ev.preventDefault();
+    keys[keyName] = false;
+  };
+  el.addEventListener("pointerdown", down);
+  el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
+  el.addEventListener("pointerleave", up);
+}
+
+bindHoldButton(document.getElementById("btnUp"), "ArrowUp");
+bindHoldButton(document.getElementById("btnDown"), "ArrowDown");
+bindHoldButton(document.getElementById("btnLeft"), "ArrowLeft");
+bindHoldButton(document.getElementById("btnRight"), "ArrowRight");
+
+document.getElementById("btnShoot")?.addEventListener("pointerdown", (ev)=>{
+  if(!touchEnabled) return;
+  ev.preventDefault();
+  shootCamiMagic();
+});
+
+let hudVisible = true;
+function toggleHud(){
+  hudVisible = !hudVisible;
+  const hud = document.getElementById("hudText");
+  if(hud) hud.style.display = hudVisible ? "block" : "none";
+}
+document.getElementById("btnHud")?.addEventListener("pointerdown", (ev)=>{
+  if(!touchEnabled) return;
+  ev.preventDefault();
+  toggleHud();
+});
+
+// keep iPad controls separate from HUD: H key toggles only HUD text
+addEventListener("keydown", (e)=>{
+  if((e.key || "").toLowerCase() === "h"){
+    toggleHud();
+  }
+});
+
+applyTouchUI();
+
+
+/* =========================
+   HELPERS
+========================= */
+function wrap(a){ while(a<-Math.PI)a+=Math.PI*2; while(a>Math.PI)a-=Math.PI*2; return a; }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+function isWall(x,y){
+  const mx = (x/TILE)|0;
+  const my = (y/TILE)|0;
+  if(mx<0||my<0||mx>=MW||my>=MH) return true;
+  return map[my][mx] === "1";
+}
+function rand(min,max){ return Math.random()*(max-min)+min; }
+
+/* =========================
+   PORTAL (appears after boss defeat)
+========================= */
+let portal = null;          // {x,y,r}
+let portalActive = false;
+let bossWasAlive = true;
+
+/* pick a safe open tile far-ish from walls */
+function spawnPortal(){
+  // try a bunch of random open spots
+  for(let tries=0; tries<200; tries++){
+    const tx = 1 + (Math.random()*(MW-2)|0);
+    const ty = 1 + (Math.random()*(MH-2)|0);
+    if(map[ty][tx] !== "0") continue;
+
+    const x = (tx+0.5)*TILE;
+    const y = (ty+0.5)*TILE;
+
+    // avoid spawning right on cami
+    if(Math.hypot(x-px, y-py) < 3*TILE) continue;
+
+    // avoid too close to any wall edge by sampling around
+    const safe =
+      !isWall(x+22,y) && !isWall(x-22,y) && !isWall(x,y+22) && !isWall(x,y-22);
+
+    if(!safe) continue;
+
+    portal = { x, y, r: 24 };
+    portalActive = true;
+    return;
+  }
+
+  // fallback: center of arena
+  portal = { x: 6*TILE, y: 5*TILE, r: 24 };
+  portalActive = true;
+}
+
+/* =========================
+   CAMI SHOOT
+========================= */
+function shootCamiMagic(){
+  const now = Date.now();
+  if(now - lastCamiShot < CAMI_MAGIC_COOLDOWN) return;
+  lastCamiShot = now;
+
+  const sx = px + Math.cos(pa)*18;
+  const sy = py + Math.sin(pa)*18;
+
+  camiShots.push({
+    x: sx, y: sy,
+    dx: Math.cos(pa), dy: Math.sin(pa),
+    life: 1200
+  });
+}
+
+/* =========================
+   GAME LOOP
+========================= */
+function loop(){ update(); draw(); requestAnimationFrame(loop); }
+loop();
+
+/* =========================
+   UPDATE
+========================= */
+function update(){
+  if(gameEnded) return;
+  if(keys.ArrowLeft)  pa -= TURN_SPEED;
+  if(keys.ArrowRight) pa += TURN_SPEED;
+
+  let nx=px, ny=py;
+  if(keys.ArrowUp){   nx += Math.cos(pa)*CAMI_SPEED; ny += Math.sin(pa)*CAMI_SPEED; }
+  if(keys.ArrowDown){ nx -= Math.cos(pa)*CAMI_SPEED; ny -= Math.sin(pa)*CAMI_SPEED; }
+  if(!isWall(nx,ny)){ px=nx; py=ny; }
+
+  // enemies chase + shoot
+  enemies.forEach(e=>{
+    if(e.hp <= 0) return;
+
+    const dx=px-e.x, dy=py-e.y;
+    const d=Math.hypot(dx,dy);
+
+    if(d>0.0001){
+      e.x += (dx/d)*ENEMY_SPEED;
+      e.y += (dy/d)*ENEMY_SPEED;
+    }
+
+    // enemy shoots purple magic
+    if(d<350 && Date.now()-e.lastShot>MAGIC_COOLDOWN){
+      e.lastShot=Date.now();
+      magicShots.push({
+        x:e.x, y:e.y,
+        dx:dx/d, dy:dy/d,
+        life: 1600
+      });
+    }
+  });
+
+  // enemy purple shots
+  for(let i=magicShots.length-1;i>=0;i--){
+    const m=magicShots[i];
+    m.x += m.dx*MAGIC_SPEED;
+    m.y += m.dy*MAGIC_SPEED;
+    m.life -= 16;
+
+    if(isWall(m.x,m.y) || m.life<=0){
+      magicShots.splice(i,1);
+      continue;
+    }
+
+    if(Math.hypot(px-m.x,py-m.y)<20){
+      health -= MAGIC_DAMAGE;
+      health = Math.max(0, health);
+      magicShots.splice(i,1);
+      continue;
+    }
+  }
+
+  // cami red shots
+  for(let i=camiShots.length-1;i>=0;i--){
+    const s=camiShots[i];
+    s.x += s.dx*CAMI_MAGIC_SPEED;
+    s.y += s.dy*CAMI_MAGIC_SPEED;
+    s.life -= 16;
+
+    if(isWall(s.x,s.y) || s.life<=0){
+      camiShots.splice(i,1);
+      continue;
+    }
+
+    // hit enemy?
+    let hit = false;
+    for(const e of enemies){
+      if(e.hp<=0) continue;
+      if(Math.hypot(e.x - s.x, e.y - s.y) < 22){
+        e.hp -= CAMI_MAGIC_DAMAGE;
+        hit = true;
+
+        // if dead, clear nearby purple shots
+        if(e.hp <= 0){
+          for(let k=magicShots.length-1;k>=0;k--){
+            const m=magicShots[k];
+            if(Math.hypot(m.x-e.x, m.y-e.y) < 60) magicShots.splice(k,1);
+          }
+        }
+        break;
+      }
+    }
+    if(hit){
+      camiShots.splice(i,1);
+      continue;
+    }
+  }
+
+  // if boss just died -> spawn portal
+  const boss = enemies.find(e=>e.isBoss);
+  const bossAliveNow = boss && boss.hp > 0;
+
+  if(bossWasAlive && !bossAliveNow && !portalActive){
+    spawnPortal();
+  }
+  bossWasAlive = bossAliveNow;
+
+  // portal win check
+  if(portalActive && portal){
+    if(Math.hypot(px-portal.x, py-portal.y) < portal.r + 14){
+      // WIN: show a proper end screen with buttons
+      showEndScreen(
+        "YOU WIN!",
+        'Walked into the portal!<br><br><span style="opacity:.9">Press <b>R</b> to play again, or <b>Q</b> to exit.</span>'
+      );
+    }
+  }
+
+  if(health<=0){
+    showEndScreen(
+      "GAME OVER",
+      'Cami ran out of health.<br><br><span style="opacity:.9">Press <b>R</b> to restart, or <b>Q</b> to exit.</span>'
+    );
+  }
+}
+
+/* =========================
+   DRAW HELPERS (BARS)
+========================= */
+function drawBar(x,y,w,h,pct,fillColor,bgAlpha=0.65){
+  pct = clamp(pct, 0, 1);
+  ctx.fillStyle = `rgba(0,0,0,${bgAlpha})`;
+  ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle = "rgba(255,255,255,0.55)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x,y,w,h);
+  ctx.fillStyle = fillColor;
+  ctx.fillRect(x+2, y+2, (w-4)*pct, h-4);
+}
+
+/* =========================
+   DRAW PORTAL (2D overlay swirl)
+========================= */
+function drawPortalSprite(zbuf){
+  if(!portalActive || !portal) return;
+
+  // project portal into view like a sprite (same as enemies)
+  const dx = portal.x - px;
+  const dy = portal.y - py;
+  const dist = Math.hypot(dx,dy);
+  const ang  = wrap(Math.atan2(dy,dx) - pa);
+
+  if(Math.abs(ang) > FOV/2) return;
+
+  const size = (TILE * canvas.height) / dist;
+  const sx = (ang / FOV + 0.5) * canvas.width;
+  const col = sx|0;
+  if(col>=0 && col<canvas.width && dist > zbuf[col]) return;
+
+  const sy = canvas.height/2 - size/2;
+
+  // animated swirl
+  const t = performance.now() * 0.004;
+
+  // outer red ring
+  ctx.save();
+  ctx.translate(sx, sy + size/2);
+
+  // glow
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath();
+  ctx.arc(0,0, size*0.33, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(255,0,0,0.20)";
+  ctx.fill();
+
+  // ring
+  ctx.lineWidth = Math.max(4, size*0.04);
+  ctx.strokeStyle = "rgba(255,0,0,0.95)";
+  ctx.beginPath();
+  ctx.arc(0,0, size*0.28, 0, Math.PI*2);
+  ctx.stroke();
+
+  // inner swirl arcs
+  for(let i=0;i<6;i++){
+    const a0 = t + i*(Math.PI*2/6);
+    const a1 = a0 + 1.3;
+    ctx.lineWidth = Math.max(2, size*0.018);
+    ctx.strokeStyle = `rgba(255,80,80,${0.35 + 0.1*Math.sin(t+i)})`;
+    ctx.beginPath();
+    ctx.arc(0,0, size*(0.12 + 0.02*i), a0, a1);
+    ctx.stroke();
+  }
+
+  // center pulse
+  ctx.globalAlpha = 0.75;
+  ctx.fillStyle = "rgba(255,0,0,0.55)";
+  const pulse = (0.06 + 0.02*Math.sin(t*2));
+  ctx.beginPath();
+  ctx.arc(0,0, size*pulse, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // label
+  ctx.fillStyle="rgba(255,200,200,0.95)";
+  ctx.font="16px monospace";
+  ctx.textAlign="center";
+  ctx.textBaseline="bottom";
+  ctx.fillText("PORTAL!", sx, sy - 8);
+  ctx.textAlign="left";
+}
+
+/* =========================
+   DRAW (RAYCAST + SPRITES + HUD)
+========================= */
+function draw(){
+  // sky + floor
+  ctx.fillStyle="#87CEEB";
+  ctx.fillRect(0,0,canvas.width,canvas.height/2);
+  ctx.fillStyle="#333";
+  ctx.fillRect(0,canvas.height/2,canvas.width,canvas.height/2);
+
+  // raycast walls + z buffer
+  const zbuf=new Array(canvas.width);
+
+  for(let x=0;x<canvas.width;x++){
+    const ra = pa - FOV/2 + (x/canvas.width)*FOV;
+
+    let d=0, hit=false;
+    while(!hit && d<DEPTH){
+      d+=4;
+      const rx = px + Math.cos(ra)*d;
+      const ry = py + Math.sin(ra)*d;
+      const mx = (rx/TILE)|0;
+      const my = (ry/TILE)|0;
+      if(mx<0||my<0||mx>=MW||my>=MH){ hit=true; break; }
+      if(map[my][mx]==="1") hit=true;
+    }
+
+    zbuf[x]=d;
+    const h=(TILE*canvas.height)/d;
+    const c=clamp(255 - d/3, 0, 255);
+    ctx.fillStyle=`rgb(${c},${c},${c})`;
+    ctx.fillRect(x, canvas.height/2 - h/2, 1, h);
+  }
+
+  // draw enemies
+  enemies.forEach(e=>{
+    if(e.hp<=0) return;
+
+    const dx=e.x-px, dy=e.y-py;
+    const dist=Math.hypot(dx,dy);
+    const ang=wrap(Math.atan2(dy,dx)-pa);
+    if(Math.abs(ang)>FOV/2) return;
+
+    const size=(TILE*canvas.height)/dist;
+    const sx=(ang/FOV+.5)*canvas.width;
+    const col = sx|0;
+    if(col>=0 && col<canvas.width && dist>zbuf[col]) return;
+
+    ctx.drawImage(badImg, sx-size/2, canvas.height/2-size/2, size, size);
+
+    // small HP bar over non-boss enemies
+    if(!e.isBoss){
+      const maxHp = 25;
+      const hpPct = clamp(e.hp/maxHp, 0, 1);
+      const barW = size * 0.9;
+      const barH = Math.max(5, size*0.06);
+      const bx = sx - barW/2;
+      const by = canvas.height/2 - size/2 - barH - 8;
+      drawBar(bx, by, barW, barH, hpPct, "lime", 0.55);
+    }
+  });
+
+  // draw PORTAL after enemies so it feels special
+  drawPortalSprite(zbuf);
+
+  // enemy purple magic
+  magicShots.forEach(m=>{
+    const dx=m.x-px, dy=m.y-py;
+    const dist=Math.hypot(dx,dy);
+    const ang=wrap(Math.atan2(dy,dx)-pa);
+    if(Math.abs(ang)>FOV/2) return;
+
+    const size = 12*(canvas.height/dist);
+    const sx = (ang/FOV+.5)*canvas.width;
+    const col = sx|0;
+    if(col>=0 && col<canvas.width && dist>zbuf[col]) return;
+
+    ctx.fillStyle="purple";
+    ctx.beginPath();
+    ctx.arc(sx, canvas.height/2, Math.max(2, size/2), 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // cami red magic
+  camiShots.forEach(s=>{
+    const dx=s.x-px, dy=s.y-py;
+    const dist=Math.hypot(dx,dy);
+    const ang=wrap(Math.atan2(dy,dx)-pa);
+    if(Math.abs(ang)>FOV/2) return;
+
+    const size = 14*(canvas.height/dist);
+    const sx = (ang/FOV+.5)*canvas.width;
+    const col = sx|0;
+    if(col>=0 && col<canvas.width && dist>zbuf[col]) return;
+
+    ctx.fillStyle="red";
+    ctx.beginPath();
+    ctx.arc(sx, canvas.height/2, Math.max(2.5, size/2), 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.strokeStyle="rgba(255,80,80,.65)";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.arc(sx, canvas.height/2, Math.max(4, size*0.7), 0, Math.PI*2);
+    ctx.stroke();
+  });
+
+  /* HUD HEALTH BARS */
+
+  // CAMI HP bar (bottom-left)
+  const camiPct = health / CAMI_MAX_HP;
+  const camiBarW = Math.min(360, canvas.width * 0.35);
+  const camiBarH = 20;
+  const camiX = 16;
+  const camiY = canvas.height - camiBarH - 16;
+  drawBar(camiX, camiY, camiBarW, camiBarH, camiPct, "red", 0.7);
+
+  ctx.fillStyle = "white";
+  ctx.font = "14px monospace";
+  ctx.textBaseline = "bottom";
+  ctx.fillText(`CAMI HP: ${health|0}/${CAMI_MAX_HP}`, camiX + 8, camiY - 4);
+
+  // BIG BOSS HP bar (top-center) or defeated message
+  const boss = enemies.find(e=>e.isBoss);
+  if(boss && boss.hp > 0){
+    const bossPct = boss.hp / BOSS_MAX_HP;
+    const bossBarW = Math.min(520, canvas.width * 0.55);
+    const bossBarH = 26;
+    const bossX = (canvas.width - bossBarW)/2;
+    const bossY = 14;
+
+    drawBar(bossX, bossY, bossBarW, bossBarH, bossPct, "lime", 0.75);
+
+    ctx.fillStyle = "white";
+    ctx.font = "16px monospace";
+    ctx.textBaseline = "top";
+    ctx.fillText(`BADGUY BOSS HP: ${boss.hp|0}/${BOSS_MAX_HP}`, bossX + 10, bossY + bossBarH + 6);
+  } else {
+    ctx.fillStyle = "gold";
+    ctx.font = "22px monospace";
+    ctx.textBaseline = "top";
+    ctx.fillText("BOSS DEFEATED!!!", (canvas.width/2) - 110, 14);
+
+    if(portalActive){
+      ctx.fillStyle = "rgba(255,220,220,0.95)";
+      ctx.font = "16px monospace";
+      ctx.fillText("Find the RED PORTAL and walk into it!", (canvas.width/2) - 185, 44);
+    }
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1604 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Inside – GRIZ + 3 ZOMBIES + BOOM DOOR + VOID TRAP DOOR + TREASURE DOOR + PORTAL + SAFE + STUN + BLACK '1' WALLS + MUSIC</title>
+<style>
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; }
+  canvas { display:block; width:100vw; height:100vh; image-rendering: pixelated; }
+  /* HUD panels (text + health are separate so H hides text only) */
+.hudPanel{
+  position: fixed; left: 10px;
+  font: 14px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  color: rgba(255,255,255,.92);
+  background: rgba(0,0,0,.35);
+  padding: 10px 12px;
+  border-radius: 10px;
+  max-width: min(1120px, calc(100vw - 24px));
+  z-index: 10;
+}
+.hudPanel b{ color:#fff; }
+
+/* Health stays visible */
+.hudHealth{ top: 10px; }
+
+/* Text panel sits below health */
+.hudText{ top: 78px; }
+
+  /* Health bar */
+  .healthRow{ margin-top:0; }
+  .healthLabel{ font-weight:600; font-size:12px; opacity:.95; margin-bottom:4px; }
+  .healthBar{
+    width: 220px; height: 14px;
+    background: rgba(255,255,255,.18);
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .healthFill{
+    height: 100%;
+    width: 100%;
+    background: #e11d48; /* red */
+    transition: width .15s linear;
+  }
+  .healthPct{ font-size:12px; opacity:.9; margin-top:4px; }
+
+
+  /* =========================
+     📱 TOUCH CONTROLS + TOGGLE
+     ========================= */
+  #touchToggle{
+    position: fixed;
+    left: 10px;
+    top: 52px;
+    z-index: 9999;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 0;
+    background: rgba(0,0,0,0.50);
+    color: #fff;
+    font: 14px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    user-select:none;
+    cursor: pointer;
+  }
+  #touchControls{
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 9998;
+    padding: 14px;
+    display: none;          /* controlled by toggle */
+    pointer-events: none;   /* buttons enable pointer */
+  }
+  .tcRow{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:14px;
+    pointer-events:none;
+  }
+  .tcPad{
+    display:grid;
+    grid-template-columns:64px 64px 64px;
+    grid-template-rows:64px 64px;
+    gap:10px;
+    pointer-events:none;
+  }
+  .tcActions{
+    display:grid;
+    grid-template-columns:120px 120px;
+    grid-template-rows:64px 64px;
+    gap:10px;
+    pointer-events:none;
+  }
+  .tcBtn{
+    width:100%;
+    height:100%;
+    border-radius:16px;
+    border:0;
+    background:rgba(0,0,0,0.45);
+    color:rgba(255,255,255,0.95);
+    font:18px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    pointer-events:auto;
+    touch-action:none;
+    user-select:none;
+  }
+  .tcBtn:active{ background:rgba(255,255,255,0.20); }
+  .tcSmall{ font-size:14px; }
+  .tcWide{ grid-column: span 2; }
+
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0"></canvas>
+<div id="hudHealth" class="hudPanel hudHealth">
+  <div class="healthLabel">HEALTH</div>
+  <div class="healthBar" aria-label="Health">
+    <div id="healthFill" class="healthFill"></div>
+  </div>
+  <div id="healthPct" class="healthPct">100%</div>
+</div>
+
+<div id="hudText" class="hudPanel hudText">
+  <div><b>INSIDE – GRIZ + 3 ZOMBIES + BOOM + VOID + TREASURE + PORTAL + SAFE + STUN + BLACK “1” WALLS</b></div>
+  <div>
+    ↑/↓ move • ←/→ turn • Shift faster • R = re-roll floor + walls fallback<br>
+    E = open door • <b>H</b> hide text • <b>Safe:</b> stand on X • <b>N</b> new round<br>
+    <b>Stun:</b> pick up Z or find the <b>stun door</b> (shows images/stun.png) • Space fires (images/gun.mp3) • hit stuns GRIZ + zombies<br>
+    <b>Boom door:</b> one random door triggers images/explosion.mp3 + GAME OVER<br>
+    <b>Void trap door:</b> one random door “sucks you into” black world → 3 seconds → GAME OVER (plays suction)<br>
+    <b>Treasure door:</b> one random door reveals images/treasure.png inside (walk into it to collect)<br>
+    <b>Portal:</b> open portal door, then walk into blue rune → SpiderPad.html<br>
+    <b>Music:</b> loops images/drama.mp3 (starts after first keypress/click)
+  </div>
+
+  <div id="status" style="margin-top:6px;"></div>
+</div>
+
+
+<!-- =========================
+     📱 On-screen controls UI
+     ========================= -->
+<button id="touchToggle">📱 Controls: OFF</button>
+
+<div id="touchControls">
+  <div class="tcRow">
+
+    <!-- Left: move + turn pad -->
+    <div class="tcPad">
+      <button class="tcBtn" data-hold="ArrowLeft">⟲</button>
+      <button class="tcBtn" data-hold="ArrowUp">▲</button>
+      <button class="tcBtn" data-hold="ArrowRight">⟳</button>
+
+      <button class="tcBtn tcSmall" data-tap="KeyH">HUD</button>
+      <button class="tcBtn" data-hold="ArrowDown">▼</button>
+      <button class="tcBtn tcSmall" data-tap="KeyE">OPEN</button>
+    </div>
+
+    <!-- Right: bigger buttons -->
+    <div class="tcActions">
+      <button class="tcBtn" data-hold="ShiftLeft">RUN</button>
+      <button class="tcBtn tcSmall" data-tap="KeyN">NEW</button>
+      <button class="tcBtn tcWide" data-tap="Space">FIRE</button>
+      <button class="tcBtn tcWide tcSmall" data-tap="KeyR">REROLL</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(() => {
+
+  // ===== Health (starts full) =====
+  const MAX_HEALTH = 100;
+  let health = 100;
+
+  // Consequences + recovery (tweak these)
+  const GRIZ_DAMAGE = 14;            // per "caught" event
+  const ZOMBIE_DAMAGE = 10;          // per "caught" event
+  const DAMAGE_COOLDOWN_MS = 850;    // prevents rapid multi-hits
+  const SAFE_REGEN_PER_SEC = 8;      // regen while standing on X
+  const TREASURE_HEALTH_BONUS = 20;  // health gained on treasure pickup
+  const STUN_PICKUP_BONUS = 8;       // health gained when you get stun power
+
+  let lastDamageAt = -1e9;
+  let damageFlashUntil = 0;
+
+  const healthFillEl = () => document.getElementById('healthFill');
+  const healthPctEl  = () => document.getElementById('healthPct');
+
+  function setHealth(val){
+    health = Math.max(0, Math.min(MAX_HEALTH, val));
+    const pct = (health / MAX_HEALTH) * 100;
+    const fill = healthFillEl();
+    const pctEl = healthPctEl();
+    if (fill) fill.style.width = pct.toFixed(1) + '%';
+    if (pctEl) pctEl.textContent = Math.round(pct) + '%';
+  }
+
+  function takeDamage(amount, nowMs, reason){
+    if (amount <= 0) return;
+    if (gameOver || voidActive) return;
+    if (nowMs - lastDamageAt < DAMAGE_COOLDOWN_MS) return;
+
+    lastDamageAt = nowMs;
+    damageFlashUntil = nowMs + 220;
+
+    setHealth(health - amount);
+
+    if (health <= 0){
+      triggerDeath(nowMs, reason || "YOU DIED");
+    }
+  }
+
+  function heal(amount){
+    if (amount <= 0) return;
+    if (gameOver || voidActive) return;
+    setHealth(health + amount);
+  }
+
+  // Initialize
+  setHealth(health);
+
+
+  /* =========================================================
+     MAP LEGEND
+     # wall, . floor, D door, X safe, Z stun pickup
+     1 = SPECIAL WALL TYPE (solid black texture)
+  ========================================================= */
+  const MAP = [
+    "##111##111##111##111##111##########",
+    "##...##...##...##...##...##########",
+    "###D####D####D####D####D###########",
+    "#........................##########",
+    "#....Z...................##########",
+    "#........................##########",
+    "#........................D.....XX##",
+    "#........................######XX##",
+    "###D####D####D####D####D###########",
+    "##...##...##...##...##...##########",
+    "##...##...##...##...##...##########",
+    "##111##111##111##111##111##########",
+  ];
+
+  const TILE = 64;
+
+  const FOV            = Math.PI / 3.35;
+  const WALL_SCALE     = 1.65;
+  const HORIZON_FRAC   = 0.56;
+  const MOVE_SPEED     = 170;
+  const TURN_SPEED     = 2.2;
+  const WALL_MIN_SHADE = 0.28;
+
+  const CEIL_FIXED = { r: 112, g: 124, b: 108 };
+
+  // GRIZ
+  const GRIZ_SPEED        = 45;
+  const GRIZ_TURN_SMOOTH  = 10.0;
+  const GRIZ_RADIUS       = 16;
+  const GRIZ_SIZE_FACTOR  = 0.65;
+
+  // ZOMBIES
+  const ZOMBIE_COUNT       = 3;
+  const ZOMBIE_SPEED       = 34;
+  const ZOMBIE_TURN_SMOOTH = 9.0;
+  const ZOMBIE_RADIUS      = 14;
+  const ZOMBIE_SIZE_FACTOR = 0.60;
+
+  // NO-OVERLAP CONTROL
+  const ENEMY_MIN_SEP = 92;
+
+  // catch & sounds
+  const CATCH_DIST = 25;
+  const SOUND_COOLDOWN_MS = 1400;
+  const ENEMY_STUN_AFTER_CATCH_MS = 650;
+  const CAUGHT_FLASH_MS = 900;
+
+  // SAFE ROOM
+  const SAFE_FREEZE_ENEMIES = true;
+
+  // STUN GUN
+  const STUN_START_CHARGES = 10;
+  const STUN_RANGE = 270;
+  const STUN_FOV = 18 * Math.PI/180;
+  const STUN_DURATION_MS = 2400;
+  const STUN_COOLDOWN_MS = 550;
+  const ZAP_FLASH_MS = 140;
+
+  // PORTAL
+  const OUTSIDE_URL = "Luke2.html";
+  const PORTAL_TRIGGER_DIST = 34;
+  const PORTAL_SIZE = 0.78;
+
+  // VOID TRAP
+  const VOID_COUNTDOWN_MS = 3000;
+
+  // TREASURE
+  const TREASURE_SIZE = 0.72;
+  const TREASURE_PICKUP_DIST = 34;
+
+  // STUN DOOR (NEW)
+  const STUN_DOOR_SIZE = 0.72;
+  const STUN_DOOR_PICKUP_DIST = 34;
+
+  /* =========================================================
+     MUSIC (INSIDE): images/drama.mp3
+  ========================================================= */
+  const MUSIC = new Audio("images/drama.mp3");
+  MUSIC.loop = true;
+  MUSIC.preload = "auto";
+  MUSIC.volume = 0.40;
+  let musicStarted = false;
+
+  function startMusicOnce(){
+    if(musicStarted) return;
+    musicStarted = true;
+    MUSIC.play().catch(()=>{});
+  }
+  addEventListener("pointerdown", startMusicOnce, { once:true });
+
+  /* =========================================================
+     CANVAS
+  ========================================================= */
+  const canvas = document.getElementById("c");
+  const ctx = canvas.getContext("2d", { alpha:false });
+  const statusEl = document.getElementById("status");
+
+  // HUD TOGGLE (H key) - hides TEXT panel only (health stays)
+  const hudTextEl = document.getElementById("hudText");
+  let hudTextVisible = true;
+  function setHudTextVisible(v){
+    hudTextVisible = !!v;
+    if(hudTextEl) hudTextEl.style.display = hudTextVisible ? "block" : "none";
+  }
+
+  function resize(){
+    const scale = 1.5;
+    canvas.width  = (innerWidth / scale) | 0;
+    canvas.height = (innerHeight / scale) | 0;
+    ctx.imageSmoothingEnabled = false;
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  /* =========================================================
+     HELPERS
+  ========================================================= */
+  function randInt(a,b){ return a + Math.floor(Math.random()*(b-a+1)); }
+  function clamp(v,a,b){ return v<a?a : v>b?b : v; }
+  function clamp255(v){ return Math.max(0, Math.min(255, v|0)); }
+  function rgb(c){ return `rgb(${c.r|0},${c.g|0},${c.b|0})`; }
+  function wrapAngle(a){
+    while(a < -Math.PI) a += Math.PI*2;
+    while(a >  Math.PI) a -= Math.PI*2;
+    return a;
+  }
+  function angleDiff(a,b){ return Math.abs(wrapAngle(a-b)); }
+
+  function randColorPastelish(){
+    return { r: randInt(60,220), g: randInt(60,220), b: randInt(60,220) };
+  }
+  function randStoneBase(){
+    const base = randInt(95, 165);
+    return { r: base + randInt(-18,18), g: base + randInt(-14,14), b: base + randInt(-14,14) };
+  }
+
+  /* =========================================================
+     COLORS + PROCEDURAL WALL FALLBACK
+  ========================================================= */
+  let floorCol, wallBase;
+
+  const TEX = 64;
+
+  const texCanvas = document.createElement("canvas");
+  texCanvas.width = TEX;
+  texCanvas.height = TEX;
+  const tctx = texCanvas.getContext("2d", { alpha:false });
+
+  function generateStoneTexture(base){
+    const img = tctx.createImageData(TEX, TEX);
+    const d = img.data;
+
+    const base2 = {
+      r: base.r + randInt(-10, 80),
+      g: base.g + randInt(-10, 10),
+      b: base.b + randInt(-10, 10)
+    };
+
+    for(let y=0;y<TEX;y++){
+      for(let x=0;x<TEX;x++){
+        const i = (y*TEX + x) * 4;
+        const mix = randInt(0,100) < 55 ? base : base2;
+
+        let n = randInt(-22, 22);
+        if(randInt(0,100) < 8) n += randInt(-40, -18);
+
+        d[i+0] = clamp255(mix.r + n);
+        d[i+1] = clamp255(mix.g + n);
+        d[i+2] = clamp255(mix.b + n);
+        d[i+3] = 255;
+      }
+    }
+    tctx.putImageData(img, 0, 0);
+  }
+
+  function rerollColors(){
+    floorCol = randColorPastelish();
+    wallBase = randStoneBase();
+    generateStoneTexture(wallBase);
+  }
+  rerollColors();
+
+  const blackTexCanvas = document.createElement("canvas");
+  blackTexCanvas.width = TEX;
+  blackTexCanvas.height = TEX;
+  const bctx = blackTexCanvas.getContext("2d", { alpha:false });
+  bctx.fillStyle = "rgb(0,0,0)";
+  bctx.fillRect(0,0,TEX,TEX);
+
+  /* =========================================================
+     LOAD IMAGES + AUDIO FX
+  ========================================================= */
+  function loadImage(src){
+    const img = new Image();
+    img.src = src;
+    return img;
+  }
+
+  const wallImg = loadImage("images/wall1.png");
+  let wallReady = false;
+  wallImg.onload = () => wallReady = true;
+
+  const doorImg = loadImage("images/door.png");
+  let doorReady = false;
+  doorImg.onload = () => doorReady = true;
+
+  const IMG = {
+    griz: loadImage("images/griz.png"),
+    zombie: loadImage("images/zombie.png"),
+    eyes: loadImage("images/eyes.png"),
+    treasure: loadImage("images/treasure.png"),
+    stunIcon: loadImage("images/stun.png"), // ✅ NEW
+  };
+
+  const SND = {
+    bear: new Audio("images/bear_sound.mp3"),
+    scream: new Audio("images/scream.mp3"),
+    gun: new Audio("images/gun.mp3"),
+    boom: new Audio("images/explosion.mp3"),
+    suction: new Audio("images/suction.mp3"),
+  };
+  for(const k in SND){ SND[k].preload = "auto"; }
+  SND.bear.volume = 0.85;
+  SND.scream.volume = 0.95;
+  SND.gun.volume = 0.80;
+  SND.boom.volume = 0.95;
+  SND.suction.volume = 0.95;
+
+  function playOneShot(a){
+    try{
+      const b = a.cloneNode();
+      b.volume = a.volume ?? 1;
+      b.play().catch(()=>{});
+    }catch(e){}
+  }
+
+  /* =========================================================
+     MAP + DOORS + PICKUPS + PORTAL + ENEMIES + BOOM + VOID + TREASURE + STUN DOOR
+  ========================================================= */
+  const MH = MAP.length, MW = MAP[0].length;
+
+  const doorsOpen = new Set();
+  const doorKey = (mx,my) => mx + "," + my;
+
+  const pickupsTaken = new Set();
+
+  function cellAt(mx,my){
+    if(mx<0||my<0||mx>=MW||my>=MH) return "#";
+    return MAP[my][mx];
+  }
+
+  function cellBlocks(mx,my){
+    const cell = cellAt(mx,my);
+    if(cell === "#" || cell === "1") return true;
+    if(cell === "D") return !doorsOpen.has(doorKey(mx,my));
+    return false;
+  }
+
+  function cellWalkable(mx,my){
+    if(mx<0||my<0||mx>=MW||my>=MH) return false;
+    const c = cellAt(mx,my);
+    return (c === "." || c === "X" || c === "Z");
+  }
+
+  function isWall(x,y){
+    const mx = (x / TILE) | 0;
+    const my = (y / TILE) | 0;
+    return cellBlocks(mx,my);
+  }
+
+  const player = {
+    x: 5.5*TILE,
+    y: 5.2*TILE,
+    a: -Math.PI/2,
+    hasStun: false,
+    stunCharges: 0,
+    lastStunShotAt: -1e9
+  };
+
+  function playerIsSafe(){
+    const mx = (player.x / TILE) | 0;
+    const my = (player.y / TILE) | 0;
+    return cellAt(mx,my) === "X";
+  }
+
+  // Doors list
+  const allDoors = [];
+  for(let my=0; my<MH; my++){
+    for(let mx=0; mx<MW; mx++){
+      if(MAP[my][mx] === "D") allDoors.push({mx,my,key:doorKey(mx,my)});
+    }
+  }
+
+  // no-overlap spawn helper
+  function chooseSpawnNearDoor(door, usedPositions){
+    const ring = [];
+    for(let r=1; r<=2; r++){
+      for(let oy=-r; oy<=r; oy++){
+        for(let ox=-r; ox<=r; ox++){
+          const mx = door.mx + ox;
+          const my = door.my + oy;
+          if(!cellWalkable(mx,my)) continue;
+          ring.push({
+            x: (mx + 0.5) * TILE + randInt(-10,10),
+            y: (my + 0.5) * TILE + randInt(-10,10),
+          });
+        }
+      }
+      if(ring.length) break;
+    }
+    if(!ring.length) return { x:(door.mx+0.5)*TILE, y:(door.my+0.5)*TILE };
+
+    let best = ring[0], bestMin = -1;
+    for(const c of ring){
+      let minD = 1e9;
+      for(const p of usedPositions){
+        const d = Math.hypot(c.x - p.x, c.y - p.y);
+        if(d < minD) minD = d;
+      }
+      if(usedPositions.length === 0) minD = 1e9;
+      const ok = (usedPositions.length === 0) || (minD >= ENEMY_MIN_SEP);
+
+      if(ok){
+        if(minD > bestMin){ bestMin = minD; best = c; }
+      } else if(bestMin < 0){
+        if(minD > bestMin){ bestMin = minD; best = c; }
+      }
+    }
+    return best;
+  }
+
+  // PORTAL
+  let portalDoor = null;
+  let portalPos = null;
+  let portalTriggered = false;
+  let portalOverlayUntil = 0;
+
+  function pickRandomPortalDoor(){
+    if(allDoors.length === 0){
+      portalDoor = null;
+      portalPos = null;
+      return;
+    }
+    portalDoor = allDoors[randInt(0, allDoors.length - 1)];
+    portalPos = { x:(portalDoor.mx+0.5)*TILE, y:(portalDoor.my+0.5)*TILE };
+    portalTriggered = false;
+    portalOverlayUntil = 0;
+  }
+
+  // BOOM DOOR
+  let boomDoor = null;
+  function pickRandomBoomDoor(excludeKeys){
+    boomDoor = null;
+    if(!allDoors.length) return;
+    const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
+    const pickFrom = candidates.length ? candidates : allDoors;
+    boomDoor = pickFrom[randInt(0, pickFrom.length - 1)];
+    excludeKeys.add(boomDoor.key);
+  }
+
+  // VOID DOOR
+  let voidDoor = null;
+  function pickRandomVoidDoor(excludeKeys){
+    voidDoor = null;
+    if(!allDoors.length) return;
+    const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
+    const pickFrom = candidates.length ? candidates : allDoors;
+    voidDoor = pickFrom[randInt(0, pickFrom.length - 1)];
+    excludeKeys.add(voidDoor.key);
+  }
+
+  // TREASURE DOOR
+  let treasureDoor = null;
+  let treasurePos = null;
+  let treasureCollected = false;
+
+  function pickRandomTreasureDoor(excludeKeys){
+    treasureDoor = null;
+    treasurePos = null;
+    treasureCollected = false;
+
+    if(!allDoors.length) return;
+    const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
+    const pickFrom = candidates.length ? candidates : allDoors;
+
+    treasureDoor = pickFrom[randInt(0, pickFrom.length - 1)];
+    excludeKeys.add(treasureDoor.key);
+
+    treasurePos = { x:(treasureDoor.mx+0.5)*TILE, y:(treasureDoor.my+0.5)*TILE };
+  }
+
+  // ✅ STUN DOOR (NEW)
+  let stunDoor = null;
+  let stunPos = null;
+  let stunDoorCollected = false;
+
+  function pickRandomStunDoor(excludeKeys){
+    stunDoor = null;
+    stunPos = null;
+    stunDoorCollected = false;
+
+    if(!allDoors.length) return;
+    const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
+    const pickFrom = candidates.length ? candidates : allDoors;
+
+    stunDoor = pickFrom[randInt(0, pickFrom.length - 1)];
+    excludeKeys.add(stunDoor.key);
+
+    stunPos = { x:(stunDoor.mx+0.5)*TILE, y:(stunDoor.my+0.5)*TILE };
+  }
+
+  // GAME STATES
+  let gameOver = false;
+  let gameOverReason = "GAME OVER";
+
+  function triggerDeath(nowMs, why){
+    if(gameOver || voidActive) return;
+    gameOver = true;
+    gameOverStartedAt = nowMs;
+    gameOverReason = why || "YOU DIED";
+    MUSIC.volume = 0.10;
+    try{ playOneShot(SND.scream); }catch(e){}
+  }
+
+
+  // VOID STATE
+  let voidActive = false;
+  let voidUntil = 0;
+  let voidStartedAt = 0;
+
+  function triggerVoid(nowMs){
+    if(gameOver || voidActive) return;
+    voidActive = true;
+    voidStartedAt = nowMs;
+    voidUntil = nowMs + VOID_COUNTDOWN_MS;
+    MUSIC.volume = 0.08;
+    playOneShot(SND.suction);
+  }
+
+  function triggerGameOverFromVoid(nowMs){
+    voidActive = false;
+    gameOver = true;
+    gameOverStartedAt = nowMs;
+    gameOverReason = "CONSUMED BY THE VOID";
+    MUSIC.volume = 0.10;
+  }
+
+  // GRIZ
+  let grizDoor = null;
+  let grizActive = false;
+
+  const griz = {
+    x: 3.0*TILE, y: 2.2*TILE, a: 0,
+    radius: GRIZ_RADIUS, speed: GRIZ_SPEED, size: GRIZ_SIZE_FACTOR
+  };
+
+  function pickRandomGrizDoor(excludeKeys, usedPositions){
+    grizDoor = null;
+    grizActive = false;
+
+    const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
+    const pickFrom = candidates.length ? candidates : allDoors;
+    if(!pickFrom.length) return;
+
+    grizDoor = pickFrom[randInt(0, pickFrom.length - 1)];
+    excludeKeys.add(grizDoor.key);
+
+    const spawn = chooseSpawnNearDoor(grizDoor, usedPositions);
+    usedPositions.push({x:spawn.x, y:spawn.y});
+
+    griz.x = spawn.x;
+    griz.y = spawn.y;
+    griz.a = 0;
+  }
+
+  // ZOMBIES
+  const zombies = [];
+  let zombieDoors = [];
+
+  function spawnZombies(excludeKeys, usedPositions){
+    zombies.length = 0;
+    zombieDoors = [];
+    if(!allDoors.length) return;
+
+    const basePool = allDoors.filter(d => !excludeKeys.has(d.key));
+    const pool = basePool.length ? basePool.slice() : allDoors.slice();
+
+    for(let i=0;i<ZOMBIE_COUNT;i++){
+      let door = null;
+      for(let tries=0; tries<40; tries++){
+        const cand = pool[randInt(0, pool.length - 1)];
+        if(!excludeKeys.has(cand.key)){ door = cand; break; }
+      }
+      if(!door) door = pool[randInt(0, pool.length - 1)];
+
+      zombieDoors.push(door);
+      excludeKeys.add(door.key);
+
+      const spawn = chooseSpawnNearDoor(door, usedPositions);
+      usedPositions.push({x:spawn.x, y:spawn.y});
+
+      zombies.push({
+        x: spawn.x, y: spawn.y, a: 0,
+        radius: ZOMBIE_RADIUS, speed: ZOMBIE_SPEED, size: ZOMBIE_SIZE_FACTOR,
+        active: false,
+        stunnedUntil: 0,
+        stunAfterCatchUntil: 0,
+        lastCatchSoundAt: -1e9
+      });
+    }
+  }
+
+  function setupRound(){
+    const exclude = new Set();
+    const used = [];
+
+    pickRandomPortalDoor();
+    if(portalDoor) exclude.add(portalDoor.key);
+
+    pickRandomBoomDoor(exclude);
+    pickRandomVoidDoor(exclude);
+    pickRandomTreasureDoor(exclude);
+    pickRandomStunDoor(exclude); // ✅ NEW
+
+    pickRandomGrizDoor(exclude, used);
+    spawnZombies(exclude, used);
+
+    portalTriggered = false;
+    portalOverlayUntil = 0;
+
+    gameOver = false;
+    voidActive = false;
+    voidUntil = 0;
+    voidStartedAt = 0;
+  }
+  setupRound();
+
+  function checkPortal(nowMs){
+    if(gameOver || voidActive) return;
+    if(!portalDoor || !portalPos || portalTriggered) return;
+    if(!doorsOpen.has(portalDoor.key)) return;
+
+    const d = Math.hypot(player.x - portalPos.x, player.y - portalPos.y);
+    if(d <= PORTAL_TRIGGER_DIST){
+      portalTriggered = true;
+      portalOverlayUntil = nowMs + 450;
+      MUSIC.volume = 0.18;
+      setTimeout(() => window.location.href = OUTSIDE_URL, 220);
+    }
+  }
+
+  function checkTreasure(nowMs){
+    if(gameOver || voidActive) return;
+    if(!treasureDoor || !treasurePos || treasureCollected) return;
+    if(!doorsOpen.has(treasureDoor.key)) return;
+
+    const d = Math.hypot(player.x - treasurePos.x, player.y - treasurePos.y);
+    if(d <= TREASURE_PICKUP_DIST){
+      treasureCollected = true;
+      heal(TREASURE_HEALTH_BONUS);
+    }
+  }
+
+  // ✅ NEW: stun-door pickup logic
+  function checkStunDoorPickup(nowMs){
+    if(gameOver || voidActive) return;
+    if(!stunDoor || !stunPos || stunDoorCollected) return;
+    if(!doorsOpen.has(stunDoor.key)) return;
+
+    const d = Math.hypot(player.x - stunPos.x, player.y - stunPos.y);
+    if(d <= STUN_DOOR_PICKUP_DIST){
+      stunDoorCollected = true;
+      player.hasStun = true;
+      player.stunCharges = STUN_START_CHARGES;
+      player.lastStunShotAt = -1e9;
+      heal(STUN_PICKUP_BONUS);
+      zapUntil = nowMs + 220;
+    }
+  }
+
+  function triggerBoom(nowMs){
+    if(gameOver || voidActive) return;
+    gameOver = true;
+    gameOverStartedAt = nowMs;
+    gameOverReason = "BLOWN UP";
+    MUSIC.volume = 0.10;
+    playOneShot(SND.boom);
+  }
+
+  function tryOpenDoorInFront(nowMs){
+    const lookDist = 34;
+    const tx = player.x + Math.cos(player.a) * lookDist;
+    const ty = player.y + Math.sin(player.a) * lookDist;
+    const mx = (tx / TILE) | 0;
+    const my = (ty / TILE) | 0;
+
+    if(cellAt(mx,my) !== "D") return;
+
+    const key = doorKey(mx,my);
+    doorsOpen.add(key);
+
+    if(voidDoor && key === voidDoor.key){
+      triggerVoid(nowMs);
+      return;
+    }
+    if(boomDoor && key === boomDoor.key){
+      triggerBoom(nowMs);
+      return;
+    }
+
+    if(gameOver || voidActive) return;
+
+    if(grizDoor && key === grizDoor.key && !grizActive){
+      grizActive = true;
+      playOneShot(SND.bear);
+    }
+
+    for(let i=0;i<zombies.length;i++){
+      if(zombieDoors[i] && key === zombieDoors[i].key){
+        if(!zombies[i].active){
+          zombies[i].active = true;
+          playOneShot(SND.bear);
+        }
+      }
+    }
+  }
+
+  /* =========================================================
+     INPUT
+  ========================================================= */
+  const keys = new Set();
+  // =========================
+  // 📱 TOUCH CONTROLS (iPad)
+  // =========================
+  const TOUCH_STORE_KEY = "luke1_touch_controls";
+
+  const touchToggle = document.getElementById("touchToggle");
+  const touchControls = document.getElementById("touchControls");
+
+  function isCoarsePointer(){
+    return (window.matchMedia && matchMedia("(pointer: coarse)").matches) ||
+           ("ontouchstart" in window) ||
+           (navigator.maxTouchPoints > 0);
+  }
+
+  function loadTouchEnabled(){
+    const saved = localStorage.getItem(TOUCH_STORE_KEY);
+    if(saved === "on")  return true;
+    if(saved === "off") return false;
+    // default ON for iPad/touch, default OFF for desktop
+    return isCoarsePointer();
+  }
+
+  let touchEnabled = loadTouchEnabled();
+
+  function applyTouchUI(){
+    if(!touchToggle || !touchControls) return;
+    touchControls.style.display = touchEnabled ? "block" : "none";
+    touchToggle.textContent = touchEnabled ? "📱 Controls: ON" : "📱 Controls: OFF";
+  }
+
+  function setTouchEnabled(v){
+    touchEnabled = !!v;
+    localStorage.setItem(TOUCH_STORE_KEY, touchEnabled ? "on" : "off");
+
+    // release held virtual keys when turning off
+    if(!touchEnabled){
+      keys.delete("ArrowUp");
+      keys.delete("ArrowDown");
+      keys.delete("ArrowLeft");
+      keys.delete("ArrowRight");
+      keys.delete("ShiftLeft");
+      keys.delete("ShiftRight");
+    }
+    applyTouchUI();
+    canvas && canvas.focus && canvas.focus();
+  }
+
+  if(touchToggle){
+    touchToggle.addEventListener("click", () => setTouchEnabled(!touchEnabled));
+  }
+
+  function bindHold(btn, code){
+    const down = (e) => {
+      if(!touchEnabled) return;
+      e.preventDefault();
+      startMusicOnce();
+      keys.add(code);
+      canvas && canvas.focus && canvas.focus();
+    };
+    const up = (e) => {
+      e.preventDefault();
+      keys.delete(code);
+    };
+    btn.addEventListener("pointerdown", down, {passive:false});
+    btn.addEventListener("pointerup", up, {passive:false});
+    btn.addEventListener("pointercancel", up, {passive:false});
+    btn.addEventListener("pointerleave", up, {passive:false});
+  }
+
+  function fakeKeyPress(code){
+    // Call the same logic as real keys by emitting a KeyboardEvent.
+    // This keeps behavior identical (E opens door, Space fires, etc.)
+    try{
+      const ev = new KeyboardEvent("keydown", { code, bubbles:true });
+      window.dispatchEvent(ev);
+    }catch(e){}
+  }
+
+  function bindTap(btn, code){
+    btn.addEventListener("pointerdown", (e) => {
+      if(!touchEnabled) return;
+      e.preventDefault();
+      startMusicOnce();
+      canvas && canvas.focus && canvas.focus();
+      fakeKeyPress(code);
+    }, {passive:false});
+  }
+
+  document.querySelectorAll(".tcBtn").forEach(btn => {
+    const hold = btn.getAttribute("data-hold");
+    const tap  = btn.getAttribute("data-tap");
+    if(hold) bindHold(btn, hold);
+    if(tap)  bindTap(btn, tap);
+  });
+
+  applyTouchUI();
+
+  addEventListener("keydown", (e) => {
+    startMusicOnce();
+    keys.add(e.code);
+
+    if(e.code === "KeyH"){ setHudTextVisible(!hudTextVisible); e.preventDefault(); return; }
+
+    if(e.code === "KeyR") rerollColors();
+    if(e.code === "KeyE"){ tryOpenDoorInFront(performance.now()); e.preventDefault(); }
+    if(e.code === "KeyN"){ newRound(); e.preventDefault(); }
+    if(e.code === "Space"){ fireStunGun(performance.now()); e.preventDefault(); }
+
+    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
+  }, { passive:false });
+  addEventListener("keyup", (e) => keys.delete(e.code));
+
+  /* =========================================================
+     COLLISION
+  ========================================================= */
+  const PRADIUS = 14;
+
+  function canMoveCircle(nx, ny, radius){
+    const r = radius;
+    const checks = [
+      [nx+r, ny],[nx-r, ny],[nx, ny+r],[nx, ny-r],
+      [nx+r*0.7, ny+r*0.7],[nx-r*0.7, ny+r*0.7],
+      [nx+r*0.7, ny-r*0.7],[nx-r*0.7, ny-r*0.7],
+    ];
+    for(const [cx,cy] of checks) if(isWall(cx,cy)) return false;
+    return true;
+  }
+
+  function tryMovePlayer(nx, ny){
+    if(!canMoveCircle(nx, ny, PRADIUS)) return;
+    player.x = nx; player.y = ny;
+  }
+
+  function tryMoveEntity(ent, nx, ny){
+    if(!canMoveCircle(nx, ny, ent.radius)) return false;
+    ent.x = nx; ent.y = ny;
+    return true;
+  }
+
+  /* =========================================================
+     RAYCAST
+  ========================================================= */
+  function cast(rayAngle){
+    const sin = Math.sin(rayAngle);
+    const cos = Math.cos(rayAngle);
+
+    const px = player.x / TILE;
+    const py = player.y / TILE;
+
+    let mapX = px | 0;
+    let mapY = py | 0;
+
+    const deltaDistX = Math.abs(1 / (cos || 1e-9));
+    const deltaDistY = Math.abs(1 / (sin || 1e-9));
+
+    let stepX, stepY, sideDistX, sideDistY;
+
+    if(cos < 0){ stepX = -1; sideDistX = (px - mapX) * deltaDistX; }
+    else       { stepX =  1; sideDistX = (mapX + 1 - px) * deltaDistX; }
+
+    if(sin < 0){ stepY = -1; sideDistY = (py - mapY) * deltaDistY; }
+    else       { stepY =  1; sideDistY = (mapY + 1 - py) * deltaDistY; }
+
+    let side = 0;
+
+    for(let i=0;i<96;i++){
+      if(sideDistX < sideDistY){
+        sideDistX += deltaDistX;
+        mapX += stepX;
+        side = 0;
+      } else {
+        sideDistY += deltaDistY;
+        mapY += stepY;
+        side = 1;
+      }
+      if(mapX<0||mapY<0||mapX>=MW||mapY>=MH) break;
+      if(cellBlocks(mapX,mapY)) break;
+    }
+
+    let perpDist;
+    if(side === 0) perpDist = (mapX - px + (1 - stepX)/2) / (cos || 1e-9);
+    else           perpDist = (mapY - py + (1 - stepY)/2) / (sin || 1e-9);
+
+    let wallX;
+    if(side === 0) wallX = py + perpDist * sin;
+    else           wallX = px + perpDist * cos;
+    wallX -= Math.floor(wallX);
+
+    const corrected = perpDist * Math.cos(rayAngle - player.a);
+    const distWorld = Math.max(0.001, corrected * TILE);
+
+    const hitCell = cellAt(mapX,mapY);
+    const hitOpen = (hitCell === "D") ? doorsOpen.has(doorKey(mapX,mapY)) : false;
+
+    return { dist: distWorld, side, wallX, hitCell, hitOpen, hitMX: mapX, hitMY: mapY };
+  }
+
+  /* =========================================================
+     BILLBOARD DRAW
+  ========================================================= */
+  function drawBillboard(img, xWorld, yWorld, sizeFactor, w, h, horizon, projPlane, wallZ){
+    const dx = xWorld - player.x;
+    const dy = yWorld - player.y;
+    const dist = Math.hypot(dx,dy);
+    if(dist < 6) return;
+
+    const ang = wrapAngle(Math.atan2(dy,dx) - player.a);
+    if(Math.abs(ang) > FOV*0.65) return;
+
+    const screenX = (w/2) + Math.tan(ang) * projPlane;
+
+    const spriteH = (TILE / dist) * projPlane * WALL_SCALE * sizeFactor;
+    const spriteW = spriteH * (img.width / img.height);
+
+    const left = (screenX - spriteW/2) | 0;
+    const right = (screenX + spriteW/2) | 0;
+
+    const bottom = horizon + (spriteH * 0.50);
+    const top = (bottom - spriteH) | 0;
+
+    for(let x=left; x<=right; x++){
+      if(x<0 || x>=w) continue;
+      if(wallZ[x] < dist) continue;
+
+      const u = (x - left) / Math.max(1, (right - left));
+      const sx = (u * img.width) | 0;
+
+      ctx.drawImage(img, sx, 0, 1, img.height, x, top, 1, spriteH);
+    }
+  }
+
+  /* =========================================================
+     GENERATED SPRITES: portal rune
+  ========================================================= */
+  const runeCanvas = document.createElement("canvas");
+  runeCanvas.width = 64; runeCanvas.height = 64;
+  const rctx = runeCanvas.getContext("2d");
+  {
+    const g = rctx.createRadialGradient(32,32,4, 32,32,30);
+    g.addColorStop(0, "rgba(80,220,255,0.95)");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    rctx.fillStyle = g;
+    rctx.fillRect(0,0,64,64);
+
+    rctx.strokeStyle = "rgba(120,240,255,0.95)";
+    rctx.lineWidth = 5;
+    rctx.beginPath();
+    rctx.arc(32,32,20,0,Math.PI*2);
+    rctx.stroke();
+
+    rctx.strokeStyle = "rgba(30,120,255,0.95)";
+    rctx.lineWidth = 4;
+    rctx.beginPath();
+    rctx.moveTo(32,14); rctx.lineTo(32,50);
+    rctx.moveTo(22,22); rctx.lineTo(42,22);
+    rctx.moveTo(22,42); rctx.lineTo(42,42);
+    rctx.stroke();
+  }
+
+  /* =========================================================
+     STUN (pickup + firing)
+  ========================================================= */
+  const zapCanvas = document.createElement("canvas");
+  zapCanvas.width = 32; zapCanvas.height = 32;
+  const zctx = zapCanvas.getContext("2d");
+  zctx.fillStyle = "rgb(255,240,120)";
+  zctx.beginPath();
+  zctx.moveTo(18,2); zctx.lineTo(10,16); zctx.lineTo(16,16);
+  zctx.lineTo(9,30); zctx.lineTo(23,14); zctx.lineTo(16,14);
+  zctx.closePath();
+  zctx.fill();
+  zctx.strokeStyle = "rgb(90,70,20)";
+  zctx.lineWidth = 2;
+  zctx.stroke();
+
+  const pickups = [];
+  for(let my=0; my<MH; my++){
+    for(let mx=0; mx<MW; mx++){
+      if(MAP[my][mx] === "Z"){
+        pickups.push({ mx, my, x:(mx+0.5)*TILE, y:(my+0.5)*TILE });
+      }
+    }
+  }
+
+  let zapUntil = 0;
+  let caughtUntil = 0;
+
+  function checkPickup(nowMs){
+    const mx = (player.x / TILE) | 0;
+    const my = (player.y / TILE) | 0;
+    const key = mx + "," + my;
+
+    if(cellAt(mx,my) === "Z" && !pickupsTaken.has(key)){
+      pickupsTaken.add(key);
+      player.hasStun = true;
+      player.stunCharges = STUN_START_CHARGES;
+      player.lastStunShotAt = -1e9;
+      heal(STUN_PICKUP_BONUS);
+      zapUntil = nowMs + 220;
+    }
+  }
+
+  function fireStunGun(nowMs){
+    if(gameOver || voidActive) return;
+    if(!player.hasStun || player.stunCharges <= 0) return;
+    if(nowMs - player.lastStunShotAt < STUN_COOLDOWN_MS) return;
+
+    player.lastStunShotAt = nowMs;
+    player.stunCharges -= 1;
+    zapUntil = nowMs + ZAP_FLASH_MS;
+    playOneShot(SND.gun);
+
+    if(grizActive){
+      const dx = griz.x - player.x, dy = griz.y - player.y;
+      const dist = Math.hypot(dx,dy);
+      const aimErr = angleDiff(Math.atan2(dy, dx), player.a);
+      if(dist <= STUN_RANGE && aimErr <= STUN_FOV){
+        grizStunnedUntil = nowMs + STUN_DURATION_MS;
+      }
+    }
+
+    for(const z of zombies){
+      if(!z.active) continue;
+      const dx = z.x - player.x, dy = z.y - player.y;
+      const dist = Math.hypot(dx,dy);
+      const aimErr = angleDiff(Math.atan2(dy, dx), player.a);
+      if(dist <= STUN_RANGE && aimErr <= STUN_FOV){
+        z.stunnedUntil = nowMs + STUN_DURATION_MS;
+      }
+    }
+  }
+
+  let grizStunnedUntil = 0;
+  let grizStunAfterCatchUntil = 0;
+  let lastGrizCatchSoundAt = -1e9;
+  let gameOverStartedAt = 0;
+
+  function updateGriz(dt, nowMs){
+    if(gameOver || voidActive) return;
+    if(!grizActive) return;
+    if(nowMs < grizStunnedUntil) return;
+    if(playerIsSafe() && SAFE_FREEZE_ENEMIES) return;
+
+    const dx = player.x - griz.x;
+    const dy = player.y - griz.y;
+    const dist = Math.hypot(dx,dy);
+
+    if(!playerIsSafe() && dist < CATCH_DIST){
+      caughtUntil = Math.max(caughtUntil, nowMs + CAUGHT_FLASH_MS);
+      grizStunAfterCatchUntil = Math.max(grizStunAfterCatchUntil, nowMs + ENEMY_STUN_AFTER_CATCH_MS);
+
+      // Health consequence
+      takeDamage(GRIZ_DAMAGE, nowMs, "MAULED BY GRIZ");
+
+      if(nowMs - lastGrizCatchSoundAt > SOUND_COOLDOWN_MS){
+        playOneShot(SND.bear);
+        playOneShot(SND.scream);
+        lastGrizCatchSoundAt = nowMs;
+      }
+      return;
+    }
+
+    if(nowMs < grizStunAfterCatchUntil) return;
+
+    const targetA = Math.atan2(dy, dx);
+    const da = wrapAngle(targetA - griz.a);
+    const kTurn = 1 - Math.exp(-GRIZ_TURN_SMOOTH * dt);
+    griz.a = wrapAngle(griz.a + da * kTurn);
+
+    const step = griz.speed * dt;
+    const nx = griz.x + Math.cos(griz.a) * step;
+    const ny = griz.y + Math.sin(griz.a) * step;
+
+    if(tryMoveEntity(griz, nx, ny)) return;
+    if(tryMoveEntity(griz, nx, griz.y)) return;
+    if(tryMoveEntity(griz, griz.x, ny)) return;
+  }
+
+  function updateZombies(dt, nowMs){
+    if(gameOver || voidActive) return;
+    for(const z of zombies){
+      if(!z.active) continue;
+      if(nowMs < z.stunnedUntil) continue;
+      if(playerIsSafe() && SAFE_FREEZE_ENEMIES) continue;
+
+      const dx = player.x - z.x;
+      const dy = player.y - z.y;
+      const dist = Math.hypot(dx,dy);
+
+      if(!playerIsSafe() && dist < CATCH_DIST){
+        caughtUntil = Math.max(caughtUntil, nowMs + CAUGHT_FLASH_MS);
+        z.stunAfterCatchUntil = Math.max(z.stunAfterCatchUntil, nowMs + ENEMY_STUN_AFTER_CATCH_MS);
+
+        // Health consequence
+        takeDamage(ZOMBIE_DAMAGE, nowMs, "BITTEN BY ZOMBIE");
+
+        if(nowMs - z.lastCatchSoundAt > SOUND_COOLDOWN_MS){
+          playOneShot(SND.bear);
+          playOneShot(SND.scream);
+          z.lastCatchSoundAt = nowMs;
+        }
+        continue;
+      }
+
+      if(nowMs < z.stunAfterCatchUntil) continue;
+
+      const targetA = Math.atan2(dy, dx);
+      const da = wrapAngle(targetA - z.a);
+      const kTurn = 1 - Math.exp(-ZOMBIE_TURN_SMOOTH * dt);
+      z.a = wrapAngle(z.a + da * kTurn);
+
+      const step = z.speed * dt;
+      const nx = z.x + Math.cos(z.a) * step;
+      const ny = z.y + Math.sin(z.a) * step;
+
+      if(tryMoveEntity(z, nx, ny)) continue;
+      if(tryMoveEntity(z, nx, z.y)) continue;
+      if(tryMoveEntity(z, z.x, ny)) continue;
+    }
+  }
+
+  /* =========================================================
+     OVERLAYS (VOID with EYES)
+  ========================================================= */
+  function drawCenteredText(lines, w, h, mainColor){
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = mainColor;
+    ctx.font = "bold 52px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif";
+    ctx.fillText(lines[0], w/2, h/2);
+    ctx.font = "18px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif";
+    if(lines[1]) ctx.fillText(lines[1], w/2, h/2 + 54);
+  }
+
+  function drawVoidEyes(w, h, nowMs){
+    const img = IMG.eyes;
+    if(!(img.complete && img.naturalWidth > 0)) return;
+
+    const t = (nowMs - voidStartedAt) * 0.0023;
+    const bob = Math.sin(t) * (h * 0.012);
+
+    const size = Math.min(w, h) * 0.36;
+    const x = (w - size) * 0.5;
+    const y = (h - size) * 0.43 + bob;
+
+    ctx.globalAlpha = 0.96;
+    ctx.drawImage(img, x, y, size, size);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawOverlays(w,h, nowMs){
+    if(voidActive){
+      const t = clamp((nowMs - voidStartedAt) / 650, 0, 1);
+      ctx.fillStyle = `rgba(0,0,0,${(0.70 + 0.30*t).toFixed(3)})`;
+      ctx.fillRect(0,0,w,h);
+
+      drawVoidEyes(w,h, nowMs);
+
+      const leftMs = Math.max(0, voidUntil - nowMs);
+      const secs = Math.ceil(leftMs / 1000);
+
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "rgba(255,255,255,0.92)";
+      ctx.font = "18px system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif";
+      ctx.fillText(`Game over in ${secs}...`, w/2, h * 0.88);
+
+      return;
+    }
+
+    if(gameOver){
+      ctx.fillStyle = "rgba(0,0,0,0.55)";
+      ctx.fillRect(0,0,w,h);
+      drawCenteredText([gameOverReason || "GAME OVER", "Press N for new round"], w,h, "rgba(255,220,220,0.98)");
+      return;
+    }
+
+    if(playerIsSafe()){
+      ctx.fillStyle = "rgba(0,0,0,0.10)";
+      ctx.fillRect(0,0,w,h);
+      drawCenteredText(["SAFE ROOM!", "Press N for new round."], w,h, "rgba(210,255,210,0.98)");
+      return;
+    }
+
+    if(nowMs <= caughtUntil){
+      ctx.fillStyle = "rgba(0,0,0,0.25)";
+      ctx.fillRect(0,0,w,h);
+      drawCenteredText(["CAUGHT!", "Run!!!"], w,h, "rgba(255,255,255,0.95)");
+    }
+
+    if(nowMs <= damageFlashUntil){
+      ctx.fillStyle = "rgba(255,0,0,0.20)";
+      ctx.fillRect(0,0,w,h);
+    }
+
+    if(nowMs <= zapUntil){
+      ctx.fillStyle = "rgba(255,245,130,0.20)";
+      ctx.fillRect(0,0,w,h);
+    }
+
+    if(nowMs <= portalOverlayUntil){
+      ctx.fillStyle = "rgba(0,0,0,0.18)";
+      ctx.fillRect(0,0,w,h);
+      drawCenteredText(["PORTAL!", "Loading Luke2.html"], w,h, "rgba(180,240,255,0.98)");
+    }
+  }
+
+  /* =========================================================
+     NEW ROUND
+  ========================================================= */
+  function newRound(){
+    player.x = 5.5*TILE;
+    player.y = 5.2*TILE;
+    player.a = -Math.PI/2;
+
+    // Reset health
+    setHealth(MAX_HEALTH);
+    lastDamageAt = -1e9;
+    damageFlashUntil = 0;
+    gameOverReason = "GAME OVER";
+
+    doorsOpen.clear();
+    pickupsTaken.clear();
+    player.hasStun = false;
+    player.stunCharges = 0;
+    player.lastStunShotAt = -1e9;
+
+    grizActive = false;
+    grizStunnedUntil = 0;
+    grizStunAfterCatchUntil = 0;
+    lastGrizCatchSoundAt = -1e9;
+
+    for(const z of zombies){
+      z.active = false;
+      z.stunnedUntil = 0;
+      z.stunAfterCatchUntil = 0;
+      z.lastCatchSoundAt = -1e9;
+    }
+
+    zapUntil = 0;
+    caughtUntil = 0;
+    portalTriggered = false;
+    portalOverlayUntil = 0;
+
+    voidActive = false;
+    voidUntil = 0;
+    voidStartedAt = 0;
+
+    gameOver = false;
+    gameOverStartedAt = 0;
+
+    treasureCollected = false;
+    stunDoorCollected = false; // ✅ NEW
+
+    MUSIC.volume = 0.40;
+
+    setupRound();
+  }
+
+  /* =========================================================
+     MAIN LOOP
+  ========================================================= */
+  let last = performance.now();
+  let wallZ = new Float32Array(1);
+
+  function tick(now){
+    const dt = Math.min(0.05, (now - last)/1000);
+    last = now;
+
+    if(voidActive && now >= voidUntil){
+      triggerGameOverFromVoid(now);
+    }
+
+    const w = canvas.width, h = canvas.height;
+    if(wallZ.length !== w) wallZ = new Float32Array(w);
+
+    if(!gameOver && !voidActive){
+      const speed = (keys.has("ShiftLeft") || keys.has("ShiftRight")) ? MOVE_SPEED * 1.8 : MOVE_SPEED;
+
+      if(keys.has("ArrowLeft"))  player.a -= TURN_SPEED * dt;
+      if(keys.has("ArrowRight")) player.a += TURN_SPEED * dt;
+
+      let vx=0, vy=0;
+      if(keys.has("ArrowUp"))   { vx += Math.cos(player.a)*speed*dt; vy += Math.sin(player.a)*speed*dt; }
+      if(keys.has("ArrowDown")) { vx -= Math.cos(player.a)*speed*dt; vy -= Math.sin(player.a)*speed*dt; }
+      if(vx || vy) tryMovePlayer(player.x + vx, player.y + vy);
+    }
+
+    // Passive regen only while standing in the SAFE zone (X)
+    if(!gameOver && !voidActive && playerIsSafe()){
+      heal(SAFE_REGEN_PER_SEC * dt);
+    }
+
+    checkPickup(now);
+    checkStunDoorPickup(now); // ✅ NEW
+    updateGriz(dt, now);
+    updateZombies(dt, now);
+    checkPortal(now);
+    checkTreasure(now);
+
+    const horizon = (h * HORIZON_FRAC) | 0;
+
+    if(voidActive){
+      ctx.fillStyle = "rgb(0,0,0)";
+      ctx.fillRect(0,0,w,h);
+      drawOverlays(w,h, now);
+
+      statusEl.innerHTML =
+        `<b>VOID:</b> ACTIVE • <b>Countdown:</b> ${(Math.max(0, (voidUntil-now))/1000).toFixed(2)}s • <b>Press N</b> to restart`;
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    ctx.fillStyle = rgb(CEIL_FIXED);
+    ctx.fillRect(0,0,w,horizon);
+
+    ctx.fillStyle = playerIsSafe() ? "rgb(120,180,120)" : rgb(floorCol);
+    ctx.fillRect(0,horizon,w,h-horizon);
+
+    const projPlane = (w/2) / Math.tan(FOV/2);
+
+    const wallTex = (wallReady && wallImg.naturalWidth > 0) ? wallImg : texCanvas;
+    const wallW = wallTex.naturalWidth ? wallTex.naturalWidth : TEX;
+    const wallH = wallTex.naturalHeight ? wallTex.naturalHeight : TEX;
+
+    const doorTex = (doorReady && doorImg.naturalWidth > 0) ? doorImg : wallTex;
+    const doorW = doorTex.naturalWidth ? doorTex.naturalWidth : wallW;
+    const doorH = doorTex.naturalHeight ? doorTex.naturalHeight : wallH;
+
+    const blackTex = blackTexCanvas;
+    const blackW = TEX, blackH = TEX;
+
+    for(let x=0; x<w; x++){
+      const t = x / (w - 1);
+      const rayAngle = (player.a - FOV/2) + t * FOV;
+
+      const hit = cast(rayAngle);
+      const dist = hit.dist;
+      wallZ[x] = dist;
+
+      const wallPixH = Math.min(h, ((TILE / dist) * projPlane) * WALL_SCALE);
+      const top = (horizon - wallPixH/2) | 0;
+
+      const useDoor = (hit.hitCell === "D" && !hit.hitOpen);
+      const useBlack = (hit.hitCell === "1");
+
+      const tex = useBlack ? blackTex : (useDoor ? doorTex : wallTex);
+      const texW = useBlack ? blackW   : (useDoor ? doorW   : wallW);
+      const texH = useBlack ? blackH   : (useDoor ? doorH   : wallH);
+
+      let texX = (hit.wallX * texW) | 0;
+      texX = clamp(texX, 0, texW-1);
+
+      let shade = 1 / (1 + dist * 0.008);
+      if(hit.side === 0) shade *= 0.82;
+      shade = Math.max(WALL_MIN_SHADE, shade);
+
+      ctx.drawImage(tex, texX, 0, 1, texH, x, top, 1, wallPixH);
+
+      const darkness = 1 - shade;
+      if(darkness > 0.001){
+        ctx.fillStyle = `rgba(0,0,0,${darkness.toFixed(3)})`;
+        ctx.fillRect(x, top, 1, wallPixH);
+      }
+    }
+
+    if(grizActive && IMG.griz.complete && IMG.griz.naturalWidth > 0){
+      drawBillboard(IMG.griz, griz.x, griz.y, griz.size, w,h,horizon,projPlane,wallZ);
+    }
+    if(IMG.zombie.complete && IMG.zombie.naturalWidth > 0){
+      for(const z of zombies){
+        if(!z.active) continue;
+        drawBillboard(IMG.zombie, z.x, z.y, z.size, w,h,horizon,projPlane,wallZ);
+      }
+    }
+
+    for(const p of pickups){
+      const key = p.mx + "," + p.my;
+      if(pickupsTaken.has(key)) continue;
+      drawBillboard(zapCanvas, p.x, p.y, 0.55, w,h,horizon,projPlane,wallZ);
+    }
+
+    if(portalDoor && portalPos && doorsOpen.has(portalDoor.key)){
+      drawBillboard(runeCanvas, portalPos.x, portalPos.y, PORTAL_SIZE, w,h,horizon,projPlane,wallZ);
+    }
+
+    if(treasureDoor && treasurePos && doorsOpen.has(treasureDoor.key) && !treasureCollected){
+      const img = IMG.treasure;
+      if(img.complete && img.naturalWidth > 0){
+        drawBillboard(img, treasurePos.x, treasurePos.y, TREASURE_SIZE, w,h,horizon,projPlane,wallZ);
+      }
+    }
+
+    // ✅ NEW: draw stun icon behind stun door when opened
+    if(stunDoor && stunPos && doorsOpen.has(stunDoor.key) && !stunDoorCollected){
+      const img = IMG.stunIcon;
+      if(img.complete && img.naturalWidth > 0){
+        drawBillboard(img, stunPos.x, stunPos.y, STUN_DOOR_SIZE, w,h,horizon,projPlane,wallZ);
+      }
+    }
+
+    drawOverlays(w,h, now);
+
+    const stunState = player.hasStun ? `YES (${player.stunCharges})` : "NO";
+
+    const portalState = portalDoor
+      ? (doorsOpen.has(portalDoor.key) ? "OPEN (portal visible)" : "HIDDEN (behind a door)")
+      : "none";
+
+    const zActive = zombies.filter(z => z.active).length;
+    const zHidden = zombies.length - zActive;
+
+    const boomState = boomDoor
+      ? (doorsOpen.has(boomDoor.key) ? (gameOver ? "TRIGGERED" : "OPENED") : "HIDDEN (behind a door)")
+      : "none";
+
+    const voidState = voidDoor
+      ? (doorsOpen.has(voidDoor.key) ? (voidActive ? "TRIGGERED" : "OPENED") : "HIDDEN (behind a door)")
+      : "none";
+
+    const treasureState = treasureDoor
+      ? (treasureCollected ? "COLLECTED"
+        : (doorsOpen.has(treasureDoor.key) ? "OPEN (treasure visible)" : "HIDDEN (behind a door)"))
+      : "none";
+
+    const stunDoorState = stunDoor
+      ? (stunDoorCollected ? "COLLECTED"
+        : (doorsOpen.has(stunDoor.key) ? "OPEN (stun visible)" : "HIDDEN (behind a door)"))
+      : "none";
+
+    statusEl.innerHTML =
+      `<b>Music:</b> drama.mp3 • <b>Stun:</b> ${stunState} • <b>Stun Door:</b> ${stunDoorState} • <b>Safe:</b> ${playerIsSafe()?"YES":"no"} • ` +
+      `<b>Portal:</b> ${portalState} • <b>Boom:</b> ${boomState} • <b>Void:</b> ${voidState} • ` +
+      `<b>Treasure:</b> ${treasureState} • ` +
+      `<b>Griz:</b> ${grizActive?"ACTIVE":"hidden"} • <b>Zombies:</b> ${zActive} active / ${zHidden} hidden • <b>Black walls:</b> tile '1'`;
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+})();
+</script>
+</body>
+</html>

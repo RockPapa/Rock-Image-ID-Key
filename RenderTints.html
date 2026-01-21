@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Yosemite 3D – RenderTerrainViewer (PBR + Strong Tint + HUD Toggle)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      color: white;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 10px 12px;
+      background: rgba(0,0,0,0.55);
+      font-size: 14px;
+      z-index: 20;
+      line-height: 1.45;
+      border-radius: 12px;
+      max-width: 1060px;
+    }
+    code { background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div id="info">
+    <b>RenderTerrainViewer</b> – Yosemite heightmap with rock PBR textures + elevation colors (tint)<br>
+    <span style="opacity:.9">
+      Map keys: ← → rotate, ↑ ↓ tilt, W/S zoom &nbsp; | &nbsp;
+      <b>R/F = view up/down</b> &nbsp; | &nbsp;
+      <b>H = toggle HUD</b>
+    </span>
+    <div id="status" style="margin-top:7px; opacity:.95;">Loading…</div>
+  </div>
+
+  <script src="three.min.js"></script>
+
+  <script>
+    // =========================
+    // TWEAK ZONE
+    // =========================
+    const TEX_DIR = "images/";
+    const HEIGHTMAP_FILE = "yosemite_heightmap.png";
+
+    // PBR rock set (in images/)
+    const ALBEDO_FILE = "rock_albedo.jpg";
+    const ROUGH_FILE  = "rock_rough.jpg";
+
+    // Texture tiling
+    const TEX_REPEAT = 10;
+
+    // Terrain shape
+    const TERRAIN_SIZE = 3200;
+    const SEGMENTS = 512;
+    const VERTICAL_SCALE = 450;
+
+    // Tint strength (another notch up from 0.80)
+    const TINT = 0.98;
+
+    // R/F: camera/view vertical speed (units per second)
+    const RF_VIEW_VERTICAL_SPEED = 700;
+
+    // =========================
+    // Boot
+    // =========================
+    window.addEventListener('load', () => {
+      if (typeof THREE === 'undefined') {
+        document.body.style.background = 'red';
+        document.body.innerHTML =
+          '<h1 style="color:white;font-family:system-ui;padding:16px">ERROR: three.min.js not loaded</h1>' +
+          '<p style="color:white;font-family:system-ui;padding:0 16px">Put <b>three.min.js</b> in the same folder as this HTML.</p>';
+        return;
+      }
+      start();
+    });
+
+    function start() {
+      const infoEl = document.getElementById('info');
+      const statusEl = document.getElementById('status');
+      const setStatus = (s) => statusEl.innerHTML = s;
+      const addStatus = (s) => statusEl.innerHTML += "<br>" + s;
+
+      let scene, camera, renderer, terrain;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x02040b);
+
+      const aspect = window.innerWidth / window.innerHeight;
+      camera = new THREE.PerspectiveCamera(65, aspect, 0.1, 20000);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // sRGB handling for broad compatibility
+      if (renderer.outputColorSpace !== undefined && THREE.SRGBColorSpace !== undefined) {
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+      } else if (renderer.outputEncoding !== undefined && THREE.sRGBEncoding !== undefined) {
+        renderer.outputEncoding = THREE.sRGBEncoding;
+      }
+
+      // lights
+      const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+      sun.position.set(800, 1400, 600);
+      scene.add(sun);
+
+      const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+      fill.position.set(-600, 400, -900);
+      scene.add(fill);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.35);
+      scene.add(ambient);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // ---------- CAMERA (moves MAP) ----------
+      let yaw = 0.9, pitch = 0.6, radius = 1800;
+      const minPitch = 0.15, maxPitch = 1.4, minRadius = 500, maxRadius = 5000;
+
+      // View elevation offset (this is what R/F changes)
+      let viewYOffset = 0;
+      const minViewY = -1200;
+      const maxViewY =  3200;
+
+      const keys = {};
+
+      document.addEventListener('keydown', e => {
+        const k = e.key.toLowerCase();
+
+        if (["arrowup","arrowdown","arrowleft","arrowright"].includes(k)) e.preventDefault();
+        keys[k] = true;
+
+        // H toggles HUD (instead of resetting camera)
+        if (k === 'h') {
+          infoEl.style.display = (infoEl.style.display === 'none') ? 'block' : 'none';
+        }
+      });
+
+      document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+      function updateCamera(dt) {
+        const stepYaw = 0.04;
+        const stepPitch = 0.06;
+        const stepRadius = 90;
+
+        if (keys['arrowleft'])  yaw -= stepYaw;
+        if (keys['arrowright']) yaw += stepYaw;
+
+        if (keys['arrowup'])   pitch = Math.min(maxPitch, pitch + stepPitch);
+        if (keys['arrowdown']) pitch = Math.max(minPitch, pitch - stepPitch);
+
+        if (keys['w']) radius = Math.max(minRadius, radius - stepRadius);
+        if (keys['s']) radius = Math.min(maxRadius, radius + stepRadius);
+
+        // R/F = view up/down (straight vertical)
+        if (keys['r']) viewYOffset += RF_VIEW_VERTICAL_SPEED * dt;
+        if (keys['f']) viewYOffset -= RF_VIEW_VERTICAL_SPEED * dt;
+        viewYOffset = Math.max(minViewY, Math.min(maxViewY, viewYOffset));
+
+        const cosPitch = Math.cos(pitch);
+        const sinPitch = Math.sin(pitch);
+
+        camera.position.x = Math.cos(yaw) * cosPitch * radius;
+        camera.position.z = Math.sin(yaw) * cosPitch * radius;
+        camera.position.y = sinPitch * radius + viewYOffset;
+
+        camera.lookAt(0, 0, 0);
+      }
+
+      // ---------- TERRAIN ----------
+      setStatus(`Loading heightmap: <code>${TEX_DIR + HEIGHTMAP_FILE}</code>…`);
+
+      const loader = new THREE.TextureLoader();
+
+      function prepRepeat(tex, repeat) {
+        if (!tex) return;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(repeat, repeat);
+        if (tex.anisotropy !== undefined && renderer.capabilities && renderer.capabilities.getMaxAnisotropy) {
+          tex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 12);
+        }
+      }
+
+      let albedoMap = null, roughMap = null;
+
+      loader.load(
+        TEX_DIR + ALBEDO_FILE,
+        (tex) => {
+          albedoMap = tex;
+          if (albedoMap.colorSpace !== undefined && THREE.SRGBColorSpace !== undefined) {
+            albedoMap.colorSpace = THREE.SRGBColorSpace;
+          } else if (albedoMap.encoding !== undefined && THREE.sRGBEncoding !== undefined) {
+            albedoMap.encoding = THREE.sRGBEncoding;
+          }
+          prepRepeat(albedoMap, TEX_REPEAT);
+          addStatus(`✅ Albedo: <code>${ALBEDO_FILE}</code>`);
+        },
+        undefined,
+        () => addStatus(`⚠️ Missing albedo: <code>${ALBEDO_FILE}</code> (using plain color)`)
+      );
+
+      loader.load(
+        TEX_DIR + ROUGH_FILE,
+        (tex) => {
+          roughMap = tex;
+          prepRepeat(roughMap, TEX_REPEAT);
+          addStatus(`✅ Roughness: <code>${ROUGH_FILE}</code>`);
+        },
+        undefined,
+        () => addStatus(`⚠️ Missing roughness: <code>${ROUGH_FILE}</code> (using roughness slider)`)
+      );
+
+      loader.load(TEX_DIR + HEIGHTMAP_FILE, tex => {
+        const img = tex.image;
+        const w = img.width;
+        const h = img.height;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const data = ctx.getImageData(0, 0, w, h).data;
+
+        const geometry = new THREE.PlaneGeometry(TERRAIN_SIZE, TERRAIN_SIZE, SEGMENTS, SEGMENTS);
+        geometry.rotateX(-Math.PI / 2);
+
+        const positions = geometry.attributes.position;
+        const uvs = geometry.attributes.uv;
+        const vertexCount = positions.count;
+
+        const colors = new Float32Array(vertexCount * 3);
+
+        function blendTowardWhite(c) { return (1 - TINT) * 1.0 + TINT * c; }
+
+        for (let i = 0; i < vertexCount; i++) {
+          const u = uvs.getX(i);
+          const v = uvs.getY(i);
+          const x = Math.floor(u * (w - 1));
+          const y = Math.floor((1 - v) * (h - 1));
+          const idx = (y * w + x) * 4;
+          const r = data[idx];
+
+          const hNorm = r / 255;
+          positions.setY(i, hNorm * VERTICAL_SCALE);
+
+          // 6 elevation colors
+          let cr, cg, cb;
+          if (hNorm < 0.18)      { cr=0.03; cg=0.18; cb=0.03; }
+          else if (hNorm < 0.35) { cr=0.10; cg=0.34; cb=0.10; }
+          else if (hNorm < 0.52) { cr=0.36; cg=0.55; cb=0.20; }
+          else if (hNorm < 0.70) { cr=0.55; cg=0.47; cb=0.36; }
+          else if (hNorm < 0.86) { cr=0.78; cg=0.78; cb=0.78; }
+          else                   { cr=0.97; cg=0.97; cb=0.99; }
+
+          cr = blendTowardWhite(cr);
+          cg = blendTowardWhite(cg);
+          cb = blendTowardWhite(cb);
+
+          colors[i*3+0] = cr;
+          colors[i*3+1] = cg;
+          colors[i*3+2] = cb;
+        }
+
+        geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+        geometry.computeVertexNormals();
+
+        const material = new THREE.MeshStandardMaterial({
+          map: albedoMap || null,
+          roughnessMap: roughMap || null,
+          roughness: roughMap ? 1.0 : 0.95,
+          metalness: 0.0,
+          color: albedoMap ? 0xffffff : 0x666666,
+          vertexColors: true
+        });
+
+        terrain = new THREE.Mesh(geometry, material);
+        scene.add(terrain);
+
+        addStatus(`✅ Heightmap: <code>${HEIGHTMAP_FILE}</code> (${w}×${h})`);
+        addStatus(`🎨 Tint: <code>TINT = ${TINT}</code> (edit near top; try 0.85–1.00)`);
+        addStatus(`⬆️⬇️ R/F view: <code>${RF_VIEW_VERTICAL_SPEED}</code> units/sec (edit <code>RF_VIEW_VERTICAL_SPEED</code>)`);
+        addStatus(`<span style="opacity:.9">Tip: texture scale = <b>TEX_REPEAT</b> (try 8–18).</span>`);
+
+        lastT = performance.now();
+        animate();
+      }, undefined, () => {
+        setStatus(`❌ Missing heightmap: <code>${TEX_DIR + HEIGHTMAP_FILE}</code><br>Put it in <b>${TEX_DIR}</b> and refresh.`);
+      });
+
+      // Animation loop with dt
+      let lastT = performance.now();
+      function animate() {
+        requestAnimationFrame(animate);
+        const now = performance.now();
+        const dt = Math.min(0.05, (now - lastT) / 1000);
+        lastT = now;
+
+        if (terrain) updateCamera(dt);
+        renderer.render(scene, camera);
+      }
+    }
+  </script>
+</body>
+</html>

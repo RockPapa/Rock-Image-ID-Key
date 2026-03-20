@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitHub Map + JSON Test</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial, sans-serif; margin: 16px; background: #f6f8fb; }
+    .card { max-width: 1100px; margin: 0 auto; background: #fff; border: 1px solid #d8dee8; border-radius: 12px; padding: 16px; }
+    h1 { margin: 0 0 10px 0; font-size: 22px; }
+    #status { margin: 8px 0 14px 0; font-size: 14px; }
+    #status.ok { color: #0b7a2c; }
+    #status.err { color: #b42318; }
+    #status.warn { color: #9a6700; }
+    #mapImg { display: none; max-width: 100%; height: auto; border: 1px solid #c6cedb; border-radius: 8px; background: #fff; }
+    #jsonStatusWrap { margin-top: 12px; padding: 10px 12px; border: 1px solid #d8dee8; border-radius: 10px; background: #fcfdff; }
+    #jsonStatusTitle { font-weight: 600; margin-bottom: 6px; }
+    #jsonStatusList { margin: 0; padding-left: 20px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    #report { margin-top: 12px; padding: 10px 12px; border: 1px solid #d8dee8; border-radius: 10px; background: #fbfcff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: pre-wrap; }
+    code { background: #eef2f8; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Map + JSON Load Test</h1>
+    <div>Map path under test: <code>PROJECT_FILES/map.png</code></div>
+    <div id="status">Starting test...</div>
+    <img id="mapImg" alt="Map test image" />
+    <div id="jsonStatusWrap">
+      <div id="jsonStatusTitle">JSON status: pending...</div>
+      <ul id="jsonStatusList"></ul>
+    </div>
+    <div id="report">Report pending...</div>
+  </div>
+
+  <script>
+    (function () {
+      var statusEl = document.getElementById("status");
+      var reportEl = document.getElementById("report");
+      var jsonStatusTitleEl = document.getElementById("jsonStatusTitle");
+      var jsonStatusListEl = document.getElementById("jsonStatusList");
+      var img = document.getElementById("mapImg");
+
+      var MAP_SRC = "PROJECT_FILES/map.png";
+      var BRANCH = "main";
+      var FOLDER = "PROJECT_FILES";
+
+      function setStatus(kind, text) {
+        statusEl.className = kind;
+        statusEl.textContent = text;
+      }
+
+      function setJsonTitle(text) {
+        jsonStatusTitleEl.textContent = text;
+      }
+
+      function addJsonStatusLine(text) {
+        var li = document.createElement("li");
+        li.textContent = text;
+        jsonStatusListEl.appendChild(li);
+        return li;
+      }
+
+      function getRepoContext() {
+        var host = (location.hostname || "").toLowerCase();
+        var ownerFromHost = host.indexOf(".github.io") > -1 ? host.replace(/\.github\.io$/, "") : "RockPapa";
+        var pathParts = location.pathname.split("/").filter(Boolean);
+        var repoFromPath = pathParts.length ? pathParts[0] : "Rock-Image-ID-Key";
+        return { owner: ownerFromHost, repo: repoFromPath };
+      }
+
+      function loadImage(src) {
+        return new Promise(function (resolve, reject) {
+          img.onload = function () { resolve(); };
+          img.onerror = function () { reject(new Error("Image failed to load")); };
+          img.src = src + "?v=" + Date.now();
+        });
+      }
+
+      function countTopLevel(data) {
+        if (Array.isArray(data)) return data.length;
+        if (data && typeof data === "object") return Object.keys(data).length;
+        return 0;
+      }
+
+      async function run() {
+        var ctx = getRepoContext();
+        var owner = ctx.owner;
+        var repo = ctx.repo;
+
+        setJsonTitle("JSON status: waiting for map load...");
+        jsonStatusListEl.innerHTML = "";
+
+        setStatus("warn", "Step 1/2: Loading " + MAP_SRC + "...");
+        try {
+          await loadImage(MAP_SRC);
+          img.style.display = "block";
+          setStatus("ok", "Step 1/2 complete: map loaded (" + img.naturalWidth + "x" + img.naturalHeight + "). Now loading JSON files...");
+        } catch (err) {
+          setStatus("err", "Step 1/2 failed: could not load " + MAP_SRC);
+          reportEl.textContent = "Map load failed.\nPath: " + MAP_SRC + "\nError: " + String((err && err.message) || err);
+          return;
+        }
+
+        setJsonTitle("JSON status: listing files from GitHub...");
+
+        var apiUrl = "https://api.github.com/repos/" + owner + "/" + repo + "/contents/" + encodeURIComponent(FOLDER) + "?ref=" + encodeURIComponent(BRANCH);
+        var entries;
+        try {
+          var resp = await fetch(apiUrl, { cache: "no-store" });
+          if (!resp.ok) throw new Error("GitHub API " + resp.status + " (" + resp.statusText + ")");
+          entries = await resp.json();
+          if (!Array.isArray(entries)) throw new Error("Unexpected API response");
+        } catch (err) {
+          setStatus("err", "Step 2/2 failed: could not list JSON files from GitHub API");
+          setJsonTitle("JSON status: failed to list files from GitHub API");
+          addJsonStatusLine("[FAIL] Listing failed: " + String((err && err.message) || err));
+          reportEl.textContent = "JSON listing failed.\nAPI: " + apiUrl + "\nError: " + String((err && err.message) || err);
+          return;
+        }
+
+        var jsonEntries = entries.filter(function (e) {
+          return e && e.type === "file" && String(e.name || "").toLowerCase().endsWith(".json") && e.download_url;
+        });
+
+        var okCount = 0;
+        var failCount = 0;
+        var polyCount = 0;
+        var failures = [];
+
+        if (jsonEntries.length === 0) {
+          setJsonTitle("JSON status: no JSON files found in PROJECT_FILES");
+          addJsonStatusLine("No .json files were found by the GitHub contents API.");
+        } else {
+          setJsonTitle("JSON status: found " + jsonEntries.length + " file(s), loading...");
+        }
+
+        for (var i = 0; i < jsonEntries.length; i++) {
+          var entry = jsonEntries[i];
+          var currentLine = addJsonStatusLine("[LOAD] " + entry.name + ": loading...");
+          try {
+            var r = await fetch(entry.download_url, { cache: "no-store" });
+            if (!r.ok) throw new Error("HTTP " + r.status);
+            var txt = await r.text();
+            var data = JSON.parse(txt);
+
+            okCount += 1;
+            if (data && Array.isArray(data.polys)) polyCount += data.polys.length;
+
+            currentLine.textContent = "[OK] " + entry.name + ": loaded and parsed (" + countTopLevel(data) + " top-level entries)";
+          } catch (err) {
+            failCount += 1;
+            failures.push(entry.name + " -> " + String((err && err.message) || err));
+            currentLine.textContent = "[FAIL] " + entry.name + ": failed (" + String((err && err.message) || err) + ")";
+          }
+        }
+
+        if (jsonEntries.length === 0) {
+          setStatus("warn", "Map displayed, but no JSON files were found in PROJECT_FILES.");
+        } else if (failCount === 0) {
+          setStatus("ok", "Success: map displayed + " + okCount + " JSON files parsed.");
+          setJsonTitle("JSON status: all " + okCount + "/" + jsonEntries.length + " file(s) loaded.");
+        } else {
+          setStatus("warn", "Partial: map displayed + " + okCount + " JSON parsed, " + failCount + " failed.");
+          setJsonTitle("JSON status: " + okCount + " loaded, " + failCount + " failed.");
+        }
+
+        var reportLines = [
+          "Repo: " + owner + "/" + repo,
+          "Branch: " + BRANCH,
+          "Folder: " + FOLDER,
+          "Map: " + MAP_SRC + " (displayed)",
+          "JSON files found: " + jsonEntries.length,
+          "JSON parsed OK: " + okCount,
+          "JSON failed: " + failCount,
+          "Total polys counted: " + polyCount
+        ];
+
+        if (failCount) {
+          reportLines.push("");
+          reportLines.push("Failed files:");
+          reportLines = reportLines.concat(failures);
+        }
+
+        reportEl.textContent = reportLines.join("\n");
+      }
+
+      run();
+    })();
+  </script>
+</body>
+</html>

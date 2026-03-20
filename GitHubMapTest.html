@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitHub Map Test</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial, sans-serif; margin: 16px; background: #f6f8fb; }
+    .card { max-width: 1100px; margin: 0 auto; background: #fff; border: 1px solid #d8dee8; border-radius: 12px; padding: 16px; }
+    h1 { margin: 0 0 10px 0; font-size: 22px; }
+    #status { margin: 8px 0 14px 0; font-size: 14px; }
+    #status.ok { color: #0b7a2c; }
+    #status.err { color: #b42318; }
+    #mapImg { display: none; max-width: 100%; height: auto; border: 1px solid #c6cedb; border-radius: 8px; background: #fff; }
+    code { background: #eef2f8; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Map Load Test</h1>
+    <div>Path under test: <code>PROJECT_FILES/map.png</code></div>
+    <div id="status">Loading…</div>
+    <img id="mapImg" alt="Map test image" />
+  </div>
+
+  <script>
+    (function () {
+      const img = document.getElementById("mapImg");
+      const status = document.getElementById("status");
+      const src = "PROJECT_FILES/map.png";
+
+      status.textContent = `Loading ${src}...`;
+
+      img.onload = function () {
+        status.className = "ok";
+        status.textContent = `Loaded successfully: ${src} (${img.naturalWidth}x${img.naturalHeight})`;
+        img.style.display = "block";
+      };
+
+      img.onerror = function () {
+        status.className = "err";
+        status.textContent = `Failed to load ${src}`;
+      };
+
+      img.src = src + "?v=" + Date.now();
+    })();
+  </script>
+</body>
+</html>

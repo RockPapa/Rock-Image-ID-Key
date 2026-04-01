@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EcoForge Labs - Star Map</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0b0e12;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color: white;
+  }
+
+  #app {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  #map {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+    width: 100%;
+    height: 100%;
+    background-image: url('images/star_map.jpg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    user-select: none;
+    -webkit-user-drag: none;
+    pointer-events: auto;
+    touch-action: none;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
+  #map.dragging { transition: none !important; }
+
+  #titleBox {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    background: rgba(0,0,0,0.55);
+    padding: 6px 10px;
+    border-radius: 8px;
+    z-index: 5;
+    font-size: 12px;
+    line-height: 1.25;
+    user-select: none;
+    max-width: 72vw;
+  }
+
+  #readout {
+    position: absolute;
+    right: 12px;
+    top: 84px;
+    background: rgba(0,0,0,0.55);
+    padding: 6px 10px;
+    border-radius: 8px;
+    z-index: 5;
+    font-size: 12px;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  #tapStarHint {
+    position: absolute;
+    right: 12px;
+    top: 118px;
+    background: rgba(0,0,0,0.55);
+    padding: 6px 10px;
+    border-radius: 8px;
+    z-index: 5;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  #starHover {
+    position: fixed;
+    left: 0;
+    top: 0;
+    display: none;
+    background: rgba(0,0,0,0.82);
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 30;
+  }
+
+  .hotSpot {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    z-index: 9;
+    cursor: pointer;
+    touch-action: none;
+    user-select: none;
+    background: transparent;
+  }
+
+  .hotSpot.debug {
+    border: 2px solid rgba(255,0,0,0.95);
+    background: rgba(255,0,0,0.18);
+    box-shadow: 0 0 0 6px rgba(255,0,0,0.12);
+  }
+
+  .hotSpotLabel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12px;
+    font-weight: 800;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    pointer-events: none;
+  }
+
+  #userDot {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: #0a84ff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 0 0 8px rgba(10,132,255,0.20), 0 0 10px rgba(10,132,255,0.7);
+    z-index: 11;
+    pointer-events: none;
+    display: none;
+  }
+
+  #modeChooser {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7, 10, 14, 0.72);
+    backdrop-filter: blur(3px);
+    padding: 16px;
+  }
+
+  #modeCard {
+    width: min(520px, 94vw);
+    background: rgba(12,16,22,0.96);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.38);
+  }
+
+  .modeTitle {
+    margin: 0 0 6px 0;
+    font-size: 19px;
+    font-weight: 800;
+  }
+
+  .modeSub {
+    margin: 0 0 14px 0;
+    font-size: 13px;
+    opacity: 0.86;
+    line-height: 1.35;
+  }
+
+  .modeRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .modeBtn {
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    padding: 12px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    background: rgba(255,255,255,0.07);
+    text-align: left;
+    line-height: 1.25;
+  }
+
+  .modeBtn strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .modeBtn:hover {
+    background: rgba(255,255,255,0.12);
+  }
+
+  @media (max-width: 620px) {
+    .modeRow {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 420px) {
+    #map { height: 90%; }
+    .hotSpot { width: 30px; height: 30px; }
+  }
+</style>
+</head>
+
+<body>
+<div id="app">
+
+  <div id="map" aria-label="Star Map"></div>
+  <div id="userDot" aria-label="Your Location"></div>
+
+  <div id="titleBox">
+    <strong style="font-size:13px;">EcoForge Labs</strong><br>
+    <span style="font-size:11px;">Star Map</span><br>
+    <span style="font-size:10px; opacity:0.85;">Drag to move map • Pinch or two-finger scroll to zoom • Tap stars</span>
+  </div>
+
+  <div id="readout">Choose a tour mode</div>
+  <div id="tapStarHint">TAP ON A RED STAR TO SEE THE ROCK TYPE</div>
+  <div id="starHover" aria-hidden="true"></div>
+
+  <div id="modeChooser">
+    <div id="modeCard">
+      <h1 class="modeTitle">Choose Tour Mode</h1>
+      <p class="modeSub">Use Virtual Tour for remote testing. Use On-Site Tour for live GPS guidance with a moving "you are here" icon on this map.</p>
+      <div class="modeRow">
+        <button id="virtualBtn" class="modeBtn">
+          <strong>Virtual Tour</strong>
+          Open stops without requiring GPS.
+        </button>
+        <button id="onsiteBtn" class="modeBtn">
+          <strong>On-Site Tour</strong>
+          Show your live location and guide you to each stop.
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const mapDiv = document.getElementById("map");
+const appDiv = document.getElementById("app");
+const readout = document.getElementById("readout");
+const modeChooser = document.getElementById("modeChooser");
+const virtualBtn = document.getElementById("virtualBtn");
+const onsiteBtn = document.getElementById("onsiteBtn");
+const userDot = document.getElementById("userDot");
+const starHover = document.getElementById("starHover");
+const urlModeParam = (new URLSearchParams(location.search).get("mode") || "").toLowerCase();
+const initialMode = (urlModeParam === "virtual" || urlModeParam === "onsite") ? urlModeParam : null;
+
+const DEBUG_SHOW_HOTSPOTS = false;
+
+let appMode = null;
+let gpsWatchId = null;
+let userNx = null;
+let userNy = null;
+
+let imgW = 1, imgH = 1, imgAspect = 1;
+const preImg = new Image();
+preImg.src = "images/star_map.jpg";
+
+preImg.onload = () => {
+  imgW = preImg.naturalWidth;
+  imgH = preImg.naturalHeight;
+  imgAspect = imgW / imgH;
+  centerAndFillMainMap();
+  updateTransform();
+  updateHotspots();
+  updateUserDot();
+};
+preImg.onerror = () => alert("Map image not found. Ensure images/star_map.jpg is in the images folder.");
+
+let scale = 1;
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 5;
+let panX = 0;
+let panY = 0;
+
+let needsUpdate = false;
+function requestUpdate() {
+  if (needsUpdate) return;
+  needsUpdate = true;
+  requestAnimationFrame(() => {
+    needsUpdate = false;
+    updateTransform();
+  });
+}
+
+function getFittedRect() {
+  const rect = mapDiv.getBoundingClientRect();
+  const cw = rect.width, ch = rect.height;
+  const cAspect = cw / ch;
+
+  let drawW, drawH, offX, offY;
+  if (cAspect > imgAspect) {
+    drawH = ch;
+    drawW = ch * imgAspect;
+    offX = (cw - drawW) / 2;
+    offY = 0;
+  } else {
+    drawW = cw;
+    drawH = cw / imgAspect;
+    offX = 0;
+    offY = (ch - drawH) / 2;
+  }
+  return { left: rect.left + offX, top: rect.top + offY, width: drawW, height: drawH };
+}
+
+function updateTransform() {
+  mapDiv.style.transform =
+    `translate3d(calc(-50% + ${panX}px), calc(-50% + ${panY}px), 0) scale(${scale})`;
+  updateHotspots();
+  updateUserDot();
+}
+
+function centerAndFillMainMap() {
+  const rect = mapDiv.getBoundingClientRect();
+  if (!rect.width || !rect.height || !imgAspect) {
+    panX = 0;
+    panY = 0;
+    scale = Math.max(scale, MIN_ZOOM);
+    requestUpdate();
+    return;
+  }
+
+  const cAspect = rect.width / rect.height;
+  const fillScale = Math.max(cAspect / imgAspect, imgAspect / cAspect);
+  panX = 0;
+  panY = 0;
+  scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, fillScale));
+  requestUpdate();
+}
+
+
+let dragging = false;
+let lastX = 0;
+let lastY = 0;
+
+function startDrag(x, y) {
+  dragging = true;
+  lastX = x;
+  lastY = y;
+  mapDiv.classList.add("dragging");
+}
+function endDrag() {
+  dragging = false;
+  mapDiv.classList.remove("dragging");
+}
+function dragMove(x, y) {
+  if (!dragging) return;
+  panX += (x - lastX);
+  panY += (y - lastY);
+  lastX = x;
+  lastY = y;
+  requestUpdate();
+}
+
+mapDiv.addEventListener("mousedown", e => {
+  e.preventDefault();
+  startDrag(e.clientX, e.clientY);
+});
+window.addEventListener("mouseup", endDrag);
+window.addEventListener("mousemove", e => dragMove(e.clientX, e.clientY));
+
+// iOS Safari can hijack two-finger pinch for page zoom; block that on this app.
+document.addEventListener("gesturestart", e => e.preventDefault(), { passive:false });
+document.addEventListener("gesturechange", e => e.preventDefault(), { passive:false });
+document.addEventListener("gestureend", e => e.preventDefault(), { passive:false });
+
+let pinching = false;
+let pinchStartDist = 0;
+let pinchStartScale = 1;
+let pinchStartPanX = 0;
+let pinchStartPanY = 0;
+let pinchStartMidX = 0;
+let pinchStartMidY = 0;
+
+function touchDistance(a, b) {
+  const dx = a.clientX - b.clientX;
+  const dy = a.clientY - b.clientY;
+  return Math.hypot(dx, dy);
+}
+
+function viewportCenter() {
+  const r = mapDiv.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+
+function clampScale(next) {
+  return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, next));
+}
+
+function zoomAboutClientPoint(nextScale, clientX, clientY) {
+  const vc = viewportCenter();
+  const uX = clientX - vc.x;
+  const uY = clientY - vc.y;
+  const baseScale = scale || 1;
+  const worldX = (uX - panX) / baseScale;
+  const worldY = (uY - panY) / baseScale;
+
+  scale = clampScale(nextScale);
+  panX = uX - scale * worldX;
+  panY = uY - scale * worldY;
+}
+
+appDiv.addEventListener("touchstart", e => {
+  e.preventDefault();
+  if (e.touches.length === 1) {
+    pinching = false;
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+    return;
+  }
+
+  if (e.touches.length >= 2) {
+    e.preventDefault();
+    endDrag();
+    pinching = true;
+
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    pinchStartDist = touchDistance(t1, t2);
+    pinchStartScale = scale;
+    pinchStartPanX = panX;
+    pinchStartPanY = panY;
+    pinchStartMidX = (t1.clientX + t2.clientX) / 2;
+    pinchStartMidY = (t1.clientY + t2.clientY) / 2;
+  }
+}, {passive:false});
+
+appDiv.addEventListener("touchmove", e => {
+  if (e.touches.length >= 2 && pinching) {
+    e.preventDefault();
+
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    const dist = touchDistance(t1, t2);
+    if (!dist || !pinchStartDist) return;
+
+    const ratio = dist / pinchStartDist;
+    const nextScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, pinchStartScale * ratio));
+
+    const midX = (t1.clientX + t2.clientX) / 2;
+    const midY = (t1.clientY + t2.clientY) / 2;
+    const vc = viewportCenter();
+    const uStartX = pinchStartMidX - vc.x;
+    const uStartY = pinchStartMidY - vc.y;
+    const uNowX = midX - vc.x;
+    const uNowY = midY - vc.y;
+
+    const baseScale = pinchStartScale || 1;
+    const worldX = (uStartX - pinchStartPanX) / baseScale;
+    const worldY = (uStartY - pinchStartPanY) / baseScale;
+
+    scale = nextScale;
+    panX = uNowX - scale * worldX;
+    panY = uNowY - scale * worldY;
+    requestUpdate();
+    return;
+  }
+
+  if (e.touches.length === 1 && !pinching) {
+    e.preventDefault();
+    const t = e.touches[0];
+    dragMove(t.clientX, t.clientY);
+  }
+}, {passive:false});
+
+appDiv.addEventListener("touchend", e => {
+  e.preventDefault();
+  if (e.touches.length === 0) {
+    pinching = false;
+    endDrag();
+    return;
+  }
+
+  if (e.touches.length === 1) {
+    pinching = false;
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }
+}, {passive:false});
+
+appDiv.addEventListener("touchcancel", () => {
+  pinching = false;
+  endDrag();
+}, {passive:true});
+
+mapDiv.addEventListener("wheel", e => {
+  e.preventDefault();
+  if (e.deltaY === 0) return;
+
+  // Supports trackpad two-finger drag and mouse wheel zoom.
+  const zoomFactor = Math.exp(-e.deltaY * 0.0025);
+  const nextScale = clampScale(scale * zoomFactor);
+  if (nextScale === scale) return;
+
+  zoomAboutClientPoint(nextScale, e.clientX, e.clientY);
+  requestUpdate();
+}, { passive: false });
+
+mapDiv.addEventListener("click", (e) => {
+  const fit = getFittedRect();
+  const x = e.clientX - fit.left;
+  const y = e.clientY - fit.top;
+  const nx = x / fit.width;
+  const ny = y / fit.height;
+  if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return;
+  if (appMode === "onsite") return;
+  readout.textContent = `nx=${nx.toFixed(3)}, ny=${ny.toFixed(3)}`;
+});
+
+const starTargets = [
+  { id:"S1",  nx:0.275,  ny:0.770,  lat:33.90147,  lng:-83.38714,  info:"Quartz1.html",         rock:"QUARTZ" },
+  { id:"S2",  nx:0.545,  ny:0.682,  lat:33.90155,  lng:-83.38507,  info:"Granite1.html",        rock:"GRANITE" },
+  { id:"S3",  nx:0.2595, ny:0.574,  lat:33.90484,  lng:-83.38815,  info:"Schist1.html",         rock:"SILLIMINITE SCHIST" },
+  { id:"S4",  nx:0.266,  ny:0.6435, lat:33.90350,  lng:-83.38720,  info:"Amphibolite2.html",    rock:"AMPHIBOLITE" },
+  { id:"S5",  nx:0.298,  ny:0.636,  lat:33.90317,  lng:-83.38672,  info:"PinkGranite.html",     rock:"PINK GRANITE" },
+  { id:"S6",  nx:0.3333, ny:0.6260, lat:33.90288,  lng:-83.38616,  info:"Amphibolite1.html",    rock:"AMPHIBOLITE" },
+  { id:"S7",  nx:0.665,  ny:0.586,  lat:33.90120,  lng:-83.37980,  info:"ChalkMaple.html",      rock:"AMPHIBOLITE AND CHALK MAPLE" },
+  { id:"S8",  nx:0.533,  ny:0.7272, lat:33.900959, lng:-83.383279, info:"GraniteGneiss1.html",  rock:"GRANITE GNEISS" },
+  { id:"S9",  nx:0.371,  ny:0.609,  lat:33.90270,  lng:-83.38544,  info:"GraniteGneiss2.html",  rock:"GRANITE GNEISS" },
+  { id:"S10", nx:0.63,   ny:0.525,  lat:33.90265,  lng:-83.38067,  info:"BiotiteGneiss1.html",  rock:"BIOTITE HORNBLENDE GNEISS" }
+];
+
+function stopNumber(id) {
+  return id.replace("S", "");
+}
+
+function showStarHover(s, e) {
+  if (!starHover || !e) return;
+  starHover.textContent = s.rock;
+  starHover.style.display = "block";
+  starHover.style.left = (e.clientX + 12) + "px";
+  starHover.style.top = (e.clientY + 12) + "px";
+}
+
+function moveStarHover(e) {
+  if (!starHover || starHover.style.display !== "block" || !e) return;
+  starHover.style.left = (e.clientX + 12) + "px";
+  starHover.style.top = (e.clientY + 12) + "px";
+}
+
+function hideStarHover() {
+  if (!starHover) return;
+  starHover.style.display = "none";
+}
+
+function buildStopHref(s) {
+  const params = new URLSearchParams({
+    id: s.id,
+    name: `Stop ${stopNumber(s.id)}`,
+    lat: String(s.lat),
+    lng: String(s.lng),
+    nx: String(s.nx),
+    ny: String(s.ny),
+    info: s.info,
+    rock: s.rock,
+    mode: appMode || "virtual"
+  });
+  return `orient.html?${params.toString()}`;
+}
+
+const hotspots = starTargets.map(s => {
+  const el = document.createElement("div");
+  el.className = "hotSpot" + (DEBUG_SHOW_HOTSPOTS ? " debug" : "");
+  el.title = "";
+
+  if (DEBUG_SHOW_HOTSPOTS) {
+    const lab = document.createElement("div");
+    lab.className = "hotSpotLabel";
+    lab.textContent = stopNumber(s.id);
+    el.appendChild(lab);
+  }
+
+  el.addEventListener("click", (e) => {
+    e.stopPropagation();
+    hideStarHover();
+    window.location.href = buildStopHref(s);
+  });
+  el.addEventListener("mouseenter", (e) => showStarHover(s, e));
+  el.addEventListener("mousemove", moveStarHover);
+  el.addEventListener("mouseleave", hideStarHover);
+
+  document.getElementById("app").appendChild(el);
+  return { ...s, el };
+});
+
+function updateHotspots() {
+  const fit = getFittedRect();
+  hotspots.forEach(h => {
+    h.el.style.left = `${fit.left + h.nx * fit.width}px`;
+    h.el.style.top = `${fit.top + h.ny * fit.height}px`;
+  });
+}
+
+function solve3x3(A, b) {
+  const m = [
+    [A[0][0], A[0][1], A[0][2], b[0]],
+    [A[1][0], A[1][1], A[1][2], b[1]],
+    [A[2][0], A[2][1], A[2][2], b[2]]
+  ];
+
+  for (let i = 0; i < 3; i++) {
+    let maxRow = i;
+    for (let r = i + 1; r < 3; r++) {
+      if (Math.abs(m[r][i]) > Math.abs(m[maxRow][i])) maxRow = r;
+    }
+    if (Math.abs(m[maxRow][i]) < 1e-12) return null;
+    if (maxRow !== i) {
+      const tmp = m[i];
+      m[i] = m[maxRow];
+      m[maxRow] = tmp;
+    }
+
+    const pivot = m[i][i];
+    for (let c = i; c < 4; c++) m[i][c] /= pivot;
+
+    for (let r = 0; r < 3; r++) {
+      if (r === i) continue;
+      const factor = m[r][i];
+      for (let c = i; c < 4; c++) m[r][c] -= factor * m[i][c];
+    }
+  }
+
+  return [m[0][3], m[1][3], m[2][3]];
+}
+
+function fitLinearModel(points, targetKey) {
+  const ATA = [[0,0,0],[0,0,0],[0,0,0]];
+  const ATb = [0,0,0];
+
+  for (const p of points) {
+    const x = [p.lat, p.lng, 1];
+    const y = p[targetKey];
+
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) ATA[i][j] += x[i] * x[j];
+      ATb[i] += x[i] * y;
+    }
+  }
+
+  return solve3x3(ATA, ATb);
+}
+
+const calibrationPoints = starTargets.map(s => ({ lat:s.lat, lng:s.lng, nx:s.nx, ny:s.ny }));
+const nxCoef = fitLinearModel(calibrationPoints, "nx");
+const nyCoef = fitLinearModel(calibrationPoints, "ny");
+
+function latLngToNormalized(lat, lng) {
+  if (!nxCoef || !nyCoef) return null;
+  const nx = nxCoef[0] * lat + nxCoef[1] * lng + nxCoef[2];
+  const ny = nyCoef[0] * lat + nyCoef[1] * lng + nyCoef[2];
+  return { nx, ny };
+}
+
+function updateUserDot() {
+  if (appMode !== "onsite" || userNx === null || userNy === null) {
+    userDot.style.display = "none";
+    return;
+  }
+
+  const fit = getFittedRect();
+  userDot.style.left = `${fit.left + userNx * fit.width}px`;
+  userDot.style.top = `${fit.top + userNy * fit.height}px`;
+  userDot.style.display = "block";
+}
+
+function stopOnsiteTracking() {
+  if (gpsWatchId !== null && navigator.geolocation) {
+    navigator.geolocation.clearWatch(gpsWatchId);
+    gpsWatchId = null;
+  }
+  userNx = null;
+  userNy = null;
+  updateUserDot();
+}
+
+function startOnsiteTracking() {
+  if (!navigator.geolocation) {
+    readout.textContent = "Geolocation not available on this device/browser.";
+    return;
+  }
+  if (!nxCoef || !nyCoef) {
+    readout.textContent = "Map calibration unavailable.";
+    return;
+  }
+
+  readout.textContent = "Requesting GPS permission...";
+
+  gpsWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const mapped = latLngToNormalized(pos.coords.latitude, pos.coords.longitude);
+      if (!mapped) {
+        readout.textContent = "Unable to map GPS position onto tour map.";
+        return;
+      }
+
+      userNx = mapped.nx;
+      userNy = mapped.ny;
+      updateUserDot();
+
+      const acc = Number.isFinite(pos.coords.accuracy) ? Math.round(pos.coords.accuracy) : null;
+      const inBounds = (userNx >= -0.2 && userNx <= 1.2 && userNy >= -0.2 && userNy <= 1.2);
+      if (!inBounds) {
+        readout.textContent = acc !== null
+          ? `GPS active (accuracy ${acc}m). You may be outside mapped area.`
+          : "GPS active. You may be outside mapped area.";
+      } else {
+        readout.textContent = acc !== null
+          ? `On-Site Mode - Live position active (accuracy ${acc}m)`
+          : "On-Site Mode - Live position active";
+      }
+    },
+    (err) => {
+      const msg = err && err.message ? err.message : "Location unavailable";
+      readout.textContent = `GPS error: ${msg}`;
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+      timeout: 12000
+    }
+  );
+}
+
+function selectMode(mode) {
+  appMode = mode;
+  modeChooser.style.display = "none";
+  centerAndFillMainMap();
+
+  if (mode === "onsite") {
+    readout.textContent = "On-Site Mode - preparing live location...";
+    startOnsiteTracking();
+  } else {
+    stopOnsiteTracking();
+    readout.textContent = "Virtual Mode - tap any numbered star";
+  }
+}
+
+virtualBtn.addEventListener("click", () => selectMode("virtual"));
+onsiteBtn.addEventListener("click", () => selectMode("onsite"));
+
+window.addEventListener("resize", () => {
+  centerAndFillMainMap();
+  updateHotspots();
+  updateUserDot();
+});
+window.addEventListener("orientationchange", () => {
+  centerAndFillMainMap();
+  updateHotspots();
+  updateUserDot();
+});
+window.addEventListener("beforeunload", stopOnsiteTracking);
+
+if (initialMode) {
+  selectMode(initialMode);
+}
+
+updateTransform();
+updateHotspots();
+updateUserDot();
+</script>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RockTour Phone Blend</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0c1218;
+      font-family: Arial, sans-serif;
+    }
+
+    .stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: #0c1218;
+      touch-action: none;
+      overflow: hidden;
+    }
+
+    #mapFrame {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    .layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      user-select: none;
+      pointer-events: none;
+      -webkit-user-drag: none;
+    }
+
+    #starLayer {
+      z-index: 1;
+    }
+
+    #satelliteLayer {
+      z-index: 2;
+      opacity: 0.25;
+    }
+
+    #starHotspots {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .mapStar {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      color: #ff2b2b;
+      font-size: clamp(14px, 1.2vw, 24px);
+      line-height: 1;
+      font-weight: 700;
+      text-shadow: 0 0 2px #7a0000, 0 0 4px #7a0000;
+      pointer-events: auto;
+      cursor: pointer;
+      user-select: none;
+      background: transparent;
+      border: 0;
+      padding: 6px;
+      border-radius: 50%;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mapStar:focus-visible {
+      outline: 2px solid #ffffff;
+      outline-offset: 2px;
+    }
+
+    .hud {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 10;
+      width: min(86vw, 260px);
+      min-height: 112px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(28, 122, 214, 0.9);
+      color: #ffffff;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      transform: scale(0.45);
+      transform-origin: top right;
+    }
+
+    .hudNote {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin-bottom: 8px;
+    }
+
+    .hudRow {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      margin-bottom: 4px;
+      gap: 8px;
+    }
+
+    .hudSlider {
+      display: block;
+      width: calc(100% - 12px);
+      margin: auto 6px 0 6px;
+      box-sizing: border-box;
+      accent-color: #ffffff;
+    }
+
+    /* Slider knob only: ~75% larger */
+    .hudSlider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 49px;
+      height: 49px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      margin-top: -19px;
+    }
+
+    .hudSlider::-moz-range-thumb {
+      width: 49px;
+      height: 49px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 2px solid rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div id="mapFrame" aria-label="Locked map stack">
+      <img id="starLayer" class="layer" src="images/star_map.jpg" alt="Star map" />
+      <img id="satelliteLayer" class="layer" src="images/sbg_satellite_map.jpg" alt="Satellite map" />
+      <div id="starHotspots" aria-label="Rock stop stars"></div>
+    </div>
+
+    <div class="hud" id="hud" aria-label="Satellite controls">
+      <div class="hudNote">DRAG AND ZOOM. TAP A RED STAR</div>
+      <div class="hudRow">
+        <strong>Satellite Opacity Slider</strong>
+      </div>
+      <input id="opacitySlider" class="hudSlider" type="range" min="0" max="100" value="25" step="1" />
+      <div class="hudRow" style="margin-top:4px;margin-bottom:0;">
+        <span></span><span id="opacityValue">25%</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const stage = document.getElementById("stage");
+    const hud = document.getElementById("hud");
+    const mapFrame = document.getElementById("mapFrame");
+    const satellite = document.getElementById("satelliteLayer");
+    const opacitySlider = document.getElementById("opacitySlider");
+    const opacityValue = document.getElementById("opacityValue");
+    const starHotspots = document.getElementById("starHotspots");
+
+    // Matched to existing project stop mapping (index.html / index Grayscale.html):
+    // S1->Quartz1, S2->Granite1, S3->Schist1, S4->Amphibolite2, S5->PinkGranite,
+    // S6->Amphibolite1, S7->ChalkMaple, S8->GraniteGneiss1, S9->GraniteGneiss2, S10->BiotiteGneiss1.
+    const starTargets = [
+      { id: "S10", x: 63.06, y: 52.73, info: "BiotiteGneiss1.html" },
+      { id: "S3",  x: 26.02, y: 56.97, info: "Schist1.html" },
+      { id: "S7",  x: 66.24, y: 58.30, info: "ChalkMaple.html" },
+      { id: "S9",  x: 37.12, y: 61.15, info: "GraniteGneiss2.html" },
+      { id: "S6",  x: 33.16, y: 62.00, info: "Amphibolite1.html" },
+      { id: "S5",  x: 29.92, y: 63.30, info: "PinkGranite.html" },
+      { id: "S4",  x: 26.39, y: 63.79, info: "Amphibolite2.html" },
+      { id: "S2",  x: 54.29, y: 68.36, info: "Granite1.html" },
+      { id: "S8",  x: 53.22, y: 72.06, info: "GraniteGneiss1.html" },
+      { id: "S1",  x: 27.47, y: 76.36, info: "Quartz1.html" },
+      { id: "S1_NEW", x: 67.20, y: 63.47, info: "Quartz1.html" },
+    ];
+
+    const state = {
+      tx: 0,
+      ty: 0,
+      scale: 1,
+      minScale: 0.5,
+      maxScale: 8
+    };
+
+    const pointers = new Map();
+    let panStart = null;
+    let pinchStart = null;
+
+    function applyTransform() {
+      mapFrame.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function distance(a, b) {
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      return Math.hypot(dx, dy);
+    }
+
+    function midpoint(a, b) {
+      return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    }
+
+    function getLocalPoint(clientX, clientY) {
+      const rect = stage.getBoundingClientRect();
+      return { x: clientX - rect.left, y: clientY - rect.top };
+    }
+
+    function zoomAt(factor, point) {
+      const nextScale = clamp(state.scale * factor, state.minScale, state.maxScale);
+      if (nextScale === state.scale) return;
+
+      const wx = (point.x - state.tx) / state.scale;
+      const wy = (point.y - state.ty) / state.scale;
+
+      state.scale = nextScale;
+      state.tx = point.x - wx * state.scale;
+      state.ty = point.y - wy * state.scale;
+      applyTransform();
+    }
+
+    function startPan(pointer) {
+      panStart = {
+        pointerId: pointer.id,
+        startX: pointer.x,
+        startY: pointer.y,
+        tx: state.tx,
+        ty: state.ty
+      };
+      pinchStart = null;
+    }
+
+    function startPinch() {
+      const pts = Array.from(pointers.values());
+      if (pts.length < 2) return;
+
+      const p1 = pts[0];
+      const p2 = pts[1];
+      const startMid = midpoint(p1, p2);
+
+      pinchStart = {
+        startDistance: Math.max(1, distance(p1, p2)),
+        startScale: state.scale,
+        worldMidX: (startMid.x - state.tx) / state.scale,
+        worldMidY: (startMid.y - state.ty) / state.scale
+      };
+
+      panStart = null;
+    }
+
+    function updateGestures() {
+      const pts = Array.from(pointers.values());
+
+      if (pts.length === 1 && panStart) {
+        const p = pts[0];
+        state.tx = panStart.tx + (p.x - panStart.startX);
+        state.ty = panStart.ty + (p.y - panStart.startY);
+        applyTransform();
+        return;
+      }
+
+      if (pts.length >= 2 && pinchStart) {
+        const p1 = pts[0];
+        const p2 = pts[1];
+        const currentDistance = Math.max(1, distance(p1, p2));
+        const currentMid = midpoint(p1, p2);
+
+        const scaleRatio = currentDistance / pinchStart.startDistance;
+        const nextScale = clamp(pinchStart.startScale * scaleRatio, state.minScale, state.maxScale);
+
+        state.scale = nextScale;
+        state.tx = currentMid.x - pinchStart.worldMidX * state.scale;
+        state.ty = currentMid.y - pinchStart.worldMidY * state.scale;
+        applyTransform();
+      }
+    }
+
+    stage.addEventListener("pointerdown", (event) => {
+      if (hud.contains(event.target)) return;
+      if (event.target.closest(".mapStar")) return;
+
+      const p = getLocalPoint(event.clientX, event.clientY);
+      pointers.set(event.pointerId, { id: event.pointerId, x: p.x, y: p.y });
+      stage.setPointerCapture(event.pointerId);
+
+      if (pointers.size === 1) startPan({ id: event.pointerId, x: p.x, y: p.y });
+      else if (pointers.size >= 2) startPinch();
+    });
+
+    stage.addEventListener("pointermove", (event) => {
+      if (!pointers.has(event.pointerId)) return;
+      const p = getLocalPoint(event.clientX, event.clientY);
+      pointers.set(event.pointerId, { id: event.pointerId, x: p.x, y: p.y });
+      updateGestures();
+    });
+
+    function endPointer(event) {
+      pointers.delete(event.pointerId);
+
+      if (pointers.size === 1) {
+        const remaining = Array.from(pointers.values())[0];
+        startPan(remaining);
+      } else if (pointers.size >= 2) {
+        startPinch();
+      } else {
+        panStart = null;
+        pinchStart = null;
+      }
+    }
+
+    stage.addEventListener("pointerup", endPointer);
+    stage.addEventListener("pointercancel", endPointer);
+    stage.addEventListener("pointerleave", endPointer);
+
+    stage.addEventListener(
+      "wheel",
+      (event) => {
+        if (!(event.ctrlKey || event.metaKey)) return;
+        event.preventDefault();
+
+        const local = getLocalPoint(event.clientX, event.clientY);
+        const factor = Math.exp(-event.deltaY * 0.002);
+        zoomAt(factor, local);
+      },
+      { passive: false }
+    );
+
+    function renderStars() {
+      starHotspots.innerHTML = "";
+
+      for (const target of starTargets) {
+        const btn = document.createElement("button");
+        btn.className = "mapStar";
+        btn.type = "button";
+        btn.textContent = "★";
+        btn.title = `${target.id}: ${target.info}`;
+        btn.setAttribute("aria-label", `${target.id} rock description`);
+        btn.style.left = target.x + "%";
+        btn.style.top = target.y + "%";
+
+        btn.addEventListener("pointerdown", (e) => {
+          e.stopPropagation();
+        });
+
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          location.href = target.info;
+        });
+
+        starHotspots.appendChild(btn);
+      }
+    }
+
+    function setOpacity(percent) {
+      const clamped = Math.max(0, Math.min(100, Number(percent) || 0));
+      satellite.style.opacity = String(clamped / 100);
+      opacityValue.textContent = clamped + "%";
+    }
+
+    opacitySlider.addEventListener("input", (event) => {
+      setOpacity(event.target.value);
+    });
+
+    renderStars();
+    setOpacity(opacitySlider.value);
+    applyTransform();
+  </script>
+</body>
+</html>

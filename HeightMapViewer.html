@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Apache HeightMap Viewer – HeightMapViewer12 – Compass + Textures Restored</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+canvas{display:block;width:100vw;height:100vh}
+.hud{
+  position:fixed;left:18px;top:18px;z-index:10;
+  padding:14px 16px;border-radius:12px;
+  background:rgba(20,24,32,.8);
+  color:#fff;font:15px system-ui;
+  max-width: 560px;
+}
+.hmRow{margin-top:8px}
+.hmRow label{display:block;font-size:12px;opacity:.9;margin-bottom:4px}
+.hmRow input[type="file"]{
+  width:100%;
+  font:12px system-ui;
+  color:#fff;
+}
+.hmRow input[type="range"]{
+  width:100%;
+}
+.ctrlToggle{
+  margin-top:8px;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  border-radius:8px;
+  padding:5px 10px;
+  font:12px system-ui;
+  cursor:pointer;
+}
+.ctrlPanel.hidden{display:none;}
+.hud.hidden{display:none;}
+.hudToggleFloat{
+  position:fixed;left:18px;top:18px;z-index:20;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(20,24,32,.85);
+  color:#fff;
+  border-radius:8px;
+  padding:6px 10px;
+  font:12px system-ui;
+  cursor:pointer;
+}
+.hud .small{opacity:.9;font-size:13px;margin-top:6px;line-height:1.35}
+.compass{
+  position:fixed;right:18px;top:18px;
+  width:90px;height:90px;border-radius:50%;
+  background:#1b1f2a;border:2px solid rgba(255,255,255,.3);
+  box-shadow:0 8px 22px rgba(0,0,0,.45);
+  pointer-events:none;
+}
+.compass .needle{
+  position:absolute;left:50%;top:10px;
+  width:2px;height:36px;background:red;
+  transform-origin:50% 100%;
+}
+.compass span{
+  position:absolute;color:#fff;font-weight:600;font-size:13px;
+}
+.n{top:4px;left:50%;transform:translateX(-50%)}
+.s{bottom:4px;left:50%;transform:translateX(-50%)}
+.e{right:6px;top:50%;transform:translateY(-50%)}
+.w{left:6px;top:50%;transform:translateY(-50%)}
+
+.minimapWrap{
+  position:fixed;right:18px;bottom:18px;z-index:11;
+  width:190px;
+  background:rgba(20,24,32,.78);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
+  box-shadow:0 10px 26px rgba(0,0,0,.55);
+  padding:10px;
+}
+#minimap{
+  width:170px;height:170px;
+  border-radius:10px;
+  background:#000;
+  display:block;
+  image-rendering:auto;
+}
+.miniLabel{
+  margin-top:8px;
+  color:#fff;font:12px system-ui;
+  opacity:.92;
+  line-height:1.25;
+}
+
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+
+<button id="controlsToggle" class="hudToggleFloat" type="button" aria-expanded="true">Hide HUD</button>
+
+<div class="hud" id="hud">
+  <b>HeightMap Viewer</b><br>
+  Top of heightmap = <b>North</b> · Compass top-right<br>
+  Arrow keys = move/turn · E/D = tilt up/down · R/F = up/down
+  <div class="small" id="status">Loading…</div>
+  <div id="controlsPanel" class="ctrlPanel">
+    <div class="hmRow">
+      <label for="terrainHeightSlider">Terrain height: <span id="terrainHeightReadout">2000</span></label>
+      <input id="terrainHeightSlider" type="range" min="200" max="5000" step="10" value="2000">
+    </div>
+    <div class="hmRow">
+      <label for="terrainSizeSlider">Terrain size: <span id="terrainSizeReadout">4000</span></label>
+      <input id="terrainSizeSlider" type="range" min="1000" max="12000" step="50" value="4000">
+    </div>
+    <div class="hmRow">
+      <label for="heightmapPicker">Load local heightmap image</label>
+      <input id="heightmapPicker" type="file" accept="image/*">
+    </div>
+    <div class="hmRow">
+      <label for="texturePicker">Load local texture image</label>
+      <input id="texturePicker" type="file" accept="image/*">
+    </div>
+  </div>
+</div>
+
+<div class="compass">
+  <div class="needle" id="needle"></div>
+  <span class="n">N</span>
+  <span class="s">S</span>
+  <span class="e">E</span>
+  <span class="w">W</span>
+</div>
+
+
+<div class="minimapWrap">
+  <canvas id="minimap" width="170" height="170"></canvas>
+  <div class="miniLabel" id="miniLabel">Mini‑map: loading…</div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+
+/* =========================
+   TWEAK ZONE (textures!)
+   ========================= */
+
+// ===== CAMI MOVEMENT (EASY KNOBS) =====
+// Slowbrain‑Dan‑friendly 🙂
+// 10–15 = careful survey walking
+// 18     = normal hiking (old default)
+// 25+    = fast scouting
+const CAMI_SPEED = 240;   // ground travel speed
+const CAMI_CLIMB = 240;   
+// ===== CAMI VIEW TILT (NEW!) =====
+// Hold E = tilt view up, hold D = tilt view down
+// Tilt is clamped so you can't flip upside-down.
+const TILT_SPEED = 1.4;     // radians/sec (try 0.9–2.2)
+const TILT_MIN   = -1.20;   // look UP limit
+const TILT_MAX   =  1.05;   // look DOWN limit
+// vertical R/F speed
+
+const TEX_DIR = "images/";
+
+// Heightmap
+const HEIGHTMAP_FILE = "muir.png";
+const DEFAULT_TERRAIN_HEIGHT = 2000;
+const TERRAIN_SEGMENTS = 456;
+const DEFAULT_GROUND_SIZE = 4000;
+let terrainHeight = DEFAULT_TERRAIN_HEIGHT;
+let terrainSize = DEFAULT_GROUND_SIZE;
+
+
+// Minimap zoom: >1 makes the marker move more (shows a smaller area)
+const MINI_ZOOM = 2;
+// PBR textures (put these in images/). Any can be blank "" to disable.
+const COLOR_FILE  = "valley_drape.jpg";   // draped NAIP (must match heightmap pixels)   // diffuse / albedo
+const NORMAL_FILE = ""; // optional (leave blank for NAIP drape)    // optional
+const ROUGH_FILE  = ""; // optional                          // optional
+const TEX_REPEAT  = 1;   // for NAIP drape: 1 (no tiling)                          // tiling density
+
+/* =========================
+   Scene / Camera / Renderer
+   ========================= */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87b7ff);
+scene.fog = new THREE.Fog(0x87b7ff, 1200, 12000);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 20000);
+camera.position.set(0, 2, 5);
+
+camera.rotation.order = "YXZ";
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+// Shadows
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+document.body.appendChild(renderer.domElement);
+
+/* =========================
+   Controls
+   ========================= */
+const controls = new PointerLockControls(camera, document.body);
+scene.add(controls.getObject());
+
+/* =========================
+   Lights (good relief)
+   ========================= */
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445066, 0.18));
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+sun.position.set(200, 180, 120);
+sun.castShadow = true;
+
+// shadow tuning
+sun.shadow.mapSize.set(2048, 2048);
+const D = 700;
+sun.shadow.camera.left = -D;
+sun.shadow.camera.right = D;
+sun.shadow.camera.top = D;
+sun.shadow.camera.bottom = -D;
+sun.shadow.camera.near = 50;
+sun.shadow.camera.far = 3000;
+sun.shadow.bias = -0.0006;
+sun.shadow.normalBias = 0.04;
+
+scene.add(sun);
+scene.add(sun.target);
+
+/* =========================
+   HUD status
+   ========================= */
+const hudEl = document.getElementById("hud");
+const statusEl = document.getElementById("status");
+const controlsToggleEl = document.getElementById("controlsToggle");
+const controlsPanelEl = document.getElementById("controlsPanel");
+const terrainHeightSliderEl = document.getElementById("terrainHeightSlider");
+const terrainSizeSliderEl = document.getElementById("terrainSizeSlider");
+const terrainHeightReadoutEl = document.getElementById("terrainHeightReadout");
+const terrainSizeReadoutEl = document.getElementById("terrainSizeReadout");
+function setStatus(html){ statusEl.innerHTML = html; }
+function addStatus(html){ statusEl.innerHTML += "<br>" + html; }
+
+controlsToggleEl.addEventListener("click", ()=>{
+  const isHidden = hudEl.classList.toggle("hidden");
+  controlsToggleEl.textContent = isHidden ? "Show HUD" : "Hide HUD";
+  controlsToggleEl.setAttribute("aria-expanded", String(!isHidden));
+});
+
+/* =========================
+   Texture loader helpers
+   ========================= */
+const loader = new THREE.TextureLoader();
+
+function prep(tex, repeat=TEX_REPEAT, clamp=false){
+  if (clamp){
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(1, 1);
+  } else {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(repeat, repeat);
+  }
+  tex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 12);
+}
+
+async function loadTextureSafe(path){
+  return new Promise((resolve)=>{
+    loader.load(
+      path,
+      (tex)=>resolve(tex),
+      undefined,
+      ()=>resolve(null)
+    );
+  });
+}
+
+async function loadTextureFromObjectURL(url){
+  return new Promise((resolve)=>{
+    loader.load(
+      url,
+      (tex)=>resolve(tex),
+      undefined,
+      ()=>resolve(null)
+    );
+  });
+}
+
+/* =========================
+   Load heightmap
+   ========================= */
+const heightmapPickerEl = document.getElementById("heightmapPicker");
+const texturePickerEl = document.getElementById("texturePicker");
+const c = document.createElement("canvas");
+const ctx = c.getContext("2d");
+let hm = null;
+let startupWarning = "";
+
+function setHeightmapFromImage(img){
+  c.width = img.width;
+  c.height = img.height;
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0);
+  hm = ctx.getImageData(0, 0, c.width, c.height).data;
+}
+
+function makeFallbackHeightmap(size=256){
+  const fallback = document.createElement("canvas");
+  fallback.width = size;
+  fallback.height = size;
+  const fctx = fallback.getContext("2d");
+  const grad = fctx.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, "#e0e0e0");
+  grad.addColorStop(1, "#606060");
+  fctx.fillStyle = grad;
+  fctx.fillRect(0, 0, size, size);
+  return fallback;
+}
+
+function loadImageFromObjectURL(url){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+setStatus(`(Apache) Loading heightmap: <code>${HEIGHTMAP_FILE}</code>…`);
+const hmTex = await loadTextureSafe(TEX_DIR + HEIGHTMAP_FILE);
+if (hmTex && hmTex.image){
+  setHeightmapFromImage(hmTex.image);
+} else {
+  setHeightmapFromImage(makeFallbackHeightmap(256));
+  startupWarning = location.protocol === "file:"
+    ? "⚠ Default heightmap blocked on file://. Use the file picker below."
+    : `⚠ Missing default heightmap: <code>${HEIGHTMAP_FILE}</code>. Use the file picker below.`;
+}
+
+/* =========================
+   Mini‑map (shows where Cami is on the heightmap)
+   ========================= */
+const MINI_SIZE = 170;
+const mini = document.getElementById("minimap");
+const miniLabel = document.getElementById("miniLabel");
+const mctx = mini.getContext("2d");
+
+// Draw the heightmap image once into an offscreen "base" canvas (fast redraw)
+const miniBase = document.createElement("canvas");
+miniBase.width = MINI_SIZE;
+miniBase.height = MINI_SIZE;
+const bctx = miniBase.getContext("2d");
+bctx.imageSmoothingEnabled = true;
+bctx.drawImage(c, 0, 0, MINI_SIZE, MINI_SIZE);
+
+// Optional: faint grid (helps eyeballing landmarks)
+bctx.strokeStyle = "rgba(255,255,255,0.10)";
+bctx.lineWidth = 1;
+for (let i=1;i<=3;i++){
+  const t = (i/4)*MINI_SIZE;
+  bctx.beginPath(); bctx.moveTo(t,0); bctx.lineTo(t,MINI_SIZE); bctx.stroke();
+  bctx.beginPath(); bctx.moveTo(0,t); bctx.lineTo(MINI_SIZE,t); bctx.stroke();
+}
+
+function drawMiniMarker(u,v,yaw){
+  // Clamp into [0,1] so marker stays on-map when you wander off edge
+  u = Math.max(0, Math.min(1, u));
+  v = Math.max(0, Math.min(1, v));
+
+  const px = u * MINI_SIZE;
+  const py = (1 - v) * MINI_SIZE; // (1-v) matches how we sample the heightmap
+
+  // Redraw base
+  mctx.clearRect(0,0,MINI_SIZE,MINI_SIZE);
+  mctx.drawImage(miniBase, 0, 0);
+
+  // Dot
+  mctx.beginPath();
+  mctx.arc(px, py, 4.2, 0, Math.PI*2);
+  mctx.fillStyle = "rgba(0,255,255,0.95)";
+  mctx.fill();
+
+  // Facing arrow
+  const ang = (-yaw) - Math.PI/2; // yaw=0 => north/up
+  const r1 = 13, r2 = 7;
+  const ax1 = px + Math.cos(ang) * r1;
+  const ay1 = py + Math.sin(ang) * r1;
+  const ax2 = px + Math.cos(ang + 2.6) * r2;
+  const ay2 = py + Math.sin(ang + 2.6) * r2;
+  const ax3 = px + Math.cos(ang - 2.6) * r2;
+  const ay3 = py + Math.sin(ang - 2.6) * r2;
+
+  mctx.beginPath();
+  mctx.moveTo(ax1, ay1);
+  mctx.lineTo(ax2, ay2);
+  mctx.lineTo(ax3, ay3);
+  mctx.closePath();
+  mctx.fillStyle = "rgba(255,80,80,0.95)";
+  mctx.fill();
+
+  // Label: percent + pixel in the original heightmap
+  const ix = Math.floor(u * (c.width - 1));
+  const iy = Math.floor((1 - v) * (c.height - 1));
+  miniLabel.textContent = `Mini‑map: u ${(u*100).toFixed(1)}% · v ${(v*100).toFixed(1)}%  |  px ${ix}, ${iy}`;
+}
+
+
+/* =========================
+   Terrain geometry
+   ========================= */
+const geo = new THREE.PlaneGeometry(DEFAULT_GROUND_SIZE, DEFAULT_GROUND_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+geo.rotateX(-Math.PI/2);
+
+const pos = geo.attributes.position;
+const uv = geo.attributes.uv;
+
+function rebuildTerrainFromHeightmap(){
+  for (let i=0; i<pos.count; i++){
+    const u = uv.getX(i);
+    const v = uv.getY(i);
+    const x = Math.floor(u * (c.width - 1));
+    const y = Math.floor((1 - v) * (c.height - 1));
+    pos.setY(i, (hm[(y*c.width + x)*4] / 255) * terrainHeight);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+}
+
+rebuildTerrainFromHeightmap();
+
+/* =========================
+   Load PBR textures (RESTORED)
+   ========================= */
+let colorMap = null, normalMap = null, roughMap = null;
+
+if (COLOR_FILE){
+  colorMap = await loadTextureSafe(TEX_DIR + COLOR_FILE);
+  if (colorMap){
+    colorMap.colorSpace = THREE.SRGBColorSpace;
+    prep(colorMap, 1, true);
+    // For draped imagery we usually want consistent orientation
+    colorMap.flipY = false;
+    addStatus(`✅ Color: <code>${COLOR_FILE}</code>`);
+  } else {
+    addStatus(`⚠️ Missing color texture: <code>${COLOR_FILE}</code> (using fallback)`);
+  }
+} else {
+  addStatus(`ℹ️ COLOR_FILE empty (using fallback)`);
+}
+
+if (NORMAL_FILE){
+  normalMap = await loadTextureSafe(TEX_DIR + NORMAL_FILE);
+  if (normalMap){
+    prep(normalMap);
+    addStatus(`✅ Normal: <code>${NORMAL_FILE}</code>`);
+  } else {
+    addStatus(`⚠️ Missing normal map: <code>${NORMAL_FILE}</code>`);
+  }
+}
+
+if (ROUGH_FILE){
+  roughMap = await loadTextureSafe(TEX_DIR + ROUGH_FILE);
+  if (roughMap){
+    prep(roughMap);
+    addStatus(`✅ Rough: <code>${ROUGH_FILE}</code>`);
+  } else {
+    addStatus(`⚠️ Missing roughness map: <code>${ROUGH_FILE}</code>`);
+  }
+}
+
+const groundMat = new THREE.MeshStandardMaterial({
+  map: colorMap || null,
+  normalMap: normalMap || null,
+  roughnessMap: roughMap || null,
+  roughness: roughMap ? 1.0 : 0.95,
+  metalness: 0.0,
+  color: colorMap ? 0xffffff : 0x556b2f
+});
+if (groundMat.normalMap) groundMat.normalScale.set(1.0, 1.0);
+
+const ground = new THREE.Mesh(geo, groundMat);
+ground.receiveShadow = true;
+scene.add(ground);
+
+function applyTerrainSize(){
+  const scale = terrainSize / DEFAULT_GROUND_SIZE;
+  ground.scale.set(scale, 1, scale);
+}
+
+function updateTerrainControlReadouts(){
+  terrainHeightReadoutEl.textContent = String(Math.round(terrainHeight));
+  terrainSizeReadoutEl.textContent = String(Math.round(terrainSize));
+}
+
+terrainHeightSliderEl.addEventListener("input", ()=>{
+  terrainHeight = Number(terrainHeightSliderEl.value);
+  updateTerrainControlReadouts();
+  rebuildTerrainFromHeightmap();
+  const obj = controls.getObject();
+  obj.position.y = Math.max(obj.position.y, heightAt(obj.position.x, obj.position.z) + 2);
+});
+
+terrainSizeSliderEl.addEventListener("input", ()=>{
+  terrainSize = Number(terrainSizeSliderEl.value);
+  updateTerrainControlReadouts();
+  applyTerrainSize();
+  const obj = controls.getObject();
+  obj.position.y = Math.max(obj.position.y, heightAt(obj.position.x, obj.position.z) + 2);
+});
+
+updateTerrainControlReadouts();
+applyTerrainSize();
+
+if (startupWarning){
+  setStatus(`${startupWarning}<br>Fallback terrain active (${c.width}×${c.height}).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
+} else {
+  setStatus(`✅ Loaded heightmap <code>${HEIGHTMAP_FILE}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
+}
+
+let tiltReadout = document.getElementById("tiltReadout");
+
+function rebuildMiniFromCurrentHeightmap(){
+  bctx.clearRect(0,0,MINI_SIZE,MINI_SIZE);
+  bctx.imageSmoothingEnabled = true;
+  bctx.drawImage(c, 0, 0, MINI_SIZE, MINI_SIZE);
+  bctx.strokeStyle = "rgba(255,255,255,0.10)";
+  bctx.lineWidth = 1;
+  for (let i=1;i<=3;i++){
+    const t = (i/4)*MINI_SIZE;
+    bctx.beginPath(); bctx.moveTo(t,0); bctx.lineTo(t,MINI_SIZE); bctx.stroke();
+    bctx.beginPath(); bctx.moveTo(0,t); bctx.lineTo(MINI_SIZE,t); bctx.stroke();
+  }
+}
+
+heightmapPickerEl.addEventListener("change", async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImageFromObjectURL(url);
+    setHeightmapFromImage(img);
+    rebuildTerrainFromHeightmap();
+    rebuildMiniFromCurrentHeightmap();
+    const obj = controls.getObject();
+    obj.position.y = Math.max(obj.position.y, heightAt(obj.position.x, obj.position.z) + 2);
+    setStatus(`✅ Loaded local heightmap <code>${file.name}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
+    tiltReadout = document.getElementById("tiltReadout");
+  } catch (err) {
+    addStatus(`❌ Could not read local heightmap: <code>${file.name}</code>`);
+    console.error(err);
+  } finally {
+    URL.revokeObjectURL(url);
+    e.target.value = "";
+  }
+});
+
+texturePickerEl.addEventListener("change", async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  try {
+    const localTex = await loadTextureFromObjectURL(url);
+    if (!localTex){
+      addStatus(`❌ Could not read local texture: <code>${file.name}</code>`);
+      return;
+    }
+    localTex.colorSpace = THREE.SRGBColorSpace;
+    prep(localTex, 1, true);
+    localTex.flipY = false;
+    if (groundMat.map) groundMat.map.dispose();
+    groundMat.map = localTex;
+    groundMat.color.setHex(0xffffff);
+    groundMat.needsUpdate = true;
+    addStatus(`✅ Loaded local texture: <code>${file.name}</code>`);
+  } catch (err) {
+    addStatus(`❌ Could not read local texture: <code>${file.name}</code>`);
+    console.error(err);
+  } finally {
+    URL.revokeObjectURL(url);
+    e.target.value = "";
+  }
+});
+
+/* =========================
+   Compass
+   ========================= */
+const needle = document.getElementById("needle");
+function updateCompass(){
+  // Map 3D yaw to a 2D compass needle.
+  // Three.js yaw (+) turns left (toward -X / West), but CSS positive rotation is clockwise.
+  // So we flip the sign to keep East/West correct while preserving North/South.
+  const yaw = controls.getObject().rotation.y;
+  const deg = -THREE.MathUtils.radToDeg(yaw);
+  needle.style.transform = `rotate(${deg}deg)`;
+}
+
+/* =========================
+   Movement
+   ========================= */
+const keys = new Set();
+const CONTROL_KEYS = new Set([
+  "ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyE","KeyD","KeyR","KeyF","Escape"
+]);
+
+function maybeBlurRangeControl(){
+  const ae = document.activeElement;
+  if (ae && ae.tagName === "INPUT" && ae.type === "range") ae.blur();
+}
+
+addEventListener("keydown", (e)=>{
+  if (CONTROL_KEYS.has(e.code)){
+    e.preventDefault();
+    maybeBlurRangeControl();
+  }
+  keys.add(e.code);
+});
+
+addEventListener("keyup", (e)=>{
+  if (CONTROL_KEYS.has(e.code)) e.preventDefault();
+  keys.delete(e.code);
+});
+
+[terrainHeightSliderEl, terrainSizeSliderEl].forEach((el)=>{
+  el.addEventListener("keydown", (e)=>{
+    if (CONTROL_KEYS.has(e.code)) e.preventDefault();
+  });
+});
+
+function heightAt(x,z){
+  const u = (x/terrainSize)+0.5;
+  const v = (-z/terrainSize)+0.5;
+  const ix = Math.floor(u*(c.width-1));
+  const iz = Math.floor((1-v)*(c.height-1));
+  if (ix<0||iz<0||ix>=c.width||iz>=c.height) return 0;
+  return (hm[(iz*c.width + ix)*4]/255) * terrainHeight;
+}
+
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.033, clock.getDelta());
+  const obj = controls.getObject();
+
+  if (keys.has("ArrowLeft"))  obj.rotation.y += 2*dt;
+  if (keys.has("ArrowRight")) obj.rotation.y -= 2*dt;
+
+// Tilt (pitch) with E/D  (bulletproof: apply directly to camera)
+// This avoids relying on PointerLockControls' internal pitch object.
+if (keys.has("KeyE")) camera.rotation.x += TILT_SPEED * dt; // tilt down
+if (keys.has("KeyD")) camera.rotation.x -= TILT_SPEED * dt; // tilt up
+camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, TILT_MIN, TILT_MAX);
+if (tiltReadout) tiltReadout.textContent = THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(0);
+
+  let dir = 0;
+  if (keys.has("ArrowUp")) dir = 1;
+  if (keys.has("ArrowDown")) dir = -1;
+
+  if (dir){
+    obj.position.x += -Math.sin(obj.rotation.y) * dir * CAMI_SPEED * dt;
+    obj.position.z += -Math.cos(obj.rotation.y) * dir * CAMI_SPEED * dt;
+  }
+
+  if (keys.has("KeyR")) obj.position.y += CAMI_CLIMB * dt;
+  if (keys.has("KeyF")) obj.position.y -= CAMI_CLIMB * dt;
+
+  const floor = heightAt(obj.position.x, obj.position.z) + 2;
+  if (obj.position.y < floor) obj.position.y = floor;
+
+  // Mini‑map update (convert world x/z -> heightmap UV)
+  const denom = (terrainSize / MINI_ZOOM);
+  const u = (obj.position.x / denom) + 0.5;
+  const v = (-obj.position.z / denom) + 0.5;
+  drawMiniMarker(u, v, obj.rotation.y);
+
+
+  updateCompass();
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

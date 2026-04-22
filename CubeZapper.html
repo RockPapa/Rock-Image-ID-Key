@@ -398,12 +398,9 @@ const FIRE_SOUND_FILE = "gun.mp3";
 const FIRE_SOUND_VOL = 1.0;
 const HIT_SOUND_FILE = "missle.mp3";
 const HIT_SOUND_VOL = 0.85; // reduced by 15%
-const WARNING_SOUND_FILE = "buzzer.mp3";
-const WARNING_SOUND_VOL = 1.0; // max browser-safe volume
 
 let fireAudio = null;
 let hitAudio = null;
-let warningAudio = null;
 let copterAudio = null;
 let lastCopterPlayTryMs = 0;
 
@@ -458,29 +455,6 @@ function initHitSound(){
       hitAudio.currentTime = 0;
     }).catch(()=>{});
   }, { once:true });
-}
-
-function initWarningSound(){
-  if (warningAudio || !WARNING_SOUND_FILE) return;
-  const url = TEX_DIR + WARNING_SOUND_FILE + "?v=" + Date.now();
-  warningAudio = new Audio(url);
-  warningAudio.volume = WARNING_SOUND_VOL;
-
-  // prime on first user gesture
-  document.body.addEventListener("click", () => {
-    warningAudio.play().then(() => {
-      warningAudio.pause();
-      warningAudio.currentTime = 0;
-    }).catch(()=>{});
-  }, { once:true });
-}
-
-function playWarningSound(){
-  try{
-    const a = new Audio(TEX_DIR + WARNING_SOUND_FILE + "?v=" + Date.now());
-    a.volume = WARNING_SOUND_VOL;
-    a.play();
-  }catch(e){}
 }
 
 
@@ -1018,7 +992,6 @@ let targetFlashT = 0;
 let roundTimeLeftSec = ROUND_TIME_LIMIT_SEC;
 let roundTimerRunning = false;
 let roundTimerEl = null;
-let lastWarningSecondPlayed = -1;
 
 function randRange(a,b){ return a + Math.random()*(b-a); }
 function getRoundTimerEl(){
@@ -1034,15 +1007,16 @@ function formatRoundTime(seconds){
 function updateRoundTimerHUD(){
   const el = getRoundTimerEl();
   if (!el) return;
-  const urgent = roundTimeLeftSec <= 10 && roundTimerRunning;
+  const urgent = roundTimeLeftSec <= 5 && roundTimerRunning;
+  const blinkOn = !urgent || (Math.floor(performance.now() / 250) % 2 === 0);
   el.innerHTML = `⏱ Round <b>${formatRoundTime(roundTimeLeftSec)}</b>`;
   el.style.borderColor = urgent ? "rgba(255,120,120,.6)" : "rgba(255,255,255,.18)";
   el.style.background = urgent ? "rgba(80,18,18,.72)" : "rgba(20,24,32,.62)";
+  el.style.opacity = blinkOn ? "1" : "0.18";
 }
 function startRoundTimer(){
   roundTimeLeftSec = ROUND_TIME_LIMIT_SEC;
   roundTimerRunning = true;
-  lastWarningSecondPlayed = -1;
   updateRoundTimerHUD();
 }
 function stopRoundTimer(){
@@ -1055,11 +1029,6 @@ function updateRoundTimer(dt){
   if (targetsRemaining <= 0) return;
 
   roundTimeLeftSec -= dt;
-  const secLeft = Math.ceil(roundTimeLeftSec);
-  if (secLeft <= 5 && secLeft > 0 && secLeft !== lastWarningSecondPlayed){
-    playWarningSound();
-    lastWarningSecondPlayed = secLeft;
-  }
   if (roundTimeLeftSec <= 0){
     roundTimeLeftSec = 0;
     stopRoundTimer();
@@ -1909,7 +1878,6 @@ initTruckAvatar();
 initCopterAudio();
 initFireSound();
 initHitSound();
-initWarningSound();
 
 // ---------- GRASS (PBR) ----------
 (async function initGrass(){

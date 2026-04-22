@@ -178,24 +178,10 @@
 <div class="touchHint" id="touchHint">Tip: Tap <b>📱 Controls</b> to show/hide iPad buttons.</div>
 
 
-<div class="compassWrap" id="compassWrap" aria-hidden="true">
-  <div class="navLabel">COMPASS</div>
-  <canvas id="compassCanvas" width="140" height="140"></canvas>
-</div>
-
-<div class="minimapWrap" id="minimapWrap" aria-hidden="true">
-  <div class="navLabel">MINIMAP</div>
-  <canvas id="minimapCanvas" width="220" height="220"></canvas>
-</div>
-
-<div class="navHelp" id="navHelp">Press <b>M</b> to toggle compass/minimap.</div>
-
-
-
 <div class="hud" id="hud">
   <b>WALK MODE</b><br>
   Click = mouse look (Esc unlock)<br>
-  Arrow keys move · Space fire · <b>R/F fly up/down</b> · <b>H toggle HUD</b> · <b>M map</b> · <b>📱 Controls</b>
+  Arrow keys move · Space fire · <b>R/F fly up/down</b> · <b>H toggle HUD</b> · <b>📱 Controls</b>
   <div class="small">
     <b>Lake40:</b> Bright grass + visible shadows<br>
     (Sun punch + ACES exposure + wider shadow coverage)
@@ -384,7 +370,7 @@ const FIRE_SOUND_VOL = 1.0;
 const HIT_SOUND_FILE = "missle.mp3";
 const HIT_SOUND_VOL = 0.85; // reduced by 15%
 const WARNING_SOUND_FILE = "buzzer.mp3";
-const WARNING_SOUND_VOL = 0.9;
+const WARNING_SOUND_VOL = 1.0; // max browser-safe volume
 
 let fireAudio = null;
 let hitAudio = null;
@@ -637,6 +623,7 @@ scene.add(controls.getObject());
      - lake footprint (if enabled)
    - Toggle with M
    ========================================================= */
+const NAV_ENABLE = false; // compass/minimap removed
 const compassWrap = document.getElementById("compassWrap");
 const minimapWrap = document.getElementById("minimapWrap");
 const navHelp = document.getElementById("navHelp");
@@ -652,15 +639,23 @@ let mapBase = document.createElement("canvas");
 let mapBaseReady = false;
 
 // Toggle
-let navVisible = true;
+let navVisible = false;
 function setNavVisible(on){
+  if (!NAV_ENABLE){
+    navVisible = false;
+    compassWrap?.classList.add("hidden");
+    minimapWrap?.classList.add("hidden");
+    navHelp?.classList.remove("on");
+    return;
+  }
   navVisible = !!on;
   compassWrap?.classList.toggle("hidden", !navVisible);
   minimapWrap?.classList.toggle("hidden", !navVisible);
 }
-setNavVisible(true);
+setNavVisible(false);
 
 window.addEventListener("keydown", (e)=>{
+  if (!NAV_ENABLE) return;
   if (e.code === "KeyM"){
     setNavVisible(!navVisible);
     navHelp?.classList.add("on");
@@ -760,6 +755,7 @@ function drawCompass(yawRad){
 
 // Build minimap base from heightmap pixels (hmData)
 function buildMinimapBase(){
+  if (!NAV_ENABLE) return;
   if (!mapCtx || !mapC) return;
   if (!terrainReady || !hmData || hmW<=0 || hmH<=0) return;
 
@@ -888,6 +884,7 @@ function drawMinimap(playerX, playerZ, yawRad){
 
 // Public update called in animate()
 function updateNavOverlays(){
+  if (!NAV_ENABLE) return;
   if (!navVisible) return;
   if (!controls) return;
   const obj = controls.getObject();
@@ -962,6 +959,7 @@ scene.add(sun.target);
    1) 7 red cubes within 100' radius of spawn point
    2) 9 yellow cubes within 150' radius of spawn point
    3) 9 blue cubes within 200' radius of spawn point
+   4) 11 green cubes within 240' radius of spawn point
    ========================================================= */
 const TARGET_ENABLE = true;
 const TARGET_SIZE = 7.9968; // increased by 70% for all target phases
@@ -969,12 +967,13 @@ const TARGET_MIN_DISTANCE = 18;
 const TARGET_MIN_SEPARATION = 12;
 const TARGET_SPAWN_X = 0;
 const TARGET_SPAWN_Z = 6;
-const ROUND_TIME_LIMIT_SEC = 40;
+const ROUND_TIME_LIMIT_SEC = 50;
 
 const TARGET_PHASES = [
   { name: "Red",    count: 7, color: 0xff3333, radius: 100, moving: false },
   { name: "Yellow", count: 9, color: 0xffdd33, radius: 150, moving: false },
-  { name: "Blue",   count: 9, color: 0x3388ff, radius: 200, moving: false }
+  { name: "Blue",   count: 9, color: 0x3388ff, radius: 200, moving: false },
+  { name: "Green",  count: 11, color: 0x33dd66, radius: 240, moving: false }
 ];
 
 const TARGET_MOVE_SPEED_MIN = 1.2;
@@ -1125,7 +1124,7 @@ function createTargets(){
 
   const phaseNum = targetPhaseIndex + 1;
   const movingLabel = phase.moving ? " · moving" : "";
-  hudLine(`🎯 Phase <code id="waveNum">${phaseNum}</code>/3: <b>${phase.name}</b>${movingLabel} · Targets: <code id="targetsLeft">${targetsRemaining}</code> · Radius: <code>${phase.radius}</code>`);
+  hudLine(`🎯 Phase <code id="waveNum">${phaseNum}</code>/${TARGET_PHASES.length}: <b>${phase.name}</b>${movingLabel} · Targets: <code id="targetsLeft">${targetsRemaining}</code> · Radius: <code>${phase.radius}</code>`);
 
   if (targetsRemaining < desiredCount){
     hudLine(`⚠️ Only spawned <code>${targetsRemaining}</code> of <code>${desiredCount}</code> targets (terrain constraints).`);

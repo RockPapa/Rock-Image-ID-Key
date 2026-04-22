@@ -23,8 +23,8 @@
 /* Health stays visible */
 .hudHealth{ top: 10px; }
 
-/* Text panel sits below health */
-.hudText{ top: 78px; }
+/* Text panel removed; health bar remains */
+.hudText{ display:none !important; }
 
   /* Health bar */
   .healthRow{ margin-top:0; }
@@ -119,21 +119,7 @@
   <div id="healthPct" class="healthPct">100%</div>
 </div>
 
-<div id="hudText" class="hudPanel hudText">
-  <div><b>INSIDE – GRIZ + 3 ZOMBIES + BOOM + VOID + TREASURE + PORTAL + SAFE + STUN + BLACK “1” WALLS</b></div>
-  <div>
-    ↑/↓ move • ←/→ turn • Shift faster • R = re-roll floor + walls fallback<br>
-    E = open door • <b>H</b> hide text • <b>Safe:</b> stand on X • <b>N</b> new round<br>
-    <b>Stun:</b> pick up Z or find the <b>stun door</b> (shows images/stun.png) • Space fires (images/gun.mp3) • hit stuns GRIZ + zombies<br>
-    <b>Boom door:</b> one random door triggers images/explosion.mp3 + GAME OVER<br>
-    <b>Void trap door:</b> one random door “sucks you into” black world → 3 seconds → GAME OVER (plays suction)<br>
-    <b>Treasure door:</b> one random door reveals images/treasure.png inside (walk into it to collect)<br>
-    <b>Portal:</b> open portal door, then walk into blue rune → SpiderPad.html<br>
-    <b>Music:</b> loops images/drama.mp3 (starts after first keypress/click)
-  </div>
-
-  <div id="status" style="margin-top:6px;"></div>
-</div>
+<div id="status" style="display:none"></div>
 
 
 <!-- =========================
@@ -150,9 +136,9 @@
       <button class="tcBtn" data-hold="ArrowUp">▲</button>
       <button class="tcBtn" data-hold="ArrowRight">⟳</button>
 
-      <button class="tcBtn tcSmall" data-tap="KeyH">HUD</button>
+      <button class="tcBtn tcSmall" aria-hidden="true">—</button>
       <button class="tcBtn" data-hold="ArrowDown">▼</button>
-      <button class="tcBtn tcSmall" data-tap="KeyE">OPEN</button>
+      <button class="tcBtn tcSmall" aria-hidden="true">—</button>
     </div>
 
     <!-- Right: bigger buttons -->
@@ -324,13 +310,7 @@
   const ctx = canvas.getContext("2d", { alpha:false });
   const statusEl = document.getElementById("status");
 
-  // HUD TOGGLE (H key) - hides TEXT panel only (health stays)
-  const hudTextEl = document.getElementById("hudText");
-  let hudTextVisible = true;
-  function setHudTextVisible(v){
-    hudTextVisible = !!v;
-    if(hudTextEl) hudTextEl.style.display = hudTextVisible ? "block" : "none";
-  }
+  // Text HUD removed; health bar remains.
 
   function resize(){
     const scale = 1.5;
@@ -816,13 +796,7 @@
     playOneShot(SND.boom);
   }
 
-  function tryOpenDoorInFront(nowMs){
-    const lookDist = 34;
-    const tx = player.x + Math.cos(player.a) * lookDist;
-    const ty = player.y + Math.sin(player.a) * lookDist;
-    const mx = (tx / TILE) | 0;
-    const my = (ty / TILE) | 0;
-
+  function openDoorAt(mx, my, nowMs){
     if(cellAt(mx,my) !== "D") return;
 
     const key = doorKey(mx,my);
@@ -849,6 +823,39 @@
         if(!zombies[i].active){
           zombies[i].active = true;
           playOneShot(SND.bear);
+        }
+      }
+    }
+  }
+
+  function tryOpenDoorInFront(nowMs){
+    const lookDist = 34;
+    const tx = player.x + Math.cos(player.a) * lookDist;
+    const ty = player.y + Math.sin(player.a) * lookDist;
+    const mx = (tx / TILE) | 0;
+    const my = (ty / TILE) | 0;
+    openDoorAt(mx, my, nowMs);
+  }
+
+  function autoOpenDoorOnCollision(nowMs){
+    const pmx = (player.x / TILE) | 0;
+    const pmy = (player.y / TILE) | 0;
+    const rr = (PRADIUS + 1) * (PRADIUS + 1);
+
+    for(let my = pmy - 1; my <= pmy + 1; my++){
+      for(let mx = pmx - 1; mx <= pmx + 1; mx++){
+        if(cellAt(mx,my) !== "D") continue;
+        const key = doorKey(mx,my);
+        if(doorsOpen.has(key)) continue;
+
+        const l = mx * TILE, t = my * TILE;
+        const r = l + TILE,  b = t + TILE;
+        const cx = clamp(player.x, l, r);
+        const cy = clamp(player.y, t, b);
+        const dx = player.x - cx;
+        const dy = player.y - cy;
+        if((dx*dx + dy*dy) <= rr){
+          openDoorAt(mx, my, nowMs);
         }
       }
     }
@@ -959,10 +966,7 @@
     startMusicOnce();
     keys.add(e.code);
 
-    if(e.code === "KeyH"){ setHudTextVisible(!hudTextVisible); e.preventDefault(); return; }
-
     if(e.code === "KeyR") rerollColors();
-    if(e.code === "KeyE"){ tryOpenDoorInFront(performance.now()); e.preventDefault(); }
     if(e.code === "KeyN"){ newRound(); e.preventDefault(); }
     if(e.code === "Space"){ fireStunGun(performance.now()); e.preventDefault(); }
 
@@ -1444,6 +1448,9 @@
       if(keys.has("ArrowUp"))   { vx += Math.cos(player.a)*speed*dt; vy += Math.sin(player.a)*speed*dt; }
       if(keys.has("ArrowDown")) { vx -= Math.cos(player.a)*speed*dt; vy -= Math.sin(player.a)*speed*dt; }
       if(vx || vy) tryMovePlayer(player.x + vx, player.y + vy);
+
+      // Doors open automatically when the player's collision circle touches them.
+      autoOpenDoorOnCollision(now);
     }
 
     // Passive regen only while standing in the SAFE zone (X)
@@ -1465,8 +1472,10 @@
       ctx.fillRect(0,0,w,h);
       drawOverlays(w,h, now);
 
-      statusEl.innerHTML =
-        `<b>VOID:</b> ACTIVE • <b>Countdown:</b> ${(Math.max(0, (voidUntil-now))/1000).toFixed(2)}s • <b>Press N</b> to restart`;
+      if(statusEl){
+        statusEl.innerHTML =
+          `<b>VOID:</b> ACTIVE • <b>Countdown:</b> ${(Math.max(0, (voidUntil-now))/1000).toFixed(2)}s • <b>Press N</b> to restart`;
+      }
       requestAnimationFrame(tick);
       return;
     }
@@ -1588,11 +1597,13 @@
         : (doorsOpen.has(stunDoor.key) ? "OPEN (stun visible)" : "HIDDEN (behind a door)"))
       : "none";
 
-    statusEl.innerHTML =
-      `<b>Music:</b> drama.mp3 • <b>Stun:</b> ${stunState} • <b>Stun Door:</b> ${stunDoorState} • <b>Safe:</b> ${playerIsSafe()?"YES":"no"} • ` +
-      `<b>Portal:</b> ${portalState} • <b>Boom:</b> ${boomState} • <b>Void:</b> ${voidState} • ` +
-      `<b>Treasure:</b> ${treasureState} • ` +
-      `<b>Griz:</b> ${grizActive?"ACTIVE":"hidden"} • <b>Zombies:</b> ${zActive} active / ${zHidden} hidden • <b>Black walls:</b> tile '1'`;
+    if(statusEl){
+      statusEl.innerHTML =
+        `<b>Music:</b> drama.mp3 • <b>Stun:</b> ${stunState} • <b>Stun Door:</b> ${stunDoorState} • <b>Safe:</b> ${playerIsSafe()?"YES":"no"} • ` +
+        `<b>Portal:</b> ${portalState} • <b>Boom:</b> ${boomState} • <b>Void:</b> ${voidState} • ` +
+        `<b>Treasure:</b> ${treasureState} • ` +
+        `<b>Griz:</b> ${grizActive?"ACTIVE":"hidden"} • <b>Zombies:</b> ${zActive} active / ${zHidden} hidden • <b>Black walls:</b> tile '1'`;
+    }
 
     requestAnimationFrame(tick);
   }

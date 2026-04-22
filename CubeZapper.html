@@ -1,0 +1,2916 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lake40 – Bright Grass + Grass Shadows</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#000; }
+  body > canvas { display:block; width:100vw; height:100vh; }
+  /* Override the global canvas rule for HUD canvases */
+  .compassWrap canvas, .minimapWrap canvas { display:block; width:100%; height:100%; }
+
+  .hud{
+    display:none !important;
+    position:fixed; left:18px; top:18px; z-index:10;
+    max-width:740px;
+    padding:18px 18px 16px;
+    border-radius:14px;
+    background:rgba(25,30,38,.85);
+    color:#fff; font: 18px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    box-shadow: 0 10px 28px rgba(0,0,0,.35);
+  }
+  .hud.hidden{ display:none; }
+  .hud .small{ font-size:14px; opacity:.9; margin-top:8px; }
+  .hud b{ font-weight:800; }
+  code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+/* =========================
+   📱 iPad / Touch Controls (toggle)
+   ========================= */
+.touchToggle{
+  position:fixed; right:18px; top:18px; z-index:30;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(20,24,32,.78);
+  color:#fff;
+  font: 16px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 26px rgba(0,0,0,.55);
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+.touchToggle:active{ transform: translateY(1px); }
+
+.touchUI{
+  position:fixed; left:0; right:0; bottom:0; z-index:25;
+  padding:14px 18px 18px;
+  display:none;
+  pointer-events:none;
+}
+.touchUI.on{ display:block; }
+
+.touchPad{
+  position:absolute; bottom:18px; left:18px;
+  width:220px; height:220px;
+  pointer-events:none;
+}
+.touchBtn{
+  width:72px; height:72px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.20);
+  background:rgba(25,30,38,.72);
+  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font: 22px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 22px rgba(0,0,0,.45);
+  pointer-events:auto;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action:none;
+}
+.touchBtn:active{ transform: translateY(1px); background:rgba(35,42,55,.78); }
+
+.dUp{ position:absolute; left:74px; top:0; }
+.dLeft{ position:absolute; left:0; top:74px; }
+.dRight{ position:absolute; left:148px; top:74px; }
+.dDown{ position:absolute; left:74px; top:148px; }
+
+.touchActions{
+  position:absolute; bottom:18px; right:18px;
+  display:flex; flex-direction:column; gap:14px;
+  pointer-events:none;
+}
+.touchActions .touchBtn{
+  width:92px; height:92px; border-radius:22px; font-size:20px; pointer-events:auto;
+}
+
+.touchHint{
+  position:fixed; left:18px; bottom:252px; z-index:26;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(20,24,32,.62);
+  color:#fff;
+  font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 10px 22px rgba(0,0,0,.40);
+  display:none;
+}
+.touchHint.on{ display:block; }
+
+
+/* =========================
+   🧭 Compass + MiniMap (Dan HUD)
+   ========================= */
+.compassWrap{
+  position:fixed; right:18px; top:72px; z-index:28;
+  width:140px; height:140px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.58);
+  box-shadow:0 10px 26px rgba(0,0,0,.45);
+  overflow:hidden;
+  pointer-events:none;
+}
+.minimapWrap{
+  position:fixed; right:18px; bottom:18px; z-index:28;
+  width:220px; height:220px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.58);
+  box-shadow:0 10px 26px rgba(0,0,0,.45);
+  overflow:hidden;
+  pointer-events:none;
+}
+.compassWrap.hidden, .minimapWrap.hidden{ display:none; }
+.navLabel{
+  position:absolute; left:10px; top:10px;
+  font: 12px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color:rgba(255,255,255,.85);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  opacity:.95;
+}
+.navHelp{
+  position:fixed; right:18px; top:220px; z-index:28;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(20,24,32,.62);
+  color:#fff;
+  font: 12px/1.25 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 22px rgba(0,0,0,.40);
+  display:none;
+  pointer-events:none;
+}
+.navHelp.on{ display:block; }
+
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+
+<button class="touchToggle" id="touchToggle" aria-label="Toggle on-screen controls">📱 Controls</button>
+
+<div class="touchUI" id="touchUI">
+  <div class="touchPad">
+    <div class="touchBtn dUp"    id="btnUp">▲</div>
+    <div class="touchBtn dLeft"  id="btnLeft">◀</div>
+    <div class="touchBtn dRight" id="btnRight">▶</div>
+    <div class="touchBtn dDown"  id="btnDown">▼</div>
+  </div>
+
+  <div class="touchActions">
+    <div class="touchBtn" id="btnJump">FIRE</div>
+  </div>
+</div>
+
+<div class="touchHint" id="touchHint">Tip: Tap <b>📱 Controls</b> to show/hide iPad buttons.</div>
+
+
+<div class="compassWrap" id="compassWrap" aria-hidden="true">
+  <div class="navLabel">COMPASS</div>
+  <canvas id="compassCanvas" width="140" height="140"></canvas>
+</div>
+
+<div class="minimapWrap" id="minimapWrap" aria-hidden="true">
+  <div class="navLabel">MINIMAP</div>
+  <canvas id="minimapCanvas" width="220" height="220"></canvas>
+</div>
+
+<div class="navHelp" id="navHelp">Press <b>M</b> to toggle compass/minimap.</div>
+
+
+
+<div class="hud" id="hud">
+  <b>WALK MODE</b><br>
+  Click = mouse look (Esc unlock)<br>
+  Arrow keys move · Space fire · <b>R/F fly up/down</b> · <b>H toggle HUD</b> · <b>G golden hour</b> · <b>M map</b> · <b>📱 Controls</b>
+  <div class="small">
+    <b>Lake40:</b> Bright grass + visible shadows<br>
+    (Sun punch + ACES exposure + wider shadow coverage)
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
+
+/* =========================
+   TWEAK ZONE (Dan knobs)
+   ========================= */
+const TEX_DIR = "images/";
+
+// 🌲 TREE VARIETY (SAFE)
+const TREE_FILES = ['tree1.png','tree2.png'];
+const TREE2_CHANCE = 1.00; // FORCE so you definitely see it if it loads // 0..1  (set high so you definitely see it)
+let tree2Used = 0;
+let tree1Used = 0;
+
+// ----- TRUCK AUDIO -----
+const TRUCK_AUDIO_ENABLE = false;
+const TRUCK_SOUND_FILE = ""; // optional: set a file in images/ to enable
+const TRUCK_SOUND_VOL  = 0.55; // 0.0 – 1.0
+const COPTER_SOUND_FILE = "copter_sound.mp3";
+const COPTER_SOUND_VOL  = 0.40; // 60% reduction (plays at 40%)
+
+// ----- TRUCK AVATAR (Phase 1) -----
+const TRUCK_AVATAR_ENABLE = false;
+const TRUCK_FILE = ""; // optional: set a file in images/ to enable
+const TRUCK_W = 2.5;               // world units (tweak)
+const TRUCK_H = 1.8;               // world units (tweak)
+const TRUCK_FWD = 3.8;             // how far in front of camera (tweak)
+const TRUCK_SIDE = 0.0;            // left/right offset (tweak)
+const TRUCK_GROUND_SINK = 0.14;
+const TRUCK_Y_SMOOTH_RATE = 8.0;      // higher = quicker follow, lower = smoother
+const TRUCK_Y_MAX_STEP_PER_SEC = 12.0; // cap vertical movement speed to prevent bouncing
+// If your truck image has a white background (not transparent), enable chroma-key.
+// 0 = off (use PNG alpha), 1 = key out near-white
+const TRUCK_CHROMAKEY_ENABLE = true;
+const TRUCK_KEY_COLOR = { r: 1.0, g: 1.0, b: 1.0 }; // white
+const TRUCK_KEY_TOL = 0.20;   // bigger = removes more (0.12–0.30)
+const TRUCK_KEY_SOFT = 0.08;  // edge softness (0.02–0.12)
+
+// For a first "does it show?" pass, draw truck on top of terrain.
+// Set false later if you want true world-occlusion.
+const TRUCK_DRAW_ON_TOP = true;
+// tiny sink to avoid floating
+
+// Heightmap
+const HEIGHTMAP_FILE = "height_map.jpg";
+const USE_TERRAIN = true;
+
+// Terrain
+const TERRAIN_SEGMENTS = 256;
+const TERRAIN_HEIGHT   = 46.98; // reduced by 25%
+const CLAMP_OUTSIDE_TERRAIN = true;
+
+// Player
+const PLAYER_EYE_HEIGHT = 3.0;
+const MOVE_SPEED = 16.9; // increased by 100%
+const TURN_SPEED = 0.9; // finer steering // raycaster-style keyboard turning (radians/sec)
+const RF_SPEED = 55; // vertical raise/lower speed (units/sec)
+const JUMP_VEL   = 12;
+const GRAVITY    = 30;
+
+// Grass textures**********************//
+const GRASS_COLOR_FILE = 
+"rock_albedo.jpg";
+
+const GRASS_NORMAL_EXR = 
+"rock_normal.exr";
+
+const GRASS_ROUGH_EXR  = 
+"rock_rough.exr";
+
+const GRASS_REPEAT = 90;
+
+// ===== TALL GRASS (Option B: grass cards) =====
+const TALL_GRASS_ENABLE = true;
+
+// Uses your existing grass color texture; for best look later, swap to a real grass-cutout PNG.
+const GRASS_CARD_COLOR_FILE = GRASS_COLOR_FILE; // reuse ground grass color
+const GRASS_CARD_HEIGHT_FILE = "fart.png";   // put in images/dg_disp.png
+
+const GRASS_CARD_COUNT = 8000;   // start 3000–12000 (more = heavier)
+const GRASS_CARD_AREA  = 2400;   // spread radius around start (world units)
+const GRASS_CARD_MIN_H = 0.6;    // minimum blade height
+const GRASS_CARD_MAX_H = 3.2;    // maximum blade height (taller = more dramatic)
+const GRASS_CARD_W     = 0.22;   // blade/card width
+const GRASS_CARD_ALPHA = 0.60;   // alphaTest: higher = fewer pixels drawn (faster)
+const GRASS_CARD_GROUND_SINK = 0.08; // sink into ground to prevent floating
+
+// Sky & fog
+const SKY_TOP    = 0x2c5aa8;
+const SKY_BOTTOM = 0xcfe8ff;
+
+/* =========================
+   🌅 GOLDEN HOUR (Painter Toggle)
+   Press G to toggle a subtle late-afternoon warmth.
+   Safe: no new assets, no heavy shaders, no geometry changes.
+   ========================= */
+const GOLDEN_ENABLE = true;
+const GOLDEN_SUN_COLOR     = 0xffd1a3;
+const GOLDEN_SUN_INTENSITY = 1.45;
+const GOLDEN_SUN_POS       = { x: 230, y: 260, z: 260 }; // lower = longer shadows
+const GOLDEN_SKY_TOP       = 0x3b63b3;
+const GOLDEN_SKY_BOTTOM    = 0xf6e2c8;
+const FOG_COLOR_GOLDEN     = 0xaec2e6; // warm gray-blue haze
+
+// Day (original) sun position
+const DAY_SUN_POS = { x: 250, y: 420, z: 180 };
+
+// 🌞 Lake40: bright grass + stronger shadows
+const SUN_INTENSITY  = 2.95;
+const HEMI_INTENSITY = 0.42;
+const EXPOSURE       = 2.25;
+const SHADOW_D       = 620;
+
+/* =========================
+   ✅ FOG FIX (more blue + farther out)
+   Old:
+     FOG_COLOR = 0xbfd9ff
+     FOG_NEAR  = 180
+     FOG_FAR   = 1600
+   Those values fully fogged mountains at radius 4800–6400.
+   ========================= */
+const FOG_COLOR  = 0x8fb6ff;   // bluer fog
+const FOG_NEAR   = 1400;       // start fog farther out
+const FOG_FAR    = 14000;      // fade much farther away
+
+// World sizes
+const GROUND_SIZE = 1350; // reduced by 25%
+const SKY_RADIUS  = 9000;
+
+// STEP 4: Far mountain rings
+const MOUNTAIN_ENABLE = true;
+
+const M1_RADIUS   = 6800;
+const M1_HEIGHT   = 580;
+const M1_THICK    = 1200;
+const M1_SEGMENTS = 220;
+
+/* =========================
+   ✅ MORE BLUE IN FAR MOUNTAINS
+   ========================= */
+const M1_COLOR_RGB = { r: 122, g: 156, b: 220 };  // deeper blue
+const M1_OPACITY  = 0.62;                        // slightly higher so color reads
+
+const M2_RADIUS   = 8400;
+const M2_HEIGHT   = 300;
+const M2_THICK    = 1600;
+const M2_SEGMENTS = 280;
+
+const M2_COLOR_RGB = { r: 110, g: 145, b: 220 }; // lighter blue for the farther ring
+const M2_OPACITY  = 0.42;                        // slightly higher so it doesn't vanish
+
+const MOUNTAIN_BASE_Y = 40;
+const MOUNTAIN_SEED = 1337;
+const MOUNTAIN_RUGGEDNESS = 1.5;
+/* ========================= */
+
+// RGB helper (0–255 -> THREE.Color)
+function rgb255ToThree(rgb){
+  return new THREE.Color(rgb.r/255, rgb.g/255, rgb.b/255);
+}
+
+const hud = document.getElementById("hud");
+function hudLine(html){ return; }
+function showBanner(msg){ const b=document.getElementById("banner"); if(!b) return; b.innerHTML = msg; b.style.display="block"; }
+function hideBanner(){ const b=document.getElementById("banner"); if(!b) return; b.style.display="none"; }
+function setTreeCountsHUD(){
+  const a=document.getElementById('t1c'); if(a) a.textContent=String(tree1Used);
+  const b=document.getElementById('t2c'); if(b) b.textContent=String(tree2Used);
+}
+
+/* =========================================================
+   🔊 FIRE + HIT SOUNDS (SAFE)
+   - Space shot: gun.mp3
+   - Target/bad guy hit: missle.mp3
+   ========================================================= */
+const FIRE_SOUND_FILE = "gun.mp3";
+const FIRE_SOUND_VOL = 1.0;
+const HIT_SOUND_FILE = "missle.mp3";
+const HIT_SOUND_VOL = 0.85; // reduced by 15%
+
+let fireAudio = null;
+let hitAudio = null;
+let copterAudio = null;
+let lastCopterPlayTryMs = 0;
+
+function initCopterAudio(){
+  if (copterAudio || !COPTER_SOUND_FILE) return;
+  const url = TEX_DIR + COPTER_SOUND_FILE + "?v=" + Date.now();
+  copterAudio = new Audio(url);
+  copterAudio.loop = true;
+  copterAudio.volume = COPTER_SOUND_VOL;
+
+  // Start as soon as the user interacts (autoplay-safe).
+  const start = () => { ensureCopterAudioPlaying(); };
+  document.body.addEventListener("click", start, { passive: true });
+  document.body.addEventListener("touchstart", start, { passive: true });
+  document.body.addEventListener("keydown", start);
+}
+
+function ensureCopterAudioPlaying(){
+  if (!copterAudio) return;
+  if (!copterAudio.paused) return;
+  const now = performance.now();
+  if (now - lastCopterPlayTryMs < 1200) return;
+  lastCopterPlayTryMs = now;
+  copterAudio.play().catch(()=>{});
+}
+
+function initFireSound(){
+  if (fireAudio) return;
+  const url = TEX_DIR + FIRE_SOUND_FILE + "?v=" + Date.now();
+  fireAudio = new Audio(url);
+  fireAudio.volume = FIRE_SOUND_VOL;
+
+  // prime on first user gesture
+  document.body.addEventListener("click", () => {
+    fireAudio.play().then(() => {
+      fireAudio.pause();
+      fireAudio.currentTime = 0;
+    }).catch(()=>{});
+  }, { once:true });
+}
+
+function initHitSound(){
+  if (hitAudio) return;
+  const url = TEX_DIR + HIT_SOUND_FILE + "?v=" + Date.now();
+  hitAudio = new Audio(url);
+  hitAudio.volume = HIT_SOUND_VOL;
+
+  // prime on first user gesture
+  document.body.addEventListener("click", () => {
+    hitAudio.play().then(() => {
+      hitAudio.pause();
+      hitAudio.currentTime = 0;
+    }).catch(()=>{});
+  }, { once:true });
+}
+
+
+/* =========================================================
+   ✨ HIT PARTICLES (SAFE)
+   - Tiny sparkle burst on hits (target cube + bad guy)
+   - Very lightweight: THREE.Points, short lifetime, fades out
+   ========================================================= */
+const HIT_PARTICLES_ENABLE = true;
+const HIT_PARTICLE_COUNT   = 22;   // 12–40
+const HIT_PARTICLE_LIFE    = 0.35; // seconds
+const HIT_PARTICLE_SPEED   = 6.5;  // world units/sec
+const HIT_PARTICLE_SIZE    = 10.0; // pixels (PointsMaterial.size)
+
+const hitBursts = []; // { points, vels: Float32Array, life, maxLife, baseOpacity }
+
+function spawnHitBurst(worldPos, colorHex=0xffffff){
+  if (!HIT_PARTICLES_ENABLE) return;
+
+  const count = HIT_PARTICLE_COUNT;
+  const positions = new Float32Array(count * 3);
+  const vels      = new Float32Array(count * 3);
+
+  // random burst in a small sphere
+  for (let i=0; i<count; i++){
+    const k = i*3;
+    const theta = Math.random() * Math.PI * 2;
+    const u = Math.random() * 2 - 1;          // -1..1
+    const r = Math.cbrt(Math.random()) * 0.22; // compact radius
+
+    const s = Math.sqrt(1 - u*u);
+    const dx = r * s * Math.cos(theta);
+    const dy = r * u;
+    const dz = r * s * Math.sin(theta);
+
+    positions[k+0] = worldPos.x + dx;
+    positions[k+1] = worldPos.y + dy;
+    positions[k+2] = worldPos.z + dz;
+
+    // velocity direction (normalized) * speed with a bit of upward bias
+    const vx = dx;
+    const vy = dy + 0.35;
+    const vz = dz;
+    const len = Math.max(0.0001, Math.hypot(vx, vy, vz));
+    const sp = HIT_PARTICLE_SPEED * (0.45 + Math.random()*0.75);
+
+    vels[k+0] = (vx/len) * sp;
+    vels[k+1] = (vy/len) * sp;
+    vels[k+2] = (vz/len) * sp;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: colorHex,
+    size: HIT_PARTICLE_SIZE,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false
+  });
+
+  const pts = new THREE.Points(geo, mat);
+  pts.renderOrder = 998; // above most things, below truck draw-on-top
+  scene.add(pts);
+
+  hitBursts.push({
+    points: pts,
+    vels,
+    life: HIT_PARTICLE_LIFE,
+    maxLife: HIT_PARTICLE_LIFE,
+    baseOpacity: mat.opacity
+  });
+}
+
+
+function playFireSound(){
+  try{
+    const a = new Audio(TEX_DIR + FIRE_SOUND_FILE + "?v=" + Date.now());
+    a.volume = FIRE_SOUND_VOL;
+    a.play();
+  }catch(e){}
+}
+
+function playHitSound(){
+  try{
+    const a = new Audio(TEX_DIR + HIT_SOUND_FILE + "?v=" + Date.now());
+    a.volume = HIT_SOUND_VOL;
+    a.play();
+  }catch(e){}
+}
+
+function updateHitBursts(dt){
+
+  if (!HIT_PARTICLES_ENABLE) return;
+  for (let i = hitBursts.length - 1; i >= 0; i--){
+    const b = hitBursts[i];
+    b.life -= dt;
+
+    const geo = b.points.geometry;
+    const pos = geo.attributes.position;
+    const a = pos.array;
+
+    // simple movement + tiny gravity
+    for (let j=0; j<a.length; j+=3){
+      b.vels[j+1] -= 12.0 * dt; // gravity
+      a[j+0] += b.vels[j+0] * dt;
+      a[j+1] += b.vels[j+1] * dt;
+      a[j+2] += b.vels[j+2] * dt;
+    }
+    pos.needsUpdate = true;
+
+    // fade out
+    const t = Math.max(0, b.life / b.maxLife);
+    b.points.material.opacity = b.baseOpacity * t;
+
+    if (b.life <= 0){
+      scene.remove(b.points);
+      b.points.geometry.dispose();
+      b.points.material.dispose();
+      hitBursts.splice(i, 1);
+    }
+  }
+}
+
+
+// ---------- HUD TOGGLE (H key) ----------
+let hudVisible = true;
+window.addEventListener("keydown", (e)=>{
+  if (e.code === "KeyH"){
+    hudVisible = !hudVisible;
+    hud.classList.toggle("hidden", !hudVisible);
+  }
+  if (e.code === "KeyN"){
+    if (targetsRemaining === 0) startNextWave();
+    else resetCurrentWave();
+  }
+});
+
+// ---------- SCENE ----------
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(FOG_COLOR, FOG_NEAR, FOG_FAR);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 30000);
+camera.position.set(0, PLAYER_EYE_HEIGHT, 6);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = EXPOSURE;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+// Controls
+const controls = new PointerLockControls(camera, document.body);
+document.body.addEventListener("click", ()=>{ if(!(("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints>0)) && !(typeof touchOn !== "undefined" && touchOn)) controls.lock(); });
+scene.add(controls.getObject());
+
+
+/* =========================================================
+   🧭 COMPASS + MINIMAP (SAFE HUD)
+   - Compass shows your heading (north = -Z)
+   - Minimap draws the heightmap once, then overlays:
+     - player dot + facing arrow
+     - lake footprint (if enabled)
+   - Toggle with M
+   ========================================================= */
+const compassWrap = document.getElementById("compassWrap");
+const minimapWrap = document.getElementById("minimapWrap");
+const navHelp = document.getElementById("navHelp");
+
+const compassC = document.getElementById("compassCanvas");
+const compassCtx = compassC ? compassC.getContext("2d") : null;
+
+const mapC = document.getElementById("minimapCanvas");
+const mapCtx = mapC ? mapC.getContext("2d") : null;
+
+// Minimaps are easiest if we draw a "base" once and then paint overlays each frame.
+let mapBase = document.createElement("canvas");
+let mapBaseReady = false;
+
+// Toggle
+let navVisible = true;
+function setNavVisible(on){
+  navVisible = !!on;
+  compassWrap?.classList.toggle("hidden", !navVisible);
+  minimapWrap?.classList.toggle("hidden", !navVisible);
+}
+setNavVisible(true);
+
+window.addEventListener("keydown", (e)=>{
+  if (e.code === "KeyM"){
+    setNavVisible(!navVisible);
+    navHelp?.classList.add("on");
+    setTimeout(()=>navHelp?.classList.remove("on"), 1100);
+  }
+});
+
+// --- Helpers
+function clamp01_(t){ return Math.max(0, Math.min(1, t)); }
+
+// World -> minimap pixels (0..W/H)
+function worldToMapPx(x, z, W, H){
+  // Matches your heightAtWorldXZ UV mapping:
+  // u = (x / GROUND_SIZE) + 0.5
+  // v = (-z / GROUND_SIZE) + 0.5
+  let u = (x / GROUND_SIZE) + 0.5;
+  let v = (-z / GROUND_SIZE) + 0.5;
+  u = clamp01_(u);
+  v = clamp01_(v);
+  const px = u * W;
+  const py = (1 - v) * H;
+  return { px, py };
+}
+
+// Draw a pretty compass (2D canvas)
+function drawCompass(yawRad){
+  if (!compassCtx || !navVisible) return;
+
+  const w = compassC.width, h = compassC.height;
+  const cx = w/2, cy = h/2;
+  compassCtx.clearRect(0,0,w,h);
+
+  // Bearing: yaw=0 faces -Z (north), so bearing = -yaw
+  const bearing = -yawRad;
+
+  // Background ring
+  compassCtx.save();
+  compassCtx.translate(cx, cy);
+
+  // Outer ring
+  compassCtx.beginPath();
+  compassCtx.arc(0,0, (w*0.46), 0, Math.PI*2);
+  compassCtx.fillStyle = "rgba(10,12,16,0.35)";
+  compassCtx.fill();
+  compassCtx.lineWidth = 2;
+  compassCtx.strokeStyle = "rgba(255,255,255,0.20)";
+  compassCtx.stroke();
+
+  // Ticks
+  for (let i=0; i<36; i++){
+    const a = (i/36) * Math.PI*2;
+    const r0 = w*0.40;
+    const r1 = (i%3===0) ? w*0.46 : w*0.44;
+    compassCtx.beginPath();
+    compassCtx.moveTo(Math.cos(a)*r0, Math.sin(a)*r0);
+    compassCtx.lineTo(Math.cos(a)*r1, Math.sin(a)*r1);
+    compassCtx.strokeStyle = (i%3===0) ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.18)";
+    compassCtx.lineWidth = (i%3===0) ? 2 : 1;
+    compassCtx.stroke();
+  }
+
+  // Cardinal letters (fixed, not rotating)
+  const letters = [
+    {t:"N", x:0, y:-w*0.32},
+    {t:"E", x:w*0.32, y:0},
+    {t:"S", x:0, y:w*0.34},
+    {t:"W", x:-w*0.32, y:0},
+  ];
+  compassCtx.font = "700 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  compassCtx.textAlign = "center";
+  compassCtx.textBaseline = "middle";
+  for (const L of letters){
+    compassCtx.fillStyle = (L.t==="N") ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)";
+    compassCtx.fillText(L.t, L.x, L.y);
+  }
+
+  // Heading arrow (points where you're facing)
+  compassCtx.rotate(bearing);
+  compassCtx.beginPath();
+  compassCtx.moveTo(0, -w*0.30);
+  compassCtx.lineTo(w*0.045, 0);
+  compassCtx.lineTo(0, w*0.10);
+  compassCtx.lineTo(-w*0.045, 0);
+  compassCtx.closePath();
+  compassCtx.fillStyle = "rgba(255,90,90,0.95)";
+  compassCtx.fill();
+
+  // Small center dot
+  compassCtx.rotate(-bearing);
+  compassCtx.beginPath();
+  compassCtx.arc(0,0, 3.2, 0, Math.PI*2);
+  compassCtx.fillStyle = "rgba(255,255,255,0.85)";
+  compassCtx.fill();
+
+  compassCtx.restore();
+}
+
+// Build minimap base from heightmap pixels (hmData)
+function buildMinimapBase(){
+  if (!mapCtx || !mapC) return;
+  if (!terrainReady || !hmData || hmW<=0 || hmH<=0) return;
+
+  // Use a small-ish base for speed, then scale to map canvas
+  const baseSize = 256;
+  mapBase.width = baseSize;
+  mapBase.height = baseSize;
+  const bctx = mapBase.getContext("2d", { willReadFrequently:true });
+
+  const img = bctx.createImageData(baseSize, baseSize);
+  const d = img.data;
+
+  for (let y=0; y<baseSize; y++){
+    const v = y / (baseSize-1);
+    const srcY = Math.floor(v * (hmH-1));
+    for (let x=0; x<baseSize; x++){
+      const u = x / (baseSize-1);
+      const srcX = Math.floor(u * (hmW-1));
+      const idx = (srcY * hmW + srcX) * 4;
+      const h = hmData[idx] / 255; // 0..1
+
+      // Painterly height tint (subtle, readable)
+      // low = darker, high = lighter
+      const g = Math.floor(40 + h*170);
+      const r = Math.floor(30 + h*140);
+      const b = Math.floor(55 + h*190);
+
+      const k = (y*baseSize + x)*4;
+      d[k+0] = r;
+      d[k+1] = g;
+      d[k+2] = b;
+      d[k+3] = 255;
+    }
+  }
+
+  bctx.putImageData(img, 0, 0);
+  mapBaseReady = true;
+}
+
+// Draw minimap each frame
+function drawMinimap(playerX, playerZ, yawRad){
+  if (!mapCtx || !navVisible) return;
+
+  const W = mapC.width, H = mapC.height;
+  mapCtx.clearRect(0,0,W,H);
+
+  // Base
+  if (mapBaseReady){
+    mapCtx.drawImage(mapBase, 0, 0, W, H);
+  } else {
+    // fallback background if base isn't ready yet
+    mapCtx.fillStyle = "rgba(0,0,0,0.25)";
+    mapCtx.fillRect(0,0,W,H);
+    mapCtx.strokeStyle = "rgba(255,255,255,0.15)";
+    mapCtx.strokeRect(10,10,W-20,H-20);
+  }
+
+  // Lake outline (if exists)
+  try{
+    if (typeof LAKE_ENABLE !== "undefined" && LAKE_ENABLE && typeof LAKE_SIZE !== "undefined"){
+      const cx = (typeof LAKE_CENTER_X !== "undefined") ? LAKE_CENTER_X : 0;
+      const cz = (typeof LAKE_CENTER_Z !== "undefined") ? LAKE_CENTER_Z : 0;
+
+      const half = LAKE_SIZE * 0.5;
+      const rot = (lakeMesh && lakeMesh.rotation) ? lakeMesh.rotation.y : 0.0;
+
+      // corners in world space around (cx,cz)
+      const corners = [
+        {x:-half, z:-half},
+        {x: half, z:-half},
+        {x: half, z: half},
+        {x:-half, z: half},
+      ].map(p=>{
+        const x = p.x*Math.cos(rot) - p.z*Math.sin(rot);
+        const z = p.x*Math.sin(rot) + p.z*Math.cos(rot);
+        return { x: cx + x, z: cz + z };
+      });
+
+      mapCtx.beginPath();
+      corners.forEach((p, i)=>{
+        const m = worldToMapPx(p.x, p.z, W, H);
+        if (i===0) mapCtx.moveTo(m.px, m.py);
+        else mapCtx.lineTo(m.px, m.py);
+      });
+      mapCtx.closePath();
+      mapCtx.fillStyle = "rgba(60,150,255,0.22)";
+      mapCtx.fill();
+      mapCtx.strokeStyle = "rgba(220,240,255,0.55)";
+      mapCtx.lineWidth = 2;
+      mapCtx.stroke();
+    }
+  }catch(e){}
+
+  // Player position
+  const p = worldToMapPx(playerX, playerZ, W, H);
+
+  // Facing arrow
+  const bearing = -yawRad;
+  mapCtx.save();
+  mapCtx.translate(p.px, p.py);
+  mapCtx.rotate(bearing);
+  mapCtx.beginPath();
+  mapCtx.moveTo(0, -10);
+  mapCtx.lineTo(6, 6);
+  mapCtx.lineTo(0, 3);
+  mapCtx.lineTo(-6, 6);
+  mapCtx.closePath();
+  mapCtx.fillStyle = "rgba(255,255,255,0.95)";
+  mapCtx.fill();
+  mapCtx.restore();
+
+  // Player dot
+  mapCtx.beginPath();
+  mapCtx.arc(p.px, p.py, 4.2, 0, Math.PI*2);
+  mapCtx.fillStyle = "rgba(255,90,90,0.95)";
+  mapCtx.fill();
+  mapCtx.strokeStyle = "rgba(0,0,0,0.35)";
+  mapCtx.lineWidth = 2;
+  mapCtx.stroke();
+
+  // Border
+  mapCtx.strokeStyle = "rgba(255,255,255,0.22)";
+  mapCtx.lineWidth = 2;
+  mapCtx.strokeRect(1,1,W-2,H-2);
+}
+
+// Public update called in animate()
+function updateNavOverlays(){
+  if (!navVisible) return;
+  if (!controls) return;
+  const obj = controls.getObject();
+  const yaw = obj.rotation.y;
+  drawCompass(yaw);
+  drawMinimap(obj.position.x, obj.position.z, yaw);
+}
+
+
+
+// ---------- SKY ----------
+const skyGeo = new THREE.SphereGeometry(SKY_RADIUS, 48, 24);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: {
+    topColor:    { value: new THREE.Color(SKY_TOP) },
+    bottomColor: { value: new THREE.Color(SKY_BOTTOM) },
+    offset:      { value: 28 },
+    exponent:    { value: 0.65 }
+  },
+  vertexShader: `
+    varying vec3 vWorldPosition;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = wp.xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 topColor;
+    uniform vec3 bottomColor;
+    uniform float offset;
+    uniform float exponent;
+    varying vec3 vWorldPosition;
+    void main() {
+      float h = normalize(vWorldPosition + offset).y;
+      float t = pow(max(h, 0.0), exponent);
+      gl_FragColor = vec4(mix(bottomColor, topColor, t), 1.0);
+    }
+  `
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+// ---------- LIGHTS ----------
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445066, HEMI_INTENSITY));
+const sun = new THREE.DirectionalLight(0xffffff, SUN_INTENSITY);
+sun.position.set(250, 420, 180);
+
+// ===== Shadows (STEP 5C) =====
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.radius = 1;
+// shadow coverage half-size (bigger = covers more area)
+sun.shadow.camera.left = -SHADOW_D;
+sun.shadow.camera.right = SHADOW_D;
+sun.shadow.camera.top = SHADOW_D;
+sun.shadow.camera.bottom = -SHADOW_D;
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 1600;
+// These fight shadow acne/striping on terrain:
+sun.shadow.bias = -0.00035;
+sun.shadow.normalBias = 0.02;
+
+scene.add(sun);
+scene.add(sun.target);
+
+
+/* =========================================================
+   🎯 PHASE TARGETS (SAFE)
+   Sequence:
+   1) 7 red cubes within 100' radius of spawn point
+   2) 9 yellow cubes within 150' radius of spawn point
+   3) 9 blue cubes within 200' radius of spawn point
+   ========================================================= */
+const TARGET_ENABLE = true;
+const TARGET_SIZE = 7.9968; // increased by 70% for all target phases
+const TARGET_MIN_DISTANCE = 18;
+const TARGET_MIN_SEPARATION = 12;
+const TARGET_SPAWN_X = 0;
+const TARGET_SPAWN_Z = 6;
+const ROUND_TIME_LIMIT_SEC = 60;
+
+const TARGET_PHASES = [
+  { name: "Red",    count: 7, color: 0xff3333, radius: 100, moving: false },
+  { name: "Yellow", count: 9, color: 0xffdd33, radius: 150, moving: false },
+  { name: "Blue",   count: 9, color: 0x3388ff, radius: 200, moving: false }
+];
+
+const TARGET_MOVE_SPEED_MIN = 1.2;
+const TARGET_MOVE_SPEED_MAX = 2.8;
+
+let targetPhaseIndex = 0;
+let targetCycleCount = 0; // increments each time we complete Yellow and wrap to Red
+let phaseAdvancePending = false;
+
+let targets = []; // { mesh, box, moving, vx, vz, centerX, centerZ, radius }
+let targetsRemaining = 0;
+let targetFlashT = 0;
+let roundTimeLeftSec = ROUND_TIME_LIMIT_SEC;
+let roundTimerRunning = false;
+let roundTimerEl = null;
+
+function randRange(a,b){ return a + Math.random()*(b-a); }
+function getRoundTimerEl(){
+  if (!roundTimerEl) roundTimerEl = document.getElementById("roundTimer");
+  return roundTimerEl;
+}
+function formatRoundTime(seconds){
+  const whole = Math.max(0, Math.ceil(seconds));
+  const m = Math.floor(whole / 60);
+  const s = whole % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+function updateRoundTimerHUD(){
+  const el = getRoundTimerEl();
+  if (!el) return;
+  const urgent = roundTimeLeftSec <= 10 && roundTimerRunning;
+  el.innerHTML = `⏱ Round <b>${formatRoundTime(roundTimeLeftSec)}</b>`;
+  el.style.borderColor = urgent ? "rgba(255,120,120,.6)" : "rgba(255,255,255,.18)";
+  el.style.background = urgent ? "rgba(80,18,18,.72)" : "rgba(20,24,32,.62)";
+}
+function startRoundTimer(){
+  roundTimeLeftSec = ROUND_TIME_LIMIT_SEC;
+  roundTimerRunning = true;
+  updateRoundTimerHUD();
+}
+function stopRoundTimer(){
+  roundTimerRunning = false;
+  updateRoundTimerHUD();
+}
+function updateRoundTimer(dt){
+  if (!roundTimerRunning) return;
+  if (phaseAdvancePending) return;
+  if (targetsRemaining <= 0) return;
+
+  roundTimeLeftSec -= dt;
+  if (roundTimeLeftSec <= 0){
+    roundTimeLeftSec = 0;
+    stopRoundTimer();
+    resetCurrentWave();
+    return;
+  }
+  updateRoundTimerHUD();
+}
+
+function getTargetPhaseConfig() {
+  return TARGET_PHASES[targetPhaseIndex];
+}
+
+function isFarEnough(x,z, pts, minSep){
+  for (const p of pts){
+    const dx = x - p.x, dz = z - p.z;
+    if ((dx*dx + dz*dz) < (minSep*minSep)) return false;
+  }
+  return true;
+}
+
+function createTargets(){
+  if (!TARGET_ENABLE) return;
+
+  const phase = getTargetPhaseConfig();
+  const center = { x: TARGET_SPAWN_X, z: TARGET_SPAWN_Z };
+
+  const pts = [];
+  let tries = 0;
+  const desiredCount = phase.count;
+
+  while (pts.length < desiredCount && tries < 1600){
+    tries++;
+
+    const theta = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * phase.radius;
+    const x = center.x + Math.cos(theta) * r;
+    const z = center.z + Math.sin(theta) * r;
+
+    // keep away from player center a bit
+    const dx = x - center.x, dz = z - center.z;
+    if ((dx*dx + dz*dz) < (TARGET_MIN_DISTANCE*TARGET_MIN_DISTANCE)) continue;
+
+    // keep targets from stacking
+    if (!isFarEnough(x, z, pts, TARGET_MIN_SEPARATION)) continue;
+
+    pts.push({x,z});
+  }
+
+  const geo = new THREE.BoxGeometry(TARGET_SIZE, TARGET_SIZE, TARGET_SIZE);
+
+  for (const p of pts){
+    const mat = new THREE.MeshStandardMaterial({
+      color: phase.color,
+      roughness: 0.7,
+      metalness: 0.0,
+      emissive: 0x000000,
+      emissiveIntensity: 0.0
+    });
+
+    const y = heightAtWorldXZ(p.x, p.z) + (TARGET_SIZE * 0.5);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(p.x, y, p.z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    scene.add(m);
+
+    let vx = 0, vz = 0;
+    if (phase.moving) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = randRange(TARGET_MOVE_SPEED_MIN, TARGET_MOVE_SPEED_MAX);
+      vx = Math.cos(ang) * spd;
+      vz = Math.sin(ang) * spd;
+    }
+
+    targets.push({
+      mesh: m,
+      box: new THREE.Box3().setFromObject(m),
+      moving: phase.moving,
+      vx,
+      vz,
+      centerX: center.x,
+      centerZ: center.z,
+      radius: phase.radius
+    });
+  }
+
+  targetsRemaining = targets.length;
+  phaseAdvancePending = false;
+  startRoundTimer();
+
+  const phaseNum = targetPhaseIndex + 1;
+  const movingLabel = phase.moving ? " · moving" : "";
+  hudLine(`🎯 Phase <code id="waveNum">${phaseNum}</code>/3: <b>${phase.name}</b>${movingLabel} · Targets: <code id="targetsLeft">${targetsRemaining}</code> · Radius: <code>${phase.radius}</code>`);
+
+  if (targetsRemaining < desiredCount){
+    hudLine(`⚠️ Only spawned <code>${targetsRemaining}</code> of <code>${desiredCount}</code> targets (terrain constraints).`);
+  }
+}
+
+function updateTargets(dt){
+  for (const t of targets){
+    if (!t || !t.mesh) continue;
+
+    if (t.moving) {
+      let nx = t.mesh.position.x + t.vx * dt;
+      let nz = t.mesh.position.z + t.vz * dt;
+
+      const dx = nx - t.centerX;
+      const dz = nz - t.centerZ;
+      const dist = Math.hypot(dx, dz);
+      const limit = Math.max(8, t.radius - TARGET_SIZE);
+
+      if (dist > limit) {
+        const nxn = dx / (dist || 1);
+        const nzn = dz / (dist || 1);
+
+        const dot = t.vx * nxn + t.vz * nzn;
+        t.vx = t.vx - 2 * dot * nxn;
+        t.vz = t.vz - 2 * dot * nzn;
+
+        nx = t.centerX + nxn * limit;
+        nz = t.centerZ + nzn * limit;
+      }
+
+      t.mesh.position.x = nx;
+      t.mesh.position.z = nz;
+      t.mesh.position.y = heightAtWorldXZ(nx, nz) + (TARGET_SIZE * 0.5);
+    }
+
+    t.box.setFromObject(t.mesh);
+  }
+
+  if (targetFlashT > 0){
+    targetFlashT = Math.max(0, targetFlashT - dt);
+  }
+}
+
+function setWaveHUD(){
+  const el = document.getElementById("waveNum");
+  if (el) el.textContent = String(targetPhaseIndex + 1);
+}
+
+function clearTargets(){
+  stopRoundTimer();
+  for (const t of targets){
+    if (!t || !t.mesh) continue;
+    scene.remove(t.mesh);
+    if (t.mesh.material) t.mesh.material.dispose();
+  }
+  targets.length = 0;
+  targetsRemaining = 0;
+  setTargetsLeftHUD();
+}
+
+function resetCurrentWave(){
+  hideBanner();
+  clearTargets();
+  createTargets();
+  setWaveHUD();
+  hudLine(`🔁 Phase reset! (<code>${targetsRemaining}</code> targets)`);
+}
+
+function startNextWave(){
+  hideBanner();
+  clearTargets();
+
+  targetPhaseIndex += 1;
+  if (targetPhaseIndex >= TARGET_PHASES.length) {
+    targetPhaseIndex = 0;
+    targetCycleCount += 1;
+  }
+
+  createTargets();
+  setWaveHUD();
+
+  const phase = getTargetPhaseConfig();
+  const movingLabel = phase.moving ? " (moving)" : "";
+  hudLine(`✅ Next phase: <b>${phase.name}</b>${movingLabel} · <code>${targetsRemaining}</code> targets.`);
+}
+
+function setTargetsLeftHUD(){
+  const el = document.getElementById("targetsLeft");
+  if (el) el.textContent = String(targetsRemaining);
+}
+
+let areaClearedBanner = null;
+
+function winIfDone(){
+  if (targetsRemaining !== 0 || phaseAdvancePending) return;
+  stopRoundTimer();
+
+  const nextPhaseIndex = (targetPhaseIndex + 1) % TARGET_PHASES.length;
+  const nextPhase = TARGET_PHASES[nextPhaseIndex];
+  showBanner(`🏁 <b>PHASE CLEARED!</b> 🎉 &nbsp; Next: <b>${nextPhase.count} ${nextPhase.name}</b> @ <b>${nextPhase.radius}'</b>`);
+
+  phaseAdvancePending = true;
+  setTimeout(() => {
+    if (targetsRemaining === 0) startNextWave();
+    phaseAdvancePending = false;
+  }, 900);
+}
+
+function registerTargetHit(targetIndex){
+  const t = targets[targetIndex];
+  if (!t) return;
+
+  t.mesh.material.emissive.setHex(0xffffff);
+  t.mesh.material.emissiveIntensity = 0.9;
+  targetFlashT = 0.10;
+
+  scene.remove(t.mesh);
+  t.mesh.material.dispose();
+
+  targets.splice(targetIndex, 1);
+  targetsRemaining = targets.length;
+  setTargetsLeftHUD();
+  winIfDone();
+}
+
+/* =========================================================
+   😈 PASSIVE BAD GUY (NO AI, NO SHOOTING)
+   - Billboard sprite that just stands there
+   - Uses images/bad_guy.png
+   ========================================================= */
+const BAD_GUY_ENABLE = true;
+const BAD_GUY_FILE = "bad_guy.png";
+const BAD_GUY_SCALE = 3.6;
+const BAD_GUY_TURN_SPEED = 1.2; // radians/sec (smaller = slower turn)
+const BAD_GUY_POS = { x: 10, z: -70 };
+
+let badGuy = null;
+
+function spawnBadGuy(){
+  if (!BAD_GUY_ENABLE) return;
+
+  const tex = new THREE.TextureLoader().load(
+    TEX_DIR + BAD_GUY_FILE,
+    t => { t.colorSpace = THREE.SRGBColorSpace; },
+    undefined,
+    () => hudLine(`❌ Missing <code>${BAD_GUY_FILE}</code>`)
+  );
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide
+  });
+
+  const geo = new THREE.PlaneGeometry(BAD_GUY_SCALE, BAD_GUY_SCALE * 1.6);
+  badGuy = new THREE.Mesh(geo, mat);
+
+  const y = heightAtWorldXZ(BAD_GUY_POS.x, BAD_GUY_POS.z) + (BAD_GUY_SCALE * 0.8);
+  badGuy.position.set(BAD_GUY_POS.x, y, BAD_GUY_POS.z);
+
+  badGuy.castShadow = true;
+  badGuy.receiveShadow = false;
+
+  scene.add(badGuy);
+  hudLine(`😈 Bad guy placed (passive): <code>${BAD_GUY_FILE}</code>`);
+  hudLine(`😈 Bad guy hits: <code id="bgHitCount">0</code>`)
+}
+
+
+/* =========================================================
+   💥 BAD GUY HIT (SAFE)
+   - Blue balls collide with billboard and trigger flash + counter
+   - Optional: auto-hide after N hits
+   ========================================================= */
+const BAD_GUY_HITS_TO_HIDE = 6; // set 0 to never hide
+let badGuyHits = 0;
+let badGuyFlashT = 0;
+
+function registerBadGuyHit(){
+  badGuyHits++;
+  badGuyFlashT = 0.12;
+
+  const el = document.getElementById("bgHitCount");
+  if (el) el.textContent = String(badGuyHits);
+
+  if (BAD_GUY_HITS_TO_HIDE > 0 && badGuyHits >= BAD_GUY_HITS_TO_HIDE && badGuy){
+    scene.remove(badGuy);
+    badGuy = null;
+    hudLine(`✅ Bad guy removed after <code>${badGuyHits}</code> hits.`);
+  }
+}
+
+
+
+
+/* =========================================================
+   🌅 GOLDEN HOUR TOGGLE (KeyG)
+   ========================================================= */
+let goldenOn = false;
+
+function applyGoldenHour(on){
+  if (!GOLDEN_ENABLE) return;
+  goldenOn = !!on;
+
+  // Sun warmth + slightly lower sun for longer shadows
+  sun.color.setHex(goldenOn ? GOLDEN_SUN_COLOR : 0xffffff);
+  sun.intensity = goldenOn ? GOLDEN_SUN_INTENSITY : SUN_INTENSITY;
+
+  const p = goldenOn ? GOLDEN_SUN_POS : DAY_SUN_POS;
+  sun.position.set(p.x, p.y, p.z);
+
+  // Sky warms at horizon
+  skyMat.uniforms.topColor.value.setHex(goldenOn ? GOLDEN_SKY_TOP : SKY_TOP);
+  skyMat.uniforms.bottomColor.value.setHex(goldenOn ? GOLDEN_SKY_BOTTOM : SKY_BOTTOM);
+
+  // Fog haze warms slightly (kept subtle)
+  scene.fog.color.setHex(goldenOn ? FOG_COLOR_GOLDEN : FOG_COLOR);
+
+  // Status line
+  const tag = goldenOn ? "ON" : "OFF";
+  hudLine(`🌅 Golden hour: <code>${tag}</code> (press <code>G</code>)`);
+}
+
+window.addEventListener("keydown", (e)=>{
+  if (e.code === "KeyG"){
+    applyGoldenHour(!goldenOn);
+  }
+});
+
+// ---------- LOADERS ----------
+const texLoader = new THREE.TextureLoader();
+const exrLoader = new EXRLoader();
+
+function setRepeat(tex, rep){
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(rep, rep);
+  tex.anisotropy = Math.min(12, renderer.capabilities.getMaxAnisotropy());
+}
+
+function loadTextureSafe(url, { colorSpace=null } = {}){
+  return new Promise((resolve) => {
+    texLoader.load(
+      url,
+      (tex) => { if (colorSpace) tex.colorSpace = colorSpace; resolve(tex); },
+      undefined,
+      () => resolve(null)
+    );
+  });
+}
+
+function loadEXRSafe(url){
+  return new Promise((resolve) => {
+    exrLoader.load(url, (tex)=>resolve(tex), undefined, ()=>resolve(null));
+  });
+}
+
+/* =========================================================
+   TERRAIN STATE (heightmap pixels + sampler)
+   ========================================================= */
+let terrainReady = false;
+let hmW = 0, hmH = 0;
+let hmData = null;
+
+// ===== Tall grass height controller pixels (dg_disp.png) =====
+let dgW = 0, dgH = 0;
+let dgData = null;
+
+// Load dg_disp.png into pixel data (DATA texture: no sRGB)
+async function loadDispPixels(){
+  const url = TEX_DIR + GRASS_CARD_HEIGHT_FILE;
+  const tex = await loadTextureSafe(url);
+  if (!tex || !tex.image){
+    hudLine(`⚠️ Tall grass: missing <code>${GRASS_CARD_HEIGHT_FILE}</code> (expected <code>${url}</code>)`);
+    return false;
+  }
+
+  const img = tex.image;
+  dgW = img.width; dgH = img.height;
+
+  const c = document.createElement("canvas");
+  c.width = dgW; c.height = dgH;
+  const ctx = c.getContext("2d", { willReadFrequently:true });
+  ctx.drawImage(img, 0, 0);
+  dgData = ctx.getImageData(0, 0, dgW, dgH).data;
+
+  hudLine(`✅ Tall grass height map loaded: <code>${GRASS_CARD_HEIGHT_FILE}</code> (${dgW}×${dgH})`);
+  return true;
+}
+
+// Sample dg_disp at world XZ -> [0..1] brightness (red channel)
+function dispAtWorldXZ(x, z){
+  if (!dgData) return 0.5;
+
+  let u = (x / GROUND_SIZE) + 0.5;
+  let v = (-z / GROUND_SIZE) + 0.5;
+
+  // Clamp (keeps us safe when you walk near edges)
+  u = clamp01(u);
+  v = clamp01(v);
+
+  const px = Math.floor(u * (dgW - 1));
+  const py = Math.floor((1 - v) * (dgH - 1));
+  const idx = (py * dgW + px) * 4;
+
+  return dgData[idx] / 255;
+}
+
+function clamp01(t){ return Math.max(0, Math.min(1, t)); }
+
+// Bilinear height sample
+function heightAtWorldXZ(x, z){
+  if (!terrainReady || !hmData) return 0;
+
+  let u = (x / GROUND_SIZE) + 0.5;
+  let v = (-z / GROUND_SIZE) + 0.5;
+
+  if (CLAMP_OUTSIDE_TERRAIN) {
+    u = clamp01(u);
+    v = clamp01(v);
+  } else {
+    if (u < 0 || u > 1 || v < 0 || v > 1) return 0;
+  }
+
+  const fx = u * (hmW - 1);
+  const fy = (1 - v) * (hmH - 1);
+
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const x1 = Math.min(hmW - 1, x0 + 1);
+  const y1 = Math.min(hmH - 1, y0 + 1);
+
+  const tx = fx - x0;
+  const ty = fy - y0;
+
+  function rAt(px, py){
+    const idx = (py * hmW + px) * 4;
+    return hmData[idx];
+  }
+
+  const h00 = rAt(x0, y0) / 255;
+  const h10 = rAt(x1, y0) / 255;
+  const h01 = rAt(x0, y1) / 255;
+  const h11 = rAt(x1, y1) / 255;
+
+  const h0 = h00 * (1 - tx) + h10 * tx;
+  const h1 = h01 * (1 - tx) + h11 * tx;
+  const h  = h0 * (1 - ty) + h1 * ty;
+
+  return h * TERRAIN_HEIGHT;
+}
+
+/* =========================================================
+   GROUND MESH (subdivided + displaced)
+   ========================================================= */
+const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+groundGeo.rotateX(-Math.PI/2);
+
+const fallbackGrass = new THREE.MeshStandardMaterial({
+  color: 0x556b2f,
+  roughness: 1.0,
+  metalness: 0.0
+});
+
+const ground = new THREE.Mesh(groundGeo, fallbackGrass);
+scene.add(ground);
+
+ground.receiveShadow = true;
+ground.castShadow = false;
+
+/* =========================================================
+   LAKE (STEP L1) — simple, safe water plane (low BSOD risk)
+   ========================================================= */
+
+const LAKE_ENABLE = true;
+const LAKE_SIZE = 2200;      // bigger so you can't miss it      // width/length of lake plane (world units)
+
+// Lake placement:
+// "VALLEY" = find lowest spot within a radius around LAKE_CENTER_XZ (recommended)
+// "FIXED"  = place lake at LAKE_CENTER_XZ with Y set from terrain at that point + offset
+const LAKE_PLACEMENT_MODE = "VALLEY"; // "VALLEY" or "FIXED"
+const LAKE_CENTER_X = 0;             // move lake left/right
+const LAKE_CENTER_Z = -650;          // move lake forward/back (negative is "straight ahead" at start)
+const LAKE_Y_OFFSET = 6;             // how far above local minimum/terrain (world units)
+const LAKE_EDGE_FADE = 0.35; // 0–1 (visual softness via opacity only)
+
+// --- Shoreline grounding (painterly edge control) ---
+const SHORELINE_ENABLE = true;
+const SHORELINE_WIDTH_UV = 0.13;   // 0.06–0.20 (smaller = thinner dark rim)
+const SHORELINE_SOFT_UV  = 0.08;   // softness of the rim falloff
+const SHORELINE_DARK     = 0.58;   // multiplier at the very edge (0.45–0.75)
+const LAKE_RIPPLE_ENABLE = true;
+const LAKE_RIPPLE_AMP = 0.35;    // ripple height in world units (keep small!)    // ripple height in world units (keep small!)
+const LAKE_RIPPLE_SPEED = 0.45;  // animation speed  // animation speed
+const LAKE_RIPPLE_SCALE = 0.020; // wave frequency (smaller = larger waves)
+let lakeMesh = null;
+
+// ----- Collision (Step 1: lake blocker) -----
+let lastSafePos = new THREE.Vector3(0, 0, 0);
+let lastSafeInit = false;
+let prevPos = new THREE.Vector3(0, 0, 0);
+const LAKE_BLOCK_ENABLE = false; // allow player to pass across lake
+const LAKE_BLOCK_MARGIN = 18; // shoreline buffer (world units)
+
+// Pick a sensible lake height after terrain is ready:
+// sample heights in a valley-ish area near the origin and set water slightly above the local minimum.
+function pickLakeY(cx, cz){
+  // If terrain isn't ready yet, fall back
+  if (!terrainReady) return 40;
+
+  const R = 650;     // sampling radius around (cx,cz)
+  const STEP = 85;   // sampling step
+  let minH = Infinity;
+
+  for (let x = -R; x <= R; x += STEP){
+    for (let z = -R; z <= R; z += STEP){
+      const h = heightAtWorldXZ(cx + x, cz + z);
+      if (h < minH) minH = h;
+    }
+  }
+
+  // Put lake slightly above the local min so it sits "in the valley"
+  let y = minH + LAKE_Y_OFFSET;
+
+  // Clamp to a reasonable range so it can't end up absurdly low/high
+  y = Math.max(5, Math.min(y, TERRAIN_HEIGHT * 0.65));
+  return y;
+}
+
+
+function updateLakeRipples(time){
+  if (!LAKE_RIPPLE_ENABLE || !lakeMesh) return;
+  const geo = lakeMesh.geometry;
+  const base = geo.userData.basePositions;
+  if (!base) return;
+
+  const pos = geo.attributes.position;
+  const a = pos.array;
+
+  const t = time * LAKE_RIPPLE_SPEED;
+  const amp = LAKE_RIPPLE_AMP;
+  const s = LAKE_RIPPLE_SCALE;
+
+  // Very subtle 2-wave sum. We only move Y, keep X/Z same.
+  for (let i = 0; i < a.length; i += 3){
+    const x = base[i + 0];
+    const y0 = base[i + 1];
+    const z = base[i + 2];
+
+    const w1 = Math.sin((x * s) + (t));
+    const w2 = Math.sin((z * s * 1.15) + (t * 1.3));
+    a[i + 1] = y0 + (w1 + w2) * 0.5 * amp;
+  }
+
+  pos.needsUpdate = true;
+  // Keep normals as-is (ripples are tiny). If you ever increase AMP a lot, recompute normals occasionally.
+}
+
+function createLake(){
+  if (!LAKE_ENABLE) return;
+
+  // Remove old lake if re-created
+  if (lakeMesh){
+    scene.remove(lakeMesh);
+    lakeMesh.geometry.dispose();
+    // material may be shared; ignore dispose for safety
+    lakeMesh = null;
+  }
+
+  const cx = LAKE_CENTER_X;
+  const cz = LAKE_CENTER_Z;
+
+  const lakeY = (LAKE_PLACEMENT_MODE === "FIXED")
+    ? (heightAtWorldXZ(cx, cz) + LAKE_Y_OFFSET)
+    : pickLakeY(cx, cz);
+
+  const geo = new THREE.PlaneGeometry(LAKE_SIZE, LAKE_SIZE, 80, 80); // enough verts for subtle ripples
+  geo.rotateX(-Math.PI/2);
+
+  // Store original positions for ripple animation
+  const pos = geo.attributes.position;
+  const base = new Float32Array(pos.array.length);
+  base.set(pos.array);
+  geo.userData.basePositions = base;
+const mat = new THREE.MeshStandardMaterial({
+    color: 0x2b6fa8,
+    transparent: true,
+    opacity: 0.82,
+    roughness: 0.25,
+    metalness: 0.0
+  });
+  // Reduce z-fighting where terrain touches water
+  mat.polygonOffset = true;
+  mat.polygonOffsetFactor = -1;
+  mat.polygonOffsetUnits = -1;
+
+
+  lakeMesh = new THREE.Mesh(geo, mat);
+  lakeMesh.position.set(cx, lakeY, cz);
+  lakeMesh.receiveShadow = false;
+  lakeMesh.castShadow = false;
+
+  // A tiny tilt prevents z-fighting if the terrain touches the waterline
+  lakeMesh.rotation.y = 0.15;
+
+  scene.add(lakeMesh);
+  console.log("LAKE: created at", {x:cx, y:lakeY, z:cz, size:LAKE_SIZE});
+  hudLine(`🏞️ LAKE ON (shoreline shader OFF): x=<code>${cx.toFixed(0)}</code> z=<code>${cz.toFixed(0)}</code> y=<code>${lakeY.toFixed(1)}</code> size=<code>${LAKE_SIZE}</code>`);
+}
+
+
+
+async function applyHeightmapToGround(){
+  if (!USE_TERRAIN){
+    hudLine("ℹ️ Terrain disabled (USE_TERRAIN=false).");
+    terrainReady = false;
+    return;
+  }
+
+  const hmUrl = TEX_DIR + HEIGHTMAP_FILE;
+
+  // Heightmap is DATA (no sRGB)
+  const hmTex = await loadTextureSafe(hmUrl);
+  if (!hmTex || !hmTex.image){
+    hudLine(`❌ Heightmap missing: <code>${HEIGHTMAP_FILE}</code>`);
+    terrainReady = false;
+    return;
+  }
+
+  const img = hmTex.image;
+  hmW = img.width;
+  hmH = img.height;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = hmW;
+  canvas.height = hmH;
+  const ctx = canvas.getContext("2d", { willReadFrequently:true });
+  ctx.drawImage(img, 0, 0);
+  hmData = ctx.getImageData(0, 0, hmW, hmH).data;
+
+  const pos = ground.geometry.attributes.position;
+  const uv  = ground.geometry.attributes.uv;
+
+  for (let i = 0; i < pos.count; i++){
+    const u = uv.getX(i);
+    const v = uv.getY(i);
+
+    const x = Math.floor(u * (hmW - 1));
+    const y = Math.floor((1 - v) * (hmH - 1));
+    const idx = (y * hmW + x) * 4;
+
+    const r = hmData[idx];
+    pos.setY(i, (r / 255) * TERRAIN_HEIGHT);
+  }
+
+  pos.needsUpdate = true;
+  ground.geometry.computeVertexNormals();
+
+  terrainReady = true;
+  hudLine(`✅ Terrain applied: <code>${HEIGHTMAP_FILE}</code> (${hmW}×${hmH}), segments=${TERRAIN_SEGMENTS}, height=${TERRAIN_HEIGHT}`);
+
+
+  
+  // 🧭 Build minimap base once we have hmData
+  buildMinimapBase();
+// STEP L1: create lake once terrain is ready
+  createLake();
+
+  // STEP TG1: create tall grass blades once terrain is ready
+  createTallGrass();
+  createTargets();
+  spawnBadGuy();
+  spawnBadGuy();
+  // snap player to terrain
+  const p = controls.getObject().position;
+  p.y = heightAtWorldXZ(p.x, p.z) + PLAYER_EYE_HEIGHT;
+}
+applyHeightmapToGround();
+
+/* =========================================================
+   🚚 TRUCK AVATAR (Phase 1, SAFE)
+   - Uses MeshBasicMaterial (no shader patches)
+   - No UV assumptions beyond default PlaneGeometry
+   - If the truck image is missing, we just skip the avatar (no crashes)
+   ========================================================= */
+let truckPlane = null;
+let truckShadowProxy = null;
+let truckTex = null;
+
+// ----- Truck audio state -----
+let truckAudio = null;
+let truckSoundPlaying = false;
+let truckSmoothedY = null;
+
+function initTruckAvatar(){
+  if(!TRUCK_AVATAR_ENABLE) return;
+
+  const url = TEX_DIR + TRUCK_FILE + "?v=" + Date.now();
+
+  truckTex = new THREE.TextureLoader().load(
+    url,
+    tex=>{
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+      // Keep correct aspect ratio
+      const imgW = tex.image?.width || 1024;
+      const imgH = tex.image?.height || 512;
+      const aspect = imgW / Math.max(1, imgH);
+
+      // Use TRUCK_H as the "master" scale so you can think in height.
+      const h = TRUCK_H;
+      const w = TRUCK_W || (h * aspect);
+
+      let mat;
+
+      if (TRUCK_CHROMAKEY_ENABLE){
+        // Chroma-key near-white background out (for non-transparent PNGs)
+        const key = TRUCK_KEY_COLOR;
+        mat = new THREE.ShaderMaterial({
+          transparent: true,
+          depthWrite: false,
+          depthTest: !TRUCK_DRAW_ON_TOP ? true : false,
+          uniforms: {
+            map: { value: tex },
+            keyColor: { value: new THREE.Vector3(key.r, key.g, key.b) },
+            tol: { value: TRUCK_KEY_TOL },
+            soft: { value: TRUCK_KEY_SOFT }
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            void main(){
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform sampler2D map;
+            uniform vec3 keyColor;
+            uniform float tol;
+            uniform float soft;
+            varying vec2 vUv;
+
+            void main(){
+              vec4 c = texture2D(map, vUv);
+
+              // Distance from key color (white). Larger = less like white.
+              float d = distance(c.rgb, keyColor);
+
+              // alpha: 0 near white, 1 away from white
+              float a = smoothstep(tol, tol + soft, d);
+
+              // Also respect any existing alpha in the PNG
+              a *= c.a;
+
+              if (a < 0.01) discard;
+              gl_FragColor = vec4(c.rgb, a);
+            }
+          `
+        });
+      } else {
+        // Normal transparent PNG path
+        mat = new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          alphaTest: 0.5,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          depthTest: !TRUCK_DRAW_ON_TOP ? true : false
+        });
+      }
+
+      truckPlane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+      truckPlane.renderOrder = TRUCK_DRAW_ON_TOP ? 999 : 10;
+      truckPlane.castShadow = false;
+      truckPlane.receiveShadow = false;
+      scene.add(truckPlane);
+
+      // Shadow proxy (invisible) so the truck still "casts" a terrain shadow
+      const proxyMat = new THREE.MeshStandardMaterial({ color: 0x000000, transparent:true, opacity:0.0 });
+      truckShadowProxy = new THREE.Mesh(new THREE.BoxGeometry(w*0.55, h*0.55, w*0.9), proxyMat);
+      truckShadowProxy.castShadow = true;
+      truckShadowProxy.receiveShadow = false;
+      scene.add(truckShadowProxy);
+
+      hudLine(`✅ Loaded truck avatar: <code>${TRUCK_FILE}</code> (expected in <code>${TEX_DIR}${TRUCK_FILE}</code>)`);
+      if (TRUCK_CHROMAKEY_ENABLE) hudLine(`🎨 Truck chroma-key: ON (keys out near-white background)`);
+      if (TRUCK_DRAW_ON_TOP) hudLine(`🧪 Truck draw-on-top: ON (debug mode; set TRUCK_DRAW_ON_TOP=false later)`);
+    },
+    undefined,
+    err=>{
+      console.error("Truck avatar failed to load:", url, err);
+      hudLine(`❌ Truck avatar failed to load: <code>${TRUCK_FILE}</code> (expected <code>${url}</code>)`);
+    }
+  );
+}
+
+function updateTruckAvatar(dt = 1/60){
+  if(!truckPlane) return;
+
+  const camObj = controls.getObject(); // the camera
+  const yaw = camObj.rotation.y;
+
+  // Position in front of camera (like a hood / avatar view)
+  const fwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+  const right = new THREE.Vector3().crossVectors(fwd, new THREE.Vector3(0,1,0)).normalize();
+
+  const x = camObj.position.x + fwd.x * TRUCK_FWD + right.x * TRUCK_SIDE;
+  const z = camObj.position.z + fwd.z * TRUCK_FWD + right.z * TRUCK_SIDE;
+
+  // Sit on terrain with smoothing to prevent harsh vertical bouncing on rough heightmap pixels.
+  const baseY = heightAtWorldXZ(x, z);
+  const targetY = baseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03);
+
+  if (truckSmoothedY === null) truckSmoothedY = targetY;
+
+  const alpha = 1 - Math.exp(-TRUCK_Y_SMOOTH_RATE * Math.max(0.001, dt));
+  let nextY = THREE.MathUtils.lerp(truckSmoothedY, targetY, alpha);
+
+  const maxStep = TRUCK_Y_MAX_STEP_PER_SEC * Math.max(0.001, dt);
+  const deltaY = nextY - truckSmoothedY;
+  if (Math.abs(deltaY) > maxStep) nextY = truckSmoothedY + Math.sign(deltaY) * maxStep;
+
+  truckSmoothedY = nextY;
+  truckPlane.position.set(x, truckSmoothedY, z);
+  truckPlane.rotation.set(0, yaw, 0);
+
+  if(truckShadowProxy){
+    const smoothedBaseY = truckSmoothedY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+    truckShadowProxy.position.set(x, smoothedBaseY + (TRUCK_H * 0.3), z);
+    truckShadowProxy.rotation.set(0, yaw, 0);
+  }
+}
+
+
+function initTruckAudio(){
+  if (!TRUCK_AUDIO_ENABLE || !TRUCK_SOUND_FILE) return;
+  if (truckAudio) return;
+
+  const url = TEX_DIR + TRUCK_SOUND_FILE + "?v=" + Date.now();
+  truckAudio = new Audio(url);
+  truckAudio.loop = true;
+  truckAudio.volume = TRUCK_SOUND_VOL;
+
+  // Browser safety: audio must start after a user gesture.
+  // We "prime" it once on first click so later play/pause works instantly.
+  document.body.addEventListener("click", () => {
+    truckAudio.play().then(() => {
+      truckAudio.pause();
+      truckAudio.currentTime = 0;
+    }).catch(()=>{});
+  }, { once:true });
+}
+
+initTruckAudio();
+initTruckAvatar();
+initCopterAudio();
+initFireSound();
+initHitSound();
+
+// ---------- GRASS (PBR) ----------
+(async function initGrass(){
+  const colorUrl  = TEX_DIR + GRASS_COLOR_FILE;
+
+  const normalUrl = GRASS_NORMAL_EXR ? (TEX_DIR + GRASS_NORMAL_EXR) : (TEX_DIR + GRASS_NORMAL_FILE);
+
+  // Roughness: try EXR first, then fall back to .jpg/.png with the same basename, then GRASS_ROUGH_FILE if provided.
+  const roughUrlEXR = GRASS_ROUGH_EXR ? (TEX_DIR + GRASS_ROUGH_EXR) : "";
+  const roughUrlIMG = (typeof GRASS_ROUGH_FILE !== "undefined" && GRASS_ROUGH_FILE) ? (TEX_DIR + GRASS_ROUGH_FILE) : "";
+
+  const colorMap  = await loadTextureSafe(colorUrl, { colorSpace: THREE.SRGBColorSpace });
+  const normalMap = GRASS_NORMAL_EXR ? await loadEXRSafe(normalUrl) : await loadTextureSafe(normalUrl);
+
+  let roughMap = null;
+  if (roughUrlEXR){
+    roughMap = await loadEXRSafe(roughUrlEXR);
+    if (!roughMap){
+      const base = roughUrlEXR.replace(/\.exr$/i, "");
+      roughMap = await loadTextureSafe(base + ".jpg") || await loadTextureSafe(base + ".png");
+    }
+  }
+  if (!roughMap && roughUrlIMG){
+    roughMap = await loadTextureSafe(roughUrlIMG);
+  }
+
+  if (colorMap){
+    setRepeat(colorMap, GRASS_REPEAT);
+    if (normalMap) setRepeat(normalMap, GRASS_REPEAT);
+    if (roughMap)  setRepeat(roughMap,  GRASS_REPEAT);
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: colorMap,
+      normalMap: normalMap || null,
+      roughnessMap: roughMap || null,
+      roughness: roughMap ? 1.0 : 0.95,
+      metalness: 0.0
+    });
+    if (mat.normalMap) mat.normalScale.set(1.0, 1.0);
+
+    ground.material = mat;
+    ground.material.needsUpdate = true;
+
+    hudLine("✅ Grass material applied (PBR).");
+  } else {
+    hudLine(`⚠️ Grass missing: <code>${GRASS_COLOR_FILE}</code>`);
+  }
+})();
+
+/* =========================================================
+   STEP 4: FAR MOUNTAIN RINGS
+   ========================================================= */
+
+/* =========================================================
+   🌾 TALL GRASS (Option B: Instanced grass cards)
+   - Adds vertical “blades” on top of the ground (real geometry)
+   - dg_disp.png controls blade height (bright = taller)
+   - SAFE defaults: no shadows casting, instanced mesh, alphaTest
+   ========================================================= */
+let tallGrassMesh = null;
+
+async function createTallGrass(){
+  if (!TALL_GRASS_ENABLE) return;
+
+  // Wait for terrain so we can place blades on the ground
+  const start = performance.now();
+  while (!terrainReady && performance.now() - start < 4000){
+    await new Promise(r => setTimeout(r, 50));
+  }
+  if (!terrainReady){
+    hudLine("⚠️ Tall grass skipped: terrain not ready.");
+    return;
+  }
+
+  // Load the height controller pixels (dg_disp.png)
+  const ok = await loadDispPixels();
+  if (!ok) return;
+
+  // Load the blade texture (we reuse your grass color for now)
+  const colorUrl = TEX_DIR + GRASS_CARD_COLOR_FILE;
+  const bladeTex = await loadTextureSafe(colorUrl, { colorSpace: THREE.SRGBColorSpace });
+  if (!bladeTex){
+    hudLine(`⚠️ Tall grass: missing <code>${GRASS_CARD_COLOR_FILE}</code>`);
+    return;
+  }
+  bladeTex.wrapS = bladeTex.wrapT = THREE.RepeatWrapping;
+  bladeTex.repeat.set(1, 1);
+  bladeTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+  // Blade geometry (unit height; we scale per instance)
+  const bladeGeo = new THREE.PlaneGeometry(GRASS_CARD_W, 1.0);
+
+  // Material: alphaTest avoids expensive sorting of transparent pixels.
+  const bladeMat = new THREE.MeshStandardMaterial({
+    map: bladeTex,
+    transparent: true,
+    alphaTest: GRASS_CARD_ALPHA,
+    side: THREE.DoubleSide,
+    roughness: 1.0,
+    metalness: 0.0
+  });
+
+  // Remove old mesh if re-created
+  if (tallGrassMesh){
+    scene.remove(tallGrassMesh);
+    tallGrassMesh.geometry.dispose();
+    // material shares a texture; skip dispose for safety
+    tallGrassMesh = null;
+  }
+
+  tallGrassMesh = new THREE.InstancedMesh(bladeGeo, bladeMat, GRASS_CARD_COUNT);
+  tallGrassMesh.castShadow = false;     // keep SAFE
+  tallGrassMesh.receiveShadow = true;
+  tallGrassMesh.frustumCulled = true;
+  scene.add(tallGrassMesh);
+
+  const dummy = new THREE.Object3D();
+
+  // Place blades in a disc around origin (start area)
+  for (let i = 0; i < GRASS_CARD_COUNT; i++){
+    const ang = Math.random() * Math.PI * 2;
+    const rr  = Math.sqrt(Math.random()) * GRASS_CARD_AREA;
+    const x = Math.cos(ang) * rr;
+    const z = Math.sin(ang) * rr;
+
+    // Height from your terrain + sink a hair
+    const groundY = heightAtWorldXZ(x, z) - GRASS_CARD_GROUND_SINK;
+
+    // dg_disp brightness -> blade height
+    const d = dispAtWorldXZ(x, z); // 0..1
+    const h = GRASS_CARD_MIN_H + d * (GRASS_CARD_MAX_H - GRASS_CARD_MIN_H);
+
+    dummy.position.set(x, groundY + h * 0.5, z);
+
+    // Random yaw for variety
+    dummy.rotation.set(0, Math.random() * Math.PI, 0);
+
+    // Scale Y = height, X = 1 (width already in geometry)
+    dummy.scale.set(1, h, 1);
+
+    dummy.updateMatrix();
+    tallGrassMesh.setMatrixAt(i, dummy.matrix);
+  }
+
+  tallGrassMesh.instanceMatrix.needsUpdate = true;
+
+  hudLine(`🌾 Tall grass ON: <code>${GRASS_CARD_COUNT}</code> cards · height via <code>${GRASS_CARD_HEIGHT_FILE}</code>`);
+}
+
+function mulberry32(seed){
+  return function(){
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function mountainProfile(t, rngBase){
+  // Some harmonics + a spike
+  const a = Math.sin(t * Math.PI * 2 * 1.0 + rngBase()*3.0);
+  const b = Math.sin(t * Math.PI * 2 * 2.2 + rngBase()*3.0) * 0.6;
+  const c = Math.sin(t * Math.PI * 2 * 4.7 + rngBase()*3.0) * 0.35;
+  const d = Math.sin(t * Math.PI * 2 * 9.3 + rngBase()*3.0) * 0.18;
+  const spike = Math.pow(Math.max(0, Math.sin(t*2*Math.PI*3.0 + rngBase()*6.0)), 6.0) * 0.8;
+
+  let v = (a*0.55 + b*0.35 + c*0.25 + d*0.20) * 0.5 + 0.55;
+  v += spike * 0.35;
+  v = Math.max(0, Math.min(1, v));
+  v = Math.pow(v, 1.15 / Math.max(0.1, MOUNTAIN_RUGGEDNESS));
+  return v;
+}
+
+function buildMountainRing({ radius, height, thickness, segments, color, opacity, seed, yBase }){
+  const rngBase = mulberry32(seed);
+
+  const inner = radius;
+  const outer = radius + thickness;
+
+  const verts = [];
+  const indices = [];
+  const stride = 4;
+
+  for (let i = 0; i <= segments; i++){
+    const t = i / segments;
+    const ang = t * Math.PI * 2;
+
+    const prof = mountainProfile(t, rngBase);
+    const topY = yBase + prof * height;
+
+    const cx = Math.cos(ang);
+    const sz = Math.sin(ang);
+
+    // inner bottom, inner top, outer top, outer bottom
+    verts.push(inner*cx, yBase, inner*sz);
+    verts.push(inner*cx, topY,  inner*sz);
+    verts.push(outer*cx, topY*0.92, outer*sz);
+    verts.push(outer*cx, yBase, outer*sz);
+  }
+
+  for (let i = 0; i < segments; i++){
+    const a = i*stride;
+    const b = a + stride;
+
+    indices.push(a+0, a+1, b+1);
+    indices.push(a+0, b+1, b+0);
+
+    indices.push(a+1, a+2, b+2);
+    indices.push(a+1, b+2, b+1);
+
+    indices.push(a+3, b+2, a+2);
+    indices.push(a+3, b+3, b+2);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+
+  const mat = new THREE.MeshLambertMaterial({
+    color,
+    transparent: true,
+    opacity,
+    fog: true,          // keep fog now that fog is fixed
+    depthWrite: false
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = -1;
+  mesh.frustumCulled = false;
+  return mesh;
+}
+
+let mountainGroup = null;
+
+function initMountains(){
+  if (!MOUNTAIN_ENABLE) return;
+
+  mountainGroup = new THREE.Group();
+
+  const ring2 = buildMountainRing({
+    radius: M2_RADIUS, height: M2_HEIGHT, thickness: M2_THICK,
+    segments: M2_SEGMENTS, color: rgb255ToThree(M2_COLOR_RGB), opacity: M2_OPACITY,
+    seed: MOUNTAIN_SEED + 2000, yBase: MOUNTAIN_BASE_Y
+  });
+
+  const ring1 = buildMountainRing({
+    radius: M1_RADIUS, height: M1_HEIGHT, thickness: M1_THICK,
+    segments: M1_SEGMENTS, color: rgb255ToThree(M1_COLOR_RGB), opacity: M1_OPACITY,
+    seed: MOUNTAIN_SEED + 1000, yBase: MOUNTAIN_BASE_Y
+  });
+
+  ring2.position.y += 40;
+
+  mountainGroup.add(ring2);
+  mountainGroup.add(ring1);
+
+  scene.add(mountainGroup);
+  hudLine("✅ Far mountain rings enabled (Step 4).");
+  hudLine("✅ Fog fixed (bluer + starts farther out). Mountains should now keep their color.");
+}
+initMountains();
+
+/* =========================================================
+   TREES (better pines + variation + smarter placement)
+   ========================================================= */
+/* =========================================================
+   PNG BILLBOARD TREES (tree1.png) — WolfLand-style culling + SAFE SHADOW LOD
+   (Prevents GPU overload / BSOD by limiting how many cast shadows)
+   ========================================================= */
+
+// --- TWEAK ZONE (PNG TREES) ---
+const BILLBOARD_TREE_FILE1 = "tree1.png";
+const BILLBOARD_TREE_FILE2 = "tree2.png"; // optional variety
+const BILLBOARD_COUNT = 2000;            // many is OK (no per-tree shadows)
+const BILLBOARD_AREA  = 3000;           // spread radius
+const BILLBOARD_MAX_SLOPE = 28;         // avoid steep slopes
+
+// Shadow LOD: only the nearest N trees get a shadow proxy that casts shadow
+const BILLBOARD_SHADOW_NEAR   = 160;    // within this distance, eligible for shadow    // within this distance, eligible for shadow
+const BILLBOARD_SHADOW_MAX    = 35;     // max number of shadow-casting trees (KEEP THIS LOW!)     // max number of shadow-casting trees (KEEP THIS LOW!)
+const BILLBOARD_SHADOW_HEIGHT = 1.6;    // proxy height factor
+
+// ------------------------------------------------------------------------
+
+const billboardTrees = []; // { plane, proxy, x, z, baseY, scale }
+
+// Load PNG textures with error logging (tree1 + optional tree2)
+let tree2Ready = false;
+const TREE_URL1 = TEX_DIR + BILLBOARD_TREE_FILE1;
+const TREE_URL2 = TEX_DIR + BILLBOARD_TREE_FILE2;
+
+const billboardTreeTex1 = new THREE.TextureLoader().load(
+  TREE_URL1,
+  tex => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    hudLine(`✅ Loaded PNG tree: <code>${BILLBOARD_TREE_FILE1}</code>`);
+  },
+  undefined,
+  err => {
+    console.error("PNG tree1 failed to load:", TREE_URL1, err);
+    hudLine(`❌ PNG tree failed to load: <code>${BILLBOARD_TREE_FILE1}</code> (check <code>${TREE_URL1}</code>)`);
+  }
+);
+
+const billboardTreeTex2 = new THREE.TextureLoader().load(
+  TREE_URL2,
+  tex => {
+    tree2Ready = true;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    hudLine(`✅ Loaded PNG tree: <code>${BILLBOARD_TREE_FILE2}</code> (variety ON)`);
+  },
+  undefined,
+  err => {
+    tree2Ready = false;
+    console.warn("PNG tree2 failed to load (variety OFF):", TREE_URL2, err);
+hudLine(`⚠️ Optional tree missing: <code>${BILLBOARD_TREE_FILE2}</code> (using tree1 only)`);
+showBanner(`❌ <b>tree2.png NOT FOUND</b> — expected <code>images/${BILLBOARD_TREE_FILE2}</code>`);
+setTimeout(()=>hideBanner(), 4200);
+    // If material2 exists, fall back to tree1 so we never render black squares
+    if (billboardMat2) billboardMat2.map = billboardTreeTex1;
+  }
+);
+
+let billboardMat1 = null;
+let billboardMat2 = null;
+
+billboardMat1 = new THREE.MeshStandardMaterial({
+  map: billboardTreeTex1,
+  transparent: true,
+  alphaTest: 0.55,
+  side: THREE.DoubleSide
+});
+
+billboardMat2 = new THREE.MeshStandardMaterial({
+  map: billboardTreeTex2,
+  transparent: true,
+  alphaTest: 0.55,
+  side: THREE.DoubleSide
+});
+
+
+// DEBUG_TREE2_BILLBOARD (SAFE): if tree2 loads, place one huge tree2 near spawn so you can't miss it
+let debugTree2Placed = false;
+function tryPlaceDebugTree2(){
+  if (debugTree2Placed) return;
+  if (!tree2Ready) return;
+  // place ~25m in front of spawn
+  const x = 0;
+  const z = -25;
+  const y = heightAtWorldXZ(x, z) + 10;
+  const geo = new THREE.PlaneGeometry(18, 24);
+  const mat = billboardMat2 ? billboardMat2.clone() : new THREE.MeshStandardMaterial({ map: billboardTreeTex2, transparent:true, alphaTest:0.55, side:THREE.DoubleSide });
+  const p = new THREE.Mesh(geo, mat);
+  p.position.set(x, y, z);
+  p.rotation.y = 0;
+  p.renderOrder = 5;
+  scene.add(p);
+  debugTree2Placed = true;
+  showBanner(`✅ <b>TREE2 LOADED</b> — big debug tree placed ahead`);
+  setTimeout(()=>hideBanner(), 2200);
+}
+
+
+// Invisible material for shadow proxy
+const shadowProxyMat = new THREE.MeshStandardMaterial({
+  color: 0x000000,
+  transparent: true,
+  opacity: 0.0
+});
+
+function makeBillboardTree(x, z){
+  const baseY = heightAtWorldXZ(x, z);
+
+  // Tiny sink prevents 'floating' billboards due to terrain sampling
+  const GROUND_SINK = 0.25;
+
+  // world-scale of PNG tree
+  const scale = 4.0 + Math.random() * 3.0; // 4–7
+  const h = scale * 1.75;
+  const w = scale;
+
+  // Billboard plane (always faces camera)
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), (tree2Ready && Math.random() < 0.40) ? billboardMat2 : billboardMat1);
+  plane.position.set(x, baseY + h*0.5 - GROUND_SINK, z);
+  plane.castShadow = false;
+  plane.receiveShadow = false;
+
+  // Shadow proxy (simple cone) — created but only SOME will castShadow each frame
+  const proxy = new THREE.Mesh(
+    new THREE.ConeGeometry(w*0.38, h*BILLBOARD_SHADOW_HEIGHT, 6),
+    shadowProxyMat
+  );
+  proxy.position.set(x, baseY + (h*0.5) - GROUND_SINK, z);
+  proxy.castShadow = false; // ✅ off by default (we enable only for nearest N)
+  proxy.receiveShadow = false;
+
+  scene.add(plane);
+  scene.add(proxy);
+
+  billboardTrees.push({ plane, proxy, x, z, baseY, scale });
+}
+
+async function spawnBillboardTreesWhenReady(){
+  const start = performance.now();
+  while (!terrainReady && performance.now() - start < 4000) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  let placed = 0;
+  let tries = 0;
+
+  while (placed < BILLBOARD_COUNT && tries < BILLBOARD_COUNT * 60){
+    tries++;
+
+    const x = (Math.random()-0.5) * BILLBOARD_AREA;
+    const z = (Math.random()-0.5) * BILLBOARD_AREA;
+
+    // avoid steep slopes
+    if (typeof slopeDegAt === "function" && slopeDegAt(x, z) > BILLBOARD_MAX_SLOPE) continue;
+
+    // avoid spawn-start zone
+    if (Math.hypot(x - 0, z - 6) < 28) continue;
+
+    makeBillboardTree(x, z);
+    placed++;
+  }
+
+  // Guaranteed test tree near start
+  makeBillboardTree(0, 28);
+
+  hudLine(`🌲 PNG trees placed: <code>${placed + 1}</code> (shadow LOD max <code>${BILLBOARD_SHADOW_MAX}</code>)`);
+hudLine(`🌲 Tree1: <code id=\"t1c\">0</code> &nbsp; Tree2: <code id=\"t2c\">0</code> (tree2 chance ${Math.round(TREE2_CHANCE*100)}%)`);
+}
+spawnBillboardTreesWhenReady();
+
+// Called each frame: face billboards + enable shadows only for nearest N (WolfLand-style "visible list")
+function updateBillboardTrees(player){
+  if (!player || !player.position) return;
+
+  const px = player.position.x;
+  const pz = player.position.z;
+
+  // Face billboards toward camera
+  for (const t of billboardTrees){
+    if (!t || !t.plane) continue;
+    t.plane.lookAt(camera.position.x, t.plane.position.y, camera.position.z);
+  }
+
+  // Shadow LOD: enable shadows only for nearest trees
+  const near2 = BILLBOARD_SHADOW_NEAR * BILLBOARD_SHADOW_NEAR;
+  const candidates = [];
+
+  for (const t of billboardTrees){
+    if (!t || !t.proxy) continue;
+    const dx = (t.x ?? 0) - px;
+    const dz = (t.z ?? 0) - pz;
+    const d2 = dx*dx + dz*dz;
+    t.proxy.castShadow = false;
+    if (d2 <= near2) candidates.push([d2, t]);
+  }
+
+  candidates.sort((a,b)=>a[0]-b[0]);
+  for (let i=0; i<Math.min(BILLBOARD_SHADOW_MAX, candidates.length); i++){
+    candidates[i][1].proxy.castShadow = true;
+  }
+}
+// quick slope estimate (degrees) using height samples
+function slopeDegAt(x, z){
+  const eps = 6; // world units
+  const h0 = heightAtWorldXZ(x, z);
+  const hx = heightAtWorldXZ(x + eps, z);
+  const hz = heightAtWorldXZ(x, z + eps);
+  const dx = (hx - h0) / eps;
+  const dz = (hz - h0) / eps;
+  const slope = Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI;
+  return slope;
+}
+
+function makePineTree(x, z){
+  const baseY = heightAtWorldXZ(x, z);
+
+  // --- Random variation (forest feels natural) ---
+  const scale = 0.85 + Math.random() * 0.95; // 0.85–1.8
+  const trunkH = 1.35 * scale;
+  const trunkRTop = 0.10 * scale;
+  const trunkRBot = 0.18 * scale;
+
+  // Subtle color variation (avoid cloned look)
+  const greenVar = 0.85 + Math.random() * 0.35; // 0.85–1.20
+  const crownColor = new THREE.Color(0x2f6f3b).multiplyScalar(greenVar);
+
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6a4a2f, roughness: 1.0 });
+  const crownMat = new THREE.MeshStandardMaterial({ color: crownColor, roughness: 1.0 });
+
+  // Group makes it easy to move/rotate the whole tree
+  const g = new THREE.Group();
+  g.position.set(x, baseY - 0.10, z);
+
+  // --- Trunk ---
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(trunkRTop, trunkRBot, trunkH, 10),
+    trunkMat
+  );
+  trunk.position.set(0, trunkH * 0.5, 0);
+
+  // --- Pine crown: stacked cones (great silhouette, cheap) ---
+  const c1 = new THREE.Mesh(new THREE.ConeGeometry(0.75 * scale, 1.05 * scale, 10), crownMat);
+  const c2 = new THREE.Mesh(new THREE.ConeGeometry(0.62 * scale, 0.95 * scale, 10), crownMat);
+  const c3 = new THREE.Mesh(new THREE.ConeGeometry(0.50 * scale, 0.80 * scale, 10), crownMat);
+
+  c1.position.set(0, trunkH + 0.35 * scale, 0);
+  c2.position.set(0, trunkH + 0.90 * scale, 0);
+  c3.position.set(0, trunkH + 1.35 * scale, 0);
+
+  // Slight random yaw so crowns don't line up
+  const yaw = Math.random() * Math.PI * 2;
+  g.rotation.y = yaw;
+
+  // Tiny random lean (kept subtle so it doesn't look goofy)
+  g.rotation.z = (Math.random() - 0.5) * 0.06;
+  g.rotation.x = (Math.random() - 0.5) * 0.06;
+
+  // Shadows
+  trunk.castShadow = true; trunk.receiveShadow = true;
+  c1.castShadow = true; c1.receiveShadow = true;
+  c2.castShadow = true; c2.receiveShadow = true;
+  c3.castShadow = true; c3.receiveShadow = true;
+
+  g.add(trunk, c1, c2, c3);
+  scene.add(g);
+  return g;
+}
+
+async function spawnTreesWhenReady(){
+  const start = performance.now();
+  while (!terrainReady && performance.now() - start < 3000) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  // --- Smarter placement: avoid steep slopes, create clumps ---
+  const TARGET_TREES = 220;         // more trees, still fine (simple geometry)
+  const AREA = 1900;                // spread radius
+  const MAX_SLOPE = 24;             // degrees (lower = fewer on hills)
+  const CLUMP_CHANCE = 0.55;        // more natural clustering
+
+  // pick a few "clump centers"
+  const clumps = [];
+  for (let i=0;i<10;i++){
+    clumps.push({
+      x: (Math.random()-0.5) * AREA,
+      z: (Math.random()-0.5) * AREA,
+      r: 180 + Math.random()*260
+    });
+  }
+
+  let placed = 0;
+  let tries = 0;
+
+  while (placed < TARGET_TREES && tries < TARGET_TREES * 60){
+    tries++;
+
+    let x, z;
+    if (Math.random() < CLUMP_CHANCE){
+      const c = clumps[(Math.random() * clumps.length) | 0];
+      const a = Math.random() * Math.PI * 2;
+      const rr = Math.sqrt(Math.random()) * c.r;
+      x = c.x + Math.cos(a) * rr;
+      z = c.z + Math.sin(a) * rr;
+    } else {
+      x = (Math.random()-0.5) * AREA;
+      z = (Math.random()-0.5) * AREA;
+    }
+
+    // avoid steep slopes
+    if (slopeDegAt(x, z) > MAX_SLOPE) continue;
+
+    // avoid placing super close to player start (so you don't spawn inside a tree)
+    if (Math.hypot(x - 0, z - 6) < 22) continue;
+
+    makePineTree(x, z);
+    placed++;
+  }
+
+  hudLine(`🌲 Better trees placed: <code>${placed}</code> (tries ${tries})`);
+}
+spawnTreesWhenReady();
+
+/* =========================================================
+   MOVEMENT + TERRAIN COLLISION
+   ========================================================= */
+const keys = new Set();
+
+
+/* =========================
+   📱 iPad / Touch Controls (toggle)
+   - Uses the existing `keys` Set so the game logic stays unchanged.
+   - Toggle button shows/hides the controls.
+   ========================= */
+const touchToggle = document.getElementById("touchToggle");
+const touchUI = document.getElementById("touchUI");
+const touchHint = document.getElementById("touchHint");
+
+function isTouchDevice(){
+  return ("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+}
+
+// default: show pad on touch devices; toggle exists everywhere
+let touchOn = isTouchDevice();
+touchUI.classList.toggle("on", touchOn);
+touchHint.classList.toggle("on", isTouchDevice());
+
+touchToggle.addEventListener("click", (e)=>{
+  e.preventDefault();
+  touchOn = !touchOn;
+  touchUI.classList.toggle("on", touchOn);
+  touchHint.classList.remove("on");
+});
+
+// Stop iOS from scrolling while using controls
+document.addEventListener("touchmove", (e)=>{ if(touchOn) e.preventDefault(); }, {passive:false});
+
+// Virtual key press/release
+function vKey(code, down){
+  if (down) keys.add(code);
+  else keys.delete(code);
+}
+
+// Bind a button to a key code (touch + mouse)
+function bindHold(btn, code){
+  if (!btn) return;
+
+  const press = (ev)=>{ if(ev) ev.preventDefault(); if(!touchOn) return; vKey(code, true); };
+  const release = (ev)=>{ if(ev) ev.preventDefault(); vKey(code, false); };
+
+  // Touch (iPad Safari reliable)
+  btn.addEventListener("touchstart", press, {passive:false});
+  btn.addEventListener("touchend", release, {passive:false});
+  btn.addEventListener("touchcancel", release, {passive:false});
+
+  // Mouse (desktop testing)
+  btn.addEventListener("mousedown", press);
+  window.addEventListener("mouseup", release);
+
+  // Pointer events (modern)
+  btn.addEventListener("pointerdown", press);
+  btn.addEventListener("pointerup", release);
+  btn.addEventListener("pointercancel", release);
+  btn.addEventListener("pointerleave", release);
+
+  btn.addEventListener("contextmenu", (e)=>e.preventDefault());
+}
+
+bindHold(document.getElementById("btnUp"), "ArrowUp");
+bindHold(document.getElementById("btnDown"), "ArrowDown");
+bindHold(document.getElementById("btnLeft"), "ArrowLeft");
+bindHold(document.getElementById("btnRight"), "ArrowRight");
+bindHold(document.getElementById("btnJump"), "Space");
+addEventListener("keydown", (e)=> keys.add(e.code));
+addEventListener("keyup",   (e)=> keys.delete(e.code));
+
+let velY = 0;
+let onGround = false;
+let manualAltitude = null; // once you use R/F, we hold altitude (no gravity fall)
+
+const clock = new THREE.Clock();
+
+
+// ----- Lake collision helpers -----
+function isPointInLakeXZ(x, z){
+  // XZ bounds only (used internally)
+  if (!lakeMesh) return false;
+
+  const cx = lakeMesh.position.x;
+  const cz = lakeMesh.position.z;
+  const half = (LAKE_SIZE * 0.5) - LAKE_BLOCK_MARGIN;
+
+  return (Math.abs(x - cx) <= half) && (Math.abs(z - cz) <= half);
+}
+
+// True only if this XZ is actually WATER (terrain is below/near the water surface).
+function isWaterAtXZ(x, z){
+  if (!lakeMesh) return false;
+  if (!isPointInLakeXZ(x, z)) return false;
+
+  const waterY = lakeMesh.position.y;
+  const groundY = heightAtWorldXZ(x, z);
+
+  // If the ground is below (or just barely above) the water surface, treat it as water.
+  // This prevents "infinite lake collider" when the square lake bounds overlap higher land.
+  const WATER_TOL = 1.5; // how much land can stick up before it's considered "dry"
+  return groundY <= (waterY + WATER_TOL);
+}
+
+function markSafePosition(obj){
+  lastSafePos.copy(obj.position);
+}
+
+function applyLakeBlock(obj){
+  if (!LAKE_BLOCK_ENABLE || !lakeMesh) return;
+
+  if (!lastSafeInit){
+    lastSafePos.copy(obj.position);
+    lastSafeInit = true;
+    return;
+  }
+
+  // If we're not in the lake, update safe pos and exit
+  if (!isWaterAtXZ(obj.position.x, obj.position.z)){
+    lastSafePos.copy(obj.position);
+    return;
+  }
+
+  // --- Sliding collision (no jitter) ---
+  // We entered the lake this frame. Try to "slide" by canceling only the axis that caused entry.
+  const px = prevPos.x, pz = prevPos.z;
+  const nx = obj.position.x, nz = obj.position.z;
+
+  const tryX = { x: nx, z: pz }; // keep X move, cancel Z move
+  const tryZ = { x: px, z: nz }; // keep Z move, cancel X move
+
+  const okX = !isWaterAtXZ(tryX.x, tryX.z);
+  const okZ = !isWaterAtXZ(tryZ.x, tryZ.z);
+
+  if (okX && !okZ){
+    obj.position.x = tryX.x;
+    obj.position.z = tryX.z;
+  } else if (okZ && !okX){
+    obj.position.x = tryZ.x;
+    obj.position.z = tryZ.z;
+  } else if (okX && okZ){
+    // both work: choose the one that stays closer to intended movement
+    const dxX = Math.abs(nx - tryX.x) + Math.abs(nz - tryX.z);
+    const dxZ = Math.abs(nx - tryZ.x) + Math.abs(nz - tryZ.z);
+    if (dxX <= dxZ){
+      obj.position.x = tryX.x;
+      obj.position.z = tryX.z;
+    } else {
+      obj.position.x = tryZ.x;
+      obj.position.z = tryZ.z;
+    }
+  } else {
+    // neither works: revert fully
+    obj.position.x = px;
+    obj.position.z = pz;
+  }
+
+  // Clamp to terrain height and update safe pos (now guaranteed outside or reverted)
+  obj.position.y = heightAtWorldXZ(obj.position.x, obj.position.z) + PLAYER_EYE_HEIGHT;
+  lastSafePos.copy(obj.position);
+}
+
+
+
+
+/* =========================================================
+   🔵 BLUE BALL FIRING (Camitruck only, SAFE)
+   Hold F to fire. No enemies.
+   ========================================================= */
+const FIRE_ENABLE = true;
+const FIRE_COOLDOWN = 260; // ms
+const FIRE_SPEED = 48;    // world units / sec
+const FIRE_LIFE = 3.0;    // seconds
+const FIRE_RADIUS = 0.36; // increased by 100%
+const FIRE_MUZZLE_ABOVE_GROUND = 2.2; // keep shots level above terrain
+
+let lastFireTime = 0;
+const blueBalls = [];
+const __tmpBox = new THREE.Box3();
+const __tmpV3 = new THREE.Vector3();
+
+function spawnBlueBall(){
+  const geom = new THREE.SphereGeometry(FIRE_RADIUS, 12, 12);
+  const mat  = new THREE.MeshStandardMaterial({
+    color: 0x4fb6ff,
+    emissive: 0x1a6fd8,
+    emissiveIntensity: 0.6
+  });
+  const ball = new THREE.Mesh(geom, mat);
+
+  const obj = controls.getObject();
+  const yaw = obj.rotation.y;
+  const dir = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+
+  const sx = obj.position.x + dir.x * 1.2;
+  const sz = obj.position.z + dir.z * 1.2;
+  const sy = heightAtWorldXZ(sx, sz) + FIRE_MUZZLE_ABOVE_GROUND;
+
+  const start = new THREE.Vector3(
+    sx,
+    sy,
+    sz
+  );
+
+  ball.position.copy(start);
+  scene.add(ball);
+
+  blueBalls.push({
+    mesh: ball,
+    vel: dir.clone().multiplyScalar(FIRE_SPEED),
+    life: FIRE_LIFE
+  });
+}
+
+function tryFire(){
+  if (!FIRE_ENABLE) return;
+  const now = performance.now();
+  if (now - lastFireTime < FIRE_COOLDOWN) return;
+  lastFireTime = now;
+  spawnBlueBall();
+  playFireSound();
+}
+
+function updateBlueBalls(dt){
+  for (let i = blueBalls.length - 1; i >= 0; i--){
+    let removed = false;
+    const b = blueBalls[i];
+    b.mesh.position.addScaledVector(b.vel, dt);
+    // Keep trajectory level relative to terrain (prevents fast ground strike on slopes)
+    b.mesh.position.y = heightAtWorldXZ(b.mesh.position.x, b.mesh.position.z) + FIRE_MUZZLE_ABOVE_GROUND;
+
+    // Hit test vs targets (sphere center vs target AABB)
+    if (targets && targets.length){
+      const p = b.mesh.position;
+      for (let ti = targets.length - 1; ti >= 0; ti--){
+        const t = targets[ti];
+        if (!t || !t.box) continue;
+        const cp = t.box.clampPoint(p, __tmpV3);
+        const d2 = cp.distanceToSquared(p);
+        if (d2 <= (FIRE_RADIUS * FIRE_RADIUS)){
+          // sparkle burst at impact
+          spawnHitBurst(p, 0xff6666);
+          playHitSound();
+
+          // remove ball
+          scene.remove(b.mesh);
+          b.mesh.geometry.dispose();
+          b.mesh.material.dispose();
+          blueBalls.splice(i, 1);
+
+          registerTargetHit(ti);
+          removed = true;
+          break;
+        }
+      }
+      // if we removed the ball, continue outer loop
+      if (removed) continue;
+    }
+
+    // BADGUY_HITTEST: Hit test vs bad guy billboard (sphere center vs billboard AABB)
+    tryPlaceDebugTree2();
+
+  if (badGuy){
+      __tmpBox.setFromObject(badGuy);
+      const p = b.mesh.position;
+      const cp = __tmpBox.clampPoint(p, __tmpV3);
+      const d2 = cp.distanceToSquared(p);
+      if (d2 <= (FIRE_RADIUS * FIRE_RADIUS)){
+        // sparkle burst at impact
+        spawnHitBurst(p, 0xffffff);
+        playHitSound();
+        scene.remove(b.mesh);
+        b.mesh.geometry.dispose();
+        b.mesh.material.dispose();
+        blueBalls.splice(i, 1);
+        registerBadGuyHit();
+        continue;
+      }
+    }
+    b.life -= dt;
+    if (b.life <= 0){
+      scene.remove(b.mesh);
+      b.mesh.geometry.dispose();
+      b.mesh.material.dispose();
+      blueBalls.splice(i, 1);
+    }
+  }
+}
+
+
+function animate(){
+  // Lake ripples (very subtle)
+  updateLakeRipples(performance.now() * 0.001);
+
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.033, clock.getDelta());
+  ensureCopterAudioPlaying();
+
+  updateHitBursts(dt);
+  updateRoundTimer(dt);
+
+  if (keys.has("Space")) tryFire();
+  updateBlueBalls(dt);
+  updateTargets(dt);
+  tryPlaceDebugTree2();
+
+  if (badGuy){
+    // Smoothly turn to face Camitruck (yaw only)
+    const px = controls.getObject().position.x;
+    const pz = controls.getObject().position.z;
+    const dx = px - badGuy.position.x;
+    const dz = pz - badGuy.position.z;
+    const desired = Math.atan2(dx, dz); // yaw angle toward player
+    let current = badGuy.rotation.y;
+    // shortest-angle delta
+    let delta = desired - current;
+    delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+    const maxStep = BAD_GUY_TURN_SPEED * dt;
+    if (Math.abs(delta) <= maxStep) current = desired;
+    else current += Math.sign(delta) * maxStep;
+    badGuy.rotation.y = current;
+    // flash on hit
+    if (badGuyFlashT > 0){
+      badGuyFlashT = Math.max(0, badGuyFlashT - dt);
+      badGuy.material.emissive.setHex(0xffffff);
+      badGuy.material.emissiveIntensity = 0.9;
+    } else {
+      badGuy.material.emissive.setHex(0x000000);
+      badGuy.material.emissiveIntensity = 0.0;
+    }
+  }
+
+  // RAYCASTER-STYLE ARROWS:
+  //   ArrowLeft/ArrowRight = turn
+  //   ArrowUp/ArrowDown    = forward/back
+  const forward = (keys.has("ArrowUp") || keys.has("KeyW")) ? 1 : (keys.has("ArrowDown") || keys.has("KeyS")) ? -1 : 0;
+
+  // Keep strafe on A/D only (optional)
+  const strafe  = (keys.has("KeyD")) ? 1 : (keys.has("KeyA")) ? -1 : 0;
+
+  // Keyboard turning (like raycaster)
+  let turn = 0;
+  if (keys.has("ArrowLeft"))  turn += 1;
+  if (keys.has("ArrowRight")) turn -= 1;
+
+  if (true) {
+    const obj = controls.getObject();
+
+    // Update PNG billboard trees (WolfLand-safe)
+    if (typeof updateBillboardTrees === 'function') updateBillboardTrees(obj);
+
+    // Raycaster-style: use the player's yaw (turning) for forward direction
+    // (PointerLock mouse look still works; arrows ALSO turn you)
+    obj.rotation.y += turn * TURN_SPEED * dt;
+
+    const fwd = new THREE.Vector3(
+      -Math.sin(obj.rotation.y),
+       0,
+      -Math.cos(obj.rotation.y)
+    ).normalize();
+
+    const right = new THREE.Vector3(-fwd.z, 0, fwd.x).normalize();
+
+    const move = new THREE.Vector3();
+    move.addScaledVector(fwd, forward);
+    move.addScaledVector(right, strafe);
+
+    const isMoving = move.lengthSq() > 0;
+
+    // Save previous position (for collision resolution)
+    prevPos.copy(obj.position);
+
+    if (isMoving) {
+      move.normalize().multiplyScalar(MOVE_SPEED * dt);
+      obj.position.add(move);
+    }
+
+    // Lake collision (baby step: slide along shoreline)
+    applyLakeBlock(obj);
+
+    // --- Truck engine sound (plays only while moving) ---
+    if (truckAudio){
+      if (isMoving && !truckSoundPlaying){
+        truckAudio.play().catch(()=>{});
+        truckSoundPlaying = true;
+      } else if (!isMoving && truckSoundPlaying){
+        truckAudio.pause();
+        truckAudio.currentTime = 0;
+        truckSoundPlaying = false;
+      }
+    }
+    // R/F vertical move (fly up/down). Safe: does not move the truck sprite.
+    let vMove = 0;
+    if (keys.has("KeyR") && !keys.has("KeyF")) vMove = 1;
+    else if (keys.has("KeyF") && !keys.has("KeyR")) vMove = -1;
+
+    if (vMove !== 0){
+      obj.position.y += vMove * RF_SPEED * dt;
+      velY = 0; // cancel gravity while actively moving vertically
+      manualAltitude = obj.position.y; // altitude-hold at new height
+    }
+
+
+
+    // --- Ground reference at current XZ ---
+const floorY = heightAtWorldXZ(obj.position.x, obj.position.z) + PLAYER_EYE_HEIGHT;
+
+// Once you touch R/F, we enter "hover" altitude-hold mode.
+// In this mode, gravity is disabled and you stay at that altitude until R raises or F lowers.
+// Altitude-hold latch: once you touch R/F, we hold that altitude until you change it with R/F again.
+if ((keys.has("KeyR") || keys.has("KeyF")) && manualAltitude === null){
+  manualAltitude = obj.position.y;
+}
+
+if (manualAltitude === null) {
+  // Walk mode: stick to terrain (no jump, no falling)
+  obj.position.y = floorY;
+  velY = 0;
+  onGround = true;
+} else {
+  // Hover mode: hold altitude (but never go below the ground)
+  manualAltitude = Math.max(floorY, manualAltitude);
+  obj.position.y = manualAltitude;
+  velY = 0;
+  onGround = (obj.position.y <= floorY + 0.0001);
+}
+
+// Space now fires (no jump)
+
+
+    // Step 4: mountains follow player
+    if (mountainGroup){
+      mountainGroup.position.x = obj.position.x;
+      mountainGroup.position.z = obj.position.z;
+      mountainGroup.position.y = 0;
+  }
+  }
+
+  updateTruckAvatar(dt);
+  updateNavOverlays();
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+
+<div id="roundTimer" style="
+  position:fixed; left:50%; top:60px; transform:translateX(-50%);
+  padding:8px 12px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.62); color:#fff; font:700 15px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  z-index:9998; backdrop-filter: blur(4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+">⏱ Round <b>1:00</b></div>
+
+<div id="banner" style="
+  position:fixed; left:50%; top:14px; transform:translateX(-50%);
+  padding:10px 14px; border-radius:14px;
+  background:rgba(0,0,0,0.65); color:#fff; font:600 16px system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  display:none; z-index:9999; backdrop-filter: blur(6px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+"></div>
+</body>
+
+</html>

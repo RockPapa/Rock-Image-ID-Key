@@ -43,7 +43,11 @@
     #npcCar3,
     #npcCar4,
     #npcCar5,
-    #npcCar6 {
+    #npcCar6,
+    #npcCar7,
+    #npcCar8,
+    #npcCar9,
+    #npcCar10 {
       position: absolute;
       width: 84px;
       height: auto;
@@ -138,58 +142,61 @@
       filter: brightness(1.15);
     }
 
-    /* ==== TOUCH CONTROLS (right-side thumb joystick only) ==== */
+    /* ==== TOUCH CONTROLS (iPad-friendly layout) ==== */
     #touchControls {
       position: absolute;
+      top: 50%;
       left: 0;
-      bottom: 0;
       width: 100%;
+      transform: translateY(-50%);
       z-index: 3;
       display: flex;
-      justify-content: flex-end;
-      align-items: flex-end;
-      padding: 18px 24px;
+      justify-content: space-between;
+      align-items: center;
+      padding-left: 24px;
+      padding-right: 24px;
       user-select: none;
       -webkit-user-select: none;
-      pointer-events: none;
     }
 
-    #joystick {
-      position: relative;
-      width: 220px;
-      height: 220px;
-      pointer-events: auto;
-      touch-action: none;
+    .touch-column {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    #joyBase {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.7);
-      background: rgba(0,0,0,0.45);
-      box-shadow: 0 10px 24px rgba(0,0,0,0.45);
+    /* FORCE right column inward by 100px */
+    #touchControls .touch-column:last-child {
+      margin-right: 100px;
     }
 
-    #joyKnob {
-      position: absolute;
-      left: 50%;
-      top: 50%;
+    /* 200% bigger: 96 x 96 px */
+    .touch-btn {
       width: 96px;
       height: 96px;
-      margin-left: -48px;
-      margin-top: -48px;
       border-radius: 50%;
-      border: 1px solid rgba(255,255,255,0.9);
-      background: rgba(255,255,255,0.25);
-      box-shadow: 0 8px 18px rgba(0,0,0,0.4);
-      pointer-events: none;
-      will-change: transform;
+      border: 1px solid rgba(255,255,255,0.7);
+      background: rgba(0,0,0,0.5);
+      color: #fff;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: none; /* important for iOS */
+    }
+
+    .touch-btn:active {
+      background: rgba(255,255,255,0.3);
     }
 
     @media (min-width: 900px) {
       #touchControls {
-        padding: 24px 40px;
+        padding-left: 40px;
+        padding-right: 40px;
+      }
+      #touchControls .touch-column:last-child {
+        margin-right: 100px; /* still 100px in desktop too */
       }
     }
   </style>
@@ -203,13 +210,17 @@
   <!-- Player car (color set after selection) -->
   <img id="car" src="images/car.png" alt="car">
 
-  <!-- Six random-moving blue cars -->
+  <!-- Ten random-moving blue cars -->
   <img id="npcCar1" src="images/blue_car.png" alt="blue car 1">
   <img id="npcCar2" src="images/blue_car.png" alt="blue car 2">
   <img id="npcCar3" src="images/blue_car.png" alt="blue car 3">
   <img id="npcCar4" src="images/blue_car.png" alt="blue car 4">
   <img id="npcCar5" src="images/blue_car.png" alt="blue car 5">
   <img id="npcCar6" src="images/blue_car.png" alt="blue car 6">
+  <img id="npcCar7" src="images/blue_car.png" alt="blue car 7">
+  <img id="npcCar8" src="images/blue_car.png" alt="blue car 8">
+  <img id="npcCar9" src="images/blue_car.png" alt="blue car 9">
+  <img id="npcCar10" src="images/blue_car.png" alt="blue car 10">
 
   <!-- UI sliders + hide-buttons toggle -->
   <div id="ui">
@@ -219,13 +230,13 @@
     <div style="margin-top:8px;">Car Size: <span id="sizeValue"></span> px</div>
     <input type="range" id="sizeSlider" min="50" max="150" value="84">
 
-    <button id="toggleButtons">Hide Joystick</button>
+    <button id="toggleButtons">Hide Buttons</button>
   </div>
 
   <!-- Color choice overlay -->
   <div id="colorMenu">
     <h2>Choose Your Car Color</h2>
-    <p>Pick a color, then drive with arrow keys or joystick!</p>
+    <p>Pick a color, then drive with the arrow keys or buttons!</p>
     <div>
       <button data-color="red">Red</button>
       <button data-color="blue">Blue</button>
@@ -235,12 +246,18 @@
     </div>
   </div>
 
-  <!-- TOUCH CONTROLS: right-side thumb joystick -->
+  <!-- TOUCH CONTROLS: UPDATED LAYOUT -->
   <div id="touchControls">
-    <div id="joystick">
-      <div id="joyBase">
-        <div id="joyKnob"></div>
-      </div>
+    <!-- LEFT SIDE: Right above Left -->
+    <div class="touch-column">
+      <button class="touch-btn" id="btnRight">▶</button>
+      <button class="touch-btn" id="btnLeft">◀</button>
+    </div>
+
+    <!-- RIGHT SIDE: Up above Down -->
+    <div class="touch-column">
+      <button class="touch-btn" id="btnUp">▲</button>
+      <button class="touch-btn" id="btnDown">▼</button>
     </div>
   </div>
 </div>
@@ -255,6 +272,10 @@
   const npcCar4     = document.getElementById("npcCar4");
   const npcCar5     = document.getElementById("npcCar5");
   const npcCar6     = document.getElementById("npcCar6");
+  const npcCar7     = document.getElementById("npcCar7");
+  const npcCar8     = document.getElementById("npcCar8");
+  const npcCar9     = document.getElementById("npcCar9");
+  const npcCar10    = document.getElementById("npcCar10");
   const speedSlider = document.getElementById("speedSlider");
   const speedValue  = document.getElementById("speedValue");
   const sizeSlider  = document.getElementById("sizeSlider");
@@ -262,8 +283,10 @@
   const colorMenu   = document.getElementById("colorMenu");
   const toggleButtons = document.getElementById("toggleButtons");
   const touchControls = document.getElementById("touchControls");
-  const joyBase = document.getElementById("joyBase");
-  const joyKnob = document.getElementById("joyKnob");
+  const btnUp    = document.getElementById("btnUp");
+  const btnDown  = document.getElementById("btnDown");
+  const btnLeft  = document.getElementById("btnLeft");
+  const btnRight = document.getElementById("btnRight");
 
   let worldW = 0;
   let worldH = 0;
@@ -272,14 +295,18 @@
   let carWorldX = 0;
   let carWorldY = 0;
 
-  // NPC state (6 blue cars)
+  // NPC state (10 blue cars)
   const npcs = [
     { img: npcCar1, x: 0, y: 0, angle:   0, speed: 120, turnTimer: 0 },
     { img: npcCar2, x: 0, y: 0, angle: 180, speed: 120, turnTimer: 0 },
     { img: npcCar3, x: 0, y: 0, angle:  90, speed: 120, turnTimer: 0 },
     { img: npcCar4, x: 0, y: 0, angle:  40, speed: 120, turnTimer: 0 },
     { img: npcCar5, x: 0, y: 0, angle: 230, speed: 120, turnTimer: 0 },
-    { img: npcCar6, x: 0, y: 0, angle: 315, speed: 120, turnTimer: 0 }
+    { img: npcCar6, x: 0, y: 0, angle: 315, speed: 120, turnTimer: 0 },
+    { img: npcCar7, x: 0, y: 0, angle: 120, speed: 120, turnTimer: 0 },
+    { img: npcCar8, x: 0, y: 0, angle: 265, speed: 120, turnTimer: 0 },
+    { img: npcCar9, x: 0, y: 0, angle:  25, speed: 120, turnTimer: 0 },
+    { img: npcCar10, x: 0, y: 0, angle: 200, speed: 120, turnTimer: 0 }
   ];
 
   // Camera
@@ -492,76 +519,59 @@
     if (e.key === "ArrowDown")  { backwardPressed = false; stopEngine(); e.preventDefault(); }
   });
 
-  // ---- JOYSTICK (maps to arrow controls) ----
-  const JOY_MAX = 58;
-  const JOY_DEAD = 0.30; // slightly less sensitive around center
-  let joyPointerId = null;
+  // ---- TOUCH BUTTON HELPERS ----
 
-  function applyJoystick(nx, ny) {
-    leftPressed = nx < -JOY_DEAD;
-    rightPressed = nx > JOY_DEAD;
-    forwardPressed = ny < -JOY_DEAD;
-    backwardPressed = ny > JOY_DEAD;
-    if (forwardPressed || backwardPressed) startEngine();
-    else stopEngine();
-  }
+  function addPressHandlers(element, onPress, onRelease) {
+    element.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      if (!gameStarted) return;
+      onPress();
+      element.setPointerCapture(e.pointerId);
+    });
 
-  function resetJoystick() {
-    joyPointerId = null;
-    leftPressed = rightPressed = forwardPressed = backwardPressed = false;
-    stopEngine();
-    if (joyKnob) joyKnob.style.transform = "translate(0px, 0px)";
-  }
-
-  function updateJoystickFromPointer(e) {
-    if (!joyBase || !joyKnob) return;
-    const rect = joyBase.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    let dx = e.clientX - cx;
-    let dy = e.clientY - cy;
-    const len = Math.hypot(dx, dy) || 1;
-    if (len > JOY_MAX) {
-      dx = (dx / len) * JOY_MAX;
-      dy = (dy / len) * JOY_MAX;
+    function endHandler(e) {
+      e.preventDefault();
+      onRelease();
     }
-    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
-    applyJoystick(dx / JOY_MAX, dy / JOY_MAX);
+
+    element.addEventListener("pointerup", endHandler);
+    element.addEventListener("pointercancel", endHandler);
+    element.addEventListener("pointerleave", endHandler);
   }
 
-  joyBase.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    if (!gameStarted || crashed) return;
-    joyPointerId = e.pointerId;
-    joyBase.setPointerCapture(e.pointerId);
-    updateJoystickFromPointer(e);
-  });
+  // Wire buttons
+  addPressHandlers(
+    btnUp,
+    () => { forwardPressed = true; startEngine(); },
+    () => { forwardPressed = false; stopEngine(); }
+  );
 
-  joyBase.addEventListener("pointermove", (e) => {
-    if (joyPointerId !== e.pointerId) return;
-    e.preventDefault();
-    updateJoystickFromPointer(e);
-  });
+  addPressHandlers(
+    btnDown,
+    () => { backwardPressed = true; startEngine(); },
+    () => { backwardPressed = false; stopEngine(); }
+  );
 
-  function endJoystick(e) {
-    if (joyPointerId !== null && e.pointerId !== undefined && joyPointerId !== e.pointerId) return;
-    e.preventDefault();
-    resetJoystick();
-  }
+  addPressHandlers(
+    btnLeft,
+    () => { leftPressed = true; },
+    () => { leftPressed = false; }
+  );
 
-  joyBase.addEventListener("pointerup", endJoystick);
-  joyBase.addEventListener("pointercancel", endJoystick);
-  joyBase.addEventListener("lostpointercapture", () => resetJoystick());
+  addPressHandlers(
+    btnRight,
+    () => { rightPressed = true; },
+    () => { rightPressed = false; }
+  );
 
   // ---- Hide / Show touch controls toggle ----
   toggleButtons.addEventListener("click", () => {
     if (touchControls.style.display === "none") {
       touchControls.style.display = "flex";
-      toggleButtons.textContent = "Hide Joystick";
+      toggleButtons.textContent = "Hide Buttons";
     } else {
       touchControls.style.display = "none";
-      resetJoystick();
-      toggleButtons.textContent = "Show Joystick";
+      toggleButtons.textContent = "Show Buttons";
     }
   });
 
@@ -706,6 +716,18 @@
 
     npcs[5].x = worldW * 0.40;
     npcs[5].y = worldH * 0.78;
+
+    npcs[6].x = worldW * 0.18;
+    npcs[6].y = worldH * 0.55;
+
+    npcs[7].x = worldW * 0.82;
+    npcs[7].y = worldH * 0.60;
+
+    npcs[8].x = worldW * 0.58;
+    npcs[8].y = worldH * 0.18;
+
+    npcs[9].x = worldW * 0.30;
+    npcs[9].y = worldH * 0.88;
 
     updateCarSizeFromSlider();
     updatePositions();

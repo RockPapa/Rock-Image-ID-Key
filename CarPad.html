@@ -40,7 +40,10 @@
     /* NPC blue cars */
     #npcCar1,
     #npcCar2,
-    #npcCar3 {
+    #npcCar3,
+    #npcCar4,
+    #npcCar5,
+    #npcCar6 {
       position: absolute;
       width: 84px;
       height: auto;
@@ -200,10 +203,13 @@
   <!-- Player car (color set after selection) -->
   <img id="car" src="images/car.png" alt="car">
 
-  <!-- Three random-moving blue cars -->
+  <!-- Six random-moving blue cars -->
   <img id="npcCar1" src="images/blue_car.png" alt="blue car 1">
   <img id="npcCar2" src="images/blue_car.png" alt="blue car 2">
   <img id="npcCar3" src="images/blue_car.png" alt="blue car 3">
+  <img id="npcCar4" src="images/blue_car.png" alt="blue car 4">
+  <img id="npcCar5" src="images/blue_car.png" alt="blue car 5">
+  <img id="npcCar6" src="images/blue_car.png" alt="blue car 6">
 
   <!-- UI sliders + hide-buttons toggle -->
   <div id="ui">
@@ -246,6 +252,9 @@
   const npcCar1     = document.getElementById("npcCar1");
   const npcCar2     = document.getElementById("npcCar2");
   const npcCar3     = document.getElementById("npcCar3");
+  const npcCar4     = document.getElementById("npcCar4");
+  const npcCar5     = document.getElementById("npcCar5");
+  const npcCar6     = document.getElementById("npcCar6");
   const speedSlider = document.getElementById("speedSlider");
   const speedValue  = document.getElementById("speedValue");
   const sizeSlider  = document.getElementById("sizeSlider");
@@ -263,11 +272,14 @@
   let carWorldX = 0;
   let carWorldY = 0;
 
-  // NPC state (3 blue cars)
+  // NPC state (6 blue cars)
   const npcs = [
     { img: npcCar1, x: 0, y: 0, angle:   0, speed: 120, turnTimer: 0 },
     { img: npcCar2, x: 0, y: 0, angle: 180, speed: 120, turnTimer: 0 },
-    { img: npcCar3, x: 0, y: 0, angle:  90, speed: 120, turnTimer: 0 }
+    { img: npcCar3, x: 0, y: 0, angle:  90, speed: 120, turnTimer: 0 },
+    { img: npcCar4, x: 0, y: 0, angle:  40, speed: 120, turnTimer: 0 },
+    { img: npcCar5, x: 0, y: 0, angle: 230, speed: 120, turnTimer: 0 },
+    { img: npcCar6, x: 0, y: 0, angle: 315, speed: 120, turnTimer: 0 }
   ];
 
   // Camera
@@ -353,7 +365,8 @@
 
     // NPCs same size
     npcWidth = carWidth;
-    [npcCar1, npcCar2, npcCar3].forEach(img => {
+    npcs.forEach(npc => {
+      const img = npc.img;
       img.style.width = npcWidth + "px";
       img.style.height = "auto";
     });
@@ -481,7 +494,7 @@
 
   // ---- JOYSTICK (maps to arrow controls) ----
   const JOY_MAX = 58;
-  const JOY_DEAD = 0.24;
+  const JOY_DEAD = 0.30; // slightly less sensitive around center
   let joyPointerId = null;
 
   function applyJoystick(nx, ny) {
@@ -683,6 +696,16 @@
 
     npcs[2].x = worldW / 2 + 100;
     npcs[2].y = worldH / 2 + 250;
+
+    // Three more roaming cars with dispersed starts
+    npcs[3].x = worldW * 0.25;
+    npcs[3].y = worldH * 0.28;
+
+    npcs[4].x = worldW * 0.72;
+    npcs[4].y = worldH * 0.35;
+
+    npcs[5].x = worldW * 0.40;
+    npcs[5].y = worldH * 0.78;
 
     updateCarSizeFromSlider();
     updatePositions();

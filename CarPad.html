@@ -135,61 +135,58 @@
       filter: brightness(1.15);
     }
 
-    /* ==== TOUCH CONTROLS (iPad-friendly layout) ==== */
+    /* ==== TOUCH CONTROLS (right-side thumb joystick only) ==== */
     #touchControls {
       position: absolute;
-      top: 50%;
       left: 0;
+      bottom: 0;
       width: 100%;
-      transform: translateY(-50%);
       z-index: 3;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-left: 24px;
-      padding-right: 24px;
+      justify-content: flex-end;
+      align-items: flex-end;
+      padding: 18px 24px;
       user-select: none;
       -webkit-user-select: none;
+      pointer-events: none;
     }
 
-    .touch-column {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+    #joystick {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      pointer-events: auto;
+      touch-action: none;
     }
 
-    /* FORCE right column inward by 100px */
-    #touchControls .touch-column:last-child {
-      margin-right: 100px;
-    }
-
-    /* 200% bigger: 96 x 96 px */
-    .touch-btn {
-      width: 96px;
-      height: 96px;
+    #joyBase {
+      position: absolute;
+      inset: 0;
       border-radius: 50%;
       border: 1px solid rgba(255,255,255,0.7);
-      background: rgba(0,0,0,0.5);
-      color: #fff;
-      font-size: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      touch-action: none; /* important for iOS */
+      background: rgba(0,0,0,0.45);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.45);
     }
 
-    .touch-btn:active {
-      background: rgba(255,255,255,0.3);
+    #joyKnob {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 96px;
+      height: 96px;
+      margin-left: -48px;
+      margin-top: -48px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.25);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.4);
+      pointer-events: none;
+      will-change: transform;
     }
 
     @media (min-width: 900px) {
       #touchControls {
-        padding-left: 40px;
-        padding-right: 40px;
-      }
-      #touchControls .touch-column:last-child {
-        margin-right: 100px; /* still 100px in desktop too */
+        padding: 24px 40px;
       }
     }
   </style>
@@ -198,7 +195,7 @@
 <body>
 
 <div id="game">
-  <img id="scene" src="images/scene_small.jpg" alt="scene">
+  <img id="scene" src="images/road.png" alt="scene">
 
   <!-- Player car (color set after selection) -->
   <img id="car" src="images/car.png" alt="car">
@@ -216,13 +213,13 @@
     <div style="margin-top:8px;">Car Size: <span id="sizeValue"></span> px</div>
     <input type="range" id="sizeSlider" min="50" max="150" value="84">
 
-    <button id="toggleButtons">Hide Buttons</button>
+    <button id="toggleButtons">Hide Joystick</button>
   </div>
 
   <!-- Color choice overlay -->
   <div id="colorMenu">
     <h2>Choose Your Car Color</h2>
-    <p>Pick a color, then drive with the arrow keys or buttons!</p>
+    <p>Pick a color, then drive with arrow keys or joystick!</p>
     <div>
       <button data-color="red">Red</button>
       <button data-color="blue">Blue</button>
@@ -232,18 +229,12 @@
     </div>
   </div>
 
-  <!-- TOUCH CONTROLS: UPDATED LAYOUT -->
+  <!-- TOUCH CONTROLS: right-side thumb joystick -->
   <div id="touchControls">
-    <!-- LEFT SIDE: Right above Left -->
-    <div class="touch-column">
-      <button class="touch-btn" id="btnRight">▶</button>
-      <button class="touch-btn" id="btnLeft">◀</button>
-    </div>
-
-    <!-- RIGHT SIDE: Up above Down -->
-    <div class="touch-column">
-      <button class="touch-btn" id="btnUp">▲</button>
-      <button class="touch-btn" id="btnDown">▼</button>
+    <div id="joystick">
+      <div id="joyBase">
+        <div id="joyKnob"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -262,12 +253,8 @@
   const colorMenu   = document.getElementById("colorMenu");
   const toggleButtons = document.getElementById("toggleButtons");
   const touchControls = document.getElementById("touchControls");
-
-  // Touch buttons
-  const btnUp    = document.getElementById("btnUp");
-  const btnDown  = document.getElementById("btnDown");
-  const btnLeft  = document.getElementById("btnLeft");
-  const btnRight = document.getElementById("btnRight");
+  const joyBase = document.getElementById("joyBase");
+  const joyKnob = document.getElementById("joyKnob");
 
   let worldW = 0;
   let worldH = 0;
@@ -492,59 +479,76 @@
     if (e.key === "ArrowDown")  { backwardPressed = false; stopEngine(); e.preventDefault(); }
   });
 
-  // ---- TOUCH BUTTON HELPERS ----
+  // ---- JOYSTICK (maps to arrow controls) ----
+  const JOY_MAX = 58;
+  const JOY_DEAD = 0.24;
+  let joyPointerId = null;
 
-  function addPressHandlers(element, onPress, onRelease) {
-    element.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      if (!gameStarted) return;
-      onPress();
-      element.setPointerCapture(e.pointerId);
-    });
-
-    function endHandler(e) {
-      e.preventDefault();
-      onRelease();
-    }
-
-    element.addEventListener("pointerup", endHandler);
-    element.addEventListener("pointercancel", endHandler);
-    element.addEventListener("pointerleave", endHandler);
+  function applyJoystick(nx, ny) {
+    leftPressed = nx < -JOY_DEAD;
+    rightPressed = nx > JOY_DEAD;
+    forwardPressed = ny < -JOY_DEAD;
+    backwardPressed = ny > JOY_DEAD;
+    if (forwardPressed || backwardPressed) startEngine();
+    else stopEngine();
   }
 
-  // Wire buttons
-  addPressHandlers(
-    btnUp,
-    () => { forwardPressed = true; startEngine(); },
-    () => { forwardPressed = false; stopEngine(); }
-  );
+  function resetJoystick() {
+    joyPointerId = null;
+    leftPressed = rightPressed = forwardPressed = backwardPressed = false;
+    stopEngine();
+    if (joyKnob) joyKnob.style.transform = "translate(0px, 0px)";
+  }
 
-  addPressHandlers(
-    btnDown,
-    () => { backwardPressed = true; startEngine(); },
-    () => { backwardPressed = false; stopEngine(); }
-  );
+  function updateJoystickFromPointer(e) {
+    if (!joyBase || !joyKnob) return;
+    const rect = joyBase.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    let dx = e.clientX - cx;
+    let dy = e.clientY - cy;
+    const len = Math.hypot(dx, dy) || 1;
+    if (len > JOY_MAX) {
+      dx = (dx / len) * JOY_MAX;
+      dy = (dy / len) * JOY_MAX;
+    }
+    joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+    applyJoystick(dx / JOY_MAX, dy / JOY_MAX);
+  }
 
-  addPressHandlers(
-    btnLeft,
-    () => { leftPressed = true; },
-    () => { leftPressed = false; }
-  );
+  joyBase.addEventListener("pointerdown", (e) => {
+    e.preventDefault();
+    if (!gameStarted || crashed) return;
+    joyPointerId = e.pointerId;
+    joyBase.setPointerCapture(e.pointerId);
+    updateJoystickFromPointer(e);
+  });
 
-  addPressHandlers(
-    btnRight,
-    () => { rightPressed = true; },
-    () => { rightPressed = false; }
-  );
+  joyBase.addEventListener("pointermove", (e) => {
+    if (joyPointerId !== e.pointerId) return;
+    e.preventDefault();
+    updateJoystickFromPointer(e);
+  });
+
+  function endJoystick(e) {
+    if (joyPointerId !== null && e.pointerId !== undefined && joyPointerId !== e.pointerId) return;
+    e.preventDefault();
+    resetJoystick();
+  }
+
+  joyBase.addEventListener("pointerup", endJoystick);
+  joyBase.addEventListener("pointercancel", endJoystick);
+  joyBase.addEventListener("lostpointercapture", () => resetJoystick());
 
   // ---- Hide / Show touch controls toggle ----
   toggleButtons.addEventListener("click", () => {
     if (touchControls.style.display === "none") {
       touchControls.style.display = "flex";
-      toggleButtons.textContent = "Hide Buttons";
+      toggleButtons.textContent = "Hide Joystick";
     } else {
       touchControls.style.display = "none";
-      toggleButtons.textContent = "Show Buttons";
+      resetJoystick();
+      toggleButtons.textContent = "Show Joystick";
     }
   });
 

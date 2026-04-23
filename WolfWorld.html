@@ -475,7 +475,7 @@ const START_MSG_SHOW_SEC = 6.0;
 const START_MSG_FADE_SEC = 1.2;
 let startMsgTimer = 0;
 
-function showStartMsg(text = "Head west to the shepherd shack.  Watch out for the wolf chasing you."){
+function showStartMsg(text = "Head EAST .  Watch out for the wolf chasing you."){
   startMsgEl.textContent = text;
   startMsgTimer = START_MSG_SHOW_SEC + START_MSG_FADE_SEC;
   startMsgEl.style.opacity = "1";
@@ -712,7 +712,7 @@ const FIRE_VISIBLE_DAYTIME = false;
 const FIRE_SPAWN_NIGHT_THRESHOLD = 0.45;
 const FIRE_SPAWN_DIST_MIN = 20.0;
 const FIRE_SPAWN_DIST_MAX = 30.0;
-const FIRE_SPAWN_ANGLE_JITTER_DEG = 18;
+const FIRE_SPAWN_ANGLE_JITTER_DEG = 0;
 const FIRE_SPAWN_TRIES = 10;
 const FIRE_KEEP_AT_LEAST_FROM_CAMI = 2.2;
 
@@ -755,7 +755,7 @@ const FOOD_HIGH_NOON_TIME01 = 0.50;
 
 const FOOD_SPAWN_DIST_MIN = 13.0;
 const FOOD_SPAWN_DIST_MAX = 17.0;
-const FOOD_SPAWN_ANGLE_JITTER_DEG = 22;
+const FOOD_SPAWN_ANGLE_JITTER_DEG = 0;
 const FOOD_SPAWN_TRIES = 18;
 const FOOD_KEEP_AT_LEAST_FROM_CAMI = 6.0;
 
@@ -786,7 +786,7 @@ const STUN_ONE_TIME_PER_GAME = true;  // true = only once per full run
 
 const STUN_SPAWN_DIST_MIN = 6.0;      // “close by”
 const STUN_SPAWN_DIST_MAX = 9.0;
-const STUN_SPAWN_ANGLE_JITTER_DEG = 30;
+const STUN_SPAWN_ANGLE_JITTER_DEG = 0;
 const STUN_SPAWN_TRIES = 20;
 const STUN_KEEP_AT_LEAST_FROM_CAMI = 2.2;
 
@@ -1929,7 +1929,10 @@ function frame(now){
   nightLit = computeNight(time01);
 
   const isNightNow = NIGHT_ENABLED && (nightLit.nightFactor >= NIGHT_PENALTY_START_NF);
-  if(isNightNow && !wasNight){ applyNightPenalty(); }
+  if(isNightNow && !wasNight){
+    applyNightPenalty();
+    showStartMsg("STAY BY THE FIRE TILL MORNING");
+  }
   wasNight = isNightNow;
 
   updateNightFireSpawn(nightLit);
@@ -2075,7 +2078,7 @@ requestAnimationFrame(frame);
 
 <div class="banner" id="foodBanner">FOOD AVAILABLE</div>
 <div class="banner" id="stunBanner">STUN GUN AVAILABLE</div>
-<div class="banner startMsg" id="startMsg">Head west to the shepherd shack.  Watch out for the wolf chasing you.</div>
+<div class="banner startMsg" id="startMsg">Head EAST .  Watch out for the wolf chasing you.</div>
 
 <div class="healthWrap" id="healthWrap"><div class="healthFill" id="healthFill"></div></div>
 <div class="healthText" id="healthText">HEALTH 100%</div>

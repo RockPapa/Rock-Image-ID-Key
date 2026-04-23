@@ -7,51 +7,13 @@
 <style>
   html, body { margin:0; height:100%; background:#000; overflow:hidden; }
   canvas { display:block; width:100vw; height:100vh; image-rendering: pixelated; }
-  /* HUD panels (text + health are separate so H hides text only) */
-.hudPanel{
-  position: fixed; left: 10px;
-  font: 14px/1.25 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  color: rgba(255,255,255,.92);
-  background: rgba(0,0,0,.35);
-  padding: 10px 12px;
-  border-radius: 10px;
-  max-width: min(1120px, calc(100vw - 24px));
-  z-index: 10;
-}
-.hudPanel b{ color:#fff; }
-
-/* Health stays visible */
-.hudHealth{ top: 10px; }
-
-/* Text panel removed; health bar remains */
-.hudText{ display:none !important; }
-
-  /* Health bar */
-  .healthRow{ margin-top:0; }
-  .healthLabel{ font-weight:600; font-size:12px; opacity:.95; margin-bottom:4px; }
-  .healthBar{
-    width: 220px; height: 14px;
-    background: rgba(255,255,255,.18);
-    border: 1px solid rgba(255,255,255,.35);
-    border-radius: 999px;
-    overflow: hidden;
-  }
-  .healthFill{
-    height: 100%;
-    width: 100%;
-    background: #e11d48; /* red */
-    transition: width .15s linear;
-  }
-  .healthPct{ font-size:12px; opacity:.9; margin-top:4px; }
-
-
   /* =========================
      📱 TOUCH CONTROLS + TOGGLE
      ========================= */
   #touchToggle{
     position: fixed;
     left: 10px;
-    top: 52px;
+    top: 10px;
     z-index: 9999;
     padding: 8px 10px;
     border-radius: 10px;
@@ -111,13 +73,6 @@
 </head>
 <body>
 <canvas id="c" tabindex="0"></canvas>
-<div id="hudHealth" class="hudPanel hudHealth">
-  <div class="healthLabel">HEALTH</div>
-  <div class="healthBar" aria-label="Health">
-    <div id="healthFill" class="healthFill"></div>
-  </div>
-  <div id="healthPct" class="healthPct">100%</div>
-</div>
 
 <div id="status" style="display:none"></div>
 
@@ -286,6 +241,7 @@
   // STUN DOOR (NEW)
   const STUN_DOOR_SIZE = 0.72;
   const STUN_DOOR_PICKUP_DIST = 34;
+  const AUTO_DOOR_OPEN_DIST = 42;
 
   /* =========================================================
      MUSIC (INSIDE): images/drama.mp3
@@ -840,18 +796,16 @@
   function autoOpenDoorOnCollision(nowMs){
     const pmx = (player.x / TILE) | 0;
     const pmy = (player.y / TILE) | 0;
-    const rr = (PRADIUS + 1) * (PRADIUS + 1);
+    const rr = AUTO_DOOR_OPEN_DIST * AUTO_DOOR_OPEN_DIST;
 
-    for(let my = pmy - 1; my <= pmy + 1; my++){
-      for(let mx = pmx - 1; mx <= pmx + 1; mx++){
+    for(let my = pmy - 2; my <= pmy + 2; my++){
+      for(let mx = pmx - 2; mx <= pmx + 2; mx++){
         if(cellAt(mx,my) !== "D") continue;
         const key = doorKey(mx,my);
         if(doorsOpen.has(key)) continue;
 
-        const l = mx * TILE, t = my * TILE;
-        const r = l + TILE,  b = t + TILE;
-        const cx = clamp(player.x, l, r);
-        const cy = clamp(player.y, t, b);
+        const cx = (mx + 0.5) * TILE;
+        const cy = (my + 0.5) * TILE;
         const dx = player.x - cx;
         const dy = player.y - cy;
         if((dx*dx + dy*dy) <= rr){
@@ -936,7 +890,6 @@
 
   function fakeKeyPress(code){
     // Call the same logic as real keys by emitting a KeyboardEvent.
-    // This keeps behavior identical (E opens door, Space fires, etc.)
     try{
       const ev = new KeyboardEvent("keydown", { code, bubbles:true });
       window.dispatchEvent(ev);
@@ -1449,7 +1402,7 @@
       if(keys.has("ArrowDown")) { vx -= Math.cos(player.a)*speed*dt; vy -= Math.sin(player.a)*speed*dt; }
       if(vx || vy) tryMovePlayer(player.x + vx, player.y + vy);
 
-      // Doors open automatically when the player's collision circle touches them.
+      // Doors open automatically when the player gets close.
       autoOpenDoorOnCollision(now);
     }
 

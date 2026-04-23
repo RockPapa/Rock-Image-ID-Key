@@ -10,12 +10,6 @@
   canvas#c { display:block; width:100vw; height:100vh; image-rendering:pixelated; }
   canvas#compass { display:block; width:64px; height:64px; image-rendering:auto; }
 
-  .hud{
-    position:fixed; left:12px; top:12px; z-index:10;
-    color:#fff; font:14px system-ui, -apple-system, Segoe UI, Roboto;
-    background:rgba(0,0,0,.45); padding:10px 12px; border-radius:12px;
-    line-height:1.35; user-select:none; min-width: 420px;
-  }
   .small{ opacity:.9; font-size:13px; }
   .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 
@@ -38,6 +32,15 @@
     pointer-events:none;
     user-select:none;
     white-space:nowrap;
+  }
+  .startMsg{
+    top:8%;
+    max-width:min(92vw, 900px);
+    white-space:normal;
+    text-align:center;
+    text-transform:none;
+    letter-spacing:0.01em;
+    font:600 20px/1.3 system-ui, -apple-system, Segoe UI, Roboto;
   }
 
   .healthWrap{
@@ -183,17 +186,6 @@
 <body>
 <canvas id="c" tabindex="0"></canvas>
 
-<div class="hud" id="hud">
-  <b>WolfGrove</b><br>
-  <b>Night Fire + Food After High Noon + Health Bar + ONE-SHOT STUN GUN</b>
-  • ↑/↓ move • ←/→ turn • SPACE jump (or shoot once if armed) • H HUD • K wolf on/off • P reset wolf<br>
-  <span class="small">
-    🛟 Secret save: when health ≤ 20%, a STUN GUN spawns near you. Touch it to ARM it.<br>
-    🔫 Then press SPACE to zap the wolf (stun) and play images/gun.mp3 + images/wolf_howl.mp3. Successful stuns give +10% health. After that, SPACE returns to jumping.
-  </span><br>
-  <div class="mono" id="stats"></div>
-</div>
-
 <script>
 window.addEventListener('DOMContentLoaded', () => {
 (() => {
@@ -207,11 +199,9 @@ const ctx = c.getContext("2d", { alpha:false });
 const compass = document.getElementById("compass");
 const cctx = compass.getContext("2d");
 
-const hud = document.getElementById("hud");
-const statsEl = document.getElementById("stats");
-
 const foodBannerEl = document.getElementById("foodBanner");
 const stunBannerEl = document.getElementById("stunBanner");
+const startMsgEl   = document.getElementById("startMsg");
 
 const healthFillEl = document.getElementById("healthFill");
 const healthTextEl = document.getElementById("healthText");
@@ -308,7 +298,7 @@ function virtualSpaceTap(){
 }
 
 function virtualDispatchKey(k){
-  // triggers the existing keydown handlers (HUD/WOLF toggles, etc.)
+  // triggers the existing keydown handlers
   try{
     window.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles:true }));
     window.dispatchEvent(new KeyboardEvent("keyup",   { key: k, bubbles:true }));
@@ -342,7 +332,6 @@ function bindTap(btn, code){
 
     if(code === "Space") virtualSpaceTap();
     else if(code === "KeyR") location.reload();
-    else if(code === "KeyH") virtualDispatchKey("h");
     else if(code === "KeyK") virtualDispatchKey("k");
     else if(code === "KeyP") virtualDispatchKey("p");
   }, {passive:false});
@@ -481,6 +470,27 @@ function updateStunBanner(dt){
     stunBannerEl.style.opacity = "1";
   }
 }
+
+const START_MSG_SHOW_SEC = 6.0;
+const START_MSG_FADE_SEC = 1.2;
+let startMsgTimer = 0;
+
+function showStartMsg(text = "Head northwest to the shepherd shack.  Watch out for the wolf chasing you."){
+  startMsgEl.textContent = text;
+  startMsgTimer = START_MSG_SHOW_SEC + START_MSG_FADE_SEC;
+  startMsgEl.style.opacity = "1";
+}
+function updateStartMsg(dt){
+  if(startMsgTimer <= 0){ startMsgEl.style.opacity = "0"; return; }
+  startMsgTimer -= dt;
+  if(startMsgTimer <= START_MSG_FADE_SEC){
+    const t = Math.max(0, startMsgTimer / START_MSG_FADE_SEC);
+    startMsgEl.style.opacity = String(t);
+  }else{
+    startMsgEl.style.opacity = "1";
+  }
+}
+showStartMsg();
 
 /* =========================================================
    AUDIO
@@ -981,14 +991,9 @@ let onGround = true;
 /* =========================================================
    HOTKEYS
 ========================================================= */
-let showHud = true;
 let WOLF_ENABLED = true;
 
 addEventListener("keydown",(e)=>{
-  if(e.key==="h"||e.key==="H"){
-    showHud = !showHud;
-    hud.style.display = showHud ? "block" : "none";
-  }
   if(e.key==="k"||e.key==="K") WOLF_ENABLED = !WOLF_ENABLED;
   if(e.key==="p"||e.key==="P") resetWolf(true);
 
@@ -1943,6 +1948,7 @@ function frame(now){
   advanceWolfAnim(dt);
   updateFoodBanner(dt);
   updateStunBanner(dt);
+  updateStartMsg(dt);
 
   updateAmbience(nightLit);
   if(!gameOver) updateWolf(dt);
@@ -2016,14 +2022,6 @@ function frame(now){
 
   updateHealthUI();
 
-  if(showHud){
-    statsEl.textContent =
-      `health:${health.toFixed(0)}  speedMult:${speedMult.toFixed(2)}  gameOver:${gameOver?"YES":"no"}\n`+
-      `phase:${nightLit.phase} time01:${time01.toFixed(2)} nightFactor:${nightLit.nightFactor.toFixed(2)}\n`+
-      `STUN pickupOnMap:${stunActive?"ON":"off"} hasGun:${hasStunGun?"Y":"n"} ammo:${stunAmmo} wolfStun:${wolfStunnedTimer.toFixed(1)}s\n`+
-      `fps:${fps}\nHUT: (${hutX.toFixed(1)}, ${hutY.toFixed(1)})  d=${Math.hypot(hutX-posX,hutY-posY).toFixed(1)}`;
-  }
-
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -2047,7 +2045,6 @@ requestAnimationFrame(frame);
       <button class="tcBtn" data-hold="ArrowUp">▲</button>
       <button class="tcBtn" data-hold="ArrowRight">⟳</button>
 
-      <button class="tcBtn tcSmall" data-tap="KeyH">HUD</button>
       <button class="tcBtn" data-hold="ArrowDown">▼</button>
       <button class="tcBtn tcSmall" data-tap="Space">JUMP</button>
     </div>
@@ -2077,6 +2074,7 @@ requestAnimationFrame(frame);
 
 <div class="banner" id="foodBanner">FOOD AVAILABLE</div>
 <div class="banner" id="stunBanner">STUN GUN AVAILABLE</div>
+<div class="banner startMsg" id="startMsg">Head northwest to the shepherd shack.  Watch out for the wolf chasing you.</div>
 
 <div class="healthWrap" id="healthWrap"><div class="healthFill" id="healthFill"></div></div>
 <div class="healthText" id="healthText">HEALTH 100%</div>

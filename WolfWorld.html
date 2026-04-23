@@ -1181,6 +1181,9 @@ function tryFireBonus(){
 function applyFireExitPenaltyIfNeeded(){
   const night = isNightEnoughForFireSafe();
   const inSafe = camiInFireSafeZone();
+  if(night && !wasInFireSafeZone && inSafe){
+    showStartMsg("STAY BY THE FIRE TILL MORNING");
+  }
   if(night && wasInFireSafeZone && !inSafe){
     addHealth(-FIRE_EXIT_NIGHT_HEALTH_PENALTY);
   }
@@ -2299,7 +2302,6 @@ function frame(now){
   const isNightNow = NIGHT_ENABLED && (nightLit.nightFactor >= NIGHT_PENALTY_START_NF);
   if(isNightNow && !wasNight){
     applyNightPenalty();
-    showStartMsg("STAY BY THE FIRE TILL MORNING");
   }
   wasNight = isNightNow;
 

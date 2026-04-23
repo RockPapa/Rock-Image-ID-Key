@@ -475,7 +475,7 @@ const START_MSG_SHOW_SEC = 6.0;
 const START_MSG_FADE_SEC = 1.2;
 let startMsgTimer = 0;
 
-function showStartMsg(text = "Head northwest to the shepherd shack.  Watch out for the wolf chasing you."){
+function showStartMsg(text = "Head west to the shepherd shack.  Watch out for the wolf chasing you."){
   startMsgEl.textContent = text;
   startMsgTimer = START_MSG_SHOW_SEC + START_MSG_FADE_SEC;
   startMsgEl.style.opacity = "1";
@@ -705,6 +705,7 @@ const FIRE_FPS = 14;
 const FIRE_SPRITE_SCALE = .59 * 1.7;
 const FIRE_YSHIFT = 0.02;
 const FIRE_CROP = { x: 0.18, y: 0.02, w: 0.64, h: 0.96 };
+const FIRE_FRAME_COUNT = 5;
 
 const FIRE_SPAWN_AT_NIGHT = true;
 const FIRE_VISIBLE_DAYTIME = false;
@@ -721,9 +722,9 @@ let fireActive = true;
 let fireSpawnedThisNight = false;
 
 const fireFrames = [];
-for(let i=1;i<=8;i++){
+for(let i=1;i<=FIRE_FRAME_COUNT;i++){
   const im = new Image();
-  im.src = `images/${i}.png`;
+  im.src = `images/fire${i}.png`;
   fireFrames.push(im);
 }
 let fireFrameIndex = 0;
@@ -1025,7 +1026,7 @@ function drawCompass(a){
 
   cctx.save();
   cctx.translate(cx,cy);
-  cctx.rotate(-a);
+  cctx.rotate(a);
   cctx.beginPath();
   cctx.moveTo(0,-r+4);
   cctx.lineTo(-4,6);
@@ -2074,7 +2075,7 @@ requestAnimationFrame(frame);
 
 <div class="banner" id="foodBanner">FOOD AVAILABLE</div>
 <div class="banner" id="stunBanner">STUN GUN AVAILABLE</div>
-<div class="banner startMsg" id="startMsg">Head northwest to the shepherd shack.  Watch out for the wolf chasing you.</div>
+<div class="banner startMsg" id="startMsg">Head west to the shepherd shack.  Watch out for the wolf chasing you.</div>
 
 <div class="healthWrap" id="healthWrap"><div class="healthFill" id="healthFill"></div></div>
 <div class="healthText" id="healthText">HEALTH 100%</div>

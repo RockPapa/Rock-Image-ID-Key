@@ -908,8 +908,8 @@ const SABER_HIT_RADIUS = 1.15;
 const SABER_YSHIFT = 0.34;
 const SABER_DAY_THRESHOLD = 0.45;
 const SABER_PASSES_PER_DAY = 3; // guaranteed target per daylight cycle
-const SABER_AHEAD_DIST_MIN = 5.6;
-const SABER_AHEAD_DIST_MAX = 8.4;
+const SABER_AHEAD_DIST_MIN = 5.6 * 1.12;
+const SABER_AHEAD_DIST_MAX = 8.4 * 1.12;
 const SABER_CENTER_AHEAD_FACTOR = 0.72;
 const SABER_SPEED_MIN = 3.8 * 0.5;
 const SABER_SPEED_MAX = 5.2 * 0.5;
@@ -982,6 +982,8 @@ const BLUE_BALL_LIFE_SEC = 1.35;
 const BLUE_BALL_SPRITE_SCALE = 0.28;
 const BLUE_BALL_YSHIFT = 0.18;
 const BLUE_BALL_SPAWN_AHEAD = 0.70;
+const SABER_KILL_HEALTH_BONUS = 10;
+const SABER_MISS_HEALTH_PENALTY = 5;
 
 const blueBalls = [];
 
@@ -992,7 +994,8 @@ function shootBlueBall(){
     y: posY + dirY * BLUE_BALL_SPAWN_AHEAD,
     vx: dirX * BLUE_BALL_SPEED,
     vy: dirY * BLUE_BALL_SPEED,
-    life: BLUE_BALL_LIFE_SEC
+    life: BLUE_BALL_LIFE_SEC,
+    unresolved: true
   });
 }
 
@@ -1008,12 +1011,17 @@ function updateBlueBalls(dt){
       const dy = b.y - saberY;
       if((dx*dx + dy*dy) <= (SABER_HIT_RADIUS * SABER_HIT_RADIUS)){
         saberActive = false;   // blue bullet kills saber
+        addHealth(SABER_KILL_HEALTH_BONUS);
+        b.unresolved = false;
         playSfxWithUnlock(tigerSfx);
         b.life = 0;
       }
     }
 
     if(b.life <= 0){
+      if(b.unresolved){
+        addHealth(-SABER_MISS_HEALTH_PENALTY);
+      }
       blueBalls.splice(i,1);
     }
   }

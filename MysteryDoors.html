@@ -241,7 +241,7 @@
   // STUN DOOR (NEW)
   const STUN_DOOR_SIZE = 0.72;
   const STUN_DOOR_PICKUP_DIST = 34;
-  const AUTO_DOOR_OPEN_DIST = 42;
+  const AUTO_DOOR_OPEN_DIST = 56;
 
   /* =========================================================
      MUSIC (INSIDE): images/drama.mp3
@@ -794,23 +794,18 @@
   }
 
   function autoOpenDoorOnCollision(nowMs){
-    const pmx = (player.x / TILE) | 0;
-    const pmy = (player.y / TILE) | 0;
     const rr = AUTO_DOOR_OPEN_DIST * AUTO_DOOR_OPEN_DIST;
 
-    for(let my = pmy - 2; my <= pmy + 2; my++){
-      for(let mx = pmx - 2; mx <= pmx + 2; mx++){
-        if(cellAt(mx,my) !== "D") continue;
-        const key = doorKey(mx,my);
-        if(doorsOpen.has(key)) continue;
-
-        const cx = (mx + 0.5) * TILE;
-        const cy = (my + 0.5) * TILE;
-        const dx = player.x - cx;
-        const dy = player.y - cy;
-        if((dx*dx + dy*dy) <= rr){
-          openDoorAt(mx, my, nowMs);
-        }
+    for(const d of allDoors){
+      if(doorsOpen.has(d.key)) continue;
+      const l = d.mx * TILE, t = d.my * TILE;
+      const r = l + TILE,  b = t + TILE;
+      const cx = clamp(player.x, l, r);
+      const cy = clamp(player.y, t, b);
+      const dx = player.x - cx;
+      const dy = player.y - cy;
+      if((dx*dx + dy*dy) <= rr){
+        openDoorAt(d.mx, d.my, nowMs);
       }
     }
   }

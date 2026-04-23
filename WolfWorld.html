@@ -247,7 +247,7 @@ const keys = new Set();
 let spacePressedEdge = false; // TRUE only on keydown, then cleared each frame
 
 addEventListener("keydown", e=>{
-  if(e.key.startsWith("Arrow")) e.preventDefault();
+  if(e.code.startsWith("Arrow")) e.preventDefault();
 
   if(e.code === "Space"){
     e.preventDefault();
@@ -257,13 +257,13 @@ addEventListener("keydown", e=>{
     keys.add("Space");
     return;
   }
-  keys.add(e.key);
+  keys.add(e.code.startsWith("Arrow") ? e.code : e.key);
 },{passive:false});
 
 addEventListener("keyup", e=>{
-  if(e.key.startsWith("Arrow")) e.preventDefault();
+  if(e.code.startsWith("Arrow")) e.preventDefault();
   if(e.code === "Space"){ e.preventDefault(); keys.delete("Space"); return; }
-  keys.delete(e.key);
+  keys.delete(e.code.startsWith("Arrow") ? e.code : e.key);
 },{passive:false});
 
 /* =========================================================
@@ -631,6 +631,10 @@ const gunSfx = new Audio("images/gun.mp3");
 gunSfx.preload = "auto";
 gunSfx.volume = 0.95;
 
+const tigerSfx = new Audio("images/tiger.mp3");
+tigerSfx.preload = "auto";
+tigerSfx.volume = 1.0;
+
 // Optional alt name some builds used:
 const shotSfx = new Audio("images/shot.mp3");
 shotSfx.preload = "auto";
@@ -674,7 +678,7 @@ function unlockAudioOnce(){
     }catch(e){}
   };
 
-  [foodPickupSfx, wolfGrowl, wolfHowl, screamSfx, gunSfx, shotSfx, dayAmbience, fireAmbience, walkingSfx, trumpetSfx].forEach(prime);
+  [foodPickupSfx, wolfGrowl, wolfHowl, screamSfx, gunSfx, tigerSfx, shotSfx, dayAmbience, fireAmbience, walkingSfx, trumpetSfx].forEach(prime);
 }
 window.addEventListener("pointerdown", unlockAudioOnce, {once:true});
 window.addEventListener("keydown", unlockAudioOnce, {once:true});
@@ -682,6 +686,14 @@ window.addEventListener("keydown", unlockAudioOnce, {once:true});
 function playSfx(a){
   if(!audioUnlocked) return;
   try{ a.currentTime = 0; a.play(); }catch(e){}
+}
+
+function playSfxWithUnlock(a){
+  if(!audioUnlocked) unlockAudioOnce();
+  try{
+    a.currentTime = 0;
+    a.play();
+  }catch(e){}
 }
 
 // =========================================================
@@ -823,9 +835,9 @@ const FIRE_FRAME_COUNT = 5;
 
 const FIRE_SPAWN_AT_NIGHT = true;
 const FIRE_VISIBLE_DAYTIME = false;
-const FIRE_SPAWN_NIGHT_THRESHOLD = 0.45;
-const FIRE_SPAWN_DIST_MIN = 20.0;
-const FIRE_SPAWN_DIST_MAX = 30.0;
+const FIRE_SPAWN_NIGHT_THRESHOLD = 0.35;
+const FIRE_SPAWN_DIST_MIN = 8.0;
+const FIRE_SPAWN_DIST_MAX = 13.0;
 const FIRE_SPAWN_ANGLE_JITTER_DEG = 0;
 const FIRE_SPAWN_TRIES = 10;
 const FIRE_KEEP_AT_LEAST_FROM_CAMI = 2.2;
@@ -885,32 +897,37 @@ let foodSpawnedThisDay = false;
 let foodPickedThisDay = false;
 
 /* =========================================================
-   SABER CROSSING (daytime, right -> left)
+   SABER ARC (daytime, semicircle in front of player)
 ========================================================= */
 const SABER_ENABLED = true;
 const SABER_IMG_PATH = "images/saber.png";
-const SABER_SPRITE_SCALE = 0.80;
+const SABER_SPRITE_SCALE = 0.80 * 1.75;
+const SABER_LENGTH_MUL = 1.30;
+const SABER_HEIGHT_MUL = 0.80;
+const SABER_HIT_RADIUS = 1.15;
 const SABER_YSHIFT = 0.34;
 const SABER_DAY_THRESHOLD = 0.45;
-const SABER_PASSES_PER_DAY = 3;
-const SABER_AHEAD_DIST_MIN = 12.0;
-const SABER_AHEAD_DIST_MAX = 17.0;
-const SABER_CROSS_HALF_MIN = 5.0;
-const SABER_CROSS_HALF_MAX = 7.0;
-const SABER_SPEED_MIN = 3.8;
-const SABER_SPEED_MAX = 5.2;
-const SABER_COOLDOWN_MIN = 4.0;
-const SABER_COOLDOWN_MAX = 9.0;
+const SABER_PASSES_PER_DAY = 3; // guaranteed target per daylight cycle
+const SABER_AHEAD_DIST_MIN = 5.6;
+const SABER_AHEAD_DIST_MAX = 8.4;
+const SABER_CENTER_AHEAD_FACTOR = 0.72;
+const SABER_SPEED_MIN = 3.8 * 0.5;
+const SABER_SPEED_MAX = 5.2 * 0.5;
+const SABER_COOLDOWN_MIN = 1.8;
+const SABER_COOLDOWN_MAX = 3.2;
+const SABER_ARC_START = -Math.PI * 0.5; // left-front edge
+const SABER_ARC_END = Math.PI * 0.5;    // right-front edge
 
 const saberImg = new Image();
 saberImg.src = SABER_IMG_PATH;
 
 let saberActive = false;
 let saberX = 0, saberY = 0;
-let saberVX = 0, saberVY = 0;
-let saberCenterX = 0, saberCenterY = 0;
-let saberRightX = 0, saberRightY = 0;
-let saberCrossHalf = 0;
+let saberAnchorX = 0, saberAnchorY = 0;
+let saberAnchorA = 0;
+let saberArcRadius = 0;
+let saberArcTheta = SABER_ARC_START;
+let saberArcOmega = 0;
 let saberPassesThisDay = 0;
 let saberSpawnCooldown = 2.0;
 
@@ -985,6 +1002,17 @@ function updateBlueBalls(dt){
     b.x += b.vx * dt;
     b.y += b.vy * dt;
     b.life -= dt;
+
+    if(saberActive){
+      const dx = b.x - saberX;
+      const dy = b.y - saberY;
+      if((dx*dx + dy*dy) <= (SABER_HIT_RADIUS * SABER_HIT_RADIUS)){
+        saberActive = false;   // blue bullet kills saber
+        playSfxWithUnlock(tigerSfx);
+        b.life = 0;
+      }
+    }
+
     if(b.life <= 0){
       blueBalls.splice(i,1);
     }
@@ -1572,7 +1600,7 @@ function updateLamb(dt){
   const nx = lambX + vx * dt;
   const ny = lambY + vy * dt;
 
-  const wouldHit = hitsAnyTree(nx, ny);
+  const wouldHit = hitsAnyObstacle(nx, ny);
   if(!wouldHit){
     lambX = nx;
     lambY = ny;
@@ -1659,6 +1687,9 @@ function regenerateRocks(){
   }
 }
 regenerateRocks();
+ensureSafePlayerSpawn();
+updateVisibleTrees();
+resetLamb();
 
 function platformUnderCami(){
   const rr2=(ROCK_RADIUS*1.05)**2;
@@ -1674,16 +1705,59 @@ function platformUnderCami(){
   return null;
 }
 
-function hitsAnyTree(nx, ny){
+function hitsAnyObstacle(nx, ny){
   if(camZ > 0.10) return false;
-  const rr = (CAMI_RADIUS + TREE_TRUNK_RADIUS);
-  const rr2 = rr*rr;
+  const trr = (CAMI_RADIUS + TREE_TRUNK_RADIUS);
+  const trr2 = trr*trr;
   for(const t of visibleTrees){
     const dx = nx - t.x;
     const dy = ny - t.y;
-    if(dx*dx + dy*dy < rr2) return true;
+    if(dx*dx + dy*dy < trr2) return true;
+  }
+  const rrr = (CAMI_RADIUS + ROCK_RADIUS);
+  const rrr2 = rrr*rrr;
+  for(const r of ROCKS){
+    const dx = nx - r.x;
+    const dy = ny - r.y;
+    if(dx*dx + dy*dy < rrr2) return true;
   }
   return false;
+}
+
+function isSpawnBlocked(nx, ny){
+  const trr = (CAMI_RADIUS + TREE_TRUNK_RADIUS + 0.12);
+  const trr2 = trr*trr;
+  for(const t of TREES){
+    const dx = nx - t.x;
+    const dy = ny - t.y;
+    if(dx*dx + dy*dy < trr2) return true;
+  }
+  const rrr = (CAMI_RADIUS + ROCK_RADIUS + 0.12);
+  const rrr2 = rrr*rrr;
+  for(const r of ROCKS){
+    const dx = nx - r.x;
+    const dy = ny - r.y;
+    if(dx*dx + dy*dy < rrr2) return true;
+  }
+  return false;
+}
+
+function ensureSafePlayerSpawn(){
+  if(!isSpawnBlocked(posX, posY)) return;
+  const baseX = posX, baseY = posY;
+  const maxR = 36;
+  for(let r=1; r<=maxR; r+=0.75){
+    for(let i=0; i<32; i++){
+      const a = (i/32) * Math.PI * 2 + r * 0.21;
+      const nx = baseX + Math.cos(a) * r;
+      const ny = baseY + Math.sin(a) * r;
+      if(!isSpawnBlocked(nx, ny)){
+        posX = nx;
+        posY = ny;
+        return;
+      }
+    }
+  }
 }
 
 /* =========================================================
@@ -1749,27 +1823,35 @@ function pickSpawnPoint({ distMin, distMax, jitterDeg, tries, keepAtLeastFromCam
 
 function resetSaberDayCycle(){
   saberPassesThisDay = 0;
-  saberSpawnCooldown = rand(SABER_COOLDOWN_MIN, SABER_COOLDOWN_MAX);
+  saberSpawnCooldown = 0.8;
   saberActive = false;
 }
 
+function setSaberArcPosition(){
+  const fx = Math.cos(saberAnchorA);
+  const fy = Math.sin(saberAnchorA);
+  const rx = fy;
+  const ry = -fx;
+  const c = Math.cos(saberArcTheta);
+  const s = Math.sin(saberArcTheta);
+
+  saberX = saberAnchorX + (fx * (c * saberArcRadius)) + (rx * (s * saberArcRadius));
+  saberY = saberAnchorY + (fy * (c * saberArcRadius)) + (ry * (s * saberArcRadius));
+}
+
 function spawnSaberPass(){
-  const aheadDist = rand(SABER_AHEAD_DIST_MIN, SABER_AHEAD_DIST_MAX);
-  saberCrossHalf = rand(SABER_CROSS_HALF_MIN, SABER_CROSS_HALF_MAX);
+  saberArcRadius = rand(SABER_AHEAD_DIST_MIN, SABER_AHEAD_DIST_MAX);
   const speed = rand(SABER_SPEED_MIN, SABER_SPEED_MAX);
 
-  saberCenterX = posX + dirX * aheadDist;
-  saberCenterY = posY + dirY * aheadDist;
+  // Keep the semicircle clearly in front of the player for visibility.
+  const centerAhead = saberArcRadius * SABER_CENTER_AHEAD_FACTOR;
+  saberAnchorX = posX + Math.cos(ang) * centerAhead;
+  saberAnchorY = posY + Math.sin(ang) * centerAhead;
+  saberAnchorA = ang;
+  saberArcTheta = SABER_ARC_START;
+  saberArcOmega = speed / Math.max(0.001, saberArcRadius);
+  setSaberArcPosition();
 
-  // Right-hand vector relative to facing direction.
-  saberRightX = dirY;
-  saberRightY = -dirX;
-
-  // Spawn on player's right and move to player's left.
-  saberX = saberCenterX + saberRightX * saberCrossHalf;
-  saberY = saberCenterY + saberRightY * saberCrossHalf;
-  saberVX = -saberRightX * speed;
-  saberVY = -saberRightY * speed;
   saberActive = true;
   saberPassesThisDay += 1;
   saberSpawnCooldown = rand(SABER_COOLDOWN_MIN, SABER_COOLDOWN_MAX);
@@ -1788,12 +1870,10 @@ function updateDaySaber(lit, dt){
   }
 
   if(saberActive){
-    saberX += saberVX * dt;
-    saberY += saberVY * dt;
-    const px = saberX - saberCenterX;
-    const py = saberY - saberCenterY;
-    const side = (px * saberRightX) + (py * saberRightY);
-    if(side <= -saberCrossHalf){
+    saberArcTheta += saberArcOmega * dt;
+    setSaberArcPosition();
+
+    if(saberArcTheta >= SABER_ARC_END){
       saberActive = false;
     }
     return;
@@ -1958,6 +2038,25 @@ function drawSpriteSimple(img, sx, sy, scale){
 
   if(!img || !img.complete || img.naturalWidth<=0) return;
   ctx.drawImage(img, x, y, size, size);
+}
+
+function drawSpriteStretchedX(img, sx, sy, scale, stretchX, stretchY=1, yShiftFactor=0){
+  const p = projectSprite(sx, sy);
+  if(!p) return;
+
+  const base = p.size * scale;
+  const w = base * stretchX;
+  const h = base * stretchY;
+  const x = p.screenX - w/2;
+  const y0 = (p.h/2 - h/2);
+  const y = y0 + (h * yShiftFactor);
+
+  if(!img || !img.complete || img.naturalWidth<=0){
+    ctx.fillStyle = "rgba(180,230,255,0.92)";
+    ctx.fillRect(x, y, w, h);
+    return;
+  }
+  ctx.drawImage(img, x, y, w, h);
 }
 
 function drawBlueBallSprite(wx, wy, scale, yShiftFactor){
@@ -2156,8 +2255,11 @@ function frame(now){
 
   updateVisibleTrees();
 
-  // SPACE now always shoots a blue ball (no jump).
-  if(spacePressedEdge) shootBlueBall();
+  // SPACE now always shoots a blue ball (no jump) and plays gun SFX.
+  if(spacePressedEdge){
+    shootBlueBall();
+    playSfx(gunSfx);
+  }
   spacePressedEdge = false;
 
   if(!gameOver) updateJump(dt, false);
@@ -2172,8 +2274,8 @@ function frame(now){
   if(step){
     const nx = posX + dirX*step;
     const ny = posY + dirY*step;
-    if(!hitsAnyTree(nx, posY)) posX = nx;
-    if(!hitsAnyTree(posX, ny)) posY = ny;
+    if(!hitsAnyObstacle(nx, posY)) posX = nx;
+    if(!hitsAnyObstacle(posX, ny)) posY = ny;
   }
 
   if(!NIGHT_PAUSED){
@@ -2284,7 +2386,7 @@ function frame(now){
     }else if(s.kind === "stun"){
       drawSprite(stunImg, s.x, s.y, STUN_SPRITE_SCALE, "rgba(150,220,255,0.85)", STUN_YSHIFT);
     }else if(s.kind === "saber"){
-      drawSprite(saberImg, s.x, s.y, SABER_SPRITE_SCALE, "rgba(230,230,255,0.9)", SABER_YSHIFT);
+      drawSpriteStretchedX(saberImg, s.x, s.y, SABER_SPRITE_SCALE, SABER_LENGTH_MUL, SABER_HEIGHT_MUL, SABER_YSHIFT);
     }else if(s.kind === "blueball"){
       drawBlueBallSprite(s.x, s.y, BLUE_BALL_SPRITE_SCALE, BLUE_BALL_YSHIFT);
     }else if(s.kind === "hut"){

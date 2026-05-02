@@ -1046,7 +1046,9 @@ function updateBlueBalls(dt){
       }
     }
 
-    for(const s of spiders){
+    for(let si=0; si<spiders.length; si++){
+      if(!activeSpiderIdxSet.has(si)) continue;
+      const s = spiders[si];
       if(!s.alive) continue;
       const sx = b.x - s.x;
       const sy = b.y - s.y;
@@ -1165,8 +1167,8 @@ let NIGHT_SPEED_MUL = .5;
 let time01          = 0.58;
 let prevTime01      = time01;
 const DAY_LENGTH_SEC = 90;
-const DAY_DURATION_SCALE = 1.20;   // +20% duration
-const NIGHT_DURATION_SCALE = 0.80; // -20% duration
+const DAY_DURATION_SCALE = 1.30;   // +30% duration
+const NIGHT_DURATION_SCALE = 0.70; // -30% duration
 
 const NIGHT_PENALTY_START_NF = 0.82;
 let wasNight = false;
@@ -2345,19 +2347,26 @@ const SPIDER_SPRITE_SCALE = 0.72;
 const SPIDER_SPEED = 0.95;
 const SPIDER_TURN = 6.0;
 const SPIDER_CATCH_DIST = 0.90;
-const SPIDER_ATTACK_COOLDOWN = 4.0;
+const SPIDER_ATTACK_COOLDOWN = 20.0;
 const SPIDER_FRONT_REPOSITION_DIST = 6.5;
 const SPIDER_ATTACK_PAIR_SIZE = 2;
-const SPIDER_PAIR_SWITCH_SEC = 4.0;
+const SPIDER_PAIR_SWITCH_SEC = 20.0;
+const SPIDER_PAIR_RESPAWN_SEC = 20.0;
 
 const spiders = [];
 let spiderPairOffset = 0;
 let spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
+let spiderRespawnTimer = SPIDER_PAIR_RESPAWN_SEC;
+let spiderNextGlobalAttackAtMs = 0;
+let activeSpiderIdxSet = new Set();
 
 function resetSpiders(putInFront=false){
   spiders.length = 0;
   spiderPairOffset = 0;
   spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
+  spiderRespawnTimer = SPIDER_PAIR_RESPAWN_SEC;
+  spiderNextGlobalAttackAtMs = 0;
+  activeSpiderIdxSet = new Set();
   const frontBase = putInFront ? 8.0 : -8.0;
   for(let i=0; i<SPIDER_COUNT; i++){
     const side = (i - (SPIDER_COUNT - 1) / 2) * 1.5;
@@ -2372,13 +2381,45 @@ function resetSpiders(putInFront=false){
       alive: true
     });
   }
+  for(let i=0; i<Math.min(SPIDER_ATTACK_PAIR_SIZE, spiders.length); i++){
+    activeSpiderIdxSet.add(i);
+  }
 }
 resetSpiders(true);
 
-function updateSpiders(dt){
+function respawnSpiderPair(){
+  const deadIdx = [];
+  for(let i=0; i<spiders.length; i++){
+    if(!spiders[i].alive) deadIdx.push(i);
+  }
+  if(!deadIdx.length) return;
+
+  const spawnCount = Math.min(SPIDER_ATTACK_PAIR_SIZE, deadIdx.length);
+  for(let n=0; n<spawnCount; n++){
+    const i = deadIdx[n];
+    const s = spiders[i];
+    const side = (i - (SPIDER_COUNT - 1) / 2) * 1.2;
+    const front = SPIDER_FRONT_REPOSITION_DIST + (Math.random() * 1.4 - 0.7);
+    s.x = posX + dirX * front + (-dirY) * side;
+    s.y = posY + dirY * front + ( dirX) * side;
+    s.vx = 0;
+    s.vy = 0;
+    s.attackTimer = 0;
+    s.alive = true;
+  }
+}
+
+function updateSpiders(dt, nowMs){
   if(gameOver) return;
   const fireSafe = playerNearFireAnimation();
   const camiSafe = (camZ > 0.10) || fireSafe;
+
+  spiderRespawnTimer -= dt;
+  if(spiderRespawnTimer <= 0){
+    respawnSpiderPair();
+    spiderRespawnTimer = SPIDER_PAIR_RESPAWN_SEC;
+  }
+
   const aliveIdx = [];
   for(let i=0; i<spiders.length; i++){
     if(spiders[i].alive) aliveIdx.push(i);
@@ -2397,6 +2438,7 @@ function updateSpiders(dt){
   for(let k=0; k<activeCount; k++){
     activeSet.add(aliveIdx[(spiderPairOffset + k) % aliveIdx.length]);
   }
+  activeSpiderIdxSet = activeSet;
 
   for(let i=0; i<spiders.length; i++){
     const s = spiders[i];
@@ -2419,8 +2461,6 @@ function updateSpiders(dt){
       // Non-active spiders hold their lane while waiting for the next pair turn.
       s.vx *= 0.8;
       s.vy *= 0.8;
-      s.x += s.vx * dt;
-      s.y += s.vy * dt;
       continue;
     }
 
@@ -2429,10 +2469,11 @@ function updateSpiders(dt){
     const dist = Math.hypot(dx, dy) || 1;
 
     s.attackTimer = Math.max(0, s.attackTimer - dt);
-    if(!camiSafe && dist < SPIDER_CATCH_DIST && s.attackTimer <= 0){
+    if(!camiSafe && dist < SPIDER_CATCH_DIST && s.attackTimer <= 0 && nowMs >= spiderNextGlobalAttackAtMs){
       playSfx(screamSfx);
       applySpiderHitPenalty();
       s.attackTimer = SPIDER_ATTACK_COOLDOWN;
+      spiderNextGlobalAttackAtMs = nowMs + (SPIDER_ATTACK_COOLDOWN * 1000);
     }
 
     const ux = dx / dist;
@@ -2558,7 +2599,7 @@ function frame(now){
 
   updateAmbience(nightLit);
   if(!gameOver) updateWolf(dt);
-  if(!gameOver) updateSpiders(dt);
+  if(!gameOver) updateSpiders(dt, now);
   if(!gameOver) updateLamb(dt);
   if(!gameOver) tryLambPickup(dt);
   checkHutCollision();
@@ -2610,7 +2651,9 @@ function frame(now){
     const dx = wolfX - posX, dy = wolfY - posY;
     sprites.push({x:wolfX, y:wolfY, d2:dx*dx+dy*dy, kind:"wolf"});
   }
-  for(const s of spiders){
+  for(let i=0; i<spiders.length; i++){
+    if(!activeSpiderIdxSet.has(i)) continue;
+    const s = spiders[i];
     if(!s.alive) continue;
     const dx = s.x - posX, dy = s.y - posY;
     sprites.push({x:s.x, y:s.y, d2:dx*dx+dy*dy, kind:"spider"});

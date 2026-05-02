@@ -1306,6 +1306,7 @@ const MOON_LIFT    = 0.12;
 const NIGHT_TINT = { r: 10, g: 25, b: 30 };
 const NIGHT_TINT_ALPHA_AT_FULL_NIGHT = 0.18;
 const VIGNETTE_STRENGTH = 0.35;
+const SUN_BRIGHTNESS_BOOST = 1.18;
 
 function clamp01(x){ return x<0?0:(x>1?1:x); }
 function smoothstep(e0,e1,x){
@@ -1335,8 +1336,8 @@ function computeNight(t01){
   else if (t01 > 0.12 && t01 < 0.38) phase = "Dawn";
 
   const SKY = {
-    dayTop:    {r: 12,  g: 34,  b: 92 },
-    dayH:      {r: 190, g: 228, b: 255},
+    dayTop:    {r: 20,  g: 52,  b: 125},
+    dayH:      {r: 215, g: 240, b: 255},
     duskTop:   {r: 35,  g: 35,  b: 90 },
     duskH:     {r: 140, g: 85,  b: 120},
     nightTop:  {r: 5,   g: 10,  b: 25 },
@@ -1450,7 +1451,7 @@ const MOUNTAIN_BAND_PX       = 70;   // 🔧 bigger band = taller mountains
 const MOUNTAIN_COLOR         = { r: 120, g: 135, b: 155 }; // gray-blue
 const MOUNTAIN_HAZE_STRENGTH = 0.55; // 🔧 stronger haze/visibility
 
-const FOG_NEAR = 10, FOG_FAR = 120, FLOOR_NEAR_DIM=0.85, FOG_COLOR={r:205,g:220,b:235};
+const FOG_NEAR = 10, FOG_FAR = 120, FLOOR_NEAR_DIM=0.94, FOG_COLOR={r:205,g:220,b:235};
 
 function renderSkyAndFloor(){
   const w=c.width, h=c.height, half=h>>1;
@@ -1549,6 +1550,11 @@ function renderSkyAndFloor(){
       r = (r * FLOOR_NEAR_DIM) | 0;
       g = (g * FLOOR_NEAR_DIM) | 0;
       b = (b * FLOOR_NEAR_DIM) | 0;
+
+      const dayBoost = 1 + (nightLit.sun * (SUN_BRIGHTNESS_BOOST - 1));
+      r = Math.min(255, (r * dayBoost) | 0);
+      g = Math.min(255, (g * dayBoost) | 0);
+      b = Math.min(255, (b * dayBoost) | 0);
 
       r = (r + (FOG_COLOR.r - r) * fog) | 0;
       g = (g + (FOG_COLOR.g - g) * fog) | 0;
@@ -2110,6 +2116,29 @@ function drawSpriteStretchedX(img, sx, sy, scale, stretchX, stretchY=1, yShiftFa
   ctx.drawImage(img, x, y, w, h);
 }
 
+function drawGroundShadow(wx, wy, scale, yShiftFactor=0, strength=0.22){
+  const p = projectSprite(wx, wy);
+  if(!p) return;
+
+  const size = p.size * scale;
+  const x = p.screenX;
+  const y0 = (p.h/2 - size/2);
+  const y = y0 + (size * yShiftFactor);
+  const baseY = y + (size * 0.88);
+
+  const rx = Math.max(2, size * 0.28);
+  const ry = Math.max(1, size * 0.10);
+  const alpha = strength * (0.25 + nightLit.sun * 0.75);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(0,0,0,1)";
+  ctx.beginPath();
+  ctx.ellipse(x, baseY, rx, ry, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
 function drawBlueBallSprite(wx, wy, scale, yShiftFactor){
   const p = projectSprite(wx, wy);
   if(!p) return;
@@ -2273,7 +2302,7 @@ const SPIDER_SPRITE_SCALE = 0.72;
 const SPIDER_SPEED = 0.95;
 const SPIDER_TURN = 6.0;
 const SPIDER_CATCH_DIST = 0.90;
-const SPIDER_ATTACK_COOLDOWN = 3.0;
+const SPIDER_ATTACK_COOLDOWN = 4.0;
 
 let spiderX = 0, spiderY = 0;
 let spiderVX = 0, spiderVY = 0;
@@ -2488,6 +2517,20 @@ function frame(now){
   sprites.sort((a,b)=>b.d2-a.d2);
 
   for(const s of sprites){
+    if(s.kind === "wolf"){
+      drawGroundShadow(s.x, s.y, WOLF_SPRITE_SCALE, 0.35, 0.30);
+    }else if(s.kind === "spider"){
+      drawGroundShadow(s.x, s.y, SPIDER_SPRITE_SCALE, 0.36, 0.26);
+    }else if(s.kind === "lamb"){
+      drawGroundShadow(s.x, s.y, LAMB_SPRITE_SCALE, 0.35, 0.22);
+    }else if(s.kind === "rock"){
+      drawGroundShadow(s.x, s.y, ROCK_SPRITE_SCALE, 0.30, 0.18);
+    }else if(s.kind === "hut"){
+      drawGroundShadow(s.x, s.y, HUT_SPRITE_SCALE, 0.0, 0.24);
+    }else if(s.kind === "tree"){
+      drawGroundShadow(s.x, s.y, TREE_SPRITE_SCALE, 0.0, 0.14);
+    }
+
     if(s.kind === "wolf"){
       drawWolfFramesSprite(s.x, s.y, WOLF_SPRITE_SCALE, 0.35);
     }else if(s.kind === "spider"){

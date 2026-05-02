@@ -4629,7 +4629,7 @@ preloadFromRepoFolder().catch((e)=>{
 });
 initRefuelHUD();
 initIpadControls();
-if(IOS_DEVICE) setIpadControlsVisible(true);
+setIpadControlsVisible(true);
 
 addEventListener('beforeunload', ()=>{
   try{ stopWeirdLoop(); }catch(e){}

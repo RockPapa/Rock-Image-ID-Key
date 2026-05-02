@@ -1165,8 +1165,8 @@ let NIGHT_SPEED_MUL = .5;
 let time01          = 0.58;
 let prevTime01      = time01;
 const DAY_LENGTH_SEC = 90;
-const DAY_DURATION_SCALE = 1.12;   // +12% duration
-const NIGHT_DURATION_SCALE = 0.88; // -12% duration
+const DAY_DURATION_SCALE = 1.20;   // +20% duration
+const NIGHT_DURATION_SCALE = 0.80; // -20% duration
 
 const NIGHT_PENALTY_START_NF = 0.82;
 let wasNight = false;
@@ -1218,6 +1218,12 @@ function applyEastHeadingRule(dt){
 
 function isNightEnoughForFireSafe(){
   return NIGHT_ENABLED && nightLit.nightFactor >= FIRE_SAFE_NIGHT_THRESHOLD;
+}
+function playerNearFireAnimation(){
+  if(!FIRE_ENABLED || !fireActive) return false;
+  const dx = posX - fireX;
+  const dy = posY - fireY;
+  return (dx*dx + dy*dy) <= (FIRE_SAFE_RADIUS * FIRE_SAFE_RADIUS);
 }
 function camiInFireSafeZone(){
   if(!FIRE_SAFE_ENABLED || !FIRE_ENABLED) return false;
@@ -2300,7 +2306,7 @@ function updateWolf(dt){
     return;
   }
 
-  const fireSafe = camiInFireSafeZone();
+  const fireSafe = playerNearFireAnimation();
   const camiSafe = (camZ > 0.10) || fireSafe;
 
   const dx = posX - wolfX;
@@ -2341,11 +2347,17 @@ const SPIDER_TURN = 6.0;
 const SPIDER_CATCH_DIST = 0.90;
 const SPIDER_ATTACK_COOLDOWN = 4.0;
 const SPIDER_FRONT_REPOSITION_DIST = 6.5;
+const SPIDER_ATTACK_PAIR_SIZE = 2;
+const SPIDER_PAIR_SWITCH_SEC = 4.0;
 
 const spiders = [];
+let spiderPairOffset = 0;
+let spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
 
 function resetSpiders(putInFront=false){
   spiders.length = 0;
+  spiderPairOffset = 0;
+  spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
   const frontBase = putInFront ? 8.0 : -8.0;
   for(let i=0; i<SPIDER_COUNT; i++){
     const side = (i - (SPIDER_COUNT - 1) / 2) * 1.5;
@@ -2365,8 +2377,26 @@ resetSpiders(true);
 
 function updateSpiders(dt){
   if(gameOver) return;
-  const fireSafe = camiInFireSafeZone();
+  const fireSafe = playerNearFireAnimation();
   const camiSafe = (camZ > 0.10) || fireSafe;
+  const aliveIdx = [];
+  for(let i=0; i<spiders.length; i++){
+    if(spiders[i].alive) aliveIdx.push(i);
+  }
+  if(!aliveIdx.length) return;
+
+  spiderPairTimer -= dt;
+  if(spiderPairTimer <= 0){
+    const step = Math.min(SPIDER_ATTACK_PAIR_SIZE, aliveIdx.length);
+    spiderPairOffset = (spiderPairOffset + step) % aliveIdx.length;
+    spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
+  }
+
+  const activeSet = new Set();
+  const activeCount = Math.min(SPIDER_ATTACK_PAIR_SIZE, aliveIdx.length);
+  for(let k=0; k<activeCount; k++){
+    activeSet.add(aliveIdx[(spiderPairOffset + k) % aliveIdx.length]);
+  }
 
   for(let i=0; i<spiders.length; i++){
     const s = spiders[i];
@@ -2383,6 +2413,15 @@ function updateSpiders(dt){
       s.y = posY + dirY * front + ( dirX) * side;
       s.vx = 0;
       s.vy = 0;
+    }
+
+    if(!activeSet.has(i)){
+      // Non-active spiders hold their lane while waiting for the next pair turn.
+      s.vx *= 0.8;
+      s.vy *= 0.8;
+      s.x += s.vx * dt;
+      s.y += s.vy * dt;
+      continue;
     }
 
     const dx = posX - s.x;

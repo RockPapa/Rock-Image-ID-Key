@@ -1011,7 +1011,8 @@ const BLUE_BALL_SPAWN_AHEAD = 0.70;
 const SABER_KILL_HEALTH_BONUS = 10;
 const SABER_MISS_HEALTH_PENALTY = 5;
 const SPIDER_HIT_RADIUS = 0.95;
-const SPIDER_RESPAWN_DELAY_SEC = 3.0;
+const SPIDER_STUN_DURATION_SEC = 3.0;
+const SPIDER_COUNT = 4; // original + 3 more
 
 const blueBalls = [];
 
@@ -1046,14 +1047,17 @@ function updateBlueBalls(dt){
       }
     }
 
-    if(spiderAlive){
-      const sx = b.x - spiderX;
-      const sy = b.y - spiderY;
+    for(const s of spiders){
+      if(s.stunTimer > 0) continue;
+      const sx = b.x - s.x;
+      const sy = b.y - s.y;
       if((sx*sx + sy*sy) <= (SPIDER_HIT_RADIUS * SPIDER_HIT_RADIUS)){
-        spiderAlive = false;
-        spiderRespawnTimer = SPIDER_RESPAWN_DELAY_SEC;
+        s.stunTimer = SPIDER_STUN_DURATION_SEC;
+        s.vx = 0;
+        s.vy = 0;
         b.unresolved = false;
         b.life = 0;
+        break;
       }
     }
 
@@ -1342,7 +1346,7 @@ const MOON_LIFT    = 0.12;
 const NIGHT_TINT = { r: 10, g: 25, b: 30 };
 const NIGHT_TINT_ALPHA_AT_FULL_NIGHT = 0.18;
 const VIGNETTE_STRENGTH = 0.35;
-const SUN_BRIGHTNESS_BOOST = 1.18;
+const SUN_BRIGHTNESS_BOOST = 1.30;
 
 function clamp01(x){ return x<0?0:(x>1?1:x); }
 function smoothstep(e0,e1,x){
@@ -2164,7 +2168,7 @@ function drawGroundShadow(wx, wy, scale, yShiftFactor=0, strength=0.22){
 
   const rx = Math.max(2, size * 0.28);
   const ry = Math.max(1, size * 0.10);
-  const alpha = strength * (0.25 + nightLit.sun * 0.75);
+  const alpha = Math.min(0.95, strength * 1.2 * (0.25 + nightLit.sun * 0.75));
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -2340,55 +2344,60 @@ const SPIDER_TURN = 6.0;
 const SPIDER_CATCH_DIST = 0.90;
 const SPIDER_ATTACK_COOLDOWN = 4.0;
 
-let spiderX = 0, spiderY = 0;
-let spiderVX = 0, spiderVY = 0;
-let spiderAttackTimer = 0;
-let spiderAlive = true;
-let spiderRespawnTimer = 0;
+const spiders = [];
 
-function resetSpider(putInFront=false){
-  const front = putInFront ? 8.0 : -8.0;
-  spiderX = posX + dirX * front + (dirY) * 2.0;
-  spiderY = posY + dirY * front + (-dirX) * 2.0;
-  spiderVX = 0;
-  spiderVY = 0;
-  spiderAttackTimer = 0;
-  spiderAlive = true;
-  spiderRespawnTimer = 0;
-}
-resetSpider(true);
-
-function updateSpider(dt){
-  if(gameOver) return;
-  if(!spiderAlive){
-    spiderRespawnTimer = Math.max(0, spiderRespawnTimer - dt);
-    if(spiderRespawnTimer <= 0) resetSpider(false);
-    return;
+function resetSpiders(putInFront=false){
+  spiders.length = 0;
+  const frontBase = putInFront ? 8.0 : -8.0;
+  for(let i=0; i<SPIDER_COUNT; i++){
+    const side = (i - (SPIDER_COUNT - 1) / 2) * 1.5;
+    const frontJitter = (Math.random() * 2.0) - 1.0;
+    const front = frontBase + frontJitter;
+    spiders.push({
+      x: posX + dirX * front + (dirY) * (2.0 + side),
+      y: posY + dirY * front + (-dirX) * (2.0 + side),
+      vx: 0,
+      vy: 0,
+      attackTimer: 0,
+      stunTimer: 0
+    });
   }
+}
+resetSpiders(true);
 
+function updateSpiders(dt){
+  if(gameOver) return;
   const fireSafe = camiInFireSafeZone();
   const camiSafe = (camZ > 0.10) || fireSafe;
-  const dx = posX - spiderX;
-  const dy = posY - spiderY;
-  const dist = Math.hypot(dx, dy) || 1;
 
-  spiderAttackTimer = Math.max(0, spiderAttackTimer - dt);
-  if(!camiSafe && dist < SPIDER_CATCH_DIST && spiderAttackTimer <= 0){
-    playSfx(screamSfx);
-    applySpiderHitPenalty();
-    spiderAttackTimer = SPIDER_ATTACK_COOLDOWN;
+  for(const s of spiders){
+    if(s.stunTimer > 0){
+      s.stunTimer = Math.max(0, s.stunTimer - dt);
+      continue;
+    }
+
+    const dx = posX - s.x;
+    const dy = posY - s.y;
+    const dist = Math.hypot(dx, dy) || 1;
+
+    s.attackTimer = Math.max(0, s.attackTimer - dt);
+    if(!camiSafe && dist < SPIDER_CATCH_DIST && s.attackTimer <= 0){
+      playSfx(screamSfx);
+      applySpiderHitPenalty();
+      s.attackTimer = SPIDER_ATTACK_COOLDOWN;
+    }
+
+    const ux = dx / dist;
+    const uy = dy / dist;
+    const desiredVX = ux * SPIDER_SPEED;
+    const desiredVY = uy * SPIDER_SPEED;
+    const k = Math.min(1, SPIDER_TURN * dt);
+    s.vx += (desiredVX - s.vx) * k;
+    s.vy += (desiredVY - s.vy) * k;
+
+    s.x += s.vx * dt;
+    s.y += s.vy * dt;
   }
-
-  const ux = dx / dist;
-  const uy = dy / dist;
-  const desiredVX = ux * SPIDER_SPEED;
-  const desiredVY = uy * SPIDER_SPEED;
-  const k = Math.min(1, SPIDER_TURN * dt);
-  spiderVX += (desiredVX - spiderVX) * k;
-  spiderVY += (desiredVY - spiderVY) * k;
-
-  spiderX += spiderVX * dt;
-  spiderY += spiderVY * dt;
 }
 
 /* =========================================================
@@ -2501,7 +2510,7 @@ function frame(now){
 
   updateAmbience(nightLit);
   if(!gameOver) updateWolf(dt);
-  if(!gameOver) updateSpider(dt);
+  if(!gameOver) updateSpiders(dt);
   if(!gameOver) updateLamb(dt);
   if(!gameOver) tryLambPickup(dt);
   checkHutCollision();
@@ -2553,9 +2562,9 @@ function frame(now){
     const dx = wolfX - posX, dy = wolfY - posY;
     sprites.push({x:wolfX, y:wolfY, d2:dx*dx+dy*dy, kind:"wolf"});
   }
-  if(spiderAlive){
-    const dx = spiderX - posX, dy = spiderY - posY;
-    sprites.push({x:spiderX, y:spiderY, d2:dx*dx+dy*dy, kind:"spider"});
+  for(const s of spiders){
+    const dx = s.x - posX, dy = s.y - posY;
+    sprites.push({x:s.x, y:s.y, d2:dx*dx+dy*dy, kind:"spider"});
   }
 
   sprites.sort((a,b)=>b.d2-a.d2);

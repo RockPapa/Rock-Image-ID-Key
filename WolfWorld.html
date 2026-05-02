@@ -855,7 +855,7 @@ function updateWalkingSound(isMoving){
 const FIRE_ENABLED = true;
 const FIRE_FPS = 14;
 const FIRE_SPRITE_SCALE = .59 * 1.7;
-const FIRE_YSHIFT = 0.02;
+const FIRE_YSHIFT = 0.12;
 const FIRE_CROP = { x: 0.18, y: 0.02, w: 0.64, h: 0.96 };
 const FIRE_FRAME_COUNT = 5;
 
@@ -1164,6 +1164,8 @@ let NIGHT_SPEED_MUL = .5;
 let time01          = 0.58;
 let prevTime01      = time01;
 const DAY_LENGTH_SEC = 90;
+const DAY_DURATION_SCALE = 1.12;   // +12% duration
+const NIGHT_DURATION_SCALE = 0.88; // -12% duration
 
 const NIGHT_PENALTY_START_NF = 0.82;
 let wasNight = false;
@@ -1177,6 +1179,40 @@ const FIRE_SAFE_NIGHT_THRESHOLD = 0.55;
 
 const FIRE_EXIT_NIGHT_HEALTH_PENALTY = 5;   // ✅ lose 5% health if you leave fire safe zone at night
 let wasInFireSafeZone = false;
+
+/* =========================================================
+   EAST HEADING VIOLATION
+========================================================= */
+const EAST_TARGET_DEG = 270;
+const EAST_TOLERANCE_DEG = 10;
+const EAST_VIOLATION_SECONDS = 2.0;
+const EAST_VIOLATION_HEALTH_PENALTY = 5;
+let eastOffTimer = 0;
+let eastViolationArmed = true;
+
+function angleDiffDeg(a, b){
+  let d = Math.abs(a - b) % 360;
+  if(d > 180) d = 360 - d;
+  return d;
+}
+
+function applyEastHeadingRule(dt){
+  const headingDeg = ((ang * 180 / Math.PI) % 360 + 360) % 360;
+  const offBy = angleDiffDeg(headingDeg, EAST_TARGET_DEG);
+  const inRange = offBy <= EAST_TOLERANCE_DEG;
+
+  if(inRange){
+    eastOffTimer = 0;
+    eastViolationArmed = true;
+    return;
+  }
+
+  eastOffTimer += dt;
+  if(eastViolationArmed && eastOffTimer > EAST_VIOLATION_SECONDS){
+    addHealth(-EAST_VIOLATION_HEALTH_PENALTY);
+    eastViolationArmed = false;
+  }
+}
 
 
 function isNightEnoughForFireSafe(){
@@ -2419,7 +2455,13 @@ function frame(now){
   }
 
   if(!NIGHT_PAUSED){
-    const rate = (1 / DAY_LENGTH_SEC) * NIGHT_SPEED_MUL;
+    let rate = (1 / DAY_LENGTH_SEC) * NIGHT_SPEED_MUL;
+    const sunRawNow = (Math.cos((time01 - 0.5) * Math.PI * 2) + 1) / 2;
+    if(sunRawNow >= 0.5){
+      rate *= (1 / DAY_DURATION_SCALE);   // slower during daytime
+    }else{
+      rate *= (1 / NIGHT_DURATION_SCALE); // faster during nighttime
+    }
     time01 = (time01 + dt * rate) % 1;
   }
   if(time01 < prevTime01){
@@ -2437,6 +2479,8 @@ function frame(now){
   updateNightFireSpawn(nightLit);
   updateDayFoodSpawn(nightLit);
   updateDaySaber(nightLit, dt);
+
+  if(!gameOver) applyEastHeadingRule(dt);
 
   if(!gameOver) tryFoodPickup();
   if(!gameOver) tryFireBonus();

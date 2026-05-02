@@ -20,8 +20,8 @@
        ========================= */
     #touchToggle{
       position: fixed;
-      left: 10px;
-      top: 56px;
+      right: 10px;
+      top: 10px;
       z-index: 9999;
       padding: 8px 10px;
       border-radius: 10px;
@@ -160,6 +160,9 @@ const MAIN_CATCH_DIST   = 0.25;
 const GUARD_ORBIT_RADIUS = 1.00;
 const GUARD_ORBIT_SPEED  = 6.0;
 const GUARD_CATCH_DIST   = 0.25;
+const DECOY_CATCH_DIST   = 0.24;
+const GHOST_DAMAGE_COUNT = 2;   // additional damage dealers
+const GHOST_CATCH_DIST   = 0.24;
 
 const NUM_DECOY_ROAMERS  = 6;
 const NUM_GHOST_CHASERS  = 4;
@@ -212,6 +215,26 @@ function playZap(){
     g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.10);
     o.stop(ac.currentTime + 0.11);
     setTimeout(()=>ac.close(), 150);
+  }catch(e){}
+}
+
+function playTreasureBeep(){
+  try{
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = "square";
+    o.frequency.value = 1200;
+    g.gain.value = 0.001;
+    o.connect(g);
+    g.connect(ac.destination);
+    const t0 = ac.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.01);
+    o.frequency.exponentialRampToValueAtTime(1850, t0 + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.12);
+    o.start(t0);
+    o.stop(t0 + 0.13);
+    setTimeout(()=>ac.close(), 220);
   }catch(e){}
 }
 
@@ -446,9 +469,10 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   let health = MAX_HEALTH;
   let gameOver = false;
 
-  let zapCharges = 0;
+let zapCharges = 0;
+let allSpidersDamageMode = false;
 
-  let gotTreasureUntil = 0;
+let gotTreasureUntil = 0;
   let startObjectiveUntil = performance.now() + START_OBJECTIVE_MSG_MS;
 
   let nextZapAt = 0;
@@ -561,8 +585,12 @@ addEventListener("keydown", startOutsideMusic, {once:true});
         t.collected = true;
         zapCharges += TREASURE_BULLETS_PER_PICKUP;
         gotTreasureUntil = nowMs + TREASURE_MSG_MS;
+        playTreasureBeep();
         syncTreasureAnchor();
       }
+    }
+    if(!allSpidersDamageMode && allTreasuresCollected() && zapCharges > 0){
+      allSpidersDamageMode = true;
     }
   }
 
@@ -667,8 +695,21 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   }
 
   function updateDecoys(dt){
+    const safe = playerIsSafe();
     for(const d of decoySpiders){
       if(d.zapped) continue;
+
+      if(allSpidersDamageMode && !safe){
+        const dx = posX - d.x;
+        const dy = posY - d.y;
+        const hitD = Math.hypot(dx, dy);
+        if(hitD < DECOY_CATCH_DIST){
+          triggerHit(performance.now());
+          d.x = posX - (dx/(hitD||1)) * 0.28;
+          d.y = posY - (dy/(hitD||1)) * 0.28;
+          continue;
+        }
+      }
 
       d.ang += rand(-DECOY_TURN_RATE, DECOY_TURN_RATE) * dt;
       const vx = Math.cos(d.ang) * d.speed;
@@ -692,12 +733,21 @@ addEventListener("keydown", startOutsideMusic, {once:true});
 
   function updateGhosts(dt){
     const safe = playerIsSafe();
-    for(const g of ghostSpiders){
+    for(let i=0; i<ghostSpiders.length; i++){
+      const g = ghostSpiders[i];
       if(g.zapped) continue;
 
       const dx = posX - g.x;
       const dy = posY - g.y;
       const d  = Math.hypot(dx, dy) || 1;
+
+      const canDamage = allSpidersDamageMode || (i < GHOST_DAMAGE_COUNT);
+      if(!safe && canDamage && d < GHOST_CATCH_DIST){
+        triggerHit(performance.now());
+        g.x = posX - (dx/d) * 0.28;
+        g.y = posY - (dy/d) * 0.28;
+        continue;
+      }
 
       let nx = g.x + (dx/d) * GHOST_SPEED * dt;
       let ny = g.y + (dy/d) * GHOST_SPEED * dt;

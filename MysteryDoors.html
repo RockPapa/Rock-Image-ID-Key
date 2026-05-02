@@ -69,9 +69,31 @@
   .tcSmall{ font-size:14px; }
   .tcWide{ grid-column: span 2; }
 
+  .pcHint{
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    padding: 10px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(20,24,32,.82);
+    color: #fff;
+    font: 700 16px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    box-shadow: 0 10px 22px rgba(0,0,0,.45);
+    pointer-events: none;
+    animation: hidePcHint 5s forwards;
+  }
+  @keyframes hidePcHint{
+    0%, 92%{ opacity:1; }
+    100%{ opacity:0; visibility:hidden; }
+  }
+
 </style>
 </head>
 <body>
+<div class="pcHint">Computers use arrow keys and space bar</div>
 <canvas id="c" tabindex="0"></canvas>
 
 <div id="status" style="display:none"></div>
@@ -225,6 +247,10 @@
   const STUN_DURATION_MS = 2400;
   const STUN_COOLDOWN_MS = 550;
   const ZAP_FLASH_MS = 140;
+  const BULLET_SPEED = 520;
+  const BULLET_RADIUS = 6;
+  const BULLET_MAX_DIST = 900;
+  const BULLET_COOLDOWN_MS = 120;
 
   // PORTAL
   const OUTSIDE_URL = "Luke2.html";
@@ -241,7 +267,7 @@
   // STUN DOOR (NEW)
   const STUN_DOOR_SIZE = 0.72;
   const STUN_DOOR_PICKUP_DIST = 34;
-  const AUTO_DOOR_OPEN_DIST = 56;
+  const AUTO_DOOR_OPEN_DIST = 88;
 
   /* =========================================================
      MUSIC (INSIDE): images/drama.mp3
@@ -784,24 +810,13 @@
     }
   }
 
-  function tryOpenDoorInFront(nowMs){
-    const lookDist = 34;
-    const tx = player.x + Math.cos(player.a) * lookDist;
-    const ty = player.y + Math.sin(player.a) * lookDist;
-    const mx = (tx / TILE) | 0;
-    const my = (ty / TILE) | 0;
-    openDoorAt(mx, my, nowMs);
-  }
-
   function autoOpenDoorOnCollision(nowMs){
     const rr = AUTO_DOOR_OPEN_DIST * AUTO_DOOR_OPEN_DIST;
 
     for(const d of allDoors){
       if(doorsOpen.has(d.key)) continue;
-      const l = d.mx * TILE, t = d.my * TILE;
-      const r = l + TILE,  b = t + TILE;
-      const cx = clamp(player.x, l, r);
-      const cy = clamp(player.y, t, b);
+      const cx = (d.mx + 0.5) * TILE;
+      const cy = (d.my + 0.5) * TILE;
       const dx = player.x - cx;
       const dy = player.y - cy;
       if((dx*dx + dy*dy) <= rr){
@@ -916,7 +931,12 @@
 
     if(e.code === "KeyR") rerollColors();
     if(e.code === "KeyN"){ newRound(); e.preventDefault(); }
-    if(e.code === "Space"){ fireStunGun(performance.now()); e.preventDefault(); }
+    if(e.code === "Space"){
+      const now = performance.now();
+      fireBlueBullet(now);
+      fireStunGun(now);
+      e.preventDefault();
+    }
 
     if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space"].includes(e.code)) e.preventDefault();
   }, { passive:false });
@@ -1085,6 +1105,24 @@
   zctx.lineWidth = 2;
   zctx.stroke();
 
+  const blueBulletCanvas = document.createElement("canvas");
+  blueBulletCanvas.width = 24;
+  blueBulletCanvas.height = 24;
+  const bbctx = blueBulletCanvas.getContext("2d");
+  {
+    const g = bbctx.createRadialGradient(10, 9, 2, 12, 12, 11);
+    g.addColorStop(0, "rgba(220,245,255,0.98)");
+    g.addColorStop(0.55, "rgba(70,170,255,0.95)");
+    g.addColorStop(1, "rgba(10,70,200,0.96)");
+    bbctx.fillStyle = g;
+    bbctx.beginPath();
+    bbctx.arc(12, 12, 10, 0, Math.PI * 2);
+    bbctx.fill();
+    bbctx.strokeStyle = "rgba(180,230,255,0.95)";
+    bbctx.lineWidth = 2;
+    bbctx.stroke();
+  }
+
   const pickups = [];
   for(let my=0; my<MH; my++){
     for(let mx=0; mx<MW; mx++){
@@ -1096,6 +1134,8 @@
 
   let zapUntil = 0;
   let caughtUntil = 0;
+  const bullets = [];
+  let lastBulletShotAt = -1e9;
 
   function checkPickup(nowMs){
     const mx = (player.x / TILE) | 0;
@@ -1120,7 +1160,6 @@
     player.lastStunShotAt = nowMs;
     player.stunCharges -= 1;
     zapUntil = nowMs + ZAP_FLASH_MS;
-    playOneShot(SND.gun);
 
     if(grizActive){
       const dx = griz.x - player.x, dy = griz.y - player.y;
@@ -1139,6 +1178,67 @@
       if(dist <= STUN_RANGE && aimErr <= STUN_FOV){
         z.stunnedUntil = nowMs + STUN_DURATION_MS;
       }
+    }
+  }
+
+  function fireBlueBullet(nowMs){
+    if(gameOver || voidActive) return;
+    if(nowMs - lastBulletShotAt < BULLET_COOLDOWN_MS) return;
+    lastBulletShotAt = nowMs;
+
+    const muzzle = PRADIUS + 8;
+    bullets.push({
+      x: player.x + Math.cos(player.a) * muzzle,
+      y: player.y + Math.sin(player.a) * muzzle,
+      vx: Math.cos(player.a) * BULLET_SPEED,
+      vy: Math.sin(player.a) * BULLET_SPEED,
+      traveled: 0
+    });
+    playOneShot(SND.gun);
+  }
+
+  function updateBullets(dt, nowMs){
+    for(let i = bullets.length - 1; i >= 0; i--){
+      const b = bullets[i];
+      const stepX = b.vx * dt;
+      const stepY = b.vy * dt;
+      const nx = b.x + stepX;
+      const ny = b.y + stepY;
+      const stepDist = Math.hypot(stepX, stepY);
+
+      if(isWall(nx, ny) || isWall(nx + BULLET_RADIUS, ny) || isWall(nx - BULLET_RADIUS, ny) || isWall(nx, ny + BULLET_RADIUS) || isWall(nx, ny - BULLET_RADIUS)){
+        bullets.splice(i, 1);
+        continue;
+      }
+
+      b.x = nx;
+      b.y = ny;
+      b.traveled += stepDist;
+      if(b.traveled >= BULLET_MAX_DIST){
+        bullets.splice(i, 1);
+        continue;
+      }
+
+      if(grizActive && nowMs >= grizStunnedUntil){
+        const dg = Math.hypot(griz.x - b.x, griz.y - b.y);
+        if(dg <= griz.radius + BULLET_RADIUS){
+          grizStunnedUntil = nowMs + STUN_DURATION_MS;
+          bullets.splice(i, 1);
+          continue;
+        }
+      }
+
+      let hitZombie = false;
+      for(const z of zombies){
+        if(!z.active) continue;
+        const dz = Math.hypot(z.x - b.x, z.y - b.y);
+        if(dz <= z.radius + BULLET_RADIUS){
+          z.stunnedUntil = nowMs + STUN_DURATION_MS;
+          hitZombie = true;
+          break;
+        }
+      }
+      if(hitZombie) bullets.splice(i, 1);
     }
   }
 
@@ -1351,6 +1451,8 @@
 
     zapUntil = 0;
     caughtUntil = 0;
+    bullets.length = 0;
+    lastBulletShotAt = -1e9;
     portalTriggered = false;
     portalOverlayUntil = 0;
 
@@ -1410,6 +1512,7 @@
     checkStunDoorPickup(now); // ✅ NEW
     updateGriz(dt, now);
     updateZombies(dt, now);
+    updateBullets(dt, now);
     checkPortal(now);
     checkTreasure(now);
 
@@ -1495,6 +1598,10 @@
       const key = p.mx + "," + p.my;
       if(pickupsTaken.has(key)) continue;
       drawBillboard(zapCanvas, p.x, p.y, 0.55, w,h,horizon,projPlane,wallZ);
+    }
+
+    for(const b of bullets){
+      drawBillboard(blueBulletCanvas, b.x, b.y, 0.22, w,h,horizon,projPlane,wallZ);
     }
 
     if(portalDoor && portalPos && doorsOpen.has(portalDoor.key)){

@@ -604,8 +604,6 @@ let gotTreasureUntil = 0;
     if(nowMs < nextZapAt) return;
 
     nextZapAt = nowMs + ZAP_COOLDOWN_MS;
-    zapCharges -= 1;
-    playZap();
 
     const fx = dirX, fy = dirY;
     const candidates = [];
@@ -637,6 +635,8 @@ let gotTreasureUntil = 0;
     }
 
     if(best){
+      zapCharges -= 1; // consume only on successful hit
+      playZap();
       best.zapped = true;
       if(allSpidersZapped()){
         setTimeout(() => { window.location.href = NEXT_LEVEL_URL; }, 650);

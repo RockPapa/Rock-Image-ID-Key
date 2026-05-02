@@ -171,7 +171,28 @@
   display:none;
   pointer-events:none;
 }
-.navHelp.on{ display:block; }
+  .navHelp.on{ display:block; }
+
+.pcHint{
+  position:fixed;
+  top:16px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:40;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.82);
+  color:#fff;
+  font:700 16px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 22px rgba(0,0,0,.45);
+  pointer-events:none;
+  animation:hidePcHint 5s forwards;
+}
+@keyframes hidePcHint{
+  0%, 92%{ opacity:1; }
+  100%{ opacity:0; visibility:hidden; }
+}
 
 </style>
 
@@ -186,6 +207,8 @@
 </head>
 
 <body>
+
+<div class="pcHint">Computers use arrow keys and space bar</div>
 
 <button class="touchToggle" id="touchToggle" type="button" tabindex="-1" aria-label="Toggle on-screen controls">📱 Controls</button>
 

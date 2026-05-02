@@ -1011,7 +1011,6 @@ const BLUE_BALL_SPAWN_AHEAD = 0.70;
 const SABER_KILL_HEALTH_BONUS = 10;
 const SABER_MISS_HEALTH_PENALTY = 5;
 const SPIDER_HIT_RADIUS = 0.95;
-const SPIDER_STUN_DURATION_SEC = 3.0;
 const SPIDER_COUNT = 4; // original + 3 more
 
 const blueBalls = [];
@@ -1048,13 +1047,11 @@ function updateBlueBalls(dt){
     }
 
     for(const s of spiders){
-      if(s.stunTimer > 0) continue;
+      if(!s.alive) continue;
       const sx = b.x - s.x;
       const sy = b.y - s.y;
       if((sx*sx + sy*sy) <= (SPIDER_HIT_RADIUS * SPIDER_HIT_RADIUS)){
-        s.stunTimer = SPIDER_STUN_DURATION_SEC;
-        s.vx = 0;
-        s.vy = 0;
+        s.alive = false;
         b.unresolved = false;
         b.life = 0;
         break;
@@ -2343,6 +2340,7 @@ const SPIDER_SPEED = 0.95;
 const SPIDER_TURN = 6.0;
 const SPIDER_CATCH_DIST = 0.90;
 const SPIDER_ATTACK_COOLDOWN = 4.0;
+const SPIDER_FRONT_REPOSITION_DIST = 6.5;
 
 const spiders = [];
 
@@ -2359,7 +2357,7 @@ function resetSpiders(putInFront=false){
       vx: 0,
       vy: 0,
       attackTimer: 0,
-      stunTimer: 0
+      alive: true
     });
   }
 }
@@ -2370,10 +2368,21 @@ function updateSpiders(dt){
   const fireSafe = camiInFireSafeZone();
   const camiSafe = (camZ > 0.10) || fireSafe;
 
-  for(const s of spiders){
-    if(s.stunTimer > 0){
-      s.stunTimer = Math.max(0, s.stunTimer - dt);
-      continue;
+  for(let i=0; i<spiders.length; i++){
+    const s = spiders[i];
+    if(!s.alive) continue;
+
+    // Keep spiders in front hemisphere so wolf is the only rear chaser.
+    const rx = s.x - posX;
+    const ry = s.y - posY;
+    const inFrontDot = (rx * dirX + ry * dirY);
+    if(inFrontDot < 0.15){
+      const side = (i - (SPIDER_COUNT - 1) / 2) * 1.2;
+      const front = SPIDER_FRONT_REPOSITION_DIST + (Math.random() * 1.4 - 0.7);
+      s.x = posX + dirX * front + (-dirY) * side;
+      s.y = posY + dirY * front + ( dirX) * side;
+      s.vx = 0;
+      s.vy = 0;
     }
 
     const dx = posX - s.x;
@@ -2563,6 +2572,7 @@ function frame(now){
     sprites.push({x:wolfX, y:wolfY, d2:dx*dx+dy*dy, kind:"wolf"});
   }
   for(const s of spiders){
+    if(!s.alive) continue;
     const dx = s.x - posX, dy = s.y - posY;
     sprites.push({x:s.x, y:s.y, d2:dx*dx+dy*dy, kind:"spider"});
   }

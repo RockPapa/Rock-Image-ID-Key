@@ -216,14 +216,14 @@
   const CEIL_FIXED = { r: 112, g: 124, b: 108 };
 
   // GRIZ
-  const GRIZ_SPEED        = 45;
+  const GRIZ_SPEED        = 50.4;
   const GRIZ_TURN_SMOOTH  = 10.0;
   const GRIZ_RADIUS       = 16;
   const GRIZ_SIZE_FACTOR  = 0.65;
 
   // ZOMBIES
-  const ZOMBIE_COUNT       = 3;
-  const ZOMBIE_SPEED       = 34;
+  const ZOMBIE_COUNT       = 4;
+  const ZOMBIE_SPEED       = 38.08;
   const ZOMBIE_TURN_SMOOTH = 9.0;
   const ZOMBIE_RADIUS      = 14;
   const ZOMBIE_SIZE_FACTOR = 0.60;
@@ -538,17 +538,6 @@
     portalOverlayUntil = 0;
   }
 
-  // BOOM DOOR
-  let boomDoor = null;
-  function pickRandomBoomDoor(excludeKeys){
-    boomDoor = null;
-    if(!allDoors.length) return;
-    const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
-    const pickFrom = candidates.length ? candidates : allDoors;
-    boomDoor = pickFrom[randInt(0, pickFrom.length - 1)];
-    excludeKeys.add(boomDoor.key);
-  }
-
   // VOID DOOR
   let voidDoor = null;
   function pickRandomVoidDoor(excludeKeys){
@@ -708,7 +697,6 @@
     pickRandomPortalDoor();
     if(portalDoor) exclude.add(portalDoor.key);
 
-    pickRandomBoomDoor(exclude);
     pickRandomVoidDoor(exclude);
     pickRandomTreasureDoor(exclude);
     pickRandomStunDoor(exclude); // ✅ NEW
@@ -769,15 +757,6 @@
     }
   }
 
-  function triggerBoom(nowMs){
-    if(gameOver || voidActive) return;
-    gameOver = true;
-    gameOverStartedAt = nowMs;
-    gameOverReason = "BLOWN UP";
-    MUSIC.volume = 0.10;
-    playOneShot(SND.boom);
-  }
-
   function openDoorAt(mx, my, nowMs){
     if(cellAt(mx,my) !== "D") return;
 
@@ -788,11 +767,6 @@
       triggerVoid(nowMs);
       return;
     }
-    if(boomDoor && key === boomDoor.key){
-      triggerBoom(nowMs);
-      return;
-    }
-
     if(gameOver || voidActive) return;
 
     if(grizDoor && key === grizDoor.key && !grizActive){
@@ -1634,10 +1608,6 @@
     const zActive = zombies.filter(z => z.active).length;
     const zHidden = zombies.length - zActive;
 
-    const boomState = boomDoor
-      ? (doorsOpen.has(boomDoor.key) ? (gameOver ? "TRIGGERED" : "OPENED") : "HIDDEN (behind a door)")
-      : "none";
-
     const voidState = voidDoor
       ? (doorsOpen.has(voidDoor.key) ? (voidActive ? "TRIGGERED" : "OPENED") : "HIDDEN (behind a door)")
       : "none";
@@ -1655,7 +1625,7 @@
     if(statusEl){
       statusEl.innerHTML =
         `<b>Music:</b> drama.mp3 • <b>Stun:</b> ${stunState} • <b>Stun Door:</b> ${stunDoorState} • <b>Safe:</b> ${playerIsSafe()?"YES":"no"} • ` +
-        `<b>Portal:</b> ${portalState} • <b>Boom:</b> ${boomState} • <b>Void:</b> ${voidState} • ` +
+        `<b>Portal:</b> ${portalState} • <b>Void:</b> ${voidState} • ` +
         `<b>Treasure:</b> ${treasureState} • ` +
         `<b>Griz:</b> ${grizActive?"ACTIVE":"hidden"} • <b>Zombies:</b> ${zActive} active / ${zHidden} hidden • <b>Black walls:</b> tile '1'`;
     }

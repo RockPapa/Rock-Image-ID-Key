@@ -163,6 +163,34 @@
   #popup .xClose:active { transform: translateY(1px); }
   /* Stage sizing handled in main #stage rule for desktop + mobile */
 
+  #zoomControls{
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid rgba(0,0,0,0.28);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.24);
+    background: rgba(255,255,255,0.95);
+  }
+  .zoomBtn{
+    width: 38px;
+    height: 34px;
+    border: 0;
+    border-bottom: 1px solid rgba(0,0,0,0.16);
+    background: transparent;
+    color: #111;
+    font: 700 22px/1 system-ui, -apple-system, Arial, sans-serif;
+    cursor: pointer;
+    user-select: none;
+  }
+  .zoomBtn:last-child{ border-bottom: 0; }
+  .zoomBtn:hover{ background: rgba(0,0,0,0.06); }
+  .zoomBtn:active{ background: rgba(0,0,0,0.12); }
+
 
   #loadProgress {
     max-width: 980px;
@@ -247,6 +275,10 @@ body.map-only #stage {
 <div id="stage" tabindex="0">
   <canvas id="map"></canvas>
   <canvas id="overlay"></canvas>
+  <div id="zoomControls" aria-label="Zoom controls">
+    <button class="zoomBtn" id="zoomInBtn" type="button" aria-label="Zoom in">+</button>
+    <button class="zoomBtn" id="zoomOutBtn" type="button" aria-label="Zoom out">−</button>
+  </div>
 
   <!-- Popup lives INSIDE stage so it moves/clips nicely -->
   <div id="popup">
@@ -289,6 +321,8 @@ body.map-only #stage {
   const keyLink = document.getElementById("keyLink");
   const popupClose = document.getElementById("popupClose");
   const popupX = document.getElementById("popupX");
+  const zoomInBtn = document.getElementById("zoomInBtn");
+  const zoomOutBtn = document.getElementById("zoomOutBtn");
 
   let img = null;
 
@@ -611,6 +645,14 @@ function resetView(){
   redraw();
 }
 
+function zoomAtStageCenter(factor){
+  const rect = stage.getBoundingClientRect();
+  const centerX = rect.left + rect.width * 0.5;
+  const centerY = rect.top + rect.height * 0.5;
+  zoomAt(centerX, centerY, factor);
+  redraw();
+}
+
   function zoomAt(clientX, clientY, factor){
   const oldScale = scale;
   scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * factor));
@@ -875,6 +917,18 @@ function resetView(){
     redraw();
   }, { passive: false });
 
+  zoomInBtn?.addEventListener("click", () => {
+    if (!img) return;
+    zoomAtStageCenter(ZOOM_FACTOR);
+    stage.focus();
+  });
+
+  zoomOutBtn?.addEventListener("click", () => {
+    if (!img) return;
+    zoomAtStageCenter(1 / ZOOM_FACTOR);
+    stage.focus();
+  });
+
   function pointerDistance(a, b){
   return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 }
@@ -930,7 +984,8 @@ overlayCanvas.addEventListener("pointermove", (e) => {
     const p1 = pts[0];
     const p2 = pts[1];
     const currentDistance = Math.max(1, pointerDistance(p1, p2));
-    const factor = currentDistance / Math.max(1, pinchStartDistance);
+    const rawFactor = currentDistance / Math.max(1, pinchStartDistance);
+    const factor = 1 + (rawFactor - 1) * 1.12 * 1.10 * 1.12; // +12% more sensitivity +10% zoom/spread
 
     scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, pinchStartScale * factor));
 

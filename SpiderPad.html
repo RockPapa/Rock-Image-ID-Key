@@ -87,7 +87,7 @@
 <canvas id="c" tabindex="0"></canvas>
 
 <div id="hud">
-  ↑/↓ move • ←/→ turn • SAFE ZONE at Oasis/Fort • TREASURE → FORT → STUN GUN • SPACE = ZAP • R = Restart
+  ↑/↓ move • ←/→ turn • TREASURE = +4 BLUE BULLETS • SPACE = ZAP • R = Restart
 </div>
 
 <!-- =========================
@@ -137,11 +137,14 @@ const HEALTH_BAR_H = 18;
 // TREASURE
 let TREASURE_X = 1;
 let TREASURE_Y = 0.001;
-let TREASURE_W = 0.30;
-let TREASURE_H = 0.30;
+let TREASURE_W = 0.30 * 1.75;
+let TREASURE_H = 0.30 * 1.75;
+const TREASURE_COUNT = 5;           // 1 original + 4 more
+const TREASURE_MIN_SEP = 2.2;       // keep treasures well spaced
 const TREASURE_PICKUP_DIST = 0.55;
 const TREASURE_MSG_MS      = 4500;
-const DELIVER_MSG_MS       = 4500;
+const TREASURE_BULLETS_PER_PICKUP = 4;
+const START_OBJECTIVE_MSG_MS = 6000;
 
 // OASIS / FORT (SAFE ZONE)
 let OASIS_X = 9.5;
@@ -379,17 +382,12 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   }
 
   function playerIsSafe(){
-    return dist2(posX,posY,OASIS_X,OASIS_Y) <= (SAFE_RADIUS*SAFE_RADIUS);
+    return false; // castle/safe-zone function disabled
   }
 
   const SAFE_BORDER = 0.10;
   function clampOutsideOasis(x, y, extra){
-    const r = SAFE_RADIUS + SAFE_BORDER + (extra || 0);
-    const r2 = r*r;
-    if(dist2(x,y,OASIS_X,OASIS_Y) >= r2) return {x,y};
-    const ox = x - OASIS_X, oy = y - OASIS_Y;
-    const d = Math.hypot(ox, oy) || 1;
-    return { x: OASIS_X + (ox/d)*r, y: OASIS_Y + (oy/d)*r };
+    return {x,y}; // castle/safe-zone function disabled
   }
 
   function randomOpenSpot(avoidOasis=true){
@@ -397,10 +395,49 @@ addEventListener("keydown", startOutsideMusic, {once:true});
       const x = rand(1.2, mapW-1.2);
       const y = rand(1.2, mapH-1.2);
       if(isWall(x,y)) continue;
-      if(avoidOasis && dist2(x,y,OASIS_X,OASIS_Y) < (SAFE_RADIUS+0.25)*(SAFE_RADIUS+0.25)) continue;
       return {x,y};
     }
     return {x:2.5,y:2.5};
+  }
+
+  // =========================
+  // TREASURE SPAWNING
+  // =========================
+  let treasures = [];
+
+  function isFarFromOtherTreasures(x, y){
+    const minD2 = TREASURE_MIN_SEP * TREASURE_MIN_SEP;
+    for(const t of treasures){
+      if(dist2(x, y, t.x, t.y) < minD2) return false;
+    }
+    return true;
+  }
+
+  function syncTreasureAnchor(){
+    const t = treasures.find(tt => !tt.collected);
+    if(!t) return;
+    TREASURE_X = t.x;
+    TREASURE_Y = t.y;
+  }
+
+  function allTreasuresCollected(){
+    return treasures.length > 0 && treasures.every(t => t.collected);
+  }
+
+  function spawnTreasures(){
+    treasures = [];
+    let attempts = 0;
+    while(treasures.length < TREASURE_COUNT && attempts < 4000){
+      attempts++;
+      const p = randomOpenSpot(true);
+      if(!isFarFromOtherTreasures(p.x, p.y)) continue;
+      treasures.push({ x:p.x, y:p.y, collected:false });
+    }
+    while(treasures.length < TREASURE_COUNT){
+      const p = randomOpenSpot(true);
+      treasures.push({ x:p.x, y:p.y, collected:false });
+    }
+    syncTreasureAnchor();
   }
 
   // =========================
@@ -409,12 +446,10 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   let health = MAX_HEALTH;
   let gameOver = false;
 
-  let hasTreasure = false;
-  let treasureDelivered = false;
-  let hasStunGun = false;
+  let zapCharges = 0;
 
   let gotTreasureUntil = 0;
-  let deliveredUntil   = 0;
+  let startObjectiveUntil = performance.now() + START_OBJECTIVE_MSG_MS;
 
   let nextZapAt = 0;
 
@@ -476,6 +511,8 @@ addEventListener("keydown", startOutsideMusic, {once:true});
     lamb.speed=rand(LAMB_SPEED_MIN, LAMB_SPEED_MAX);
   }
 
+  spawnTreasures();
+
   function allSpidersZapped(){
     if(!mainSpider.zapped) return false;
     if(!guardSpider.zapped) return false;
@@ -517,19 +554,15 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   // TREASURE STATE
   // =========================
   function updateTreasureState(nowMs){
-    if(!hasTreasure && !treasureDelivered){
-      const d2 = dist2(posX, posY, TREASURE_X, TREASURE_Y);
+    for(const t of treasures){
+      if(t.collected) continue;
+      const d2 = dist2(posX, posY, t.x, t.y);
       if(d2 <= TREASURE_PICKUP_DIST*TREASURE_PICKUP_DIST){
-        hasTreasure = true;
+        t.collected = true;
+        zapCharges += TREASURE_BULLETS_PER_PICKUP;
         gotTreasureUntil = nowMs + TREASURE_MSG_MS;
+        syncTreasureAnchor();
       }
-    }
-
-    if(hasTreasure && !treasureDelivered && playerIsSafe()){
-      treasureDelivered = true;
-      hasTreasure = false;
-      deliveredUntil = nowMs + DELIVER_MSG_MS;
-      hasStunGun = true;
     }
   }
 
@@ -537,11 +570,13 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   // STUN GUN
   // =========================
   function tryZap(nowMs){
-    if(!hasStunGun) return;
+    if(zapCharges <= 0) return;
     if(gameOver) return;
+    if(!allTreasuresCollected()) return; // lock kills until all treasures are collected
     if(nowMs < nextZapAt) return;
 
     nextZapAt = nowMs + ZAP_COOLDOWN_MS;
+    zapCharges -= 1;
     playZap();
 
     const fx = dirX, fy = dirY;
@@ -614,6 +649,7 @@ addEventListener("keydown", startOutsideMusic, {once:true});
     if(guardSpider.zapped) return;
     if(gameOver) return;
 
+    syncTreasureAnchor();
     guardSpider.angle += GUARD_ORBIT_SPEED * dt;
     guardSpider.x = TREASURE_X + Math.cos(guardSpider.angle) * GUARD_ORBIT_RADIUS;
     guardSpider.y = TREASURE_Y + Math.sin(guardSpider.angle) * GUARD_ORBIT_RADIUS;
@@ -1002,27 +1038,44 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   }
 
   function drawTreasureMessages(w,h, nowMs){
-    const showCarryMsg = hasTreasure || (nowMs < gotTreasureUntil);
-    const showDeliverMsg = (nowMs < deliveredUntil);
+    const showPickupMsg = (nowMs < gotTreasureUntil);
 
-    if(showCarryMsg){
+    if(showPickupMsg){
       ctx.fillStyle="rgba(0,0,0,0.35)";
       ctx.fillRect(0,h-70,w,70);
       ctx.textAlign="center";
       ctx.textBaseline="middle";
       ctx.fillStyle="rgba(255,255,255,0.98)";
       ctx.font="bold 26px system-ui";
-      ctx.fillText("YOU GOT TREASURE, GO TO THE FORT", w/2, h-38);
+      ctx.fillText(`TREASURE COLLECTED: +${TREASURE_BULLETS_PER_PICKUP} BLUE BULLETS`, w/2, h-38);
     }
 
-    if(showDeliverMsg){
-      ctx.fillStyle="rgba(0,0,0,0.40)";
-      ctx.fillRect(0,h-120,w,50);
+    ctx.fillStyle="rgba(0,0,0,0.35)";
+    ctx.fillRect(12, 12, 190, 34);
+    ctx.textAlign="left";
+    ctx.textBaseline="middle";
+    ctx.fillStyle="rgba(120,200,255,0.98)";
+    ctx.font="bold 18px system-ui";
+    ctx.fillText(`BLUE BULLETS: ${zapCharges}`, 22, 29);
+
+    if(!allTreasuresCollected()){
+      ctx.fillStyle="rgba(0,0,0,0.35)";
+      ctx.fillRect(0, h-120, w, 50);
       ctx.textAlign="center";
       ctx.textBaseline="middle";
-      ctx.fillStyle="rgba(0,255,255,0.98)";
+      ctx.fillStyle="rgba(255,230,120,0.98)";
+      ctx.font="bold 24px system-ui";
+      ctx.fillText("COLLECT ALL TREASURES TO ENABLE SPIDER KILLS", w/2, h-95);
+    }
+
+    if(nowMs < startObjectiveUntil){
+      ctx.fillStyle="rgba(0,0,0,0.42)";
+      ctx.fillRect(0, 16, w, 52);
+      ctx.textAlign="center";
+      ctx.textBaseline="middle";
+      ctx.fillStyle="rgba(255,255,255,0.98)";
       ctx.font="bold 26px system-ui";
-      ctx.fillText("TREASURE AT FORT — STUN GUN READY!", w/2, h-95);
+      ctx.fillText("COLLECT ALL TREASURES AND KILL ALL SPIDERS TO WIN", w/2, 42);
     }
   }
 
@@ -1070,16 +1123,12 @@ addEventListener("keydown", startOutsideMusic, {once:true});
       }
     }
 
-    const oxp = ox + OASIS_X*scale, oyp = oy + OASIS_Y*scale;
-    ctx.fillStyle="rgba(0,255,255,0.95)";
-    ctx.beginPath(); ctx.arc(oxp, oyp, 4, 0, Math.PI*2); ctx.fill();
-    ctx.strokeStyle="rgba(0,255,255,0.35)";
-    ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(oxp, oyp, SAFE_RADIUS*scale, 0, Math.PI*2); ctx.stroke();
-
-    if(!treasureDelivered && !hasTreasure){
-      ctx.fillStyle="rgba(255,215,0,0.95)";
-      ctx.beginPath(); ctx.arc(ox + TREASURE_X*scale, oy + TREASURE_Y*scale, 4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle="rgba(255,215,0,0.95)";
+    for(const t of treasures){
+      if(t.collected) continue;
+      ctx.beginPath();
+      ctx.arc(ox + t.x*scale, oy + t.y*scale, 4, 0, Math.PI*2);
+      ctx.fill();
     }
 
     const px = ox + posX*scale, py = oy + posY*scale;
@@ -1112,12 +1161,10 @@ addEventListener("keydown", startOutsideMusic, {once:true});
     health = MAX_HEALTH;
     gameOver = false;
 
-    hasTreasure = false;
-    treasureDelivered = false;
-    hasStunGun = false;
+    zapCharges = 0;
 
     gotTreasureUntil = 0;
-    deliveredUntil = 0;
+    startObjectiveUntil = performance.now() + START_OBJECTIVE_MSG_MS;
 
     nextZapAt = 0;
     playerFrozenUntil = 0;
@@ -1130,6 +1177,7 @@ addEventListener("keydown", startOutsideMusic, {once:true});
 
     mainSpider.x = 8.5; mainSpider.y = 5.5; mainSpider.zapped = false;
 
+    spawnTreasures();
     guardSpider.angle = 0;
     guardSpider.x = TREASURE_X;
     guardSpider.y = TREASURE_Y;
@@ -1238,10 +1286,9 @@ addEventListener("keydown", startOutsideMusic, {once:true});
     ctx.putImageData(img, 0, 0);
 
     // sprites
-    drawSprite(oasisImg, OASIS_X, OASIS_Y, w, h, OASIS_W, OASIS_H, 0.35);
-
-    if(!hasTreasure && !treasureDelivered){
-      drawSprite(treasureImg, TREASURE_X, TREASURE_Y, w, h, TREASURE_W, TREASURE_H, 0.25);
+    for(const t of treasures){
+      if(t.collected) continue;
+      drawSprite(treasureImg, t.x, t.y, w, h, TREASURE_W, TREASURE_H, 0.25);
     }
 
     drawSprite(lambImg, lamb.x, lamb.y, w, h, LAMB_SIZE, LAMB_SIZE, 0.22);
@@ -1267,16 +1314,6 @@ addEventListener("keydown", startOutsideMusic, {once:true});
     drawMinimap();
     drawHealthBar();
     drawCaughtOverlay(w,h, now);
-
-    if(playerIsSafe()){
-      ctx.fillStyle="rgba(0,0,0,0.30)";
-      ctx.fillRect(0, h-60, w, 60);
-      ctx.textAlign="center";
-      ctx.textBaseline="middle";
-      ctx.fillStyle="rgba(0,255,255,0.95)";
-      ctx.font="bold 22px system-ui";
-      ctx.fillText("SAFE ZONE — spiders can’t hurt you here", w/2, h-30);
-    }
 
     drawTreasureMessages(w,h, now);
     drawVictory(w,h);

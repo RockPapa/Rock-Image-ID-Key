@@ -1,0 +1,5474 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Lake40 – Bright Grass + Grass Shadows</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<style>
+  html, body { margin:0; height:100%; overflow:hidden; background:#000; }
+  body > canvas { display:block; width:100vw; height:100vh; }
+  /* Override the global canvas rule for HUD canvases */
+  .compassWrap canvas, .minimapWrap canvas { display:block; width:100%; height:100%; }
+
+  .hud{
+    display:none !important;
+    position:fixed; left:18px; top:18px; z-index:10;
+    max-width:740px;
+    padding:18px 18px 16px;
+    border-radius:14px;
+    background:rgba(25,30,38,.85);
+    color:#fff; font: 18px/1.35 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    box-shadow: 0 10px 28px rgba(0,0,0,.35);
+  }
+  .hud.hidden{ display:none; }
+  .hud .small{ font-size:14px; opacity:.9; margin-top:8px; }
+  .hud b{ font-weight:800; }
+  code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+
+/* =========================
+   📱 iPad / Touch Controls (toggle)
+   ========================= */
+.touchToggle{
+  position:fixed; right:18px; top:18px; z-index:30;
+  padding:12px 14px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(20,24,32,.78);
+  color:#fff;
+  font: 16px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 26px rgba(0,0,0,.55);
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+}
+.touchToggle:active{ transform: translateY(1px); }
+.touchToggle.on{
+  background:rgba(32,102,70,.86);
+  border-color:rgba(130,255,198,.55);
+}
+
+.touchUI{
+  position:fixed; left:0; right:0; bottom:0; z-index:25;
+  padding:14px 18px 18px;
+  display:none;
+  pointer-events:none;
+}
+.touchUI.on{ display:block; }
+
+
+.touchBtn{
+  width:92px; height:92px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.20);
+  background:rgba(25,30,38,.72);
+  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  font: 700 20px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 22px rgba(0,0,0,.45);
+  pointer-events:auto;
+  user-select:none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action:none;
+}
+.touchBtn:active{ transform: translateY(1px); background:rgba(35,42,55,.78); }
+
+.touchLeft{
+  position:absolute; bottom:18px; left:18px;
+  display:flex; flex-direction:column; gap:14px;
+  pointer-events:none;
+}
+.touchLeft .touchBtn{
+  border-radius:22px;
+  pointer-events:auto;
+}
+.touchBtn.fire{
+  width:116px;
+  height:116px;
+  font-size:24px;
+}
+.touchBtn.startRace{
+  width:166px;
+  height:74px;
+  font-size:22px;
+  border-radius:16px;
+  background:rgba(39,118,78,.82);
+}
+
+.joyWrap{
+  position:absolute; bottom:18px; right:18px;
+  width:220px; height:220px;
+  pointer-events:auto;
+}
+.joyBase{
+  position:absolute; inset:0;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.20);
+  background:radial-gradient(circle at 35% 30%, rgba(45,53,70,.92), rgba(18,22,30,.78) 70%);
+  box-shadow:0 12px 26px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.06);
+  touch-action:none;
+}
+.joyKnob{
+  position:absolute; left:50%; top:50%;
+  width:92px; height:92px;
+  margin-left:-46px; margin-top:-46px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.32);
+  background:radial-gradient(circle at 30% 30%, rgba(255,255,255,.25), rgba(75,92,124,.82) 68%, rgba(41,53,74,.9));
+  box-shadow:0 8px 18px rgba(0,0,0,.45);
+  pointer-events:none;
+  will-change: transform;
+}
+.joyLabel{
+  position:absolute; left:50%; top:-22px; transform:translateX(-50%);
+  font: 700 11px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing:.11em; text-transform:uppercase;
+  color:rgba(255,255,255,.8);
+}
+
+.touchHint{
+  position:fixed; left:18px; bottom:252px; z-index:26;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(20,24,32,.62);
+  color:#fff;
+  font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 10px 22px rgba(0,0,0,.40);
+  display:none;
+}
+.touchHint.on{ display:block; }
+
+/* iPad landscape tuning: larger targets and lower-right thumb joystick */
+@media (orientation: landscape) and (pointer: coarse){
+  .touchToggle{
+    top:14px; right:14px;
+    font-size:18px;
+    padding:14px 16px;
+  }
+  .touchUI{
+    padding:10px 14px 12px;
+  }
+  .joyWrap{
+    right:14px;
+    bottom:8px;
+    width:260px;
+    height:260px;
+  }
+  .joyKnob{
+    width:108px;
+    height:108px;
+    margin-left:-54px;
+    margin-top:-54px;
+  }
+  .touchLeft{
+    left:14px;
+    bottom:10px;
+    gap:12px;
+  }
+  .touchBtn{
+    width:104px;
+    height:104px;
+    font-size:22px;
+  }
+  .touchBtn.fire{
+    width:132px;
+    height:132px;
+    font-size:26px;
+  }
+  .touchBtn.startRace{
+    width:190px;
+    height:84px;
+    font-size:24px;
+  }
+}
+
+
+/* =========================
+   🧭 Compass + MiniMap (Dan HUD)
+   ========================= */
+.compassWrap{
+  position:fixed; right:18px; top:72px; z-index:28;
+  width:140px; height:140px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.58);
+  box-shadow:0 10px 26px rgba(0,0,0,.45);
+  overflow:hidden;
+  pointer-events:none;
+}
+.minimapWrap{
+  position:fixed; right:18px; bottom:18px; z-index:28;
+  width:220px; height:220px;
+  border-radius:18px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.58);
+  box-shadow:0 10px 26px rgba(0,0,0,.45);
+  overflow:hidden;
+  pointer-events:none;
+}
+.compassWrap.hidden, .minimapWrap.hidden{ display:none; }
+.navLabel{
+  position:absolute; left:10px; top:10px;
+  font: 12px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  color:rgba(255,255,255,.85);
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  opacity:.95;
+}
+.navHelp{
+  position:fixed; right:18px; top:220px; z-index:28;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(20,24,32,.62);
+  color:#fff;
+  font: 12px/1.25 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 22px rgba(0,0,0,.40);
+  display:none;
+  pointer-events:none;
+}
+  .navHelp.on{ display:block; }
+
+.pcHint{
+  position:fixed;
+  top:16px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:40;
+  padding:10px 14px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.82);
+  color:#fff;
+  font:700 16px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 10px 22px rgba(0,0,0,.45);
+  pointer-events:none;
+  animation:hidePcHint 5s forwards;
+}
+@keyframes hidePcHint{
+  0%, 92%{ opacity:1; }
+  100%{ opacity:0; visibility:hidden; }
+}
+
+.assetPicker{
+  position:fixed;
+  inset:0;
+  z-index:60;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(6,10,16,.82);
+}
+.assetPicker.hidden{ display:none; }
+.assetPickerCard{
+  width:min(560px, 92vw);
+  padding:18px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.2);
+  background:rgba(20,24,32,.95);
+  color:#fff;
+  font: 15px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  box-shadow:0 14px 30px rgba(0,0,0,.45);
+}
+.assetPickerCard h3{
+  margin:0 0 8px;
+  font:700 18px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+.assetPickerBtns{
+  margin-top:12px;
+  display:flex;
+  gap:10px;
+}
+.assetPickerBtns button{
+  border:1px solid rgba(255,255,255,.22);
+  background:rgba(47,95,95,.7);
+  color:#fff;
+  padding:10px 12px;
+  border-radius:10px;
+  font:700 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+}
+.assetPickerBtns button.skip{
+  background:rgba(55,60,72,.72);
+}
+
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+
+<div class="pcHint">Computers use arrow keys and space bar</div>
+
+<button class="touchToggle" id="touchToggle" type="button" tabindex="-1" aria-label="Toggle on-screen controls">📱 Controls</button>
+
+<div class="touchUI" id="touchUI">
+  <div class="joyWrap" id="joyWrap">
+    <div class="joyLabel">MOVE</div>
+    <div class="joyBase" id="joyBase">
+      <div class="joyKnob" id="joyKnob"></div>
+    </div>
+  </div>
+
+  <div class="touchLeft">
+    <div class="touchBtn startRace" id="btnStartRace">START RACE</div>
+  </div>
+</div>
+
+<div class="touchHint" id="touchHint">Tip: Tap <b>📱 Controls</b> to show/hide joystick + buttons.</div>
+
+<div class="hud" id="hud">
+  <b>WALK MODE</b><br>
+  Click = mouse look (Esc unlock)<br>
+  Arrow keys move · Space fire · <b>R/F fly up/down</b> · <b>H toggle HUD</b> · <b>📱 Controls</b>
+  <div class="small">
+    <b>Lake40:</b> Bright grass + visible shadows<br>
+    (Sun punch + ACES exposure + wider shadow coverage)
+  </div>
+</div>
+
+<div class="assetPicker" id="assetPicker">
+  <div class="assetPickerCard">
+    <h3>Select images folder</h3>
+    <div>Pick your asset folder once so local textures, sounds, and height maps can load reliably from <code>file://</code>.</div>
+    <div class="assetPickerBtns">
+      <button type="button" id="pickAssetsBtn">Choose Folder</button>
+      <button type="button" class="skip" id="skipAssetsBtn">Skip (use images/)</button>
+    </div>
+    <input id="assetFolderInput" type="file" webkitdirectory directory multiple style="display:none">
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
+
+/* =========================
+   TWEAK ZONE (Dan knobs)
+   ========================= */
+const TEX_DIR = "images/";
+const IS_FILE_PROTOCOL = location.protocol === "file:";
+const FORCE_NO_PICKER = true; // always load directly from images/
+const pickedAssets = new Map();
+const pickedAssetUrls = [];
+
+function registerPickedAssets(files){
+  pickedAssets.clear();
+  for (const oldUrl of pickedAssetUrls) URL.revokeObjectURL(oldUrl);
+  pickedAssetUrls.length = 0;
+
+  for (const file of files){
+    const rel = (file.webkitRelativePath || file.name || "").replace(/^\/+/, "");
+    const relKey = rel.toLowerCase();
+    const nameKey = file.name.toLowerCase();
+    const blobUrl = URL.createObjectURL(file);
+    pickedAssetUrls.push(blobUrl);
+    if (relKey) pickedAssets.set(relKey, blobUrl);
+    if (nameKey && !pickedAssets.has(nameKey)) pickedAssets.set(nameKey, blobUrl);
+  }
+}
+
+function resolveAssetUrl(fileName, { cacheBust=false } = {}){
+  const file = String(fileName || "").trim();
+  if (!file) return "";
+  if (/^(blob:|data:|https?:|file:)/i.test(file)) return file;
+
+  const clean = file.replace(/^\/+/, "");
+  const key = clean.toLowerCase();
+  const baseKey = clean.split("/").pop().toLowerCase();
+
+  let url = pickedAssets.get(key) || pickedAssets.get(baseKey) || (TEX_DIR + clean);
+  if (cacheBust && !IS_FILE_PROTOCOL && !url.startsWith("blob:") && !url.startsWith("data:")){
+    const sep = url.includes("?") ? "&" : "?";
+    url += `${sep}v=${Date.now()}`;
+  }
+  return url;
+}
+
+async function waitForAssetFolderChoice(){
+  const overlay = document.getElementById("assetPicker");
+  const pickBtn = document.getElementById("pickAssetsBtn");
+  const skipBtn = document.getElementById("skipAssetsBtn");
+  const input = document.getElementById("assetFolderInput");
+  if (!overlay || !pickBtn || !skipBtn || !input) return;
+
+  // Force direct images/ loading (local + web) when override is enabled.
+  if (FORCE_NO_PICKER || !IS_FILE_PROTOCOL){
+    overlay.classList.add("hidden");
+    return;
+  }
+
+  await new Promise((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      overlay.classList.add("hidden");
+      resolve();
+    };
+
+    pickBtn.addEventListener("click", () => input.click());
+    input.addEventListener("change", () => {
+      if (input.files && input.files.length) registerPickedAssets(input.files);
+      finish();
+    });
+    skipBtn.addEventListener("click", finish);
+  });
+}
+
+await waitForAssetFolderChoice();
+
+// 🌲 TREE VARIETY (SAFE)
+const TREE_FILES = ['tree1.png','tree2.png'];
+const TREE2_CHANCE = 1.00; // FORCE so you definitely see it if it loads // 0..1  (set high so you definitely see it)
+let tree2Used = 0;
+let tree1Used = 0;
+
+// ----- TRUCK AUDIO -----
+const TRUCK_AUDIO_ENABLE = true;
+const TRUCK_SOUND_FILE = "car_sound.mp3"; // optional: set a file in images/ to enable
+const TRUCK_SOUND_VOL  = 1.0; // max in-game playback gain
+const COPTER_SOUND_FILE = "";
+const COPTER_SOUND_VOL  = 0.40; // 60% reduction (plays at 40%)
+
+// ----- TRUCK AVATAR (Phase 1) -----
+const TRUCK_AVATAR_ENABLE = true;
+const TRUCK_FILE = "blue_truck.png"; // initial avatar
+const TRUCK_CHOICES = [
+  "big_truck.png",
+  "bigfoot.png",
+  "blue_truck.png",
+  "maz_back.png",
+  "orange_truck.png",
+  "truck2.png"
+];
+const DEFAULT_TRUCK_FILE = "blue_truck.png";
+const PLAYER_TRUCK_KEY_MAP = {
+  Digit1: "bigfoot.png",
+  Digit2: "blue_truck.png",
+  Digit3: "maz_back.png",
+  Digit4: "orange_truck.png",
+  Digit5: "truck2.png",
+  Digit6: "big_truck.png"
+};
+const PLAYER_TRUCK_SCALE_MAP = {
+  "bigfoot.png": 1.2768,
+  "maz_back.png": 1.2768,
+  "orange_truck.png": 1.14,
+  "truck2.png": 1.14,
+  "big_truck.png": 1.482
+};
+const PLAYER_TRUCK_SPEED_MULT_MAP = {
+  "bigfoot.png": 0.945, // 1: -5.5%
+  "maz_back.png": 1.07, // 3: +7%
+  "orange_truck.png": null, // 4: same as orange AI vehicle (computed at runtime)
+  "truck2.png": 1.03, // 5: +3%
+  "big_truck.png": 1.12 // 6: +12%
+};
+const PLAYER_RANDOM_SPEED_DELTAS = [0.00, 0.03, 0.05, -0.03, -0.05];
+const PLAYER_RANDOM_SPEED_ELIGIBLE = new Set([
+  "bigfoot.png",
+  "blue_truck.png",
+  "maz_back.png",
+  "orange_truck.png",
+  "truck2.png",
+  "big_truck.png"
+]);
+const TRUCK_W = 4.356;             // world units (+12% again)
+const TRUCK_H = 3.091;             // world units (+12% again)
+const BLUE_TRUCK_SCALE = 0.9856;   // decreased by 12% from 1.12
+const ORANGE_TRUCK_RAISE = 0.0; // keep tires tied to track surface
+const TRUCK_FWD = 6.2;             // how far in front of camera (tweak)
+const TRUCK_SIDE = 0.0;            // left/right offset (tweak)
+const COMPANION_TRUCK_ENABLE = true;
+const COMPANION_TRUCK_FILE = "orange_truck.png";
+const COMPANION_TRUCK_SIDE_OFFSET = -3.6; // side-by-side on opposite side of blue truck
+const AI_RACER_ENABLE = false;
+const ORANGE_AUTORUN_START_KEY = "KeyZ";
+const ORANGE_AUTORUN_LAPS = 1;
+const ORANGE_AUTORUN_SPEED = 5.544 * 1.30 * 1.30 * 1.50 * 1.02 * 1.03; // +3% more orange base speed
+const ORANGE_AUTORUN_TURN_RATE = 1.15; // smoother tank-style steering (smaller per-frame yaw steps)
+const ORANGE_AUTORUN_BLUE_SPAWN_SIDE_GAP = TRUCK_W * 1.35; // blue starts clearly beside orange at Z-start
+const ORANGE_SPURT_COUNT = 3;
+const ORANGE_SPURT_MULT = 1.84094681; // +3%
+const ORANGE_SPURT_DURATION = 1.0; // seconds
+const ORANGE_CATCHUP_GAP_TRIGGER_1 = 10.0; // if orange trails by this much, +3%
+const ORANGE_CATCHUP_GAP_TRIGGER_2 = 15.0; // if orange trails by this much, +5%
+const ORANGE_CATCHUP_GAP_TRIGGER_3 = 20.0; // if orange trails by this much, +7%
+const ORANGE_CATCHUP_GAP_TRIGGER_4 = 25.0; // if orange trails by this much, +5%
+const ORANGE_CATCHUP_REARM_GAP = 8.0; // must recover inside this gap before next boost
+const ORANGE_CATCHUP_BOOST_MULT_1 = 1.80164922; // +3%
+const ORANGE_CATCHUP_BOOST_MULT_2 = 1.84094681; // +3%
+const ORANGE_CATCHUP_BOOST_MULT_3 = 1.87268626; // +3%
+const ORANGE_CATCHUP_BOOST_MULT_4 = 1.84094681; // +3%
+const ORANGE_AI_LOOKAHEAD = 9.0; // tank-style steer target distance
+const ORANGE_CURVE_HUG_MAX = 1.28; // max sideways offset toward inside line
+const ORANGE_CURVE_HUG_GAIN = 9.4; // turn angle -> lateral offset
+const ORANGE_CURVE_HUG_SMOOTH = 2.2; // lower = slower, smoother lane migration
+const ORANGE_CURVE_HUG_DEADZONE = 0.015; // ignore tiny track noise on straights
+const ORANGE_CAMERA_FOLLOW_CENTERLINE = true; // keeps camera stable while orange apexes
+const ORANGE_CAMERA_Y_SMOOTH_RATE = 5.0; // smooth camera height to avoid world-jerk feel
+const ORANGE_AI_LOOKAHEAD_MIN = 7.0;
+const ORANGE_AI_LOOKAHEAD_MAX = 18.0;
+const ORANGE_AI_LOOKAHEAD_SPEED_GAIN = 0.42;
+const ORANGE_AI_CURVE_SPEED_BRAKE = 2.0; // higher = slower through sharper turns
+const ORANGE_AI_STATE_ATTACK_MULT = 1.10;
+const ORANGE_AI_STATE_CRUISE_MULT = 1.00;
+const ORANGE_AI_STATE_DEFEND_MULT = 0.95;
+const ORANGE_AI_STATE_RECOVER_MULT = 0.82;
+const ORANGE_AI_ACCEL_RATE = 2.884; // +3%
+const ORANGE_AI_DECEL_RATE = 4.0;
+const ORANGE_AI_GAP_GAIN = 0.08; // IDM-like simple gap closure gain
+const ORANGE_AI_TARGET_GAP = 8.0;
+const ORANGE_STRAIGHT_SPEED_BOOST_MAX = 0.044463620817; // +3%
+const ORANGE_STRAIGHT_SPEED_BOOST_SMOOTH = 0.3605; // +3% straight-section acceleration ramp
+const BLUE_ZMODE_LATERAL_MULT = 1.875; // +25% left/right slide speed for blue in Z mode
+const BLUE_ZMODE_TURN_MULT = 1.452; // -12% steering response for blue after Z
+const AI_RACER_BASE_SPEED = 18.0;
+const AI_RACER_MIN_SPEED = 10.0;
+const AI_RACER_MAX_SPEED = 44.0;
+const AI_RACER_RUBBERBAND_GAIN = 0.075; // closes/open gaps like arcade racers
+const AI_RACER_SMOOTH_RATE = 3.5;
+const AI_RACER_TARGET_GAP = 10.0; // keep orange near player for visible head-to-head racing
+const TRUCK_GROUND_SINK = 0.16;
+const TRUCK_VISUAL_DROP = 0.55; // extra sprite baseline drop so tires sit on track
+const TRACK_PLAYER_SURFACE_OFFSET = 0.9;
+const TRACK_TRUCK_SURFACE_OFFSET = 0.22;
+const TRUCK_Y_SMOOTH_RATE = 8.0;      // higher = quicker follow, lower = smoother
+const TRUCK_Y_MAX_STEP_PER_SEC = 12.0; // cap vertical movement speed to prevent bouncing
+const ORANGE_BLUE_COLLISION_RADIUS = 0.86; // very tight collision zone
+const ORANGE_BLUE_COLLISION_COOLDOWN_MS = 420;
+// If your truck image has a white background (not transparent), enable chroma-key.
+// 0 = off (use PNG alpha), 1 = key out near-white
+const TRUCK_CHROMAKEY_ENABLE = false;
+const TRUCK_KEY_COLOR = { r: 1.0, g: 1.0, b: 1.0 }; // white
+const TRUCK_KEY_TOL = 0.20;   // bigger = removes more (0.12–0.30)
+const TRUCK_KEY_SOFT = 0.08;  // edge softness (0.02–0.12)
+
+// For a first "does it show?" pass, draw truck on top of terrain.
+// Set false later if you want true world-occlusion.
+const TRUCK_DRAW_ON_TOP = true;
+// tiny sink to avoid floating
+
+// Heightmap
+const HEIGHTMAP_FILE = "height_map.jpg";
+const USE_TERRAIN = true;
+
+// Terrain
+const TERRAIN_SEGMENTS = 256;
+const TERRAIN_HEIGHT   = 20.45972; // lowered by 12%
+const CLAMP_OUTSIDE_TERRAIN = true;
+
+// Player
+const PLAYER_EYE_HEIGHT = 5.5;
+const MOVE_SPEED = 16.9; // increased by 100%
+const TURN_SPEED = 0.792; // -12% steering rate (radians/sec)
+const ARROW_TURN_INPUT_MULT = 0.7744; // another 12% reduction (0.88 * 0.88)
+const ARROW_TURN_SPEED_MULT = 0.7744; // another 12% reduction (0.88 * 0.88)
+const RF_SPEED = 55; // vertical raise/lower speed (units/sec)
+const JUMP_VEL   = 12;
+const GRAVITY    = 30;
+const DRIVE_MAX_SPEED = 36;
+const DRIVE_ACCEL = 22;
+const DRIVE_COAST_DECEL = 6.2;
+const DRIVE_BRAKE_DECEL = 20;
+const TANK_BASE_SPEED = 5.04 * 1.232 * 1.30 * 1.30 * 1.50; // +50% default blue speed
+const TANK_BOOST_MAX = TANK_BASE_SPEED; // Spacebar no longer increases beyond default
+const TANK_BOOST_ACCEL = 12;
+
+// Debug block (requested): L=20, W=5, Thickness=2
+const DEBUG_RED_BLOCK_ENABLE = false;
+const DEBUG_RED_BLOCK_L = 100;
+const DEBUG_RED_BLOCK_W = 10;
+const DEBUG_RED_BLOCK_T = 2;
+const DEBUG_RED_BLOCK_SINK = 0.8;
+const DEBUG_RED_BLOCK_Y_OFFSET = 5.0;
+const DEBUG_RED_BLOCK_POS = { x: 0, z: 40 };
+let debugRedBlock = null;
+
+const DEBUG_RED_CURVE_ENABLE = false;
+const DEBUG_RED_CURVE_TURN_DEG = 45;
+const DEBUG_RED_CURVE_STEPS = 28;
+let debugRedCurveBlock = null;
+const DEBUG_RED_CURVE_RIGHT_ENABLE = false;
+let debugRedCurveRightBlock = null;
+const MODULE_LOOP_ENABLE = false;
+const MODULE_SEG_LEN = DEBUG_RED_BLOCK_L;
+const MODULE_CURVE_DEG = 45;
+let moduleLoopGroup = null;
+const START_GATE_EXTRA_ROT_DEG = 90;
+const START_GATE_ANCHOR_ENABLE = true;
+const START_GATE_ANCHOR_X = 3.3;
+const START_GATE_ANCHOR_Y = 38.2;
+const START_GATE_ANCHOR_Z = -172.3;
+const SPAWN_OVERRIDE_ENABLE = true;
+const SPAWN_OVERRIDE_X = 13.5;
+const SPAWN_OVERRIDE_Z = -172.3;
+const SPAWN_YAW_CCW_DEG = 0; // increase (e.g. 5, 10, 15) if you want extra counter-clockwise tweak
+const RIGHT_POST_HEIGHT_SCALE = 0.924; // shorten right post by 12%
+
+const DEBUG_GREEN_BLOCK_ENABLE = false;
+const DEBUG_GREEN_BLOCK_L = 70;
+const DEBUG_GREEN_BLOCK_W = 70;
+const DEBUG_GREEN_BLOCK_POS = { x: 45, z: 40 };
+const DEBUG_GREEN_BLOCK_Y_OFFSET = 2.8;
+let debugGreenBlock = null;
+
+const PLAYER_SPAWN_X = 65.8;
+const PLAYER_SPAWN_Z = 41.8;
+
+// Grass textures**********************//
+const GRASS_COLOR_FILE = 
+"rock_albedo.jpg";
+
+const GRASS_NORMAL_EXR = 
+"rock_normal.exr";
+
+const GRASS_ROUGH_EXR  = 
+"rock_rough.exr";
+
+const GRASS_REPEAT = 90;
+
+// ===== TALL GRASS (Option B: grass cards) =====
+const TALL_GRASS_ENABLE = true;
+
+// Uses your existing grass color texture; for best look later, swap to a real grass-cutout PNG.
+const GRASS_CARD_COLOR_FILE = GRASS_COLOR_FILE; // reuse ground grass color
+const GRASS_CARD_HEIGHT_FILE = "fart.png";   // put in images/dg_disp.png
+
+const GRASS_CARD_COUNT = 8000;   // start 3000–12000 (more = heavier)
+const GRASS_CARD_AREA  = 2400;   // spread radius around start (world units)
+const GRASS_CARD_MIN_H = 0.6;    // minimum blade height
+const GRASS_CARD_MAX_H = 3.2;    // maximum blade height (taller = more dramatic)
+const GRASS_CARD_W     = 0.22;   // blade/card width
+const GRASS_CARD_ALPHA = 0.60;   // alphaTest: higher = fewer pixels drawn (faster)
+const GRASS_CARD_GROUND_SINK = 0.08; // sink into ground to prevent floating
+
+// Sky & fog
+const SKY_TOP    = 0x2c5aa8;
+const SKY_BOTTOM = 0xcfe8ff;
+
+/* =========================
+   🌅 GOLDEN HOUR (PERMANENT)
+   Always-on late-afternoon warmth.
+   Safe: no new assets, no heavy shaders, no geometry changes.
+   ========================= */
+const GOLDEN_ENABLE = true;
+const GOLDEN_SUN_COLOR     = 0xffd1a3;
+const GOLDEN_SUN_INTENSITY = 1.45;
+const GOLDEN_SUN_POS       = { x: 230, y: 260, z: 260 }; // lower = longer shadows
+const GOLDEN_SKY_TOP       = 0x3b63b3;
+const GOLDEN_SKY_BOTTOM    = 0xf6e2c8;
+const FOG_COLOR_GOLDEN     = 0xaec2e6; // warm gray-blue haze
+
+// Day (original) sun position
+const DAY_SUN_POS = { x: 250, y: 420, z: 180 };
+
+// 🌞 Lake40: bright grass + stronger shadows
+const SUN_INTENSITY  = 2.95;
+const HEMI_INTENSITY = 0.42;
+const EXPOSURE       = 2.25;
+const SHADOW_D       = 620;
+
+/* =========================
+   ✅ FOG FIX (more blue + farther out)
+   Old:
+     FOG_COLOR = 0xbfd9ff
+     FOG_NEAR  = 180
+     FOG_FAR   = 1600
+   Those values fully fogged mountains at radius 4800–6400.
+   ========================= */
+const FOG_COLOR  = 0x8fb6ff;   // bluer fog
+const FOG_NEAR   = 1400;       // start fog farther out
+const FOG_FAR    = 14000;      // fade much farther away
+
+// World sizes
+const GROUND_SIZE = 1350; // reduced by 25%
+const SKY_RADIUS  = 9000;
+
+// ===== Procedural race track =====
+const RACE_TRACK_ENABLE = true;
+const RACE_TRACK_WIDTH = 22.4; // widened by 12%
+const RACE_TRACK_Y_LIFT = 18.0;
+const RACE_TRACK_EDGE_Y_LIFT = 0.45;
+const RACE_TRACK_THICKNESS = 0.7;
+const RACE_TRACK_ALBEDO_FILE = "rock_albedo.png";
+const RACE_TRACK_SAMPLE_COUNT = 320; // denser centerline for smoother curves
+const RACE_TRACK_SMOOTH_PASSES = 2; // more rounded, less angular corners
+const RACE_TRACK_CENTERLINE_ENABLE = true;
+const RACE_TRACK_CENTERLINE_WIDTH = 1.6;
+const RACE_TRACK_CENTERLINE_Y_OFFSET = 0.16;
+const RACE_TRACK_EDGE_LINE_ENABLE = true;
+const RACE_TRACK_EDGE_LINE_WIDTH = 0.5;
+const RACE_TRACK_EDGE_LINE_INSET = 0.35;
+const RACE_TRACK_EDGE_LINE_Y_OFFSET = 0.07;
+const RACE_TRACK_RAISED_EDGE_ENABLE = true;
+const RACE_TRACK_RAISED_EDGE_WIDTH_RATIO = 0.02; // 2% of track width on each side
+const RACE_TRACK_RAISED_EDGE_HEIGHT = TRUCK_H * 0.25; // one-fourth vehicle height
+const RACE_TRACK_RAISED_EDGE_COLOR = 0xffff00; // bright yellow
+let raceTrackMesh = null;
+let raceTrackStripeMesh = null;
+let raceTrackEdgeMeshL = null;
+let raceTrackEdgeMeshR = null;
+let raceTrackRaisedEdgeMeshL = null;
+let raceTrackRaisedEdgeMeshR = null;
+let raceTrackSkirtMesh = null;
+let raceTrackSectionLinesGroup = null;
+let raceTrackStart = null;
+let raceTrackStartGate = null;
+let raceTrackCenterline = null;
+let raceTrackCumLen = null;
+let raceTrackTotalLen = 0;
+let raceTrackGateS = 0;
+let raceTrackColorTex = null;
+
+// STEP 4: Far mountain rings
+const MOUNTAIN_ENABLE = true;
+
+const M1_RADIUS   = 6800;
+const M1_HEIGHT   = 580;
+const M1_THICK    = 1200;
+const M1_SEGMENTS = 220;
+
+/* =========================
+   ✅ MORE BLUE IN FAR MOUNTAINS
+   ========================= */
+const M1_COLOR_RGB = { r: 122, g: 156, b: 220 };  // deeper blue
+const M1_OPACITY  = 0.62;                        // slightly higher so color reads
+
+const M2_RADIUS   = 8400;
+const M2_HEIGHT   = 300;
+const M2_THICK    = 1600;
+const M2_SEGMENTS = 280;
+
+const M2_COLOR_RGB = { r: 110, g: 145, b: 220 }; // lighter blue for the farther ring
+const M2_OPACITY  = 0.42;                        // slightly higher so it doesn't vanish
+
+const MOUNTAIN_BASE_Y = 40;
+const MOUNTAIN_SEED = 1337;
+const MOUNTAIN_RUGGEDNESS = 1.5;
+/* ========================= */
+
+// RGB helper (0–255 -> THREE.Color)
+function rgb255ToThree(rgb){
+  return new THREE.Color(rgb.r/255, rgb.g/255, rgb.b/255);
+}
+
+const hud = document.getElementById("hud");
+function hudLine(html){ return; }
+function showBanner(msg){ const b=document.getElementById("banner"); if(!b) return; b.innerHTML = msg; b.style.display="block"; }
+function hideBanner(){ const b=document.getElementById("banner"); if(!b) return; b.style.display="none"; }
+function setTreeCountsHUD(){
+  const a=document.getElementById('t1c'); if(a) a.textContent=String(tree1Used);
+  const b=document.getElementById('t2c'); if(b) b.textContent=String(tree2Used);
+}
+
+function buildCurvedBlockGeometry(length, width, thickness, turnDeg, steps=24){
+  const turnRad = THREE.MathUtils.degToRad(Math.max(1, turnDeg));
+  const radius = length / turnRad;
+  const halfW = width * 0.5;
+  const halfT = thickness * 0.5;
+  const centerX = 0;
+  const centerZ = radius;
+
+  const positions = [];
+  const indices = [];
+
+  function addV(x, y, z){
+    positions.push(x, y, z);
+    return (positions.length / 3) - 1;
+  }
+  function addQuad(a, b, c, d){
+    indices.push(a, b, d);
+    indices.push(b, c, d);
+  }
+
+  const rows = [];
+  for (let i = 0; i <= steps; i++){
+    const t = i / steps;
+    const a = -Math.PI * 0.5 + (turnRad * t);
+    const dx = Math.cos(a);
+    const dz = Math.sin(a);
+
+    const ix = centerX + dx * (radius - halfW);
+    const iz = centerZ + dz * (radius - halfW);
+    const ox = centerX + dx * (radius + halfW);
+    const oz = centerZ + dz * (radius + halfW);
+
+    const innerTop = addV(ix, halfT, iz);
+    const outerTop = addV(ox, halfT, oz);
+    const innerBot = addV(ix, -halfT, iz);
+    const outerBot = addV(ox, -halfT, oz);
+    rows.push({ innerTop, outerTop, innerBot, outerBot });
+  }
+
+  for (let i = 0; i < rows.length - 1; i++){
+    const a = rows[i];
+    const b = rows[i + 1];
+    addQuad(a.innerTop, a.outerTop, b.outerTop, b.innerTop); // top
+    addQuad(a.outerBot, a.innerBot, b.innerBot, b.outerBot); // bottom
+    addQuad(a.innerBot, a.innerTop, b.innerTop, b.innerBot); // inner wall
+    addQuad(a.outerTop, a.outerBot, b.outerBot, b.outerTop); // outer wall
+  }
+
+  const s = rows[0];
+  const e = rows[rows.length - 1];
+  addQuad(s.outerTop, s.innerTop, s.innerBot, s.outerBot); // start cap
+  addQuad(e.innerTop, e.outerTop, e.outerBot, e.innerBot); // end cap
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function createModuleSegmentMesh(type){
+  if (type === "S"){
+    const geo = new THREE.BoxGeometry(DEBUG_RED_BLOCK_L, DEBUG_RED_BLOCK_T, DEBUG_RED_BLOCK_W);
+    const mat = new THREE.MeshStandardMaterial({ color: 0x5c0000, roughness: 0.62, metalness: 0.05 });
+    const m = new THREE.Mesh(geo, mat);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    return m;
+  }
+
+  const geo = buildCurvedBlockGeometry(
+    DEBUG_RED_BLOCK_L,
+    DEBUG_RED_BLOCK_W,
+    DEBUG_RED_BLOCK_T,
+    DEBUG_RED_CURVE_TURN_DEG,
+    DEBUG_RED_CURVE_STEPS
+  );
+  const mat = new THREE.MeshStandardMaterial({ color: 0x5c0000, roughness: 0.62, metalness: 0.05 });
+  const m = new THREE.Mesh(geo, mat);
+  m.castShadow = true;
+  m.receiveShadow = true;
+  if (type === "R") m.scale.z = -1;
+  return m;
+}
+
+function buildModuleLoopTrack(){
+  if (!MODULE_LOOP_ENABLE || !terrainReady) return;
+
+  if (moduleLoopGroup){
+    scene.remove(moduleLoopGroup);
+    moduleLoopGroup.traverse((obj)=>{
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    });
+  }
+  moduleLoopGroup = new THREE.Group();
+
+  const seq = [];
+  for (let g = 0; g < 4; g++){
+    // 5 modules per quadrant: 3 straights + 2 left turns
+    // 4 quadrants => 20 modules (2000') and closes cleanly by symmetry.
+    seq.push("S", "S", "L", "S", "L");
+  }
+
+  const turnRad = THREE.MathUtils.degToRad(MODULE_CURVE_DEG);
+  const radius = MODULE_SEG_LEN / turnRad;
+  const baseY = heightAtWorldXZ(0, -380) + (DEBUG_RED_BLOCK_T * 0.5) - DEBUG_RED_BLOCK_SINK + DEBUG_RED_BLOCK_Y_OFFSET;
+
+  // Anchor means "start point of next segment".
+  let x = -150;
+  let z = -520;
+  let heading = 0;
+
+  for (const type of seq){
+    const seg = createModuleSegmentMesh(type);
+    const cosH = Math.cos(heading);
+    const sinH = Math.sin(heading);
+
+    if (type === "S"){
+      // C1 is centered on X, so place center half-length forward from anchor.
+      const cx = x + cosH * (MODULE_SEG_LEN * 0.5);
+      const cz = z + sinH * (MODULE_SEG_LEN * 0.5);
+      seg.position.set(cx, baseY, cz);
+      seg.rotation.y = heading;
+      moduleLoopGroup.add(seg);
+
+      x += cosH * MODULE_SEG_LEN;
+      z += sinH * MODULE_SEG_LEN;
+    } else if (type === "L"){
+      // CL geometry is anchored at local start point.
+      seg.position.set(x, baseY, z);
+      seg.rotation.y = heading;
+      moduleLoopGroup.add(seg);
+
+      const dx = radius * Math.sin(turnRad);
+      const dz = radius * (1 - Math.cos(turnRad));
+      x += cosH * dx - sinH * dz;
+      z += sinH * dx + cosH * dz;
+      heading += turnRad;
+    } else {
+      // CR is CL mirrored on local Z.
+      seg.scale.z = -1;
+      seg.position.set(x, baseY, z);
+      seg.rotation.y = heading;
+      moduleLoopGroup.add(seg);
+
+      const dx = radius * Math.sin(turnRad);
+      const dz = -radius * (1 - Math.cos(turnRad));
+      x += cosH * dx - sinH * dz;
+      z += sinH * dx + cosH * dz;
+      heading -= turnRad;
+    }
+  }
+
+  scene.add(moduleLoopGroup);
+}
+
+function updateXYZTracker(){
+  const el = document.getElementById("xyzTracker");
+  if (!el) return;
+  const p = controls.getObject().position;
+  el.textContent = `X: ${p.x.toFixed(1)}  Y: ${p.y.toFixed(1)}  Z: ${p.z.toFixed(1)}`;
+}
+
+function updateRaceGapTracker(){
+  const el = document.getElementById("raceGapTracker");
+  if (!el) return;
+  if (!raceTrackCenterline || raceTrackTotalLen <= 1 || !companionTruckPlane){
+    el.textContent = "Gap: --";
+    return;
+  }
+
+  const bluePos = (orangeAutoRunActive && blueControlActive) ? blueControlPos : controls.getObject().position;
+  const blueS = projectTrackDistanceAtXZ(bluePos.x, bluePos.z);
+  const orangeS = projectTrackDistanceAtXZ(companionTruckPlane.position.x, companionTruckPlane.position.z);
+  const gap = signedTrackDelta(orangeS, blueS);
+  const leader = gap > 0 ? "Orange +" : (gap < 0 ? "Blue +" : "Tied");
+  el.textContent = `${leader} ${Math.abs(gap).toFixed(1)}u`;
+}
+
+function getPlayerVehicleLabel(){
+  const n = PLAYER_TRUCK_NUMBER_BY_FILE[currentTruckFile];
+  return Number.isFinite(n) ? `PLAYER ${n}` : "PLAYER";
+}
+
+function showRaceFinishBoard(winnerLabel, leadFeet){
+  const el = document.getElementById("raceFinishBoard");
+  if (!el) return;
+  el.innerHTML = `<div>${winnerLabel} WINS BY</div><div>${leadFeet.toFixed(1)} FEET</div>`;
+  el.style.display = "block";
+}
+
+function resetRaceFinishMonitor(startBlueS = null, startOrangeS = null){
+  raceFinishAnnounced = false;
+  raceBlueDistAccum = 0;
+  raceOrangeDistAccum = 0;
+  raceBluePrevGateU = null;
+  raceOrangePrevGateU = null;
+  raceBluePrevS = startBlueS;
+  raceOrangePrevS = startOrangeS;
+  const el = document.getElementById("raceFinishBoard");
+  if (el) el.style.display = "none";
+}
+
+function updateRaceFinishMonitor(){
+  if (raceFinishAnnounced) return;
+  if (!raceStarted || !companionTruckPlane || raceTrackTotalLen <= 1) return;
+
+  const bluePos = (orangeAutoRunActive && blueControlActive) ? blueControlPos : controls.getObject().position;
+  const orangePos = companionTruckPlane.position;
+  const blueS = projectTrackDistanceAtXZ(bluePos.x, bluePos.z);
+  const orangeS = projectTrackDistanceAtXZ(orangePos.x, orangePos.z);
+
+  if (raceBluePrevS !== null){
+    let ds = blueS - raceBluePrevS;
+    if (ds < -raceTrackTotalLen * 0.5) ds += raceTrackTotalLen;
+    if (ds > raceTrackTotalLen * 0.5) ds -= raceTrackTotalLen;
+    if (ds > 0) raceBlueDistAccum += ds;
+  }
+  if (raceOrangePrevS !== null){
+    let ds = orangeS - raceOrangePrevS;
+    if (ds < -raceTrackTotalLen * 0.5) ds += raceTrackTotalLen;
+    if (ds > raceTrackTotalLen * 0.5) ds -= raceTrackTotalLen;
+    if (ds > 0) raceOrangeDistAccum += ds;
+  }
+  raceBluePrevS = blueS;
+  raceOrangePrevS = orangeS;
+
+  const blueGateU = wrapTrackDistance(blueS - raceTrackGateS);
+  const orangeGateU = wrapTrackDistance(orangeS - raceTrackGateS);
+  // Robust forward wrap detection: large drop in wrapped gate distance means crossed start/finish.
+  const blueCrossedGate = (raceBluePrevGateU !== null) && ((raceBluePrevGateU - blueGateU) > (raceTrackTotalLen * 0.5));
+  const orangeCrossedGate = (raceOrangePrevGateU !== null) && ((raceOrangePrevGateU - orangeGateU) > (raceTrackTotalLen * 0.5));
+  raceBluePrevGateU = blueGateU;
+  raceOrangePrevGateU = orangeGateU;
+
+  const lapTarget = raceTrackTotalLen * ORANGE_AUTORUN_LAPS;
+  const blueFinishedNow = blueCrossedGate && (raceBlueDistAccum >= lapTarget);
+  const orangeFinishedNow = orangeCrossedGate && (raceOrangeDistAccum >= lapTarget);
+  if (!blueFinishedNow && !orangeFinishedNow) return;
+
+  const gap = signedTrackDelta(orangeS, blueS);
+  const leadFeet = Math.abs(gap) * RACE_UNIT_TO_FEET;
+  if (blueFinishedNow && !orangeFinishedNow) showRaceFinishBoard(getPlayerVehicleLabel(), leadFeet);
+  else if (orangeFinishedNow && !blueFinishedNow) showRaceFinishBoard("ROBOCAR", leadFeet);
+  else showRaceFinishBoard((gap > 0) ? "ROBOCAR" : getPlayerVehicleLabel(), leadFeet);
+  raceFinishAnnounced = true;
+}
+
+/* =========================================================
+   🔊 FIRE + HIT SOUNDS (SAFE)
+   - Space shot: gun.mp3
+   - Target/bad guy hit: missle.mp3
+   ========================================================= */
+const FIRE_SOUND_FILE = "gun.mp3";
+const FIRE_SOUND_VOL = 1.0;
+const HIT_SOUND_FILE = "missle.mp3";
+const HIT_SOUND_VOL = 0.85; // reduced by 15%
+const SKID_SOUND_FILE = "skid.mp3";
+const SKID_SOUND_VOL = 0.92;
+const JUNGLE_SOUND_FILE = "jungle.mp3";
+const JUNGLE_SOUND_VOL = 0.576;
+const BLUE_EDGE_SKID_COOLDOWN_MS = 260;
+const BLUE_EDGE_SLOW_MULT = 0.97; // -3% speed
+const BLUE_EDGE_SLOW_DURATION = 1.0; // seconds
+const PLAYER_AI_COLLISION_SLOW_MULT = 0.95; // -5% speed
+const PLAYER_AI_COLLISION_SLOW_DURATION = 2.0; // seconds
+const RACE_UNIT_TO_FEET = 1.0; // world units -> feet for finish board
+
+let fireAudio = null;
+let hitAudio = null;
+let skidAudio = null;
+let jungleAudio = null;
+let copterAudio = null;
+let lastCopterPlayTryMs = 0;
+
+function initCopterAudio(){
+  if (copterAudio || !COPTER_SOUND_FILE) return;
+  const url = resolveAssetUrl(COPTER_SOUND_FILE, { cacheBust:true });
+  copterAudio = new Audio(url);
+  copterAudio.loop = true;
+  copterAudio.volume = COPTER_SOUND_VOL;
+
+  // Start as soon as the user interacts (autoplay-safe).
+  const start = () => { ensureCopterAudioPlaying(); };
+  document.body.addEventListener("click", start, { passive: true });
+  document.body.addEventListener("touchstart", start, { passive: true });
+  document.body.addEventListener("keydown", start);
+}
+
+function ensureCopterAudioPlaying(){
+  if (!copterAudio) return;
+  if (!copterAudio.paused) return;
+  const now = performance.now();
+  if (now - lastCopterPlayTryMs < 1200) return;
+  lastCopterPlayTryMs = now;
+  copterAudio.play().catch(()=>{});
+}
+
+function initFireSound(){
+  if (fireAudio) return;
+  const url = resolveAssetUrl(FIRE_SOUND_FILE, { cacheBust:true });
+  fireAudio = new Audio(url);
+  fireAudio.volume = FIRE_SOUND_VOL;
+
+  // prime on first user gesture
+  document.body.addEventListener("click", () => {
+    fireAudio.play().then(() => {
+      fireAudio.pause();
+      fireAudio.currentTime = 0;
+    }).catch(()=>{});
+  }, { once:true });
+}
+
+function initHitSound(){
+  if (hitAudio) return;
+  const url = resolveAssetUrl(HIT_SOUND_FILE, { cacheBust:true });
+  hitAudio = new Audio(url);
+  hitAudio.volume = HIT_SOUND_VOL;
+
+  // prime on first user gesture
+  document.body.addEventListener("click", () => {
+    hitAudio.play().then(() => {
+      hitAudio.pause();
+      hitAudio.currentTime = 0;
+    }).catch(()=>{});
+  }, { once:true });
+}
+
+function initSkidSound(){
+  if (skidAudio) return;
+  const url = resolveAssetUrl(SKID_SOUND_FILE, { cacheBust:true });
+  skidAudio = new Audio(url);
+  skidAudio.volume = SKID_SOUND_VOL;
+
+  // prime on first user gesture
+  document.body.addEventListener("click", () => {
+    skidAudio.play().then(() => {
+      skidAudio.pause();
+      skidAudio.currentTime = 0;
+    }).catch(()=>{});
+  }, { once:true });
+}
+
+
+/* =========================================================
+   ✨ HIT PARTICLES (SAFE)
+   - Tiny sparkle burst on hits (target cube + bad guy)
+   - Very lightweight: THREE.Points, short lifetime, fades out
+   ========================================================= */
+const HIT_PARTICLES_ENABLE = true;
+const HIT_PARTICLE_COUNT   = 22;   // 12–40
+const HIT_PARTICLE_LIFE    = 0.35; // seconds
+const HIT_PARTICLE_SPEED   = 6.5;  // world units/sec
+const HIT_PARTICLE_SIZE    = 10.0; // pixels (PointsMaterial.size)
+
+const hitBursts = []; // { points, vels: Float32Array, life, maxLife, baseOpacity }
+
+function spawnHitBurst(worldPos, colorHex=0xffffff){
+  if (!HIT_PARTICLES_ENABLE) return;
+
+  const count = HIT_PARTICLE_COUNT;
+  const positions = new Float32Array(count * 3);
+  const vels      = new Float32Array(count * 3);
+
+  // random burst in a small sphere
+  for (let i=0; i<count; i++){
+    const k = i*3;
+    const theta = Math.random() * Math.PI * 2;
+    const u = Math.random() * 2 - 1;          // -1..1
+    const r = Math.cbrt(Math.random()) * 0.22; // compact radius
+
+    const s = Math.sqrt(1 - u*u);
+    const dx = r * s * Math.cos(theta);
+    const dy = r * u;
+    const dz = r * s * Math.sin(theta);
+
+    positions[k+0] = worldPos.x + dx;
+    positions[k+1] = worldPos.y + dy;
+    positions[k+2] = worldPos.z + dz;
+
+    // velocity direction (normalized) * speed with a bit of upward bias
+    const vx = dx;
+    const vy = dy + 0.35;
+    const vz = dz;
+    const len = Math.max(0.0001, Math.hypot(vx, vy, vz));
+    const sp = HIT_PARTICLE_SPEED * (0.45 + Math.random()*0.75);
+
+    vels[k+0] = (vx/len) * sp;
+    vels[k+1] = (vy/len) * sp;
+    vels[k+2] = (vz/len) * sp;
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: colorHex,
+    size: HIT_PARTICLE_SIZE,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false
+  });
+
+  const pts = new THREE.Points(geo, mat);
+  pts.renderOrder = 998; // above most things, below truck draw-on-top
+  scene.add(pts);
+
+  hitBursts.push({
+    points: pts,
+    vels,
+    life: HIT_PARTICLE_LIFE,
+    maxLife: HIT_PARTICLE_LIFE,
+    baseOpacity: mat.opacity
+  });
+}
+
+
+function playFireSound(){
+  try{
+    const a = new Audio(resolveAssetUrl(FIRE_SOUND_FILE, { cacheBust:true }));
+    a.volume = FIRE_SOUND_VOL;
+    a.play();
+  }catch(e){}
+}
+
+function playHitSound(){
+  try{
+    const a = new Audio(resolveAssetUrl(HIT_SOUND_FILE, { cacheBust:true }));
+    a.volume = HIT_SOUND_VOL;
+    a.play();
+  }catch(e){}
+}
+
+function playSkidSound(){
+  try{
+    const a = new Audio(resolveAssetUrl(SKID_SOUND_FILE, { cacheBust:true }));
+    a.volume = SKID_SOUND_VOL;
+    a.play();
+  }catch(e){}
+}
+
+function playJungleSound(){
+  try{
+    if (!jungleAudio){
+      jungleAudio = new Audio(resolveAssetUrl(JUNGLE_SOUND_FILE, { cacheBust:true }));
+      jungleAudio.volume = JUNGLE_SOUND_VOL;
+    }
+    jungleAudio.currentTime = 0;
+    jungleAudio.play().catch(()=>{});
+  }catch(e){}
+}
+
+function updateHitBursts(dt){
+
+  if (!HIT_PARTICLES_ENABLE) return;
+  for (let i = hitBursts.length - 1; i >= 0; i--){
+    const b = hitBursts[i];
+    b.life -= dt;
+
+    const geo = b.points.geometry;
+    const pos = geo.attributes.position;
+    const a = pos.array;
+
+    // simple movement + tiny gravity
+    for (let j=0; j<a.length; j+=3){
+      b.vels[j+1] -= 12.0 * dt; // gravity
+      a[j+0] += b.vels[j+0] * dt;
+      a[j+1] += b.vels[j+1] * dt;
+      a[j+2] += b.vels[j+2] * dt;
+    }
+    pos.needsUpdate = true;
+
+    // fade out
+    const t = Math.max(0, b.life / b.maxLife);
+    b.points.material.opacity = b.baseOpacity * t;
+
+    if (b.life <= 0){
+      scene.remove(b.points);
+      b.points.geometry.dispose();
+      b.points.material.dispose();
+      hitBursts.splice(i, 1);
+    }
+  }
+}
+
+
+// ---------- HUD TOGGLE (H key) ----------
+let hudVisible = true;
+
+function startRace(){
+  rollPlayerRandomSpeedDelta();
+  raceStarted = true;
+  removeStartupPanel();
+  playJungleSound();
+  const cam = controls.getObject();
+  const startFromBlueS = projectTrackDistanceAtXZ(cam.position.x, cam.position.z);
+  const startSample = sampleTrackAtDistance(startFromBlueS);
+  const startFwd = new THREE.Vector3(-Math.sin(startSample.yaw), 0, -Math.cos(startSample.yaw));
+  // True right-hand vector for current track heading.
+  const startRight = new THREE.Vector3(-startFwd.z, 0, startFwd.x).normalize();
+  // Orange starts exactly on the track centerline.
+  const startX = startSample.x;
+  const startZ = startSample.z;
+  const startBaseY = trackSurfaceYAt(startX, startZ) + TRACK_TRUCK_SURFACE_OFFSET;
+  const startY = startBaseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) + ORANGE_TRUCK_RAISE - TRUCK_VISUAL_DROP;
+  // Blue starts immediately beside orange using dedicated spawn gap.
+  const blueStartX = startX + (startRight.x * ORANGE_AUTORUN_BLUE_SPAWN_SIDE_GAP);
+  const blueStartZ = startZ + (startRight.z * ORANGE_AUTORUN_BLUE_SPAWN_SIDE_GAP);
+  const blueStartY = trackSurfaceYAt(blueStartX, blueStartZ) + TRACK_PLAYER_SURFACE_OFFSET + PLAYER_EYE_HEIGHT;
+  orangeAutoRunActive = true;
+  orangeAutoRunDistance = 0;
+  orangeAutoRunSpeedCurrent = ORANGE_AUTORUN_SPEED;
+  orangeCatchupBoostArmed = true;
+  // Start orange on centerline at blue's current along-track distance.
+  orangeAutoRunStartS = startFromBlueS;
+  aiRacerProgress = orangeAutoRunStartS;
+  orangeAutoRunLastS = aiRacerProgress;
+  orangeAiPos.set(startX, startY, startZ);
+  orangeAiYaw = startSample.yaw + Math.PI;
+  orangeAutoRunYaw = orangeAiYaw;
+  orangeAutoRunLockedY = null;
+  orangeCameraSmoothedY = null;
+  orangeAiState = "Cruise";
+  orangeStraightBoostLerp = 0;
+  companionTruckPlaced = true;
+  companionTruckSmoothedY = startY;
+  if (companionTruckPlane){
+    companionTruckPlane.position.set(startX, startY, startZ);
+    companionTruckPlane.rotation.set(0, orangeAiYaw, 0);
+  }
+  if (companionTruckShadowProxy){
+    const cSmoothedBaseY = startY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+    companionTruckShadowProxy.position.set(startX, cSmoothedBaseY + (TRUCK_H * 0.3), startZ);
+    companionTruckShadowProxy.rotation.set(0, orangeAiYaw, 0);
+  }
+  // Snap blue control state with no start delay.
+  blueControlPos.set(blueStartX, blueStartY, blueStartZ);
+  blueControlYaw = startSample.yaw;
+  blueControlActive = true;
+  cam.position.copy(blueControlPos);
+  cam.rotation.y = blueControlYaw;
+  // Hard-place blue visual immediately to remove any first-frame delay.
+  const blueTruckBaseY = trackSurfaceYAt(blueStartX, blueStartZ) + TRACK_TRUCK_SURFACE_OFFSET;
+  const blueTruckY = blueTruckBaseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) - TRUCK_VISUAL_DROP;
+  truckSmoothedY = blueTruckY;
+  if (truckPlane){
+    truckPlane.visible = true;
+    truckPlane.position.set(blueStartX, blueTruckY, blueStartZ);
+    truckPlane.rotation.set(0, blueControlYaw, 0);
+  }
+  if (truckShadowProxy){
+    truckShadowProxy.visible = true;
+    const blueShadowBaseY = blueTruckY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+    truckShadowProxy.position.set(blueStartX, blueShadowBaseY + (TRUCK_H * 0.3), blueStartZ);
+    truckShadowProxy.rotation.set(0, blueControlYaw, 0);
+  }
+  resetRaceFinishMonitor(startFromBlueS, startFromBlueS);
+  // Runtime verification for spawn alignment/side:
+  // - orangeCenterErr should be near 0
+  // - blueSideDot should be positive when blue is on orange's right side
+  const orangeCenterS = projectTrackDistanceAtXZ(startX, startZ);
+  const orangeCenterPt = sampleTrackAtDistance(orangeCenterS);
+  const orangeCenterErr = Math.hypot(startX - orangeCenterPt.x, startZ - orangeCenterPt.z);
+  const blueDx = blueStartX - startX;
+  const blueDz = blueStartZ - startZ;
+  const blueSideDot = (blueDx * startRight.x) + (blueDz * startRight.z);
+  console.info(
+    `[SpawnCheck] orangeCenterErr=${orangeCenterErr.toFixed(4)} blueSideDot=${blueSideDot.toFixed(4)} (positive=blue on right)`
+  );
+  scheduleOrangeSpurts(raceTrackTotalLen * ORANGE_AUTORUN_LAPS);
+  // Snap immediately when auto-run starts.
+  updateTruckAvatar(1/60);
+}
+
+window.addEventListener("keydown", (e)=>{
+  if (!e.repeat && PLAYER_TRUCK_KEY_MAP[e.code]){
+    initTruckAvatar(PLAYER_TRUCK_KEY_MAP[e.code]);
+    return;
+  }
+  if (e.code === "KeyH"){
+    hudVisible = !hudVisible;
+    hud.classList.toggle("hidden", !hudVisible);
+  }
+  if (e.code === "KeyX" && !e.repeat){
+    cycleTruckAvatar();
+  }
+  if (TARGET_ENABLE && e.code === "KeyN"){
+    if (targetsRemaining === 0) startNextWave();
+    else resetCurrentWave();
+  }
+  if (e.code === ORANGE_AUTORUN_START_KEY && !e.repeat){
+    startRace();
+  }
+});
+
+// ---------- SCENE ----------
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(FOG_COLOR, FOG_NEAR, FOG_FAR);
+
+const CAMERA_DOWN_PITCH = -Math.PI / 6; // 30° nose-down target
+const CAMERA_HEIGHT_MULT = 2.8224; // +20%
+const CAMERA_BACK_MULT = 1.50528; // backed up 20% more
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 30000);
+camera.position.set(0, PLAYER_EYE_HEIGHT * CAMERA_HEIGHT_MULT, 7.92);
+let touchOn = false;
+
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = EXPOSURE;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+// Controls
+const controls = new PointerLockControls(camera, document.body);
+document.body.addEventListener("click", ()=>{ if(!(("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints>0)) && !(typeof touchOn !== "undefined" && touchOn)) controls.lock(); });
+scene.add(controls.getObject());
+controls.getObject().rotation.order = "YXZ";
+camera.rotation.order = "YXZ";
+camera.rotation.x = 0;
+camera.rotation.z = 0;
+if (SPAWN_OVERRIDE_ENABLE){
+  const obj0 = controls.getObject();
+  obj0.position.x = SPAWN_OVERRIDE_X;
+  obj0.position.z = SPAWN_OVERRIDE_Z;
+}
+
+
+/* =========================================================
+   🧭 COMPASS + MINIMAP (SAFE HUD)
+   - Compass shows your heading (north = -Z)
+   - Minimap draws the heightmap once, then overlays:
+     - player dot + facing arrow
+     - lake footprint (if enabled)
+   - Toggle with M
+   ========================================================= */
+const NAV_ENABLE = false; // compass/minimap removed
+const compassWrap = document.getElementById("compassWrap");
+const minimapWrap = document.getElementById("minimapWrap");
+const navHelp = document.getElementById("navHelp");
+
+const compassC = document.getElementById("compassCanvas");
+const compassCtx = compassC ? compassC.getContext("2d") : null;
+
+const mapC = document.getElementById("minimapCanvas");
+const mapCtx = mapC ? mapC.getContext("2d") : null;
+
+// Minimaps are easiest if we draw a "base" once and then paint overlays each frame.
+let mapBase = document.createElement("canvas");
+let mapBaseReady = false;
+
+// Toggle
+let navVisible = false;
+function setNavVisible(on){
+  if (!NAV_ENABLE){
+    navVisible = false;
+    compassWrap?.classList.add("hidden");
+    minimapWrap?.classList.add("hidden");
+    navHelp?.classList.remove("on");
+    return;
+  }
+  navVisible = !!on;
+  compassWrap?.classList.toggle("hidden", !navVisible);
+  minimapWrap?.classList.toggle("hidden", !navVisible);
+}
+setNavVisible(false);
+
+window.addEventListener("keydown", (e)=>{
+  if (!NAV_ENABLE) return;
+  if (e.code === "KeyM"){
+    setNavVisible(!navVisible);
+    navHelp?.classList.add("on");
+    setTimeout(()=>navHelp?.classList.remove("on"), 1100);
+  }
+});
+
+// --- Helpers
+function clamp01_(t){ return Math.max(0, Math.min(1, t)); }
+
+// World -> minimap pixels (0..W/H)
+function worldToMapPx(x, z, W, H){
+  // Matches your heightAtWorldXZ UV mapping:
+  // u = (x / GROUND_SIZE) + 0.5
+  // v = (-z / GROUND_SIZE) + 0.5
+  let u = (x / GROUND_SIZE) + 0.5;
+  let v = (-z / GROUND_SIZE) + 0.5;
+  u = clamp01_(u);
+  v = clamp01_(v);
+  const px = u * W;
+  const py = (1 - v) * H;
+  return { px, py };
+}
+
+// Draw a pretty compass (2D canvas)
+function drawCompass(yawRad){
+  if (!compassCtx || !navVisible) return;
+
+  const w = compassC.width, h = compassC.height;
+  const cx = w/2, cy = h/2;
+  compassCtx.clearRect(0,0,w,h);
+
+  // Bearing: yaw=0 faces -Z (north), so bearing = -yaw
+  const bearing = -yawRad;
+
+  // Background ring
+  compassCtx.save();
+  compassCtx.translate(cx, cy);
+
+  // Outer ring
+  compassCtx.beginPath();
+  compassCtx.arc(0,0, (w*0.46), 0, Math.PI*2);
+  compassCtx.fillStyle = "rgba(10,12,16,0.35)";
+  compassCtx.fill();
+  compassCtx.lineWidth = 2;
+  compassCtx.strokeStyle = "rgba(255,255,255,0.20)";
+  compassCtx.stroke();
+
+  // Ticks
+  for (let i=0; i<36; i++){
+    const a = (i/36) * Math.PI*2;
+    const r0 = w*0.40;
+    const r1 = (i%3===0) ? w*0.46 : w*0.44;
+    compassCtx.beginPath();
+    compassCtx.moveTo(Math.cos(a)*r0, Math.sin(a)*r0);
+    compassCtx.lineTo(Math.cos(a)*r1, Math.sin(a)*r1);
+    compassCtx.strokeStyle = (i%3===0) ? "rgba(255,255,255,0.32)" : "rgba(255,255,255,0.18)";
+    compassCtx.lineWidth = (i%3===0) ? 2 : 1;
+    compassCtx.stroke();
+  }
+
+  // Cardinal letters (fixed, not rotating)
+  const letters = [
+    {t:"N", x:0, y:-w*0.32},
+    {t:"E", x:w*0.32, y:0},
+    {t:"S", x:0, y:w*0.34},
+    {t:"W", x:-w*0.32, y:0},
+  ];
+  compassCtx.font = "700 16px system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  compassCtx.textAlign = "center";
+  compassCtx.textBaseline = "middle";
+  for (const L of letters){
+    compassCtx.fillStyle = (L.t==="N") ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.72)";
+    compassCtx.fillText(L.t, L.x, L.y);
+  }
+
+  // Heading arrow (points where you're facing)
+  compassCtx.rotate(bearing);
+  compassCtx.beginPath();
+  compassCtx.moveTo(0, -w*0.30);
+  compassCtx.lineTo(w*0.045, 0);
+  compassCtx.lineTo(0, w*0.10);
+  compassCtx.lineTo(-w*0.045, 0);
+  compassCtx.closePath();
+  compassCtx.fillStyle = "rgba(255,90,90,0.95)";
+  compassCtx.fill();
+
+  // Small center dot
+  compassCtx.rotate(-bearing);
+  compassCtx.beginPath();
+  compassCtx.arc(0,0, 3.2, 0, Math.PI*2);
+  compassCtx.fillStyle = "rgba(255,255,255,0.85)";
+  compassCtx.fill();
+
+  compassCtx.restore();
+}
+
+// Build minimap base from heightmap pixels (hmData)
+function buildMinimapBase(){
+  if (!NAV_ENABLE) return;
+  if (!mapCtx || !mapC) return;
+  if (!terrainReady || !hmData || hmW<=0 || hmH<=0) return;
+
+  // Use a small-ish base for speed, then scale to map canvas
+  const baseSize = 256;
+  mapBase.width = baseSize;
+  mapBase.height = baseSize;
+  const bctx = mapBase.getContext("2d", { willReadFrequently:true });
+
+  const img = bctx.createImageData(baseSize, baseSize);
+  const d = img.data;
+
+  for (let y=0; y<baseSize; y++){
+    const v = y / (baseSize-1);
+    const srcY = Math.floor(v * (hmH-1));
+    for (let x=0; x<baseSize; x++){
+      const u = x / (baseSize-1);
+      const srcX = Math.floor(u * (hmW-1));
+      const idx = (srcY * hmW + srcX) * 4;
+      const h = hmData[idx] / 255; // 0..1
+
+      // Painterly height tint (subtle, readable)
+      // low = darker, high = lighter
+      const g = Math.floor(40 + h*170);
+      const r = Math.floor(30 + h*140);
+      const b = Math.floor(55 + h*190);
+
+      const k = (y*baseSize + x)*4;
+      d[k+0] = r;
+      d[k+1] = g;
+      d[k+2] = b;
+      d[k+3] = 255;
+    }
+  }
+
+  bctx.putImageData(img, 0, 0);
+  mapBaseReady = true;
+}
+
+// Draw minimap each frame
+function drawMinimap(playerX, playerZ, yawRad){
+  if (!mapCtx || !navVisible) return;
+
+  const W = mapC.width, H = mapC.height;
+  mapCtx.clearRect(0,0,W,H);
+
+  // Base
+  if (mapBaseReady){
+    mapCtx.drawImage(mapBase, 0, 0, W, H);
+  } else {
+    // fallback background if base isn't ready yet
+    mapCtx.fillStyle = "rgba(0,0,0,0.25)";
+    mapCtx.fillRect(0,0,W,H);
+    mapCtx.strokeStyle = "rgba(255,255,255,0.15)";
+    mapCtx.strokeRect(10,10,W-20,H-20);
+  }
+
+  // Lake outline (if exists)
+  try{
+    if (typeof LAKE_ENABLE !== "undefined" && LAKE_ENABLE && typeof LAKE_SIZE !== "undefined"){
+      const cx = (typeof LAKE_CENTER_X !== "undefined") ? LAKE_CENTER_X : 0;
+      const cz = (typeof LAKE_CENTER_Z !== "undefined") ? LAKE_CENTER_Z : 0;
+
+      const half = LAKE_SIZE * 0.5;
+      const rot = (lakeMesh && lakeMesh.rotation) ? lakeMesh.rotation.y : 0.0;
+
+      // corners in world space around (cx,cz)
+      const corners = [
+        {x:-half, z:-half},
+        {x: half, z:-half},
+        {x: half, z: half},
+        {x:-half, z: half},
+      ].map(p=>{
+        const x = p.x*Math.cos(rot) - p.z*Math.sin(rot);
+        const z = p.x*Math.sin(rot) + p.z*Math.cos(rot);
+        return { x: cx + x, z: cz + z };
+      });
+
+      mapCtx.beginPath();
+      corners.forEach((p, i)=>{
+        const m = worldToMapPx(p.x, p.z, W, H);
+        if (i===0) mapCtx.moveTo(m.px, m.py);
+        else mapCtx.lineTo(m.px, m.py);
+      });
+      mapCtx.closePath();
+      mapCtx.fillStyle = "rgba(60,150,255,0.22)";
+      mapCtx.fill();
+      mapCtx.strokeStyle = "rgba(220,240,255,0.55)";
+      mapCtx.lineWidth = 2;
+      mapCtx.stroke();
+    }
+  }catch(e){}
+
+  // Player position
+  const p = worldToMapPx(playerX, playerZ, W, H);
+
+  // Facing arrow
+  const bearing = -yawRad;
+  mapCtx.save();
+  mapCtx.translate(p.px, p.py);
+  mapCtx.rotate(bearing);
+  mapCtx.beginPath();
+  mapCtx.moveTo(0, -10);
+  mapCtx.lineTo(6, 6);
+  mapCtx.lineTo(0, 3);
+  mapCtx.lineTo(-6, 6);
+  mapCtx.closePath();
+  mapCtx.fillStyle = "rgba(255,255,255,0.95)";
+  mapCtx.fill();
+  mapCtx.restore();
+
+  // Player dot
+  mapCtx.beginPath();
+  mapCtx.arc(p.px, p.py, 4.2, 0, Math.PI*2);
+  mapCtx.fillStyle = "rgba(255,90,90,0.95)";
+  mapCtx.fill();
+  mapCtx.strokeStyle = "rgba(0,0,0,0.35)";
+  mapCtx.lineWidth = 2;
+  mapCtx.stroke();
+
+  // Border
+  mapCtx.strokeStyle = "rgba(255,255,255,0.22)";
+  mapCtx.lineWidth = 2;
+  mapCtx.strokeRect(1,1,W-2,H-2);
+}
+
+// Public update called in animate()
+function updateNavOverlays(){
+  if (!NAV_ENABLE) return;
+  if (!navVisible) return;
+  if (!controls) return;
+  const obj = controls.getObject();
+  const yaw = obj.rotation.y;
+  drawCompass(yaw);
+  drawMinimap(obj.position.x, obj.position.z, yaw);
+}
+
+
+
+// ---------- SKY ----------
+const skyGeo = new THREE.SphereGeometry(SKY_RADIUS, 48, 24);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  uniforms: {
+    topColor:    { value: new THREE.Color(SKY_TOP) },
+    bottomColor: { value: new THREE.Color(SKY_BOTTOM) },
+    offset:      { value: 28 },
+    exponent:    { value: 0.65 }
+  },
+  vertexShader: `
+    varying vec3 vWorldPosition;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position, 1.0);
+      vWorldPosition = wp.xyz;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 topColor;
+    uniform vec3 bottomColor;
+    uniform float offset;
+    uniform float exponent;
+    varying vec3 vWorldPosition;
+    void main() {
+      float h = normalize(vWorldPosition + offset).y;
+      float t = pow(max(h, 0.0), exponent);
+      gl_FragColor = vec4(mix(bottomColor, topColor, t), 1.0);
+    }
+  `
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+// ---------- LIGHTS ----------
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445066, HEMI_INTENSITY));
+const sun = new THREE.DirectionalLight(0xffffff, SUN_INTENSITY);
+sun.position.set(250, 420, 180);
+
+// ===== Shadows (STEP 5C) =====
+sun.castShadow = true;
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+sun.shadow.radius = 1;
+// shadow coverage half-size (bigger = covers more area)
+sun.shadow.camera.left = -SHADOW_D;
+sun.shadow.camera.right = SHADOW_D;
+sun.shadow.camera.top = SHADOW_D;
+sun.shadow.camera.bottom = -SHADOW_D;
+sun.shadow.camera.near = 10;
+sun.shadow.camera.far = 1600;
+// These fight shadow acne/striping on terrain:
+sun.shadow.bias = -0.00035;
+sun.shadow.normalBias = 0.02;
+
+scene.add(sun);
+scene.add(sun.target);
+
+
+/* =========================================================
+   🎯 PHASE TARGETS (SAFE)
+   Sequence:
+   1) 7 red cubes within 100' radius of spawn point
+   2) 9 yellow cubes within 150' radius of spawn point
+   3) 9 blue cubes within 200' radius of spawn point
+   4) 11 green cubes within 240' radius of spawn point
+   ========================================================= */
+const TARGET_ENABLE = false;
+const TARGET_SIZE = 7.9968; // increased by 70% for all target phases
+const TARGET_MIN_DISTANCE = 18;
+const TARGET_MIN_SEPARATION = 12;
+const TARGET_SPAWN_X = 0;
+const TARGET_SPAWN_Z = 6;
+const ROUND_TIME_LIMIT_SEC = 60;
+
+const TARGET_PHASES = [
+  { name: "Red",    count: 7, color: 0xff3333, radius: 100, moving: false },
+  { name: "Yellow", count: 9, color: 0xffdd33, radius: 150, moving: false },
+  { name: "Blue",   count: 9, color: 0x3388ff, radius: 200, moving: false },
+  { name: "Green",  count: 11, color: 0x33dd66, radius: 240, moving: false }
+];
+
+const TARGET_MOVE_SPEED_MIN = 1.2;
+const TARGET_MOVE_SPEED_MAX = 2.8;
+
+let targetPhaseIndex = 0;
+let targetCycleCount = 0; // increments each time we complete Yellow and wrap to Red
+let phaseAdvancePending = false;
+
+let targets = []; // { mesh, box, moving, vx, vz, centerX, centerZ, radius }
+let targetsRemaining = 0;
+let targetFlashT = 0;
+let roundTimeLeftSec = ROUND_TIME_LIMIT_SEC;
+let roundTimerRunning = false;
+let roundTimerEl = null;
+
+function randRange(a,b){ return a + Math.random()*(b-a); }
+function getRoundTimerEl(){
+  if (!TARGET_ENABLE) return null;
+  if (!roundTimerEl) roundTimerEl = document.getElementById("roundTimer");
+  return roundTimerEl;
+}
+function formatRoundTime(seconds){
+  const whole = Math.max(0, Math.ceil(seconds));
+  const m = Math.floor(whole / 60);
+  const s = whole % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+function updateRoundTimerHUD(){
+  const el = getRoundTimerEl();
+  if (!el) return;
+  const urgent = roundTimeLeftSec <= 5 && roundTimerRunning;
+  const blinkOn = !urgent || (Math.floor(performance.now() / 250) % 2 === 0);
+  el.innerHTML = `⏱ Round <b>${formatRoundTime(roundTimeLeftSec)}</b>`;
+  el.style.borderColor = urgent ? "rgba(255,120,120,.6)" : "rgba(255,255,255,.18)";
+  el.style.background = urgent ? "rgba(80,18,18,.72)" : "rgba(20,24,32,.62)";
+  el.style.opacity = blinkOn ? "1" : "0.18";
+}
+function startRoundTimer(){
+  if (!TARGET_ENABLE) return;
+  roundTimeLeftSec = ROUND_TIME_LIMIT_SEC;
+  roundTimerRunning = true;
+  updateRoundTimerHUD();
+}
+function stopRoundTimer(){
+  roundTimerRunning = false;
+  updateRoundTimerHUD();
+}
+function updateRoundTimer(dt){
+  if (!roundTimerRunning) return;
+  if (phaseAdvancePending) return;
+  if (targetsRemaining <= 0) return;
+
+  roundTimeLeftSec -= dt;
+  if (roundTimeLeftSec <= 0){
+    roundTimeLeftSec = 0;
+    stopRoundTimer();
+    resetCurrentWave();
+    return;
+  }
+  updateRoundTimerHUD();
+}
+
+function getTargetPhaseConfig() {
+  return TARGET_PHASES[targetPhaseIndex];
+}
+
+function isFarEnough(x,z, pts, minSep){
+  for (const p of pts){
+    const dx = x - p.x, dz = z - p.z;
+    if ((dx*dx + dz*dz) < (minSep*minSep)) return false;
+  }
+  return true;
+}
+
+function createTargets(){
+  if (!TARGET_ENABLE) return;
+
+  const phase = getTargetPhaseConfig();
+  const center = { x: TARGET_SPAWN_X, z: TARGET_SPAWN_Z };
+
+  const pts = [];
+  let tries = 0;
+  const desiredCount = phase.count;
+
+  while (pts.length < desiredCount && tries < 1600){
+    tries++;
+
+    const theta = Math.random() * Math.PI * 2;
+    const r = Math.sqrt(Math.random()) * phase.radius;
+    const x = center.x + Math.cos(theta) * r;
+    const z = center.z + Math.sin(theta) * r;
+
+    // keep away from player center a bit
+    const dx = x - center.x, dz = z - center.z;
+    if ((dx*dx + dz*dz) < (TARGET_MIN_DISTANCE*TARGET_MIN_DISTANCE)) continue;
+
+    // keep targets from stacking
+    if (!isFarEnough(x, z, pts, TARGET_MIN_SEPARATION)) continue;
+
+    pts.push({x,z});
+  }
+
+  const geo = new THREE.BoxGeometry(TARGET_SIZE, TARGET_SIZE, TARGET_SIZE);
+
+  for (const p of pts){
+    const mat = new THREE.MeshStandardMaterial({
+      color: phase.color,
+      roughness: 0.7,
+      metalness: 0.0,
+      emissive: 0x000000,
+      emissiveIntensity: 0.0
+    });
+
+    const y = heightAtWorldXZ(p.x, p.z) + (TARGET_SIZE * 0.5);
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(p.x, y, p.z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    scene.add(m);
+
+    let vx = 0, vz = 0;
+    if (phase.moving) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = randRange(TARGET_MOVE_SPEED_MIN, TARGET_MOVE_SPEED_MAX);
+      vx = Math.cos(ang) * spd;
+      vz = Math.sin(ang) * spd;
+    }
+
+    targets.push({
+      mesh: m,
+      box: new THREE.Box3().setFromObject(m),
+      moving: phase.moving,
+      vx,
+      vz,
+      centerX: center.x,
+      centerZ: center.z,
+      radius: phase.radius
+    });
+  }
+
+  targetsRemaining = targets.length;
+  phaseAdvancePending = false;
+  startRoundTimer();
+
+  const phaseNum = targetPhaseIndex + 1;
+  const movingLabel = phase.moving ? " · moving" : "";
+  hudLine(`🎯 Phase <code id="waveNum">${phaseNum}</code>/${TARGET_PHASES.length}: <b>${phase.name}</b>${movingLabel} · Targets: <code id="targetsLeft">${targetsRemaining}</code> · Radius: <code>${phase.radius}</code>`);
+
+  if (targetsRemaining < desiredCount){
+    hudLine(`⚠️ Only spawned <code>${targetsRemaining}</code> of <code>${desiredCount}</code> targets (terrain constraints).`);
+  }
+}
+
+function updateTargets(dt){
+  for (const t of targets){
+    if (!t || !t.mesh) continue;
+
+    if (t.moving) {
+      let nx = t.mesh.position.x + t.vx * dt;
+      let nz = t.mesh.position.z + t.vz * dt;
+
+      const dx = nx - t.centerX;
+      const dz = nz - t.centerZ;
+      const dist = Math.hypot(dx, dz);
+      const limit = Math.max(8, t.radius - TARGET_SIZE);
+
+      if (dist > limit) {
+        const nxn = dx / (dist || 1);
+        const nzn = dz / (dist || 1);
+
+        const dot = t.vx * nxn + t.vz * nzn;
+        t.vx = t.vx - 2 * dot * nxn;
+        t.vz = t.vz - 2 * dot * nzn;
+
+        nx = t.centerX + nxn * limit;
+        nz = t.centerZ + nzn * limit;
+      }
+
+      t.mesh.position.x = nx;
+      t.mesh.position.z = nz;
+      t.mesh.position.y = heightAtWorldXZ(nx, nz) + (TARGET_SIZE * 0.5);
+    }
+
+    t.box.setFromObject(t.mesh);
+  }
+
+  if (targetFlashT > 0){
+    targetFlashT = Math.max(0, targetFlashT - dt);
+  }
+}
+
+function setWaveHUD(){
+  const el = document.getElementById("waveNum");
+  if (el) el.textContent = String(targetPhaseIndex + 1);
+}
+
+function clearTargets(){
+  stopRoundTimer();
+  for (const t of targets){
+    if (!t || !t.mesh) continue;
+    scene.remove(t.mesh);
+    if (t.mesh.material) t.mesh.material.dispose();
+  }
+  targets.length = 0;
+  targetsRemaining = 0;
+  setTargetsLeftHUD();
+}
+
+function resetCurrentWave(){
+  hideBanner();
+  clearTargets();
+  createTargets();
+  setWaveHUD();
+  hudLine(`🔁 Phase reset! (<code>${targetsRemaining}</code> targets)`);
+}
+
+function startNextWave(){
+  hideBanner();
+  clearTargets();
+
+  targetPhaseIndex += 1;
+  if (targetPhaseIndex >= TARGET_PHASES.length) {
+    targetPhaseIndex = 0;
+    targetCycleCount += 1;
+  }
+
+  createTargets();
+  setWaveHUD();
+
+  const phase = getTargetPhaseConfig();
+  const movingLabel = phase.moving ? " (moving)" : "";
+  hudLine(`✅ Next phase: <b>${phase.name}</b>${movingLabel} · <code>${targetsRemaining}</code> targets.`);
+}
+
+function setTargetsLeftHUD(){
+  const el = document.getElementById("targetsLeft");
+  if (el) el.textContent = String(targetsRemaining);
+}
+
+let areaClearedBanner = null;
+
+function winIfDone(){
+  if (targetsRemaining !== 0 || phaseAdvancePending) return;
+  stopRoundTimer();
+
+  const nextPhaseIndex = (targetPhaseIndex + 1) % TARGET_PHASES.length;
+  const nextPhase = TARGET_PHASES[nextPhaseIndex];
+  showBanner(`🏁 <b>PHASE CLEARED!</b> 🎉 &nbsp; Next: <b>${nextPhase.count} ${nextPhase.name}</b> @ <b>${nextPhase.radius}'</b>`);
+
+  phaseAdvancePending = true;
+  setTimeout(() => {
+    if (targetsRemaining === 0) startNextWave();
+    phaseAdvancePending = false;
+  }, 900);
+}
+
+function registerTargetHit(targetIndex){
+  const t = targets[targetIndex];
+  if (!t) return;
+
+  t.mesh.material.emissive.setHex(0xffffff);
+  t.mesh.material.emissiveIntensity = 0.9;
+  targetFlashT = 0.10;
+
+  scene.remove(t.mesh);
+  t.mesh.material.dispose();
+
+  targets.splice(targetIndex, 1);
+  targetsRemaining = targets.length;
+  setTargetsLeftHUD();
+  winIfDone();
+}
+
+/* =========================================================
+   😈 PASSIVE BAD GUY (NO AI, NO SHOOTING)
+   - Billboard sprite that just stands there
+   - Uses images/bad_guy.png
+   ========================================================= */
+const BAD_GUY_ENABLE = false;
+const BAD_GUY_FILE = "bad_guy.png";
+const BAD_GUY_SCALE = 3.6;
+const BAD_GUY_TURN_SPEED = 1.2; // radians/sec (smaller = slower turn)
+const BAD_GUY_POS = { x: 10, z: -70 };
+
+let badGuy = null;
+
+function spawnBadGuy(){
+  if (!BAD_GUY_ENABLE) return;
+
+  const tex = new THREE.TextureLoader().load(
+    resolveAssetUrl(BAD_GUY_FILE),
+    t => { t.colorSpace = THREE.SRGBColorSpace; },
+    undefined,
+    () => hudLine(`❌ Missing <code>${BAD_GUY_FILE}</code>`)
+  );
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.5,
+    side: THREE.DoubleSide
+  });
+
+  const geo = new THREE.PlaneGeometry(BAD_GUY_SCALE, BAD_GUY_SCALE * 1.6);
+  badGuy = new THREE.Mesh(geo, mat);
+
+  const y = heightAtWorldXZ(BAD_GUY_POS.x, BAD_GUY_POS.z) + (BAD_GUY_SCALE * 0.8);
+  badGuy.position.set(BAD_GUY_POS.x, y, BAD_GUY_POS.z);
+
+  badGuy.castShadow = true;
+  badGuy.receiveShadow = false;
+
+  scene.add(badGuy);
+  hudLine(`😈 Bad guy placed (passive): <code>${BAD_GUY_FILE}</code>`);
+  hudLine(`😈 Bad guy hits: <code id="bgHitCount">0</code>`)
+}
+
+
+/* =========================================================
+   💥 BAD GUY HIT (SAFE)
+   - Blue balls collide with billboard and trigger flash + counter
+   - Optional: auto-hide after N hits
+   ========================================================= */
+const BAD_GUY_HITS_TO_HIDE = 6; // set 0 to never hide
+let badGuyHits = 0;
+let badGuyFlashT = 0;
+
+function registerBadGuyHit(){
+  badGuyHits++;
+  badGuyFlashT = 0.12;
+
+  const el = document.getElementById("bgHitCount");
+  if (el) el.textContent = String(badGuyHits);
+
+  if (BAD_GUY_HITS_TO_HIDE > 0 && badGuyHits >= BAD_GUY_HITS_TO_HIDE && badGuy){
+    scene.remove(badGuy);
+    badGuy = null;
+    hudLine(`✅ Bad guy removed after <code>${badGuyHits}</code> hits.`);
+  }
+}
+
+
+
+
+/* =========================================================
+   🌅 GOLDEN HOUR (PERMANENT)
+   ========================================================= */
+let goldenOn = true;
+
+function applyGoldenHour(on){
+  if (!GOLDEN_ENABLE) return;
+  goldenOn = !!on;
+
+  // Sun warmth + slightly lower sun for longer shadows
+  sun.color.setHex(goldenOn ? GOLDEN_SUN_COLOR : 0xffffff);
+  sun.intensity = goldenOn ? GOLDEN_SUN_INTENSITY : SUN_INTENSITY;
+
+  const p = goldenOn ? GOLDEN_SUN_POS : DAY_SUN_POS;
+  sun.position.set(p.x, p.y, p.z);
+
+  // Sky warms at horizon
+  skyMat.uniforms.topColor.value.setHex(goldenOn ? GOLDEN_SKY_TOP : SKY_TOP);
+  skyMat.uniforms.bottomColor.value.setHex(goldenOn ? GOLDEN_SKY_BOTTOM : SKY_BOTTOM);
+
+  // Fog haze warms slightly (kept subtle)
+  scene.fog.color.setHex(goldenOn ? FOG_COLOR_GOLDEN : FOG_COLOR);
+
+  // Status line
+  const tag = goldenOn ? "ON" : "OFF";
+  hudLine(`🌅 Golden hour: <code>${tag}</code>`);
+}
+
+applyGoldenHour(true);
+
+// ---------- LOADERS ----------
+const texLoader = new THREE.TextureLoader();
+const exrLoader = new EXRLoader();
+
+function setRepeat(tex, rep){
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  tex.repeat.set(rep, rep);
+  tex.anisotropy = Math.min(12, renderer.capabilities.getMaxAnisotropy());
+}
+
+function loadTextureSafe(url, { colorSpace=null } = {}){
+  return new Promise((resolve) => {
+    texLoader.load(
+      url,
+      (tex) => { if (colorSpace) tex.colorSpace = colorSpace; resolve(tex); },
+      undefined,
+      () => resolve(null)
+    );
+  });
+}
+
+function loadEXRSafe(url){
+  // Chrome blocks fetch-style EXR loading on file:// origins.
+  if (IS_FILE_PROTOCOL) return Promise.resolve(null);
+  return new Promise((resolve) => {
+    exrLoader.load(url, (tex)=>resolve(tex), undefined, ()=>resolve(null));
+  });
+}
+
+/* =========================================================
+   TERRAIN STATE (heightmap pixels + sampler)
+   ========================================================= */
+let terrainReady = false;
+let hmW = 0, hmH = 0;
+let hmData = null;
+
+// ===== Tall grass height controller pixels (dg_disp.png) =====
+let dgW = 0, dgH = 0;
+let dgData = null;
+
+// Load dg_disp.png into pixel data (DATA texture: no sRGB)
+async function loadDispPixels(){
+  const url = resolveAssetUrl(GRASS_CARD_HEIGHT_FILE);
+  const tex = await loadTextureSafe(url);
+  if (!tex || !tex.image){
+    hudLine(`⚠️ Tall grass: missing <code>${GRASS_CARD_HEIGHT_FILE}</code> (expected <code>${url}</code>)`);
+    return false;
+  }
+
+  const img = tex.image;
+  dgW = img.width; dgH = img.height;
+
+  const c = document.createElement("canvas");
+  c.width = dgW; c.height = dgH;
+  const ctx = c.getContext("2d", { willReadFrequently:true });
+  ctx.drawImage(img, 0, 0);
+  dgData = ctx.getImageData(0, 0, dgW, dgH).data;
+
+  hudLine(`✅ Tall grass height map loaded: <code>${GRASS_CARD_HEIGHT_FILE}</code> (${dgW}×${dgH})`);
+  return true;
+}
+
+// Sample dg_disp at world XZ -> [0..1] brightness (red channel)
+function dispAtWorldXZ(x, z){
+  if (!dgData) return 0.5;
+
+  let u = (x / GROUND_SIZE) + 0.5;
+  let v = (-z / GROUND_SIZE) + 0.5;
+
+  // Clamp (keeps us safe when you walk near edges)
+  u = clamp01(u);
+  v = clamp01(v);
+
+  const px = Math.floor(u * (dgW - 1));
+  const py = Math.floor((1 - v) * (dgH - 1));
+  const idx = (py * dgW + px) * 4;
+
+  return dgData[idx] / 255;
+}
+
+function clamp01(t){ return Math.max(0, Math.min(1, t)); }
+
+// Bilinear height sample
+function heightAtWorldXZ(x, z){
+  if (!terrainReady || !hmData) return 0;
+
+  let u = (x / GROUND_SIZE) + 0.5;
+  let v = (-z / GROUND_SIZE) + 0.5;
+
+  if (CLAMP_OUTSIDE_TERRAIN) {
+    u = clamp01(u);
+    v = clamp01(v);
+  } else {
+    if (u < 0 || u > 1 || v < 0 || v > 1) return 0;
+  }
+
+  const fx = u * (hmW - 1);
+  const fy = (1 - v) * (hmH - 1);
+
+  const x0 = Math.floor(fx), y0 = Math.floor(fy);
+  const x1 = Math.min(hmW - 1, x0 + 1);
+  const y1 = Math.min(hmH - 1, y0 + 1);
+
+  const tx = fx - x0;
+  const ty = fy - y0;
+
+  function rAt(px, py){
+    const idx = (py * hmW + px) * 4;
+    return hmData[idx];
+  }
+
+  const h00 = rAt(x0, y0) / 255;
+  const h10 = rAt(x1, y0) / 255;
+  const h01 = rAt(x0, y1) / 255;
+  const h11 = rAt(x1, y1) / 255;
+
+  const h0 = h00 * (1 - tx) + h10 * tx;
+  const h1 = h01 * (1 - tx) + h11 * tx;
+  const h  = h0 * (1 - ty) + h1 * ty;
+
+  return h * TERRAIN_HEIGHT;
+}
+
+function buildTrackStripFromCenterline(centerline, halfWidth, yLift){
+  const pts = [];
+  for (let i = 0; i < centerline.length; i++){
+    const p = centerline[i];
+    const prev = centerline[(i - 1 + centerline.length) % centerline.length];
+    const next = centerline[(i + 1) % centerline.length];
+    const tng = new THREE.Vector3(next.x - prev.x, 0, next.z - prev.z).normalize();
+    const right = new THREE.Vector3(tng.z, 0, -tng.x).normalize();
+    const left = right.clone().multiplyScalar(-1);
+
+    const leftX = p.x + left.x * halfWidth;
+    const leftZ = p.z + left.z * halfWidth;
+    const rightX = p.x + right.x * halfWidth;
+    const rightZ = p.z + right.z * halfWidth;
+    const leftY = heightAtWorldXZ(leftX, leftZ) + yLift;
+    const rightY = heightAtWorldXZ(rightX, rightZ) + yLift;
+
+    pts.push({
+      left: new THREE.Vector3(leftX, leftY, leftZ),
+      right: new THREE.Vector3(rightX, rightY, rightZ)
+    });
+  }
+
+  const positions = [];
+  const normals = [];
+  const uvs = [];
+  const indices = [];
+  for (let i = 0; i < pts.length; i++){
+    const p = pts[i];
+    positions.push(p.left.x, p.left.y, p.left.z);
+    positions.push(p.right.x, p.right.y, p.right.z);
+    const v = i / (pts.length - 1);
+    uvs.push(0, v, 1, v);
+    normals.push(0, 1, 0, 0, 1, 0);
+  }
+  for (let i = 0; i < pts.length; i++){
+    const ni = (i + 1) % pts.length;
+    const a = i * 2;
+    const b = a + 1;
+    const c = ni * 2;
+    const d = c + 1;
+    indices.push(a, b, c);
+    indices.push(b, d, c);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+  geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function buildOffsetCenterline(centerline, offset){
+  const out = [];
+  for (let i = 0; i < centerline.length; i++){
+    const a = centerline[Math.max(0, i - 1)];
+    const b = centerline[Math.min(centerline.length - 1, i + 1)];
+    const tx = b.x - a.x;
+    const tz = b.z - a.z;
+    const len = Math.hypot(tx, tz) || 1;
+    const rx = tz / len;
+    const rz = -tx / len;
+    out.push({
+      x: centerline[i].x + rx * offset,
+      z: centerline[i].z + rz * offset
+    });
+  }
+  return out;
+}
+
+function buildTrackBandFromCenterline(centerline, innerOffset, outerOffset, yLift){
+  const pts = [];
+  for (let i = 0; i < centerline.length; i++){
+    const p = centerline[i];
+    const prev = centerline[(i - 1 + centerline.length) % centerline.length];
+    const next = centerline[(i + 1) % centerline.length];
+    const tng = new THREE.Vector3(next.x - prev.x, 0, next.z - prev.z).normalize();
+    const right = new THREE.Vector3(tng.z, 0, -tng.x).normalize();
+
+    const inX = p.x + right.x * innerOffset;
+    const inZ = p.z + right.z * innerOffset;
+    const outX = p.x + right.x * outerOffset;
+    const outZ = p.z + right.z * outerOffset;
+    const inY = heightAtWorldXZ(inX, inZ) + yLift;
+    const outY = heightAtWorldXZ(outX, outZ) + yLift;
+    pts.push({
+      inner: new THREE.Vector3(inX, inY, inZ),
+      outer: new THREE.Vector3(outX, outY, outZ)
+    });
+  }
+
+  const positions = [];
+  const normals = [];
+  const uvs = [];
+  const indices = [];
+  for (let i = 0; i < pts.length; i++){
+    const p = pts[i];
+    positions.push(p.inner.x, p.inner.y, p.inner.z);
+    positions.push(p.outer.x, p.outer.y, p.outer.z);
+    const v = i / (pts.length - 1);
+    uvs.push(0, v, 1, v);
+    normals.push(0, 1, 0, 0, 1, 0);
+  }
+  for (let i = 0; i < pts.length; i++){
+    const ni = (i + 1) % pts.length;
+    const a = i * 2;
+    const b = a + 1;
+    const c = ni * 2;
+    const d = c + 1;
+    indices.push(a, b, c);
+    indices.push(b, d, c);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("normal", new THREE.Float32BufferAttribute(normals, 3));
+  geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function buildSolidTrackGeometryFromCenterline(centerline, width, topLift, thickness){
+  const halfW = width * 0.5;
+  const rings = [];
+
+  for (let i = 0; i < centerline.length; i++){
+    const p = centerline[i];
+    const prev = centerline[(i - 1 + centerline.length) % centerline.length];
+    const next = centerline[(i + 1) % centerline.length];
+    const tng = new THREE.Vector3(next.x - prev.x, 0, next.z - prev.z).normalize();
+    const right = new THREE.Vector3(tng.z, 0, -tng.x).normalize();
+
+    const ix = p.x - right.x * halfW;
+    const iz = p.z - right.z * halfW;
+    const ox = p.x + right.x * halfW;
+    const oz = p.z + right.z * halfW;
+
+    const iyTop = heightAtWorldXZ(ix, iz) + topLift;
+    const oyTop = heightAtWorldXZ(ox, oz) + topLift;
+    const iyBot = iyTop - thickness;
+    const oyBot = oyTop - thickness;
+
+    rings.push({
+      iTop: new THREE.Vector3(ix, iyTop, iz),
+      oTop: new THREE.Vector3(ox, oyTop, oz),
+      iBot: new THREE.Vector3(ix, iyBot, iz),
+      oBot: new THREE.Vector3(ox, oyBot, oz)
+    });
+  }
+
+  const positions = [];
+  const uvs = [];
+  const indices = [];
+
+  function addV(v, u = 0, vv = 0){
+    positions.push(v.x, v.y, v.z);
+    uvs.push(u, vv);
+    return (positions.length / 3) - 1;
+  }
+  function addQuad(a, b, c, d){
+    indices.push(a, b, c);
+    indices.push(a, c, d);
+  }
+
+  const ids = [];
+  for (let i = 0; i < rings.length; i++){
+    const r = rings[i];
+    const v = i / Math.max(1, rings.length - 1);
+    ids.push({
+      iTop: addV(r.iTop, 0, v),
+      oTop: addV(r.oTop, 1, v),
+      iBot: addV(r.iBot, 0, v),
+      oBot: addV(r.oBot, 1, v)
+    });
+  }
+
+  for (let i = 0; i < ids.length; i++){
+    const n = (i + 1) % ids.length;
+    const a = ids[i];
+    const b = ids[n];
+    // top
+    addQuad(a.iTop, a.oTop, b.oTop, b.iTop);
+    // bottom
+    addQuad(a.oBot, a.iBot, b.iBot, b.oBot);
+    // inner wall
+    addQuad(a.iBot, a.iTop, b.iTop, b.iBot);
+    // outer wall
+    addQuad(a.oTop, a.oBot, b.oBot, b.oTop);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function buildTrackCurveFromCenterline(centerline){
+  const pts = centerline.map((p) => new THREE.Vector3(p.x, 0, p.z));
+  return new THREE.CatmullRomCurve3(pts, true, "centripetal");
+}
+
+function buildSolidExtrudedTrackGeometry(centerline, width, thickness){
+  const halfW = width * 0.5;
+  const halfT = thickness * 0.5;
+  const shape = new THREE.Shape();
+  shape.moveTo(-halfW, halfT);
+  shape.lineTo(halfW, halfT);
+  shape.lineTo(halfW, -halfT);
+  shape.lineTo(-halfW, -halfT);
+  shape.lineTo(-halfW, halfT);
+
+  const path = buildTrackCurveFromCenterline(centerline);
+  return new THREE.ExtrudeGeometry(shape, {
+    steps: Math.max(300, centerline.length * 2),
+    bevelEnabled: false,
+    extrudePath: path
+  });
+}
+
+function buildModularTrackCenterline(){
+  // New wide loop: straights + 45-degree connectors only.
+  const sampleCount = RACE_TRACK_SAMPLE_COUNT;
+  const cx = PLAYER_SPAWN_X;
+  const cz = PLAYER_SPAWN_Z;
+
+  // Convex octagon loop: no self-intersections, only straights + 45deg connectors.
+  const way = [
+    { x: cx - 260, z: cz - 220 }, // SSW
+    { x: cx + 260, z: cz - 220 }, // SSE (long east straight)
+    { x: cx + 340, z: cz - 140 }, // 45deg NE
+    { x: cx + 340, z: cz + 140 }, // long north straight
+    { x: cx + 260, z: cz + 220 }, // 45deg NW
+    { x: cx - 260, z: cz + 220 }, // long west straight
+    { x: cx - 340, z: cz + 140 }, // 45deg SW
+    { x: cx - 340, z: cz - 140 }  // long south straight (closes via 45deg SE)
+  ];
+
+  function orient(ax, az, bx, bz, cx, cz){
+    return (bx - ax) * (cz - az) - (bz - az) * (cx - ax);
+  }
+  function onSeg(ax, az, bx, bz, px, pz){
+    return (
+      px >= Math.min(ax, bx) - 1e-9 && px <= Math.max(ax, bx) + 1e-9 &&
+      pz >= Math.min(az, bz) - 1e-9 && pz <= Math.max(az, bz) + 1e-9
+    );
+  }
+  function segsIntersect(a, b, c, d){
+    const o1 = orient(a.x, a.z, b.x, b.z, c.x, c.z);
+    const o2 = orient(a.x, a.z, b.x, b.z, d.x, d.z);
+    const o3 = orient(c.x, c.z, d.x, d.z, a.x, a.z);
+    const o4 = orient(c.x, c.z, d.x, d.z, b.x, b.z);
+
+    if ((o1 > 0 && o2 < 0 || o1 < 0 && o2 > 0) && (o3 > 0 && o4 < 0 || o3 < 0 && o4 > 0)) return true;
+    if (Math.abs(o1) <= 1e-9 && onSeg(a.x, a.z, b.x, b.z, c.x, c.z)) return true;
+    if (Math.abs(o2) <= 1e-9 && onSeg(a.x, a.z, b.x, b.z, d.x, d.z)) return true;
+    if (Math.abs(o3) <= 1e-9 && onSeg(c.x, c.z, d.x, d.z, a.x, a.z)) return true;
+    if (Math.abs(o4) <= 1e-9 && onSeg(c.x, c.z, d.x, d.z, b.x, b.z)) return true;
+    return false;
+  }
+  function hasSelfIntersection(poly){
+    const n = poly.length;
+    for (let i = 0; i < n; i++){
+      const a0 = poly[i];
+      const a1 = poly[(i + 1) % n];
+      for (let j = i + 1; j < n; j++){
+        // Skip adjacent edges and identical edge.
+        if (j === i) continue;
+        if ((j + 1) % n === i) continue;
+        if (j === (i + 1) % n) continue;
+        const b0 = poly[j];
+        const b1 = poly[(j + 1) % n];
+        if (segsIntersect(a0, a1, b0, b1)) return true;
+      }
+    }
+    return false;
+  }
+
+  const safeWay = [
+    { x: cx - 260, z: cz - 220 },
+    { x: cx + 260, z: cz - 220 },
+    { x: cx + 340, z: cz - 140 },
+    { x: cx + 340, z: cz + 140 },
+    { x: cx + 260, z: cz + 220 },
+    { x: cx - 260, z: cz + 220 },
+    { x: cx - 340, z: cz + 140 },
+    { x: cx - 340, z: cz - 140 }
+  ];
+  const finalWay = hasSelfIntersection(way) ? safeWay : way;
+
+  function polyLen(arr){
+    let sum = 0;
+    for (let i = 0; i < arr.length; i++){
+      const a = arr[i];
+      const b = arr[(i + 1) % arr.length];
+      sum += Math.hypot(b.x - a.x, b.z - a.z);
+    }
+    return sum;
+  }
+
+  function sampleClosedPolyline(arr, count){
+    const cum = [0];
+    let total = 0;
+    for (let i = 0; i < arr.length; i++){
+      const a = arr[i];
+      const b = arr[(i + 1) % arr.length];
+      total += Math.hypot(b.x - a.x, b.z - a.z);
+      cum.push(total);
+    }
+    const out = [];
+    for (let sIdx = 0; sIdx < count; sIdx++){
+      const s = (sIdx / count) * total;
+      let seg = 0;
+      while (seg < arr.length - 1 && cum[seg + 1] < s) seg++;
+      const a = arr[seg];
+      const b = arr[(seg + 1) % arr.length];
+      const segStart = cum[seg];
+      const segLen = Math.max(1e-6, cum[seg + 1] - segStart);
+      const t = (s - segStart) / segLen;
+      out.push({ x: a.x + (b.x - a.x) * t, z: a.z + (b.z - a.z) * t });
+    }
+    return out;
+  }
+
+  // Light Chaikin smoothing for cleaner-looking curve edges.
+  function chaikinSmoothClosed(arr, passes = 1){
+    let pts = arr.slice();
+    for (let p = 0; p < passes; p++){
+      const out = [];
+      for (let i = 0; i < pts.length; i++){
+        const a = pts[i];
+        const b = pts[(i + 1) % pts.length];
+        out.push({
+          x: (0.75 * a.x) + (0.25 * b.x),
+          z: (0.75 * a.z) + (0.25 * b.z)
+        });
+        out.push({
+          x: (0.25 * a.x) + (0.75 * b.x),
+          z: (0.25 * a.z) + (0.75 * b.z)
+        });
+      }
+      pts = out;
+    }
+    return pts;
+  }
+
+  function polyLen(arr){
+    let sum = 0;
+    for (let i = 0; i < arr.length; i++){
+      const a = arr[i];
+      const b = arr[(i + 1) % arr.length];
+      sum += Math.hypot(b.x - a.x, b.z - a.z);
+    }
+    return sum;
+  }
+
+  const targetLen = 2000;
+  const curLen = Math.max(1, polyLen(finalWay));
+  const s = targetLen / curLen;
+  const scaledWay = finalWay.map((p) => ({ x: cx + (p.x - cx) * s, z: cz + (p.z - cz) * s }));
+  const sampled = sampleClosedPolyline(scaledWay, sampleCount);
+  const scaled = chaikinSmoothClosed(sampled, RACE_TRACK_SMOOTH_PASSES);
+  raceTrackStart = new THREE.Vector3(scaled[0].x, 0, scaled[0].z);
+  return scaled;
+}
+
+function trackSurfaceYAt(x, z){
+  return heightAtWorldXZ(x, z) + (RACE_TRACK_ENABLE ? RACE_TRACK_Y_LIFT : 0);
+}
+
+function pointSegDist2(px, pz, ax, az, bx, bz){
+  const abx = bx - ax;
+  const abz = bz - az;
+  const apx = px - ax;
+  const apz = pz - az;
+  const ab2 = (abx * abx) + (abz * abz);
+  if (ab2 <= 1e-8) return (apx * apx) + (apz * apz);
+  let t = ((apx * abx) + (apz * abz)) / ab2;
+  t = Math.max(0, Math.min(1, t));
+  const cx = ax + (abx * t);
+  const cz = az + (abz * t);
+  const dx = px - cx;
+  const dz = pz - cz;
+  return (dx * dx) + (dz * dz);
+}
+
+function isOnTrackXZ(x, z){
+  if (!RACE_TRACK_ENABLE || !raceTrackCenterline || raceTrackCenterline.length < 2) return false;
+  const halfW = RACE_TRACK_WIDTH * 0.5;
+  const maxD2 = halfW * halfW;
+  for (let i = 0; i < raceTrackCenterline.length; i++){
+    const a = raceTrackCenterline[i];
+    const b = raceTrackCenterline[(i + 1) % raceTrackCenterline.length];
+    if (pointSegDist2(x, z, a.x, a.z, b.x, b.z) <= maxD2) return true;
+  }
+  return false;
+}
+
+function driveSurfaceYAt(x, z){
+  if (isOnTrackXZ(x, z)) return trackSurfaceYAt(x, z);
+  return heightAtWorldXZ(x, z);
+}
+
+function rebuildRaceTrackLengthCache(){
+  if (!raceTrackCenterline || raceTrackCenterline.length < 2){
+    raceTrackCumLen = null;
+    raceTrackTotalLen = 0;
+    return;
+  }
+  raceTrackCumLen = [0];
+  let sum = 0;
+  for (let i = 0; i < raceTrackCenterline.length; i++){
+    const a = raceTrackCenterline[i];
+    const b = raceTrackCenterline[(i + 1) % raceTrackCenterline.length];
+    sum += Math.hypot(b.x - a.x, b.z - a.z);
+    raceTrackCumLen.push(sum);
+  }
+  raceTrackTotalLen = sum;
+}
+
+function wrapTrackDistance(d){
+  if (raceTrackTotalLen <= 1e-6) return 0;
+  return ((d % raceTrackTotalLen) + raceTrackTotalLen) % raceTrackTotalLen;
+}
+
+function signedTrackDelta(a, b){
+  // shortest signed delta on a loop (a - b)
+  let d = a - b;
+  if (d > raceTrackTotalLen * 0.5) d -= raceTrackTotalLen;
+  if (d < -raceTrackTotalLen * 0.5) d += raceTrackTotalLen;
+  return d;
+}
+
+function projectTrackDistanceAtXZ(x, z){
+  if (!raceTrackCenterline || !raceTrackCumLen || raceTrackCenterline.length < 2) return 0;
+  let bestD2 = Infinity;
+  let bestS = 0;
+  for (let i = 0; i < raceTrackCenterline.length; i++){
+    const a = raceTrackCenterline[i];
+    const b = raceTrackCenterline[(i + 1) % raceTrackCenterline.length];
+    const abx = b.x - a.x;
+    const abz = b.z - a.z;
+    const ab2 = (abx * abx) + (abz * abz);
+    if (ab2 <= 1e-8) continue;
+    let t = ((x - a.x) * abx + (z - a.z) * abz) / ab2;
+    t = Math.max(0, Math.min(1, t));
+    const cx = a.x + abx * t;
+    const cz = a.z + abz * t;
+    const d2 = (x - cx) * (x - cx) + (z - cz) * (z - cz);
+    if (d2 < bestD2){
+      bestD2 = d2;
+      const segLen = Math.sqrt(ab2);
+      bestS = raceTrackCumLen[i] + segLen * t;
+    }
+  }
+  return wrapTrackDistance(bestS);
+}
+
+function sampleTrackAtDistance(dist){
+  if (!raceTrackCenterline || !raceTrackCumLen || raceTrackCenterline.length < 2){
+    return { x: 0, z: 0, yaw: 0 };
+  }
+  const s = wrapTrackDistance(dist);
+  let seg = 0;
+  while (seg < raceTrackCenterline.length - 1 && raceTrackCumLen[seg + 1] < s) seg++;
+  const a = raceTrackCenterline[seg];
+  const b = raceTrackCenterline[(seg + 1) % raceTrackCenterline.length];
+  const segStart = raceTrackCumLen[seg];
+  const segLen = Math.max(1e-6, raceTrackCumLen[seg + 1] - segStart);
+  const t = Math.max(0, Math.min(1, (s - segStart) / segLen));
+  const x = a.x + (b.x - a.x) * t;
+  const z = a.z + (b.z - a.z) * t;
+  const yaw = Math.atan2((b.x - a.x), (b.z - a.z));
+  return { x, z, yaw };
+}
+
+function signedAngleDelta(a, b){
+  let d = a - b;
+  d = Math.atan2(Math.sin(d), Math.cos(d));
+  return d;
+}
+
+function createRaceTrack(){
+  if (!RACE_TRACK_ENABLE || !terrainReady) return;
+
+  if (raceTrackMesh){
+    scene.remove(raceTrackMesh);
+    raceTrackMesh.geometry.dispose();
+    raceTrackMesh.material.dispose();
+    raceTrackMesh = null;
+  }
+  if (raceTrackStripeMesh){
+    scene.remove(raceTrackStripeMesh);
+    raceTrackStripeMesh.geometry.dispose();
+    raceTrackStripeMesh.material.dispose();
+    raceTrackStripeMesh = null;
+  }
+  if (raceTrackEdgeMeshL){
+    scene.remove(raceTrackEdgeMeshL);
+    raceTrackEdgeMeshL.geometry.dispose();
+    raceTrackEdgeMeshL.material.dispose();
+    raceTrackEdgeMeshL = null;
+  }
+  if (raceTrackEdgeMeshR){
+    scene.remove(raceTrackEdgeMeshR);
+    raceTrackEdgeMeshR.geometry.dispose();
+    raceTrackEdgeMeshR.material.dispose();
+    raceTrackEdgeMeshR = null;
+  }
+  if (raceTrackRaisedEdgeMeshL){
+    scene.remove(raceTrackRaisedEdgeMeshL);
+    raceTrackRaisedEdgeMeshL.geometry.dispose();
+    raceTrackRaisedEdgeMeshL.material.dispose();
+    raceTrackRaisedEdgeMeshL = null;
+  }
+  if (raceTrackRaisedEdgeMeshR){
+    scene.remove(raceTrackRaisedEdgeMeshR);
+    raceTrackRaisedEdgeMeshR.geometry.dispose();
+    raceTrackRaisedEdgeMeshR.material.dispose();
+    raceTrackRaisedEdgeMeshR = null;
+  }
+  if (raceTrackSkirtMesh){
+    scene.remove(raceTrackSkirtMesh);
+    raceTrackSkirtMesh.geometry.dispose();
+    raceTrackSkirtMesh.material.dispose();
+    raceTrackSkirtMesh = null;
+  }
+  if (raceTrackSectionLinesGroup){
+    scene.remove(raceTrackSectionLinesGroup);
+    raceTrackSectionLinesGroup.traverse((obj) => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    });
+    raceTrackSectionLinesGroup = null;
+  }
+  if (raceTrackStartGate){
+    scene.remove(raceTrackStartGate);
+    raceTrackStartGate.traverse((obj) => {
+      if (obj.geometry) obj.geometry.dispose();
+      if (obj.material) obj.material.dispose();
+    });
+    raceTrackStartGate = null;
+  }
+
+  const centerline = buildModularTrackCenterline();
+  raceTrackCenterline = centerline;
+  rebuildRaceTrackLengthCache();
+
+  if (!raceTrackColorTex){
+    raceTrackColorTex = new THREE.TextureLoader().load(resolveAssetUrl(RACE_TRACK_ALBEDO_FILE, { cacheBust:true }));
+    raceTrackColorTex.colorSpace = THREE.SRGBColorSpace;
+    raceTrackColorTex.wrapS = THREE.RepeatWrapping;
+    raceTrackColorTex.wrapT = THREE.RepeatWrapping;
+    raceTrackColorTex.repeat.set(6, 90);
+    raceTrackColorTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  }
+
+  const trackGeo = buildTrackStripFromCenterline(centerline, RACE_TRACK_WIDTH * 0.5, RACE_TRACK_Y_LIFT);
+  const trackMat = new THREE.MeshStandardMaterial({
+    color: GOLDEN_ENABLE ? 0x8a2f1f : 0x3f0000,
+    map: raceTrackColorTex,
+    roughness: GOLDEN_ENABLE ? 0.82 : 0.95,
+    metalness: 0.02,
+    side: THREE.DoubleSide
+  });
+  raceTrackMesh = new THREE.Mesh(trackGeo, trackMat);
+  raceTrackMesh.receiveShadow = true;
+  raceTrackMesh.castShadow = false;
+  raceTrackMesh.frustumCulled = false;
+  scene.add(raceTrackMesh);
+
+  if (RACE_TRACK_CENTERLINE_ENABLE){
+    const stripeGeo = buildTrackStripFromCenterline(
+      centerline,
+      RACE_TRACK_CENTERLINE_WIDTH * 0.5,
+      RACE_TRACK_Y_LIFT + RACE_TRACK_CENTERLINE_Y_OFFSET
+    );
+    const stripeMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+    stripeMat.polygonOffset = true;
+    stripeMat.polygonOffsetFactor = -2;
+    stripeMat.polygonOffsetUnits = -2;
+    stripeMat.depthTest = false;
+    stripeMat.depthWrite = false;
+    raceTrackStripeMesh = new THREE.Mesh(stripeGeo, stripeMat);
+    raceTrackStripeMesh.receiveShadow = false;
+    raceTrackStripeMesh.castShadow = false;
+    raceTrackStripeMesh.frustumCulled = false;
+    raceTrackStripeMesh.renderOrder = 999;
+    scene.add(raceTrackStripeMesh);
+  }
+
+  if (RACE_TRACK_EDGE_LINE_ENABLE){
+    const edgeHalf = Math.max(0.01, (RACE_TRACK_EDGE_LINE_WIDTH * 0.5));
+    const edgeY = RACE_TRACK_Y_LIFT + RACE_TRACK_EDGE_LINE_Y_OFFSET;
+    const leftOffset = (RACE_TRACK_WIDTH * 0.5) - RACE_TRACK_EDGE_LINE_INSET;
+    const rightOffset = -leftOffset;
+    const leftCenterline = buildOffsetCenterline(centerline, leftOffset);
+    const rightCenterline = buildOffsetCenterline(centerline, rightOffset);
+    const leftGeo = buildTrackStripFromCenterline(leftCenterline, edgeHalf, edgeY);
+    const rightGeo = buildTrackStripFromCenterline(rightCenterline, edgeHalf, edgeY);
+
+    const edgeMat = new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide });
+    raceTrackEdgeMeshL = new THREE.Mesh(leftGeo, edgeMat);
+    raceTrackEdgeMeshR = new THREE.Mesh(rightGeo, edgeMat.clone());
+
+    raceTrackEdgeMeshL.receiveShadow = false;
+    raceTrackEdgeMeshL.castShadow = false;
+    raceTrackEdgeMeshL.frustumCulled = false;
+    raceTrackEdgeMeshR.receiveShadow = false;
+    raceTrackEdgeMeshR.castShadow = false;
+    raceTrackEdgeMeshR.frustumCulled = false;
+
+    raceTrackEdgeMeshL.renderOrder = (raceTrackMesh.renderOrder || 0) + 1;
+    raceTrackEdgeMeshR.renderOrder = (raceTrackMesh.renderOrder || 0) + 1;
+    scene.add(raceTrackEdgeMeshL);
+    scene.add(raceTrackEdgeMeshR);
+  }
+
+  if (RACE_TRACK_RAISED_EDGE_ENABLE){
+    const edgeWidth = Math.max(0.05, RACE_TRACK_WIDTH * RACE_TRACK_RAISED_EDGE_WIDTH_RATIO);
+    const edgeHalf = edgeWidth * 0.5;
+    const sideOffset = (RACE_TRACK_WIDTH * 0.5) + edgeHalf;
+    const edgeTopLift = RACE_TRACK_Y_LIFT + RACE_TRACK_RAISED_EDGE_HEIGHT;
+
+    const leftEdgeCenterline = buildOffsetCenterline(centerline, sideOffset);
+    const rightEdgeCenterline = buildOffsetCenterline(centerline, -sideOffset);
+    const leftEdgeGeo = buildSolidTrackGeometryFromCenterline(
+      leftEdgeCenterline,
+      edgeWidth,
+      edgeTopLift,
+      RACE_TRACK_RAISED_EDGE_HEIGHT
+    );
+    const rightEdgeGeo = buildSolidTrackGeometryFromCenterline(
+      rightEdgeCenterline,
+      edgeWidth,
+      edgeTopLift,
+      RACE_TRACK_RAISED_EDGE_HEIGHT
+    );
+    const raisedEdgeMat = new THREE.MeshStandardMaterial({
+      color: RACE_TRACK_RAISED_EDGE_COLOR,
+      roughness: 0.75,
+      metalness: 0.02
+    });
+
+    raceTrackRaisedEdgeMeshL = new THREE.Mesh(leftEdgeGeo, raisedEdgeMat);
+    raceTrackRaisedEdgeMeshR = new THREE.Mesh(rightEdgeGeo, raisedEdgeMat.clone());
+    raceTrackRaisedEdgeMeshL.receiveShadow = true;
+    raceTrackRaisedEdgeMeshL.castShadow = true;
+    raceTrackRaisedEdgeMeshR.receiveShadow = true;
+    raceTrackRaisedEdgeMeshR.castShadow = true;
+    raceTrackRaisedEdgeMeshL.frustumCulled = false;
+    raceTrackRaisedEdgeMeshR.frustumCulled = false;
+
+    scene.add(raceTrackRaisedEdgeMeshL);
+    scene.add(raceTrackRaisedEdgeMeshR);
+  }
+
+  raceTrackSkirtMesh = null;
+
+  // Divide loop into 3 equal lap sections: draw yellow cross-lines at 1/3 and 2/3.
+  if (raceTrackTotalLen > 1){
+    const markers = [raceTrackTotalLen / 3, (raceTrackTotalLen * 2) / 3];
+    const grp = new THREE.Group();
+    const lineMat = new THREE.MeshBasicMaterial({
+      color: 0xffe44d,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false
+    });
+    const barLen = (RACE_TRACK_WIDTH - 0.8);
+    const barThick = 0.9;
+    const barDepth = 0.35;
+    const geo = new THREE.BoxGeometry(barLen, barThick, barDepth);
+    for (const d of markers){
+      const s = sampleTrackAtDistance(d);
+      const m = new THREE.Mesh(geo.clone(), lineMat.clone());
+      m.position.set(
+        s.x,
+        trackSurfaceYAt(s.x, s.z) + RACE_TRACK_CENTERLINE_Y_OFFSET + 0.25,
+        s.z
+      );
+      m.rotation.y = s.yaw;
+      m.renderOrder = 1000;
+      grp.add(m);
+    }
+    raceTrackSectionLinesGroup = grp;
+    scene.add(raceTrackSectionLinesGroup);
+  }
+
+  // Highly visible start gate so track location is obvious.
+  // Build it from terrain-sampled left/right anchors so it stays square on steeper terrain.
+  const sxBase = (START_GATE_ANCHOR_ENABLE ? START_GATE_ANCHOR_X : raceTrackStart.x);
+  const szBase = (START_GATE_ANCHOR_ENABLE ? START_GATE_ANCHOR_Z : raceTrackStart.z);
+  const sGate = projectTrackDistanceAtXZ(sxBase, szBase);
+  raceTrackGateS = sGate;
+  const gateSample = sampleTrackAtDistance(sGate);
+  // Match visual truck position (truck sprite is drawn forward of camera spawn).
+  const sx = sxBase + (-Math.sin(gateSample.yaw)) * TRUCK_FWD;
+  const sz = szBase + (-Math.cos(gateSample.yaw)) * TRUCK_FWD;
+  const right = new THREE.Vector3(Math.cos(gateSample.yaw), 0, -Math.sin(gateSample.yaw)).normalize();
+  const halfW = RACE_TRACK_WIDTH * 0.5;
+  const gatePostH = 15.6;
+  const gateBeamH = 1.1;
+  const gateBeamExtra = 4;
+
+  const leftX = sx - right.x * halfW;
+  const leftZ = sz - right.z * halfW;
+  const rightX = sx + right.x * halfW;
+  const rightZ = sz + right.z * halfW;
+  const leftBaseY = heightAtWorldXZ(leftX, leftZ) + RACE_TRACK_Y_LIFT;
+  const rightBaseY = heightAtWorldXZ(rightX, rightZ) + RACE_TRACK_Y_LIFT;
+
+  const gate = new THREE.Group();
+  const postMat = new THREE.MeshStandardMaterial({ color: 0xff5f45, roughness: 0.5 });
+  const beamMat = new THREE.MeshStandardMaterial({ color: 0xfff2c7, emissive: 0x663300, emissiveIntensity: 0.3 });
+  const leftPost = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1, 0.9), postMat);
+  const rightPost = new THREE.Mesh(new THREE.BoxGeometry(0.9, 1, 0.9), postMat);
+
+  // Keep the crossbar level and extend the lower post to meet it.
+  const beamTopY = Math.max(leftBaseY, rightBaseY) + gatePostH;
+  const leftPostH = Math.max(1.0, beamTopY - leftBaseY);
+  const rightPostH = Math.max(1.0, (beamTopY - rightBaseY) * RIGHT_POST_HEIGHT_SCALE);
+  leftPost.scale.y = leftPostH;
+  rightPost.scale.y = rightPostH;
+  leftPost.position.set(leftX, leftBaseY + leftPostH * 0.5, leftZ);
+  rightPost.position.set(rightX, rightBaseY + rightPostH * 0.5, rightZ);
+
+  // Yellow section line exactly at start post location.
+  {
+    const startLineMat = new THREE.MeshBasicMaterial({
+      color: 0xffe44d,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false
+    });
+    const startLineGeo = new THREE.BoxGeometry((RACE_TRACK_WIDTH - 0.8), 0.9, 0.35);
+    const startLine = new THREE.Mesh(startLineGeo, startLineMat);
+    startLine.position.set(
+      sx,
+      trackSurfaceYAt(sx, sz) + RACE_TRACK_CENTERLINE_Y_OFFSET + 0.25,
+      sz
+    );
+    startLine.rotation.y = gateSample.yaw;
+    startLine.renderOrder = 1000;
+    if (!raceTrackSectionLinesGroup){
+      raceTrackSectionLinesGroup = new THREE.Group();
+      scene.add(raceTrackSectionLinesGroup);
+    }
+    raceTrackSectionLinesGroup.add(startLine);
+  }
+
+  gate.add(leftPost, rightPost);
+  raceTrackStartGate = gate;
+  scene.add(gate);
+}
+
+/* =========================================================
+   GROUND MESH (subdivided + displaced)
+   ========================================================= */
+const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+groundGeo.rotateX(-Math.PI/2);
+
+const fallbackGrass = new THREE.MeshStandardMaterial({
+  color: 0x556b2f,
+  roughness: 1.0,
+  metalness: 0.0
+});
+
+const ground = new THREE.Mesh(groundGeo, fallbackGrass);
+scene.add(ground);
+
+ground.receiveShadow = true;
+ground.castShadow = false;
+
+if (DEBUG_RED_BLOCK_ENABLE){
+  const blockGeo = new THREE.BoxGeometry(DEBUG_RED_BLOCK_L, DEBUG_RED_BLOCK_T, DEBUG_RED_BLOCK_W);
+  const blockMat = new THREE.MeshStandardMaterial({
+    color: 0xd62828,
+    roughness: 0.62,
+    metalness: 0.05
+  });
+  debugRedBlock = new THREE.Mesh(blockGeo, blockMat);
+  debugRedBlock.castShadow = true;
+  debugRedBlock.receiveShadow = true;
+  debugRedBlock.position.set(DEBUG_RED_BLOCK_POS.x, DEBUG_RED_BLOCK_T * 0.5, DEBUG_RED_BLOCK_POS.z);
+  scene.add(debugRedBlock);
+}
+if (DEBUG_RED_CURVE_ENABLE){
+  const curveGeo = buildCurvedBlockGeometry(
+    DEBUG_RED_BLOCK_L,
+    DEBUG_RED_BLOCK_W,
+    DEBUG_RED_BLOCK_T,
+    DEBUG_RED_CURVE_TURN_DEG,
+    DEBUG_RED_CURVE_STEPS
+  );
+  const curveMat = new THREE.MeshStandardMaterial({
+    color: 0xd62828,
+    roughness: 0.62,
+    metalness: 0.05
+  });
+  debugRedCurveBlock = new THREE.Mesh(curveGeo, curveMat);
+  debugRedCurveBlock.castShadow = true;
+  debugRedCurveBlock.receiveShadow = true;
+  const startX = DEBUG_RED_BLOCK_POS.x + (DEBUG_RED_BLOCK_L * 0.5);
+  const startZ = DEBUG_RED_BLOCK_POS.z;
+  debugRedCurveBlock.position.set(startX, DEBUG_RED_BLOCK_T * 0.5, startZ);
+  scene.add(debugRedCurveBlock);
+}
+if (DEBUG_RED_CURVE_RIGHT_ENABLE){
+  const curveGeoR = buildCurvedBlockGeometry(
+    DEBUG_RED_BLOCK_L,
+    DEBUG_RED_BLOCK_W,
+    DEBUG_RED_BLOCK_T,
+    DEBUG_RED_CURVE_TURN_DEG,
+    DEBUG_RED_CURVE_STEPS
+  );
+  const curveMatR = new THREE.MeshStandardMaterial({
+    color: 0xd62828,
+    roughness: 0.62,
+    metalness: 0.05
+  });
+  debugRedCurveRightBlock = new THREE.Mesh(curveGeoR, curveMatR);
+  debugRedCurveRightBlock.castShadow = true;
+  debugRedCurveRightBlock.receiveShadow = true;
+  // Mirror CL to create CR (right curve) with identical dimensions/material.
+  debugRedCurveRightBlock.scale.z = -1;
+  const startX = DEBUG_RED_BLOCK_POS.x + (DEBUG_RED_BLOCK_L * 0.5);
+  const startZ = DEBUG_RED_BLOCK_POS.z;
+  debugRedCurveRightBlock.position.set(startX, DEBUG_RED_BLOCK_T * 0.5, startZ);
+  scene.add(debugRedCurveRightBlock);
+}
+if (DEBUG_GREEN_BLOCK_ENABLE){
+  const blockGeo = new THREE.BoxGeometry(DEBUG_GREEN_BLOCK_L, DEBUG_RED_BLOCK_T, DEBUG_GREEN_BLOCK_W);
+  const blockMat = new THREE.MeshStandardMaterial({
+    color: 0x1f9d4a,
+    roughness: 0.62,
+    metalness: 0.05
+  });
+  blockMat.polygonOffset = true;
+  blockMat.polygonOffsetFactor = -2;
+  blockMat.polygonOffsetUnits = -2;
+  debugGreenBlock = new THREE.Mesh(blockGeo, blockMat);
+  debugGreenBlock.castShadow = true;
+  debugGreenBlock.receiveShadow = true;
+  debugGreenBlock.frustumCulled = false;
+  debugGreenBlock.renderOrder = 4;
+  debugGreenBlock.position.set(DEBUG_GREEN_BLOCK_POS.x, DEBUG_RED_BLOCK_T * 0.5, DEBUG_GREEN_BLOCK_POS.z);
+  scene.add(debugGreenBlock);
+}
+
+/* =========================================================
+   LAKE (STEP L1) — simple, safe water plane (low BSOD risk)
+   ========================================================= */
+
+const LAKE_ENABLE = true;
+const LAKE_SIZE = 2200;      // bigger so you can't miss it      // width/length of lake plane (world units)
+
+// Lake placement:
+// "VALLEY" = find lowest spot within a radius around LAKE_CENTER_XZ (recommended)
+// "FIXED"  = place lake at LAKE_CENTER_XZ with Y set from terrain at that point + offset
+const LAKE_PLACEMENT_MODE = "VALLEY"; // "VALLEY" or "FIXED"
+const LAKE_CENTER_X = 0;             // move lake left/right
+const LAKE_CENTER_Z = -650;          // move lake forward/back (negative is "straight ahead" at start)
+const LAKE_Y_OFFSET = 6;             // how far above local minimum/terrain (world units)
+const LAKE_EDGE_FADE = 0.35; // 0–1 (visual softness via opacity only)
+
+// --- Shoreline grounding (painterly edge control) ---
+const SHORELINE_ENABLE = true;
+const SHORELINE_WIDTH_UV = 0.13;   // 0.06–0.20 (smaller = thinner dark rim)
+const SHORELINE_SOFT_UV  = 0.08;   // softness of the rim falloff
+const SHORELINE_DARK     = 0.58;   // multiplier at the very edge (0.45–0.75)
+const LAKE_RIPPLE_ENABLE = true;
+const LAKE_RIPPLE_AMP = 0.35;    // ripple height in world units (keep small!)    // ripple height in world units (keep small!)
+const LAKE_RIPPLE_SPEED = 0.45;  // animation speed  // animation speed
+const LAKE_RIPPLE_SCALE = 0.020; // wave frequency (smaller = larger waves)
+let lakeMesh = null;
+
+// ----- Collision (Step 1: lake blocker) -----
+let lastSafePos = new THREE.Vector3(0, 0, 0);
+let lastSafeInit = false;
+let prevPos = new THREE.Vector3(0, 0, 0);
+const LAKE_BLOCK_ENABLE = false; // allow player to pass across lake
+const LAKE_BLOCK_MARGIN = 18; // shoreline buffer (world units)
+
+// Pick a sensible lake height after terrain is ready:
+// sample heights in a valley-ish area near the origin and set water slightly above the local minimum.
+function pickLakeY(cx, cz){
+  // If terrain isn't ready yet, fall back
+  if (!terrainReady) return 40;
+
+  const R = 650;     // sampling radius around (cx,cz)
+  const STEP = 85;   // sampling step
+  let minH = Infinity;
+
+  for (let x = -R; x <= R; x += STEP){
+    for (let z = -R; z <= R; z += STEP){
+      const h = heightAtWorldXZ(cx + x, cz + z);
+      if (h < minH) minH = h;
+    }
+  }
+
+  // Put lake slightly above the local min so it sits "in the valley"
+  let y = minH + LAKE_Y_OFFSET;
+
+  // Clamp to a reasonable range so it can't end up absurdly low/high
+  y = Math.max(5, Math.min(y, TERRAIN_HEIGHT * 0.65));
+  return y;
+}
+
+
+function updateLakeRipples(time){
+  if (!LAKE_RIPPLE_ENABLE || !lakeMesh) return;
+  const geo = lakeMesh.geometry;
+  const base = geo.userData.basePositions;
+  if (!base) return;
+
+  const pos = geo.attributes.position;
+  const a = pos.array;
+
+  const t = time * LAKE_RIPPLE_SPEED;
+  const amp = LAKE_RIPPLE_AMP;
+  const s = LAKE_RIPPLE_SCALE;
+
+  // Very subtle 2-wave sum. We only move Y, keep X/Z same.
+  for (let i = 0; i < a.length; i += 3){
+    const x = base[i + 0];
+    const y0 = base[i + 1];
+    const z = base[i + 2];
+
+    const w1 = Math.sin((x * s) + (t));
+    const w2 = Math.sin((z * s * 1.15) + (t * 1.3));
+    a[i + 1] = y0 + (w1 + w2) * 0.5 * amp;
+  }
+
+  pos.needsUpdate = true;
+  // Keep normals as-is (ripples are tiny). If you ever increase AMP a lot, recompute normals occasionally.
+}
+
+function createLake(){
+  if (!LAKE_ENABLE) return;
+
+  // Remove old lake if re-created
+  if (lakeMesh){
+    scene.remove(lakeMesh);
+    lakeMesh.geometry.dispose();
+    // material may be shared; ignore dispose for safety
+    lakeMesh = null;
+  }
+
+  const cx = LAKE_CENTER_X;
+  const cz = LAKE_CENTER_Z;
+
+  const lakeY = (LAKE_PLACEMENT_MODE === "FIXED")
+    ? (heightAtWorldXZ(cx, cz) + LAKE_Y_OFFSET)
+    : pickLakeY(cx, cz);
+
+  const geo = new THREE.PlaneGeometry(LAKE_SIZE, LAKE_SIZE, 80, 80); // enough verts for subtle ripples
+  geo.rotateX(-Math.PI/2);
+
+  // Store original positions for ripple animation
+  const pos = geo.attributes.position;
+  const base = new Float32Array(pos.array.length);
+  base.set(pos.array);
+  geo.userData.basePositions = base;
+const mat = new THREE.MeshStandardMaterial({
+    color: 0x2b6fa8,
+    transparent: true,
+    opacity: 0.82,
+    roughness: 0.25,
+    metalness: 0.0
+  });
+  // Reduce z-fighting where terrain touches water
+  mat.polygonOffset = true;
+  mat.polygonOffsetFactor = -1;
+  mat.polygonOffsetUnits = -1;
+
+
+  lakeMesh = new THREE.Mesh(geo, mat);
+  lakeMesh.position.set(cx, lakeY, cz);
+  lakeMesh.receiveShadow = false;
+  lakeMesh.castShadow = false;
+
+  // A tiny tilt prevents z-fighting if the terrain touches the waterline
+  lakeMesh.rotation.y = 0.15;
+
+  scene.add(lakeMesh);
+  console.log("LAKE: created at", {x:cx, y:lakeY, z:cz, size:LAKE_SIZE});
+  hudLine(`🏞️ LAKE ON (shoreline shader OFF): x=<code>${cx.toFixed(0)}</code> z=<code>${cz.toFixed(0)}</code> y=<code>${lakeY.toFixed(1)}</code> size=<code>${LAKE_SIZE}</code>`);
+}
+
+
+
+async function applyHeightmapToGround(){
+  if (!USE_TERRAIN){
+    hudLine("ℹ️ Terrain disabled (USE_TERRAIN=false).");
+    terrainReady = false;
+    return;
+  }
+
+  const hmCandidates = [HEIGHTMAP_FILE];
+  if (HEIGHTMAP_FILE.toLowerCase().endsWith(".jpg")) hmCandidates.push(HEIGHTMAP_FILE.replace(/\.jpg$/i, ".png"));
+  if (HEIGHTMAP_FILE.toLowerCase().endsWith(".jpeg")) hmCandidates.push(HEIGHTMAP_FILE.replace(/\.jpeg$/i, ".png"));
+
+  let hmTex = null;
+  let hmUrl = "";
+  for (const file of hmCandidates){
+    const url = resolveAssetUrl(file);
+    const tex = await loadTextureSafe(url);
+    if (tex && tex.image){
+      hmTex = tex;
+      hmUrl = url;
+      break;
+    }
+  }
+
+  // Heightmap is DATA (no sRGB)
+  if (!hmTex || !hmTex.image){
+    hudLine(`❌ Heightmap missing: <code>${HEIGHTMAP_FILE}</code> (also tried PNG fallback)`);
+    terrainReady = false;
+    return;
+  }
+
+  const img = hmTex.image;
+  hmW = img.width;
+  hmH = img.height;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = hmW;
+  canvas.height = hmH;
+  const ctx = canvas.getContext("2d", { willReadFrequently:true });
+  ctx.drawImage(img, 0, 0);
+  hmData = ctx.getImageData(0, 0, hmW, hmH).data;
+
+  const pos = ground.geometry.attributes.position;
+  const uv  = ground.geometry.attributes.uv;
+
+  for (let i = 0; i < pos.count; i++){
+    const u = uv.getX(i);
+    const v = uv.getY(i);
+
+    const x = Math.floor(u * (hmW - 1));
+    const y = Math.floor((1 - v) * (hmH - 1));
+    const idx = (y * hmW + x) * 4;
+
+    const r = hmData[idx];
+    pos.setY(i, (r / 255) * TERRAIN_HEIGHT);
+  }
+
+  pos.needsUpdate = true;
+  ground.geometry.computeVertexNormals();
+
+  terrainReady = true;
+  hudLine(`✅ Terrain applied: <code>${HEIGHTMAP_FILE}</code> (${hmW}×${hmH}), segments=${TERRAIN_SEGMENTS}, height=${TERRAIN_HEIGHT}`);
+
+
+  
+  // 🧭 Build minimap base once we have hmData
+  buildMinimapBase();
+  // STEP L1: create lake once terrain is ready
+  createLake();
+  createRaceTrack();
+  buildModuleLoopTrack();
+
+  // STEP TG1: create tall grass blades once terrain is ready
+  createTallGrass();
+  createTargets();
+  spawnBadGuy();
+  spawnBadGuy();
+  if (debugRedBlock){
+    const bx = debugRedBlock.position.x;
+    const bz = debugRedBlock.position.z;
+    debugRedBlock.position.y = heightAtWorldXZ(bx, bz) + (DEBUG_RED_BLOCK_T * 0.5) - DEBUG_RED_BLOCK_SINK + DEBUG_RED_BLOCK_Y_OFFSET;
+  }
+  if (debugRedCurveBlock){
+    if (debugRedBlock){
+      debugRedCurveBlock.position.y = debugRedBlock.position.y;
+    } else {
+      const bx = debugRedCurveBlock.position.x;
+      const bz = debugRedCurveBlock.position.z;
+      debugRedCurveBlock.position.y = heightAtWorldXZ(bx, bz) + (DEBUG_RED_BLOCK_T * 0.5) - DEBUG_RED_BLOCK_SINK;
+    }
+  }
+  if (debugRedCurveRightBlock){
+    if (debugRedBlock){
+      debugRedCurveRightBlock.position.y = debugRedBlock.position.y;
+    } else {
+      const bx = debugRedCurveRightBlock.position.x;
+      const bz = debugRedCurveRightBlock.position.z;
+      debugRedCurveRightBlock.position.y = heightAtWorldXZ(bx, bz) + (DEBUG_RED_BLOCK_T * 0.5) - DEBUG_RED_BLOCK_SINK;
+    }
+  }
+  if (debugGreenBlock){
+    const bx = debugGreenBlock.position.x;
+    const bz = debugGreenBlock.position.z;
+    debugGreenBlock.position.y = heightAtWorldXZ(bx, bz) + (DEBUG_RED_BLOCK_T * 0.5) - DEBUG_RED_BLOCK_SINK + DEBUG_GREEN_BLOCK_Y_OFFSET;
+  }
+  // Snap player under start gate and face along track direction.
+  const obj = controls.getObject();
+  const p = obj.position;
+  if (SPAWN_OVERRIDE_ENABLE){
+    p.x = SPAWN_OVERRIDE_X;
+    p.z = SPAWN_OVERRIDE_Z;
+    // Face along local track direction at spawn point.
+    let spawnYaw = obj.rotation.y;
+    if (raceTrackTotalLen > 1 && raceTrackCenterline && raceTrackCenterline.length > 1){
+      const s = projectTrackDistanceAtXZ(p.x, p.z);
+      spawnYaw = sampleTrackAtDistance(s).yaw;
+    } else if (raceTrackCenterline && raceTrackCenterline.length > 1){
+      const a = raceTrackCenterline[0];
+      const b = raceTrackCenterline[1];
+      const dx = b.x - a.x;
+      const dz = b.z - a.z;
+      const len = Math.max(1e-6, Math.hypot(dx, dz));
+      spawnYaw = Math.atan2(-(dx / len), -(dz / len));
+    }
+    obj.rotation.y = spawnYaw + THREE.MathUtils.degToRad(SPAWN_YAW_CCW_DEG);
+  } else if (raceTrackStart){
+    const p0 = raceTrackCenterline?.[0] || { x: raceTrackStart.x, z: raceTrackStart.z };
+    const p1 = raceTrackCenterline?.[1] || p0;
+    const dx = p1.x - p0.x;
+    const dz = p1.z - p0.z;
+    const len = Math.max(1e-6, Math.hypot(dx, dz));
+    const fwdX = dx / len;
+    const fwdZ = dz / len;
+    obj.rotation.y = Math.atan2(-fwdX, -fwdZ);
+
+    // Place camera back so the blue truck sprite (drawn forward) sits under the start line.
+    p.x = raceTrackStart.x - (fwdX * TRUCK_FWD);
+    p.z = raceTrackStart.z - (fwdZ * TRUCK_FWD);
+  } else {
+    p.x = PLAYER_SPAWN_X;
+    p.z = PLAYER_SPAWN_Z;
+  }
+  p.y = trackSurfaceYAt(p.x, p.z) + TRACK_PLAYER_SURFACE_OFFSET + PLAYER_EYE_HEIGHT;
+  // Ensure both trucks snap to final spawn immediately (no visible spawn delay).
+  companionTruckPlaced = false;
+  companionTruckSmoothedY = null;
+  raceStarted = false;
+  removeStartupPanel();
+  updateTruckAvatar(1/60);
+  ensureStartupPanel();
+}
+applyHeightmapToGround();
+
+/* =========================================================
+   🚚 TRUCK AVATAR (Phase 1, SAFE)
+   - Uses MeshBasicMaterial (no shader patches)
+   - No UV assumptions beyond default PlaneGeometry
+   - If the truck image is missing, we just skip the avatar (no crashes)
+   ========================================================= */
+let truckPlane = null;
+let truckShadowProxy = null;
+let truckTex = null;
+let companionTruckPlane = null;
+let companionTruckShadowProxy = null;
+let currentTruckFile = DEFAULT_TRUCK_FILE;
+
+// ----- Truck audio state -----
+let truckAudio = null;
+let truckSoundPlaying = false;
+let truckSmoothedY = null;
+let companionTruckSmoothedY = null;
+let companionTruckPlaced = false;
+let orangeAutoRunActive = false;
+let orangeAutoRunStartS = 0;
+let orangeAutoRunDistance = 0;
+let orangeAutoRunYaw = null;
+let orangeAutoRunLockedY = null;
+let orangeAutoRunSpeedCurrent = ORANGE_AUTORUN_SPEED;
+let orangeCatchupBoostArmed = true;
+let orangeCatchupTierApplied = 0;
+let orangeSpurtTriggerDistances = [];
+let orangeSpurtNextIndex = 0;
+let orangeSpurtTimeLeft = 0;
+let orangeCameraSmoothedY = null;
+let orangeAiPos = new THREE.Vector3();
+let orangeAiYaw = 0;
+let orangeAutoRunLastS = 0;
+let orangeCurveHugOffset = 0;
+let orangeStraightBoostLerp = 0;
+let orangeAiState = "Cruise";
+let blueControlPos = new THREE.Vector3();
+let blueControlYaw = 0;
+let blueControlActive = false;
+let blueSpawnVisualHoldTime = 0;
+let blueSpawnVisualExtraSide = 0;
+let blueSpawnVisualExtraBack = 0;
+let blueSpawnBehindGap = 0;
+let aiRacerProgress = null;
+let aiRacerSpeed = AI_RACER_BASE_SPEED;
+let lastPlayerPos2D = null;
+let orangeBlueCollisionLatched = false;
+let orangeBlueLastCollisionMs = 0;
+let blueEdgeSkidLatched = false;
+let blueEdgeLastSkidMs = 0;
+let blueEdgeSlowTimeLeft = 0;
+let playerAiCollisionSlowTimeLeft = 0;
+let playerRandomSpeedDelta = 0;
+let raceStarted = false;
+let startupOverlayRoot = null;
+let raceFinishAnnounced = false;
+let raceBlueDistAccum = 0;
+let raceOrangeDistAccum = 0;
+let raceBluePrevGateU = null;
+let raceOrangePrevGateU = null;
+let raceBluePrevS = null;
+let raceOrangePrevS = null;
+
+const PLAYER_TRUCK_NUMBER_BY_FILE = {
+  "bigfoot.png": 1,
+  "blue_truck.png": 2,
+  "maz_back.png": 3,
+  "orange_truck.png": 4,
+  "truck2.png": 5,
+  "big_truck.png": 6
+};
+
+function rollPlayerRandomSpeedDelta(){
+  const i = Math.floor(Math.random() * PLAYER_RANDOM_SPEED_DELTAS.length);
+  playerRandomSpeedDelta = PLAYER_RANDOM_SPEED_DELTAS[i];
+}
+
+function removeStartupPanel(){
+  if (!startupOverlayRoot) return;
+  startupOverlayRoot.remove();
+  startupOverlayRoot = null;
+}
+
+function ensureStartupPanel(){
+  if (startupOverlayRoot || raceStarted) return;
+
+  const root = document.createElement("div");
+  root.style.position = "fixed";
+  root.style.left = "50%";
+  root.style.top = "50%";
+  root.style.transform = "translate(-50%, -100%)";
+  root.style.width = "min(29.4vw, 532px)";
+  root.style.height = "min(54.6vh, 686px)";
+  root.style.zIndex = "10020";
+  root.style.userSelect = "none";
+  root.style.webkitUserSelect = "none";
+
+  const bg = document.createElement("img");
+  bg.src = resolveAssetUrl("picks.png", { cacheBust:true });
+  bg.alt = "Picks";
+  bg.style.position = "absolute";
+  bg.style.inset = "0";
+  bg.style.width = "100%";
+  bg.style.height = "100%";
+  bg.style.objectFit = "fill";
+  bg.style.pointerEvents = "none";
+  bg.style.webkitUserDrag = "none";
+  root.appendChild(bg);
+
+  const mkPickBtn = ({ left, top, file, label })=>{
+    const b = document.createElement("button");
+    b.type = "button";
+    b.setAttribute("aria-label", label);
+    b.style.position = "absolute";
+    b.style.left = left;
+    b.style.top = top;
+    b.style.transform = "translate(-50%, -50%)";
+    b.style.width = "22%";
+    b.style.height = "26%";
+    b.style.background = "transparent";
+    b.style.border = "none";
+    b.style.padding = "0";
+    b.style.margin = "0";
+    b.style.cursor = "pointer";
+    b.style.pointerEvents = "auto";
+    b.addEventListener("pointerdown", (ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      initTruckAvatar(file);
+    }, { passive:false });
+    b.addEventListener("touchstart", (ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      initTruckAvatar(file);
+    }, { passive:false });
+    b.addEventListener("click", (ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      initTruckAvatar(file);
+    }, { passive:false });
+    return b;
+  };
+
+  const pickHotspots = [
+    { left: "22%", top: "32%", file: "bigfoot.png", label: "Pick vehicle 1" },
+    { left: "50%", top: "32%", file: "blue_truck.png", label: "Pick vehicle 2" },
+    { left: "78%", top: "32%", file: "maz_back.png", label: "Pick vehicle 3" },
+    { left: "22%", top: "69%", file: "orange_truck.png", label: "Pick vehicle 4" },
+    { left: "50%", top: "69%", file: "truck2.png", label: "Pick vehicle 5" },
+    { left: "78%", top: "69%", file: "big_truck.png", label: "Pick vehicle 6" }
+  ];
+  for (const spec of pickHotspots){
+    root.appendChild(mkPickBtn(spec));
+  }
+
+  document.body.appendChild(root);
+  startupOverlayRoot = root;
+}
+
+function resetOrangeSpurts(){
+  orangeSpurtTriggerDistances = [];
+  orangeSpurtNextIndex = 0;
+  orangeSpurtTimeLeft = 0;
+  orangeCameraSmoothedY = null;
+  orangeCurveHugOffset = 0;
+  orangeCatchupTierApplied = 0;
+  orangeAiState = "Cruise";
+}
+
+function scheduleOrangeSpurts(lapDistance){
+  resetOrangeSpurts();
+  if (!(lapDistance > 0)) return;
+  const margin = Math.max(4.0, ORANGE_AUTORUN_SPEED * ORANGE_SPURT_DURATION * 1.5);
+  const minD = margin;
+  const maxD = Math.max(minD, lapDistance - margin);
+  for (let i = 0; i < ORANGE_SPURT_COUNT; i++){
+    const t = Math.random();
+    const d = minD + ((maxD - minD) * t);
+    orangeSpurtTriggerDistances.push(d);
+  }
+  orangeSpurtTriggerDistances.sort((a,b)=>a-b);
+}
+
+function initTruckAvatar(fileName = currentTruckFile){
+  if(!TRUCK_AVATAR_ENABLE) return;
+
+  currentTruckFile = fileName;
+  const url = resolveAssetUrl(currentTruckFile, { cacheBust:true });
+
+  if (truckPlane){
+    scene.remove(truckPlane);
+    if (truckPlane.geometry) truckPlane.geometry.dispose();
+    if (truckPlane.material) truckPlane.material.dispose();
+    truckPlane = null;
+  }
+  if (truckShadowProxy){
+    scene.remove(truckShadowProxy);
+    if (truckShadowProxy.geometry) truckShadowProxy.geometry.dispose();
+    if (truckShadowProxy.material) truckShadowProxy.material.dispose();
+    truckShadowProxy = null;
+  }
+  if (companionTruckPlane){
+    scene.remove(companionTruckPlane);
+    if (companionTruckPlane.geometry) companionTruckPlane.geometry.dispose();
+    if (companionTruckPlane.material) companionTruckPlane.material.dispose();
+    companionTruckPlane = null;
+  }
+  if (companionTruckShadowProxy){
+    scene.remove(companionTruckShadowProxy);
+    if (companionTruckShadowProxy.geometry) companionTruckShadowProxy.geometry.dispose();
+    if (companionTruckShadowProxy.material) companionTruckShadowProxy.material.dispose();
+    companionTruckShadowProxy = null;
+  }
+  companionTruckSmoothedY = null;
+  companionTruckPlaced = false;
+  orangeAutoRunActive = false;
+  orangeAutoRunYaw = null;
+  resetOrangeSpurts();
+  aiRacerProgress = null;
+  aiRacerSpeed = AI_RACER_BASE_SPEED;
+  lastPlayerPos2D = null;
+
+  truckTex = new THREE.TextureLoader().load(
+    url,
+    tex=>{
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+      // Keep correct aspect ratio
+      const imgW = tex.image?.width || 1024;
+      const imgH = tex.image?.height || 512;
+      const aspect = imgW / Math.max(1, imgH);
+
+      // Use TRUCK_H as the "master" scale so you can think in height.
+      const h = TRUCK_H;
+      const w = TRUCK_W || (h * aspect);
+
+      let mat;
+
+      if (TRUCK_CHROMAKEY_ENABLE){
+        // Chroma-key near-white background out (for non-transparent PNGs)
+        const key = TRUCK_KEY_COLOR;
+        mat = new THREE.ShaderMaterial({
+          transparent: true,
+          depthWrite: false,
+          depthTest: !TRUCK_DRAW_ON_TOP ? true : false,
+          uniforms: {
+            map: { value: tex },
+            keyColor: { value: new THREE.Vector3(key.r, key.g, key.b) },
+            tol: { value: TRUCK_KEY_TOL },
+            soft: { value: TRUCK_KEY_SOFT }
+          },
+          vertexShader: `
+            varying vec2 vUv;
+            void main(){
+              vUv = uv;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform sampler2D map;
+            uniform vec3 keyColor;
+            uniform float tol;
+            uniform float soft;
+            varying vec2 vUv;
+
+            void main(){
+              vec4 c = texture2D(map, vUv);
+
+              // Distance from key color (white). Larger = less like white.
+              float d = distance(c.rgb, keyColor);
+
+              // alpha: 0 near white, 1 away from white
+              float a = smoothstep(tol, tol + soft, d);
+
+              // Also respect any existing alpha in the PNG
+              a *= c.a;
+
+              if (a < 0.01) discard;
+              gl_FragColor = vec4(c.rgb, a);
+            }
+          `
+        });
+      } else {
+        // Normal transparent PNG path
+        mat = new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          alphaTest: 0.5,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          depthTest: !TRUCK_DRAW_ON_TOP ? true : false
+        });
+      }
+
+      const playerScale = (PLAYER_TRUCK_SCALE_MAP[currentTruckFile] || 1.0) * BLUE_TRUCK_SCALE;
+      const blueW = w * playerScale;
+      const blueH = h * playerScale;
+      truckPlane = new THREE.Mesh(new THREE.PlaneGeometry(blueW, blueH), mat);
+      truckPlane.renderOrder = TRUCK_DRAW_ON_TOP ? 999 : 10;
+      truckPlane.castShadow = false;
+      truckPlane.receiveShadow = false;
+      scene.add(truckPlane);
+
+      // Shadow proxy (invisible) so the truck still "casts" a terrain shadow
+      const proxyMat = new THREE.MeshStandardMaterial({ color: 0x000000, transparent:true, opacity:0.0 });
+      truckShadowProxy = new THREE.Mesh(new THREE.BoxGeometry(blueW*0.55, blueH*0.55, blueW*0.9), proxyMat);
+      truckShadowProxy.castShadow = false;
+      truckShadowProxy.receiveShadow = false;
+      scene.add(truckShadowProxy);
+      updateTruckAvatar(1/60);
+
+      if (COMPANION_TRUCK_ENABLE){
+        const cUrl = resolveAssetUrl(COMPANION_TRUCK_FILE, { cacheBust:true });
+        new THREE.TextureLoader().load(
+          cUrl,
+          cTex=>{
+            cTex.colorSpace = THREE.SRGBColorSpace;
+            cTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+            const cMat = new THREE.MeshBasicMaterial({
+              map: cTex,
+              transparent: true,
+              alphaTest: 0.5,
+              side: THREE.DoubleSide,
+              depthWrite: false,
+              depthTest: !TRUCK_DRAW_ON_TOP ? true : false
+            });
+            companionTruckPlane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), cMat);
+            companionTruckPlane.renderOrder = TRUCK_DRAW_ON_TOP ? 999 : 10;
+            companionTruckPlane.castShadow = false;
+            companionTruckPlane.receiveShadow = false;
+            scene.add(companionTruckPlane);
+
+            const cProxyMat = new THREE.MeshStandardMaterial({ color: 0x000000, transparent:true, opacity:0.0 });
+            companionTruckShadowProxy = new THREE.Mesh(new THREE.BoxGeometry(w*0.55, h*0.55, w*0.9), cProxyMat);
+            companionTruckShadowProxy.castShadow = false;
+            companionTruckShadowProxy.receiveShadow = false;
+            scene.add(companionTruckShadowProxy);
+            companionTruckPlaced = false;
+            companionTruckSmoothedY = null;
+            updateTruckAvatar(1/60);
+          },
+          undefined,
+          ()=>{}
+        );
+      }
+
+      hudLine(`✅ Loaded truck avatar: <code>${currentTruckFile}</code>`);
+      if (TRUCK_CHROMAKEY_ENABLE) hudLine(`🎨 Truck chroma-key: ON (keys out near-white background)`);
+      if (TRUCK_DRAW_ON_TOP) hudLine(`🧪 Truck draw-on-top: ON (debug mode; set TRUCK_DRAW_ON_TOP=false later)`);
+    },
+    undefined,
+    err=>{
+      console.error("Truck avatar failed to load:", url, err);
+      hudLine(`❌ Truck avatar failed to load: <code>${currentTruckFile}</code>`);
+    }
+  );
+}
+
+function cycleTruckAvatar(){
+  const idx = TRUCK_CHOICES.indexOf(currentTruckFile);
+  const next = TRUCK_CHOICES[idx >= 0 ? ((idx + 1) % TRUCK_CHOICES.length) : 0];
+  initTruckAvatar(next);
+}
+
+function updateTruckAvatar(dt = 1/60){
+  if(!truckPlane) return;
+
+  const camObj = controls.getObject(); // the camera
+  const dtSafe = Math.max(0.001, dt);
+  // Keep spawn offset stable; avoid timed "slide-in" behavior.
+  const yaw = orangeAutoRunActive ? camObj.rotation.y : ((blueControlActive) ? blueControlYaw : camObj.rotation.y);
+
+  // Keep blue eligible for rendering; we'll do a full independent blue-world model later.
+  truckPlane.visible = true;
+  if (truckShadowProxy) truckShadowProxy.visible = true;
+
+  // Position in front of camera (like a hood / avatar view)
+  const fwd = __vFwdA.set(-Math.sin(yaw), 0, -Math.cos(yaw));
+  const right = __vRightA.crossVectors(fwd, __upV3).normalize();
+
+  const srcX = (orangeAutoRunActive && blueControlActive) ? blueControlPos.x : camObj.position.x;
+  const srcZ = (orangeAutoRunActive && blueControlActive) ? blueControlPos.z : camObj.position.z;
+  const spawnSideBoost = (orangeAutoRunActive ? 0 : ((blueSpawnVisualHoldTime > 0) ? blueSpawnVisualExtraSide : 0));
+  const spawnBackBoost = (orangeAutoRunActive ? 0 : ((blueSpawnVisualHoldTime > 0) ? blueSpawnVisualExtraBack : 0));
+  const visualSide = TRUCK_SIDE + spawnSideBoost;
+  // Keep blue in front of camera even when applying spawn-back offset.
+  const visualFwd = Math.max(1.6, TRUCK_FWD - spawnBackBoost);
+  let x = (orangeAutoRunActive && blueControlActive)
+    ? (srcX + right.x * visualSide)
+    : (srcX + fwd.x * visualFwd + right.x * visualSide);
+  let z = (orangeAutoRunActive && blueControlActive)
+    ? (srcZ + right.z * visualSide)
+    : (srcZ + fwd.z * visualFwd + right.z * visualSide);
+
+  // Spawn lock: place blue directly behind orange from orange's exact world position.
+  if (!orangeAutoRunActive && blueSpawnVisualHoldTime > 0 && companionTruckPlane){
+    x = companionTruckPlane.position.x - (fwd.x * blueSpawnBehindGap);
+    z = companionTruckPlane.position.z - (fwd.z * blueSpawnBehindGap);
+  }
+
+  // Sit on terrain with smoothing to prevent harsh vertical bouncing on rough heightmap pixels.
+  const baseY = trackSurfaceYAt(x, z) + TRACK_TRUCK_SURFACE_OFFSET;
+  const targetY = baseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) - TRUCK_VISUAL_DROP;
+
+  if (truckSmoothedY === null) truckSmoothedY = targetY;
+
+  const alpha = 1 - Math.exp(-TRUCK_Y_SMOOTH_RATE * dtSafe);
+  let nextY = THREE.MathUtils.lerp(truckSmoothedY, targetY, alpha);
+
+  const maxStep = TRUCK_Y_MAX_STEP_PER_SEC * dtSafe;
+  const deltaY = nextY - truckSmoothedY;
+  if (Math.abs(deltaY) > maxStep) nextY = truckSmoothedY + Math.sign(deltaY) * maxStep;
+
+  truckSmoothedY = nextY;
+  truckPlane.position.set(x, truckSmoothedY, z);
+  // Keep blue truck level (no roll) by using yaw-only orientation in all modes.
+  truckPlane.rotation.set(0, yaw, 0);
+
+  if(truckShadowProxy){
+    const smoothedBaseY = truckSmoothedY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+    truckShadowProxy.position.set(x, smoothedBaseY + (TRUCK_H * 0.3), z);
+    truckShadowProxy.rotation.set(0, yaw, 0);
+  }
+
+  if (companionTruckPlane && orangeAutoRunActive && raceTrackTotalLen > 1){
+    const bluePosNow = (blueControlActive ? blueControlPos : camObj.position);
+    const blueSNow = projectTrackDistanceAtXZ(bluePosNow.x, bluePosNow.z);
+    const gapNow = signedTrackDelta(aiRacerProgress, blueSNow); // orange - blue
+    // Hybrid race AI:
+    // - dynamic lookahead steering (Pure Pursuit style)
+    // - curvature speed planning
+    // - simple race states (Attack/Cruise/Defend/Recover)
+    const currS = projectTrackDistanceAtXZ(orangeAiPos.x, orangeAiPos.z);
+    const sample = sampleTrackAtDistance(currS);
+    const lookTurnNear = sampleTrackAtDistance(currS + 4.0);
+    const lookTurnFar = sampleTrackAtDistance(currS + 12.0);
+    const turnDelta = signedAngleDelta(lookTurnFar.yaw, lookTurnNear.yaw);
+    const curveMag = Math.abs(turnDelta);
+    const lookaheadDist = THREE.MathUtils.clamp(
+      ORANGE_AI_LOOKAHEAD_MIN +
+      (orangeAutoRunSpeedCurrent * ORANGE_AI_LOOKAHEAD_SPEED_GAIN) +
+      ((1.0 - Math.min(1.0, curveMag)) * 2.0),
+      ORANGE_AI_LOOKAHEAD_MIN,
+      ORANGE_AI_LOOKAHEAD_MAX
+    );
+    const look = sampleTrackAtDistance(currS + lookaheadDist);
+
+    const toLX0 = look.x - orangeAiPos.x;
+    const toLZ0 = look.z - orangeAiPos.z;
+    const desiredYaw0 = Math.atan2(-toLX0, -toLZ0);
+    const yawErr0 = signedAngleDelta(desiredYaw0, orangeAiYaw);
+
+    if (curveMag > 0.35 || Math.abs(yawErr0) > 0.85) orangeAiState = "Recover";
+    else if (gapNow < -ORANGE_AI_TARGET_GAP) orangeAiState = "Attack";
+    else if (gapNow > ORANGE_AI_TARGET_GAP) orangeAiState = "Defend";
+    else orangeAiState = "Cruise";
+
+    let stateMult = ORANGE_AI_STATE_CRUISE_MULT;
+    if (orangeAiState === "Attack") stateMult = ORANGE_AI_STATE_ATTACK_MULT;
+    else if (orangeAiState === "Defend") stateMult = ORANGE_AI_STATE_DEFEND_MULT;
+    else if (orangeAiState === "Recover") stateMult = ORANGE_AI_STATE_RECOVER_MULT;
+
+    const curveMult = THREE.MathUtils.clamp(1.0 - (curveMag * ORANGE_AI_CURVE_SPEED_BRAKE), 0.45, 1.0);
+    const straightFactor = THREE.MathUtils.clamp((0.20 - curveMag) / 0.20, 0.0, 1.0);
+    const straightAlpha = 1 - Math.exp(-ORANGE_STRAIGHT_SPEED_BOOST_SMOOTH * dtSafe);
+    orangeStraightBoostLerp = THREE.MathUtils.lerp(orangeStraightBoostLerp, straightFactor, straightAlpha);
+    const straightMult = 1.0 + (ORANGE_STRAIGHT_SPEED_BOOST_MAX * orangeStraightBoostLerp);
+    const gapError = (-gapNow) - ORANGE_AI_TARGET_GAP; // positive when trailing too far
+    const gapBoost = gapError * ORANGE_AI_GAP_GAIN;
+    const baseTarget = ORANGE_AUTORUN_SPEED * stateMult * curveMult * straightMult;
+    const speedTarget = THREE.MathUtils.clamp(
+      baseTarget + gapBoost,
+      ORANGE_AUTORUN_SPEED * 0.55,
+      ORANGE_AUTORUN_SPEED * 1.35
+    );
+    const speedRate = (speedTarget > orangeAutoRunSpeedCurrent) ? ORANGE_AI_ACCEL_RATE : ORANGE_AI_DECEL_RATE;
+    const speedAlpha = 1 - Math.exp(-speedRate * dtSafe);
+    orangeAutoRunSpeedCurrent = THREE.MathUtils.lerp(orangeAutoRunSpeedCurrent, speedTarget, speedAlpha);
+
+    let orangeCatchupMult = 1.0;
+    if (gapNow <= -ORANGE_CATCHUP_GAP_TRIGGER_1 && blueCatchupTierApplied < 1) blueCatchupTierApplied = 1;
+    if (gapNow <= -ORANGE_CATCHUP_GAP_TRIGGER_2 && blueCatchupTierApplied < 2) blueCatchupTierApplied = 2;
+    if (gapNow <= -ORANGE_CATCHUP_GAP_TRIGGER_3 && blueCatchupTierApplied < 3) blueCatchupTierApplied = 3;
+    if (gapNow <= -ORANGE_CATCHUP_GAP_TRIGGER_4 && blueCatchupTierApplied < 4) blueCatchupTierApplied = 4;
+    if (gapNow > -ORANGE_CATCHUP_REARM_GAP) blueCatchupTierApplied = 0;
+    if (blueCatchupTierApplied >= 1) orangeCatchupMult *= ORANGE_CATCHUP_BOOST_MULT_1;
+    if (blueCatchupTierApplied >= 2) orangeCatchupMult *= ORANGE_CATCHUP_BOOST_MULT_2;
+    if (blueCatchupTierApplied >= 3) orangeCatchupMult *= ORANGE_CATCHUP_BOOST_MULT_3;
+    if (blueCatchupTierApplied >= 4) orangeCatchupMult *= ORANGE_CATCHUP_BOOST_MULT_4;
+
+    if (orangeSpurtTimeLeft > 0){
+      orangeSpurtTimeLeft = Math.max(0, orangeSpurtTimeLeft - dt);
+    } else if (orangeSpurtNextIndex < orangeSpurtTriggerDistances.length){
+      const nextSpurtAt = orangeSpurtTriggerDistances[orangeSpurtNextIndex];
+      if (orangeAutoRunDistance >= nextSpurtAt){
+        orangeSpurtTimeLeft = ORANGE_SPURT_DURATION;
+        orangeSpurtNextIndex++;
+      }
+    }
+    const orangeSpeedNow = orangeAutoRunSpeedCurrent
+      * (orangeSpurtTimeLeft > 0 ? ORANGE_SPURT_MULT : 1.0)
+      * orangeCatchupMult;
+
+    const desiredHug = (Math.abs(turnDelta) > ORANGE_CURVE_HUG_DEADZONE)
+      ? THREE.MathUtils.clamp(turnDelta * ORANGE_CURVE_HUG_GAIN, -ORANGE_CURVE_HUG_MAX, ORANGE_CURVE_HUG_MAX)
+      : 0;
+    const hugAlpha = 1 - Math.exp(-ORANGE_CURVE_HUG_SMOOTH * dtSafe);
+    orangeCurveHugOffset = THREE.MathUtils.lerp(orangeCurveHugOffset, desiredHug, hugAlpha);
+
+    const lookRight = __vLookRight.set(Math.cos(look.yaw), 0, -Math.sin(look.yaw)).normalize();
+    const steerTargetX = look.x + lookRight.x * orangeCurveHugOffset;
+    const steerTargetZ = look.z + lookRight.z * orangeCurveHugOffset;
+    const toLX = steerTargetX - orangeAiPos.x;
+    const toLZ = steerTargetZ - orangeAiPos.z;
+    const targetYaw = Math.atan2(-toLX, -toLZ);
+    let yawErr = signedAngleDelta(targetYaw, orangeAiYaw);
+    const maxYawStep = ORANGE_AUTORUN_TURN_RATE * dtSafe;
+    if (Math.abs(yawErr) > maxYawStep) yawErr = Math.sign(yawErr) * maxYawStep;
+    orangeAiYaw += yawErr;
+
+    const aiFwd = __vAiFwdA.set(-Math.sin(orangeAiYaw), 0, -Math.cos(orangeAiYaw));
+    orangeAiPos.x += aiFwd.x * orangeSpeedNow * dt;
+    orangeAiPos.z += aiFwd.z * orangeSpeedNow * dt;
+
+    const cBaseY = trackSurfaceYAt(orangeAiPos.x, orangeAiPos.z) + TRACK_TRUCK_SURFACE_OFFSET;
+    const cTargetY = cBaseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) + ORANGE_TRUCK_RAISE - TRUCK_VISUAL_DROP;
+    companionTruckSmoothedY = cTargetY;
+    orangeAiPos.y = cTargetY;
+    companionTruckPlane.position.set(orangeAiPos.x, companionTruckSmoothedY, orangeAiPos.z);
+    companionTruckPlane.rotation.set(0, orangeAiYaw, 0);
+
+    const newS = projectTrackDistanceAtXZ(orangeAiPos.x, orangeAiPos.z);
+    let ds = newS - orangeAutoRunLastS;
+    if (ds < -raceTrackTotalLen * 0.5) ds += raceTrackTotalLen;
+    if (ds > raceTrackTotalLen * 0.5) ds -= raceTrackTotalLen;
+    if (ds < 0) ds = 0;
+    orangeAutoRunDistance += ds;
+    orangeAutoRunLastS = newS;
+    aiRacerProgress = newS;
+
+    const lapDistance = raceTrackTotalLen * ORANGE_AUTORUN_LAPS;
+    if (orangeAutoRunDistance >= lapDistance){
+      orangeAutoRunActive = false;
+      orangeAutoRunLockedY = null;
+      aiRacerProgress = orangeAutoRunStartS;
+      resetOrangeSpurts();
+    }
+
+    if (companionTruckShadowProxy){
+      const cSmoothedBaseY = companionTruckSmoothedY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+      companionTruckShadowProxy.position.set(orangeAiPos.x, cSmoothedBaseY + (TRUCK_H * 0.3), orangeAiPos.z);
+      companionTruckShadowProxy.rotation.set(0, orangeAiYaw, 0);
+    }
+
+    // Camera follows orange truck during autorun with full-vehicle framing.
+    const runYaw = orangeAiYaw;
+    const followFwd = __vFollowFwdA.set(-Math.sin(runYaw), 0, -Math.cos(runYaw));
+    const camBack = (TRUCK_FWD + 1.8) * CAMERA_BACK_MULT;
+    const camAnchorX = ORANGE_CAMERA_FOLLOW_CENTERLINE ? sample.x : orangeAiPos.x;
+    const camAnchorZ = ORANGE_CAMERA_FOLLOW_CENTERLINE ? sample.z : orangeAiPos.z;
+    camObj.position.x = camAnchorX - (followFwd.x * camBack);
+    camObj.position.z = camAnchorZ - (followFwd.z * camBack);
+    const camBaseY = trackSurfaceYAt(sample.x, sample.z) + TRACK_TRUCK_SURFACE_OFFSET;
+    const camTargetY = camBaseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) + (PLAYER_EYE_HEIGHT * 0.45 * CAMERA_HEIGHT_MULT);
+    if (orangeCameraSmoothedY === null) orangeCameraSmoothedY = camTargetY;
+    const camAlpha = 1 - Math.exp(-ORANGE_CAMERA_Y_SMOOTH_RATE * dtSafe);
+    orangeCameraSmoothedY = THREE.MathUtils.lerp(orangeCameraSmoothedY, camTargetY, camAlpha);
+    camObj.position.y = orangeCameraSmoothedY;
+    camObj.rotation.y = runYaw;
+  }
+  else if (companionTruckPlane && AI_RACER_ENABLE && raceTrackTotalLen > 1){
+    const px = camObj.position.x;
+    const pz = camObj.position.z;
+    const playerS = projectTrackDistanceAtXZ(px, pz);
+
+    if (aiRacerProgress === null){
+      aiRacerProgress = wrapTrackDistance(playerS + AI_RACER_TARGET_GAP);
+      aiRacerSpeed = AI_RACER_BASE_SPEED;
+      if (!lastPlayerPos2D) lastPlayerPos2D = new THREE.Vector2();
+      lastPlayerPos2D.set(px, pz);
+    }
+
+    let playerSpeed2D = 0;
+    if (lastPlayerPos2D){
+      const pdx = px - lastPlayerPos2D.x;
+      const pdz = pz - lastPlayerPos2D.y;
+      playerSpeed2D = Math.hypot(pdx, pdz) / dtSafe;
+    }
+    if (!lastPlayerPos2D) lastPlayerPos2D = new THREE.Vector2();
+    lastPlayerPos2D.set(px, pz);
+
+    // Signed shortest-track gap: positive means AI is ahead of player.
+    let gap = aiRacerProgress - playerS;
+    if (gap > raceTrackTotalLen * 0.5) gap -= raceTrackTotalLen;
+    if (gap < -raceTrackTotalLen * 0.5) gap += raceTrackTotalLen;
+    const gapError = AI_RACER_TARGET_GAP - gap;
+
+    const targetAiSpeed = THREE.MathUtils.clamp(
+      Math.max(AI_RACER_BASE_SPEED, playerSpeed2D) + (gapError * AI_RACER_RUBBERBAND_GAIN),
+      AI_RACER_MIN_SPEED,
+      AI_RACER_MAX_SPEED
+    );
+    aiRacerSpeed = THREE.MathUtils.lerp(aiRacerSpeed, targetAiSpeed, 1 - Math.exp(-AI_RACER_SMOOTH_RATE * dtSafe));
+    aiRacerProgress = wrapTrackDistance(aiRacerProgress + aiRacerSpeed * dt);
+
+    const sample = sampleTrackAtDistance(aiRacerProgress);
+    const aiFwd = __vAiFwdA.set(-Math.sin(sample.yaw), 0, -Math.cos(sample.yaw));
+    const aiRight = __vRightA.set(aiFwd.z, 0, -aiFwd.x).normalize();
+    const cx = sample.x + aiRight.x * COMPANION_TRUCK_SIDE_OFFSET;
+    const cz = sample.z + aiRight.z * COMPANION_TRUCK_SIDE_OFFSET;
+    const cBaseY = trackSurfaceYAt(cx, cz) + TRACK_TRUCK_SURFACE_OFFSET;
+    const cTargetY = cBaseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) + ORANGE_TRUCK_RAISE - TRUCK_VISUAL_DROP;
+
+    if (companionTruckSmoothedY === null) companionTruckSmoothedY = cTargetY;
+    const cAlpha = 1 - Math.exp(-TRUCK_Y_SMOOTH_RATE * dtSafe);
+    let cNextY = THREE.MathUtils.lerp(companionTruckSmoothedY, cTargetY, cAlpha);
+    const cMaxStep = TRUCK_Y_MAX_STEP_PER_SEC * dtSafe;
+    const cDeltaY = cNextY - companionTruckSmoothedY;
+    if (Math.abs(cDeltaY) > cMaxStep) cNextY = companionTruckSmoothedY + Math.sign(cDeltaY) * cMaxStep;
+
+    companionTruckSmoothedY = cNextY;
+    companionTruckPlane.position.set(cx, companionTruckSmoothedY, cz);
+    companionTruckPlane.rotation.set(0, sample.yaw, 0);
+
+    if (companionTruckShadowProxy){
+      const cSmoothedBaseY = companionTruckSmoothedY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+      companionTruckShadowProxy.position.set(cx, cSmoothedBaseY + (TRUCK_H * 0.3), cz);
+      companionTruckShadowProxy.rotation.set(0, sample.yaw, 0);
+    }
+  }
+  else if (companionTruckPlane && !companionTruckPlaced){
+    // Spawn behavior: orange owns centerline; blue spawns beside it.
+    const spawnS = projectTrackDistanceAtXZ(camObj.position.x, camObj.position.z);
+    const spawnSample = sampleTrackAtDistance(spawnS);
+    const spawnFwd = __vFwdA.set(-Math.sin(spawnSample.yaw), 0, -Math.cos(spawnSample.yaw));
+    const spawnRight = __vRightA.set(-spawnFwd.z, 0, spawnFwd.x).normalize();
+    const cx = spawnSample.x;
+    const cz = spawnSample.z;
+    const blueSpawnX = cx + (spawnRight.x * ORANGE_AUTORUN_BLUE_SPAWN_SIDE_GAP);
+    const blueSpawnZ = cz + (spawnRight.z * ORANGE_AUTORUN_BLUE_SPAWN_SIDE_GAP);
+    const orangeCenterErr = Math.hypot(cx - spawnSample.x, cz - spawnSample.z);
+    const blueDx = blueSpawnX - cx;
+    const blueDz = blueSpawnZ - cz;
+    const blueSideDot = (blueDx * spawnRight.x) + (blueDz * spawnRight.z);
+    console.info(
+      `[SpawnCheck:init] orangeCenterErr=${orangeCenterErr.toFixed(4)} blueSideDot=${blueSideDot.toFixed(4)} (positive=blue on right)`
+    );
+    // Center camera on track centerline so posts/road are centered on canvas at spawn.
+    camObj.position.x = cx;
+    camObj.position.z = cz;
+    camObj.rotation.y = spawnSample.yaw;
+    camObj.position.y = trackSurfaceYAt(cx, cz) + TRACK_PLAYER_SURFACE_OFFSET + PLAYER_EYE_HEIGHT;
+    // Keep both on centerline, blue clearly behind orange with no timed transition.
+    blueSpawnVisualHoldTime = 99999;
+    blueSpawnVisualExtraSide = 0;
+    blueSpawnVisualExtraBack = 0;
+    blueSpawnBehindGap = TRUCK_W * BLUE_TRUCK_SCALE * 0.8;
+    // Orange occupies the centered visual anchor; blue is offset to the right by spawn reveal boost.
+    const orangeVisualX = camObj.position.x + (spawnFwd.x * TRUCK_FWD) + (spawnRight.x * TRUCK_SIDE);
+    const orangeVisualZ = camObj.position.z + (spawnFwd.z * TRUCK_FWD) + (spawnRight.z * TRUCK_SIDE);
+    const cUseTrackSurface = true;
+    const cBaseY = trackSurfaceYAt(orangeVisualX, orangeVisualZ) + TRACK_TRUCK_SURFACE_OFFSET;
+    const cTargetY = cBaseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) + ORANGE_TRUCK_RAISE - TRUCK_VISUAL_DROP;
+
+    if (companionTruckSmoothedY === null) companionTruckSmoothedY = cTargetY;
+    const cAlpha = 1 - Math.exp(-TRUCK_Y_SMOOTH_RATE * dtSafe);
+    let cNextY = THREE.MathUtils.lerp(companionTruckSmoothedY, cTargetY, cAlpha);
+    const cMaxStep = TRUCK_Y_MAX_STEP_PER_SEC * dtSafe;
+    const cDeltaY = cNextY - companionTruckSmoothedY;
+    if (Math.abs(cDeltaY) > cMaxStep) cNextY = companionTruckSmoothedY + Math.sign(cDeltaY) * cMaxStep;
+
+    companionTruckSmoothedY = cNextY;
+    companionTruckPlane.position.set(orangeVisualX, companionTruckSmoothedY, orangeVisualZ);
+    companionTruckPlane.rotation.set(0, yaw, 0);
+    companionTruckPlaced = true;
+
+    if (companionTruckShadowProxy){
+      const cSmoothedBaseY = companionTruckSmoothedY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+      companionTruckShadowProxy.position.set(orangeVisualX, cSmoothedBaseY + (TRUCK_H * 0.3), orangeVisualZ);
+      companionTruckShadowProxy.rotation.set(0, yaw, 0);
+    }
+
+    // Hard-place blue immediately in the same frame so it appears with orange and does not pop/slide.
+    const blueVisualX = orangeVisualX - (spawnFwd.x * blueSpawnBehindGap);
+    const blueVisualZ = orangeVisualZ - (spawnFwd.z * blueSpawnBehindGap);
+    const blueBaseY = trackSurfaceYAt(blueVisualX, blueVisualZ) + TRACK_TRUCK_SURFACE_OFFSET;
+    const blueTargetY = blueBaseY + (TRUCK_H * 0.5) - TRUCK_GROUND_SINK + (TRUCK_H * 0.03) - TRUCK_VISUAL_DROP - 2.0;
+    truckSmoothedY = blueTargetY;
+    if (truckPlane){
+      truckPlane.visible = true;
+      truckPlane.position.set(blueVisualX, blueTargetY, blueVisualZ);
+      truckPlane.rotation.set(0, yaw, 0);
+    }
+    if (truckShadowProxy){
+      truckShadowProxy.visible = true;
+      const blueShadowBaseY = blueTargetY - (TRUCK_H * 0.5) + TRUCK_GROUND_SINK;
+      truckShadowProxy.position.set(blueVisualX, blueShadowBaseY + (TRUCK_H * 0.3), blueVisualZ);
+      truckShadowProxy.rotation.set(0, yaw, 0);
+    }
+  }
+
+  // Tight orange-vs-blue contact trigger (plays once per contact event).
+  if (truckPlane && companionTruckPlane){
+    const dx = companionTruckPlane.position.x - truckPlane.position.x;
+    const dz = companionTruckPlane.position.z - truckPlane.position.z;
+    const overlap = ((dx * dx) + (dz * dz)) <= (ORANGE_BLUE_COLLISION_RADIUS * ORANGE_BLUE_COLLISION_RADIUS);
+    if (overlap && !orangeBlueCollisionLatched){
+      // Player truck (choices 1-6) gets a temporary speed penalty on AI contact.
+      if (TRUCK_CHOICES.includes(currentTruckFile)){
+        playerAiCollisionSlowTimeLeft = PLAYER_AI_COLLISION_SLOW_DURATION;
+      }
+      const now = performance.now();
+      if ((now - orangeBlueLastCollisionMs) >= ORANGE_BLUE_COLLISION_COOLDOWN_MS){
+        playSkidSound();
+        orangeBlueLastCollisionMs = now;
+      }
+    }
+    orangeBlueCollisionLatched = overlap;
+  } else {
+    orangeBlueCollisionLatched = false;
+  }
+}
+
+
+function initTruckAudio(){
+  if (!TRUCK_AUDIO_ENABLE || !TRUCK_SOUND_FILE) return;
+  if (truckAudio) return;
+
+  const url = resolveAssetUrl(TRUCK_SOUND_FILE, { cacheBust:true });
+  truckAudio = new Audio(url);
+  truckAudio.loop = true;
+  truckAudio.volume = TRUCK_SOUND_VOL;
+
+  // Browser safety: audio must start after a user gesture.
+  // Prime once on first pointer/touch/click so later play/pause works instantly.
+  const prime = () => {
+    truckAudio.play().then(() => {
+      truckAudio.pause();
+      truckAudio.currentTime = 0;
+    }).catch(()=>{});
+  };
+  document.body.addEventListener("pointerdown", prime, { once:true, passive:true });
+  document.body.addEventListener("touchstart", prime, { once:true, passive:true });
+  document.body.addEventListener("click", prime, { once:true, passive:true });
+}
+
+initTruckAudio();
+initTruckAvatar();
+initCopterAudio();
+initFireSound();
+initHitSound();
+initSkidSound();
+
+// ---------- GRASS (PBR) ----------
+(async function initGrass(){
+  const colorUrl  = resolveAssetUrl(GRASS_COLOR_FILE);
+
+  const useNormalEXR = !!GRASS_NORMAL_EXR && !IS_FILE_PROTOCOL;
+  const normalUrl = useNormalEXR ? (resolveAssetUrl(GRASS_NORMAL_EXR)) : (resolveAssetUrl(GRASS_NORMAL_FILE || ""));
+
+  // Roughness: try EXR first, then fall back to .jpg/.png with the same basename, then GRASS_ROUGH_FILE if provided.
+  const roughUrlEXR = (!IS_FILE_PROTOCOL && GRASS_ROUGH_EXR) ? (resolveAssetUrl(GRASS_ROUGH_EXR)) : "";
+  const roughUrlIMG = (typeof GRASS_ROUGH_FILE !== "undefined" && GRASS_ROUGH_FILE) ? (resolveAssetUrl(GRASS_ROUGH_FILE)) : "";
+
+  const colorMap  = await loadTextureSafe(colorUrl, { colorSpace: THREE.SRGBColorSpace });
+  const normalMap = useNormalEXR ? await loadEXRSafe(normalUrl) : await loadTextureSafe(normalUrl);
+
+  let roughMap = null;
+  if (roughUrlEXR){
+    roughMap = await loadEXRSafe(roughUrlEXR);
+    if (!roughMap){
+      const base = roughUrlEXR.replace(/\.exr$/i, "");
+      roughMap = await loadTextureSafe(base + ".jpg") || await loadTextureSafe(base + ".png");
+    }
+  }
+  if (!roughMap && roughUrlIMG){
+    roughMap = await loadTextureSafe(roughUrlIMG);
+  }
+
+  if (colorMap){
+    setRepeat(colorMap, GRASS_REPEAT);
+    if (normalMap) setRepeat(normalMap, GRASS_REPEAT);
+    if (roughMap)  setRepeat(roughMap,  GRASS_REPEAT);
+
+    const mat = new THREE.MeshStandardMaterial({
+      map: colorMap,
+      normalMap: normalMap || null,
+      roughnessMap: roughMap || null,
+      roughness: roughMap ? 1.0 : 0.95,
+      metalness: 0.0
+    });
+    if (mat.normalMap) mat.normalScale.set(1.0, 1.0);
+
+    ground.material = mat;
+    ground.material.needsUpdate = true;
+
+    hudLine("✅ Grass material applied (PBR).");
+  } else {
+    hudLine(`⚠️ Grass missing: <code>${GRASS_COLOR_FILE}</code>`);
+  }
+})();
+
+/* =========================================================
+   STEP 4: FAR MOUNTAIN RINGS
+   ========================================================= */
+
+/* =========================================================
+   🌾 TALL GRASS (Option B: Instanced grass cards)
+   - Adds vertical “blades” on top of the ground (real geometry)
+   - dg_disp.png controls blade height (bright = taller)
+   - SAFE defaults: no shadows casting, instanced mesh, alphaTest
+   ========================================================= */
+let tallGrassMesh = null;
+
+async function createTallGrass(){
+  if (!TALL_GRASS_ENABLE) return;
+
+  // Wait for terrain so we can place blades on the ground
+  const start = performance.now();
+  while (!terrainReady && performance.now() - start < 4000){
+    await new Promise(r => setTimeout(r, 50));
+  }
+  if (!terrainReady){
+    hudLine("⚠️ Tall grass skipped: terrain not ready.");
+    return;
+  }
+
+  // Load the height controller pixels (dg_disp.png)
+  const ok = await loadDispPixels();
+  if (!ok) return;
+
+  // Load the blade texture (we reuse your grass color for now)
+  const colorUrl = resolveAssetUrl(GRASS_CARD_COLOR_FILE);
+  const bladeTex = await loadTextureSafe(colorUrl, { colorSpace: THREE.SRGBColorSpace });
+  if (!bladeTex){
+    hudLine(`⚠️ Tall grass: missing <code>${GRASS_CARD_COLOR_FILE}</code>`);
+    return;
+  }
+  bladeTex.wrapS = bladeTex.wrapT = THREE.RepeatWrapping;
+  bladeTex.repeat.set(1, 1);
+  bladeTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+  // Blade geometry (unit height; we scale per instance)
+  const bladeGeo = new THREE.PlaneGeometry(GRASS_CARD_W, 1.0);
+
+  // Material: alphaTest avoids expensive sorting of transparent pixels.
+  const bladeMat = new THREE.MeshStandardMaterial({
+    map: bladeTex,
+    transparent: true,
+    alphaTest: GRASS_CARD_ALPHA,
+    side: THREE.DoubleSide,
+    roughness: 1.0,
+    metalness: 0.0
+  });
+
+  // Remove old mesh if re-created
+  if (tallGrassMesh){
+    scene.remove(tallGrassMesh);
+    tallGrassMesh.geometry.dispose();
+    // material shares a texture; skip dispose for safety
+    tallGrassMesh = null;
+  }
+
+  tallGrassMesh = new THREE.InstancedMesh(bladeGeo, bladeMat, GRASS_CARD_COUNT);
+  tallGrassMesh.castShadow = false;     // keep SAFE
+  tallGrassMesh.receiveShadow = true;
+  tallGrassMesh.frustumCulled = true;
+  scene.add(tallGrassMesh);
+
+  const dummy = new THREE.Object3D();
+
+  // Place blades in a disc around origin (start area)
+  for (let i = 0; i < GRASS_CARD_COUNT; i++){
+    const ang = Math.random() * Math.PI * 2;
+    const rr  = Math.sqrt(Math.random()) * GRASS_CARD_AREA;
+    const x = Math.cos(ang) * rr;
+    const z = Math.sin(ang) * rr;
+
+    // Height from your terrain + sink a hair
+    const groundY = heightAtWorldXZ(x, z) - GRASS_CARD_GROUND_SINK;
+
+    // dg_disp brightness -> blade height
+    const d = dispAtWorldXZ(x, z); // 0..1
+    const h = GRASS_CARD_MIN_H + d * (GRASS_CARD_MAX_H - GRASS_CARD_MIN_H);
+
+    dummy.position.set(x, groundY + h * 0.5, z);
+
+    // Random yaw for variety
+    dummy.rotation.set(0, Math.random() * Math.PI, 0);
+
+    // Scale Y = height, X = 1 (width already in geometry)
+    dummy.scale.set(1, h, 1);
+
+    dummy.updateMatrix();
+    tallGrassMesh.setMatrixAt(i, dummy.matrix);
+  }
+
+  tallGrassMesh.instanceMatrix.needsUpdate = true;
+
+  hudLine(`🌾 Tall grass ON: <code>${GRASS_CARD_COUNT}</code> cards · height via <code>${GRASS_CARD_HEIGHT_FILE}</code>`);
+}
+
+function mulberry32(seed){
+  return function(){
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function mountainProfile(t, rngBase){
+  // Some harmonics + a spike
+  const a = Math.sin(t * Math.PI * 2 * 1.0 + rngBase()*3.0);
+  const b = Math.sin(t * Math.PI * 2 * 2.2 + rngBase()*3.0) * 0.6;
+  const c = Math.sin(t * Math.PI * 2 * 4.7 + rngBase()*3.0) * 0.35;
+  const d = Math.sin(t * Math.PI * 2 * 9.3 + rngBase()*3.0) * 0.18;
+  const spike = Math.pow(Math.max(0, Math.sin(t*2*Math.PI*3.0 + rngBase()*6.0)), 6.0) * 0.8;
+
+  let v = (a*0.55 + b*0.35 + c*0.25 + d*0.20) * 0.5 + 0.55;
+  v += spike * 0.35;
+  v = Math.max(0, Math.min(1, v));
+  v = Math.pow(v, 1.15 / Math.max(0.1, MOUNTAIN_RUGGEDNESS));
+  return v;
+}
+
+function buildMountainRing({ radius, height, thickness, segments, color, opacity, seed, yBase }){
+  const rngBase = mulberry32(seed);
+
+  const inner = radius;
+  const outer = radius + thickness;
+
+  const verts = [];
+  const indices = [];
+  const stride = 4;
+
+  for (let i = 0; i <= segments; i++){
+    const t = i / segments;
+    const ang = t * Math.PI * 2;
+
+    const prof = mountainProfile(t, rngBase);
+    const topY = yBase + prof * height;
+
+    const cx = Math.cos(ang);
+    const sz = Math.sin(ang);
+
+    // inner bottom, inner top, outer top, outer bottom
+    verts.push(inner*cx, yBase, inner*sz);
+    verts.push(inner*cx, topY,  inner*sz);
+    verts.push(outer*cx, topY*0.92, outer*sz);
+    verts.push(outer*cx, yBase, outer*sz);
+  }
+
+  for (let i = 0; i < segments; i++){
+    const a = i*stride;
+    const b = a + stride;
+
+    indices.push(a+0, a+1, b+1);
+    indices.push(a+0, b+1, b+0);
+
+    indices.push(a+1, a+2, b+2);
+    indices.push(a+1, b+2, b+1);
+
+    indices.push(a+3, b+2, a+2);
+    indices.push(a+3, b+3, b+2);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+
+  const mat = new THREE.MeshLambertMaterial({
+    color,
+    transparent: true,
+    opacity,
+    fog: true,          // keep fog now that fog is fixed
+    depthWrite: false
+  });
+
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.renderOrder = -1;
+  mesh.frustumCulled = false;
+  return mesh;
+}
+
+let mountainGroup = null;
+
+function initMountains(){
+  if (!MOUNTAIN_ENABLE) return;
+
+  mountainGroup = new THREE.Group();
+
+  const ring2 = buildMountainRing({
+    radius: M2_RADIUS, height: M2_HEIGHT, thickness: M2_THICK,
+    segments: M2_SEGMENTS, color: rgb255ToThree(M2_COLOR_RGB), opacity: M2_OPACITY,
+    seed: MOUNTAIN_SEED + 2000, yBase: MOUNTAIN_BASE_Y
+  });
+
+  const ring1 = buildMountainRing({
+    radius: M1_RADIUS, height: M1_HEIGHT, thickness: M1_THICK,
+    segments: M1_SEGMENTS, color: rgb255ToThree(M1_COLOR_RGB), opacity: M1_OPACITY,
+    seed: MOUNTAIN_SEED + 1000, yBase: MOUNTAIN_BASE_Y
+  });
+
+  ring2.position.y += 40;
+
+  mountainGroup.add(ring2);
+  mountainGroup.add(ring1);
+
+  scene.add(mountainGroup);
+  hudLine("✅ Far mountain rings enabled (Step 4).");
+  hudLine("✅ Fog fixed (bluer + starts farther out). Mountains should now keep their color.");
+}
+initMountains();
+
+/* =========================================================
+   TREES (better pines + variation + smarter placement)
+   ========================================================= */
+/* =========================================================
+   PNG BILLBOARD TREES (tree1.png) — WolfLand-style culling + SAFE SHADOW LOD
+   (Prevents GPU overload / BSOD by limiting how many cast shadows)
+   ========================================================= */
+
+// --- TWEAK ZONE (PNG TREES) ---
+const BILLBOARD_TREE_FILE1 = "tree1.png";
+const BILLBOARD_TREE_FILE2 = "tree2.png"; // optional variety
+const BILLBOARD_COUNT = 2000;            // many is OK (no per-tree shadows)
+const BILLBOARD_AREA  = 3000;           // spread radius
+const BILLBOARD_MAX_SLOPE = 28;         // avoid steep slopes
+
+// Shadow LOD: only the nearest N trees get a shadow proxy that casts shadow
+const BILLBOARD_SHADOW_NEAR   = 160;    // within this distance, eligible for shadow    // within this distance, eligible for shadow
+const BILLBOARD_SHADOW_MAX    = 35;     // max number of shadow-casting trees (KEEP THIS LOW!)     // max number of shadow-casting trees (KEEP THIS LOW!)
+const BILLBOARD_SHADOW_HEIGHT = 1.6;    // proxy height factor
+
+// ------------------------------------------------------------------------
+
+const billboardTrees = []; // { plane, proxy, x, z, baseY, scale }
+
+// Load PNG textures with error logging (tree1 + optional tree2)
+let tree2Ready = false;
+const TREE_URL1 = resolveAssetUrl(BILLBOARD_TREE_FILE1);
+const TREE_URL2 = resolveAssetUrl(BILLBOARD_TREE_FILE2);
+
+const billboardTreeTex1 = new THREE.TextureLoader().load(
+  TREE_URL1,
+  tex => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    hudLine(`✅ Loaded PNG tree: <code>${BILLBOARD_TREE_FILE1}</code>`);
+  },
+  undefined,
+  err => {
+    console.error("PNG tree1 failed to load:", TREE_URL1, err);
+    hudLine(`❌ PNG tree failed to load: <code>${BILLBOARD_TREE_FILE1}</code> (check <code>${TREE_URL1}</code>)`);
+  }
+);
+
+const billboardTreeTex2 = new THREE.TextureLoader().load(
+  TREE_URL2,
+  tex => {
+    tree2Ready = true;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    hudLine(`✅ Loaded PNG tree: <code>${BILLBOARD_TREE_FILE2}</code> (variety ON)`);
+  },
+  undefined,
+  err => {
+    tree2Ready = false;
+    console.warn("PNG tree2 failed to load (variety OFF):", TREE_URL2, err);
+hudLine(`⚠️ Optional tree missing: <code>${BILLBOARD_TREE_FILE2}</code> (using tree1 only)`);
+showBanner(`❌ <b>tree2.png NOT FOUND</b> — expected <code>images/${BILLBOARD_TREE_FILE2}</code>`);
+setTimeout(()=>hideBanner(), 4200);
+    // If material2 exists, fall back to tree1 so we never render black squares
+    if (billboardMat2) billboardMat2.map = billboardTreeTex1;
+  }
+);
+
+let billboardMat1 = null;
+let billboardMat2 = null;
+
+billboardMat1 = new THREE.MeshStandardMaterial({
+  map: billboardTreeTex1,
+  transparent: true,
+  alphaTest: 0.55,
+  side: THREE.DoubleSide
+});
+
+billboardMat2 = new THREE.MeshStandardMaterial({
+  map: billboardTreeTex2,
+  transparent: true,
+  alphaTest: 0.55,
+  side: THREE.DoubleSide
+});
+
+
+// DEBUG_TREE2_BILLBOARD (SAFE): if tree2 loads, place one huge tree2 near spawn so you can't miss it
+let debugTree2Placed = false;
+function tryPlaceDebugTree2(){
+  if (debugTree2Placed) return;
+  if (!tree2Ready) return;
+  // place ~25m in front of spawn
+  const x = 0;
+  const z = -25;
+  const y = heightAtWorldXZ(x, z) + 10;
+  const geo = new THREE.PlaneGeometry(18, 24);
+  const mat = billboardMat2 ? billboardMat2.clone() : new THREE.MeshStandardMaterial({ map: billboardTreeTex2, transparent:true, alphaTest:0.55, side:THREE.DoubleSide });
+  const p = new THREE.Mesh(geo, mat);
+  p.position.set(x, y, z);
+  p.rotation.y = 0;
+  p.renderOrder = 5;
+  scene.add(p);
+  debugTree2Placed = true;
+  showBanner(`✅ <b>TREE2 LOADED</b> — big debug tree placed ahead`);
+  setTimeout(()=>hideBanner(), 2200);
+}
+
+
+// Invisible material for shadow proxy
+const shadowProxyMat = new THREE.MeshStandardMaterial({
+  color: 0x000000,
+  transparent: true,
+  opacity: 0.0
+});
+
+function makeBillboardTree(x, z){
+  const baseY = heightAtWorldXZ(x, z);
+
+  // Tiny sink prevents 'floating' billboards due to terrain sampling
+  const GROUND_SINK = 0.25;
+
+  // world-scale of PNG tree
+  const scale = 4.0 + Math.random() * 3.0; // 4–7
+  const h = scale * 1.75;
+  const w = scale;
+
+  // Billboard plane (always faces camera)
+  const plane = new THREE.Mesh(new THREE.PlaneGeometry(w, h), (tree2Ready && Math.random() < 0.40) ? billboardMat2 : billboardMat1);
+  plane.position.set(x, baseY + h*0.5 - GROUND_SINK, z);
+  plane.castShadow = false;
+  plane.receiveShadow = false;
+
+  // Shadow proxy (simple cone) — created but only SOME will castShadow each frame
+  const proxy = new THREE.Mesh(
+    new THREE.ConeGeometry(w*0.38, h*BILLBOARD_SHADOW_HEIGHT, 6),
+    shadowProxyMat
+  );
+  proxy.position.set(x, baseY + (h*0.5) - GROUND_SINK, z);
+  proxy.castShadow = false; // ✅ off by default (we enable only for nearest N)
+  proxy.receiveShadow = false;
+
+  scene.add(plane);
+  scene.add(proxy);
+
+  billboardTrees.push({ plane, proxy, x, z, baseY, scale });
+}
+
+async function spawnBillboardTreesWhenReady(){
+  const start = performance.now();
+  while (!terrainReady && performance.now() - start < 4000) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  let placed = 0;
+  let tries = 0;
+
+  while (placed < BILLBOARD_COUNT && tries < BILLBOARD_COUNT * 60){
+    tries++;
+
+    const x = (Math.random()-0.5) * BILLBOARD_AREA;
+    const z = (Math.random()-0.5) * BILLBOARD_AREA;
+
+    // avoid steep slopes
+    if (typeof slopeDegAt === "function" && slopeDegAt(x, z) > BILLBOARD_MAX_SLOPE) continue;
+
+    // avoid spawn-start zone
+    if (Math.hypot(x - 0, z - 6) < 28) continue;
+
+    makeBillboardTree(x, z);
+    placed++;
+  }
+
+  // Guaranteed test tree near start
+  makeBillboardTree(0, 28);
+
+  hudLine(`🌲 PNG trees placed: <code>${placed + 1}</code> (shadow LOD max <code>${BILLBOARD_SHADOW_MAX}</code>)`);
+hudLine(`🌲 Tree1: <code id=\"t1c\">0</code> &nbsp; Tree2: <code id=\"t2c\">0</code> (tree2 chance ${Math.round(TREE2_CHANCE*100)}%)`);
+}
+spawnBillboardTreesWhenReady();
+
+// Called each frame: face billboards + enable shadows only for nearest N (WolfLand-style "visible list")
+function updateBillboardTrees(player){
+  if (!player || !player.position) return;
+
+  const px = player.position.x;
+  const pz = player.position.z;
+
+  // Face billboards toward camera
+  for (const t of billboardTrees){
+    if (!t || !t.plane) continue;
+    t.plane.lookAt(camera.position.x, t.plane.position.y, camera.position.z);
+  }
+
+  // Shadow LOD: enable shadows only for nearest trees
+  const near2 = BILLBOARD_SHADOW_NEAR * BILLBOARD_SHADOW_NEAR;
+  const candidates = [];
+
+  for (const t of billboardTrees){
+    if (!t || !t.proxy) continue;
+    const dx = (t.x ?? 0) - px;
+    const dz = (t.z ?? 0) - pz;
+    const d2 = dx*dx + dz*dz;
+    t.proxy.castShadow = false;
+    if (d2 <= near2) candidates.push([d2, t]);
+  }
+
+  candidates.sort((a,b)=>a[0]-b[0]);
+  for (let i=0; i<Math.min(BILLBOARD_SHADOW_MAX, candidates.length); i++){
+    candidates[i][1].proxy.castShadow = true;
+  }
+}
+// quick slope estimate (degrees) using height samples
+function slopeDegAt(x, z){
+  const eps = 6; // world units
+  const h0 = heightAtWorldXZ(x, z);
+  const hx = heightAtWorldXZ(x + eps, z);
+  const hz = heightAtWorldXZ(x, z + eps);
+  const dx = (hx - h0) / eps;
+  const dz = (hz - h0) / eps;
+  const slope = Math.atan(Math.hypot(dx, dz)) * 180 / Math.PI;
+  return slope;
+}
+
+function makePineTree(x, z){
+  const baseY = heightAtWorldXZ(x, z);
+
+  // --- Random variation (forest feels natural) ---
+  const scale = 0.85 + Math.random() * 0.95; // 0.85–1.8
+  const trunkH = 1.35 * scale;
+  const trunkRTop = 0.10 * scale;
+  const trunkRBot = 0.18 * scale;
+
+  // Subtle color variation (avoid cloned look)
+  const greenVar = 0.85 + Math.random() * 0.35; // 0.85–1.20
+  const crownColor = new THREE.Color(0x2f6f3b).multiplyScalar(greenVar);
+
+  const trunkMat = new THREE.MeshStandardMaterial({ color: 0x6a4a2f, roughness: 1.0 });
+  const crownMat = new THREE.MeshStandardMaterial({ color: crownColor, roughness: 1.0 });
+
+  // Group makes it easy to move/rotate the whole tree
+  const g = new THREE.Group();
+  g.position.set(x, baseY - 0.10, z);
+
+  // --- Trunk ---
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(trunkRTop, trunkRBot, trunkH, 10),
+    trunkMat
+  );
+  trunk.position.set(0, trunkH * 0.5, 0);
+
+  // --- Pine crown: stacked cones (great silhouette, cheap) ---
+  const c1 = new THREE.Mesh(new THREE.ConeGeometry(0.75 * scale, 1.05 * scale, 10), crownMat);
+  const c2 = new THREE.Mesh(new THREE.ConeGeometry(0.62 * scale, 0.95 * scale, 10), crownMat);
+  const c3 = new THREE.Mesh(new THREE.ConeGeometry(0.50 * scale, 0.80 * scale, 10), crownMat);
+
+  c1.position.set(0, trunkH + 0.35 * scale, 0);
+  c2.position.set(0, trunkH + 0.90 * scale, 0);
+  c3.position.set(0, trunkH + 1.35 * scale, 0);
+
+  // Slight random yaw so crowns don't line up
+  const yaw = Math.random() * Math.PI * 2;
+  g.rotation.y = yaw;
+
+  // Tiny random lean (kept subtle so it doesn't look goofy)
+  g.rotation.z = (Math.random() - 0.5) * 0.06;
+  g.rotation.x = (Math.random() - 0.5) * 0.06;
+
+  // Shadows
+  trunk.castShadow = true; trunk.receiveShadow = true;
+  c1.castShadow = true; c1.receiveShadow = true;
+  c2.castShadow = true; c2.receiveShadow = true;
+  c3.castShadow = true; c3.receiveShadow = true;
+
+  g.add(trunk, c1, c2, c3);
+  scene.add(g);
+  return g;
+}
+
+async function spawnTreesWhenReady(){
+  const start = performance.now();
+  while (!terrainReady && performance.now() - start < 3000) {
+    await new Promise(r => setTimeout(r, 50));
+  }
+
+  // --- Smarter placement: avoid steep slopes, create clumps ---
+  const TARGET_TREES = 220;         // more trees, still fine (simple geometry)
+  const AREA = 1900;                // spread radius
+  const MAX_SLOPE = 24;             // degrees (lower = fewer on hills)
+  const CLUMP_CHANCE = 0.55;        // more natural clustering
+
+  // pick a few "clump centers"
+  const clumps = [];
+  for (let i=0;i<10;i++){
+    clumps.push({
+      x: (Math.random()-0.5) * AREA,
+      z: (Math.random()-0.5) * AREA,
+      r: 180 + Math.random()*260
+    });
+  }
+
+  let placed = 0;
+  let tries = 0;
+
+  while (placed < TARGET_TREES && tries < TARGET_TREES * 60){
+    tries++;
+
+    let x, z;
+    if (Math.random() < CLUMP_CHANCE){
+      const c = clumps[(Math.random() * clumps.length) | 0];
+      const a = Math.random() * Math.PI * 2;
+      const rr = Math.sqrt(Math.random()) * c.r;
+      x = c.x + Math.cos(a) * rr;
+      z = c.z + Math.sin(a) * rr;
+    } else {
+      x = (Math.random()-0.5) * AREA;
+      z = (Math.random()-0.5) * AREA;
+    }
+
+    // avoid steep slopes
+    if (slopeDegAt(x, z) > MAX_SLOPE) continue;
+
+    // avoid placing super close to player start (so you don't spawn inside a tree)
+    if (Math.hypot(x - 0, z - 6) < 22) continue;
+
+    makePineTree(x, z);
+    placed++;
+  }
+
+  hudLine(`🌲 Better trees placed: <code>${placed}</code> (tries ${tries})`);
+}
+spawnTreesWhenReady();
+
+/* =========================================================
+   MOVEMENT + TERRAIN COLLISION
+   ========================================================= */
+const keys = new Set();
+
+
+/* =========================
+   📱 iPad / Touch Controls (toggle)
+   - Uses the existing `keys` Set so the game logic stays unchanged.
+   - Toggle button shows/hides the controls.
+   ========================= */
+const touchToggle = document.getElementById("touchToggle");
+const touchUI = document.getElementById("touchUI");
+const touchHint = document.getElementById("touchHint");
+const joyBase = document.getElementById("joyBase");
+const joyKnob = document.getElementById("joyKnob");
+
+function isTouchDevice(){
+  return ("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+}
+
+// default: show pad on touch devices; toggle exists everywhere
+touchOn = isTouchDevice();
+touchUI.classList.toggle("on", touchOn);
+touchHint.classList.toggle("on", isTouchDevice());
+
+function updateTouchToggleUI(){
+  if (!touchToggle) return;
+  touchToggle.classList.toggle("on", touchOn);
+  touchToggle.textContent = touchOn ? "📱 Controls: ON" : "📱 Controls: OFF";
+  touchToggle.setAttribute("aria-pressed", touchOn ? "true" : "false");
+}
+updateTouchToggleUI();
+
+const TOUCH_KEY_CODES = ["ArrowUp","ArrowDown","ArrowLeft","ArrowRight","Space","KeyR","KeyF"];
+function clearTouchKeys(){
+  for (const code of TOUCH_KEY_CODES) keys.delete(code);
+}
+
+function setTouchOn(on){
+  touchOn = !!on;
+  touchUI.classList.toggle("on", touchOn);
+  touchHint.classList.remove("on");
+  updateTouchToggleUI();
+  if (!touchOn){
+    clearTouchKeys();
+    resetJoystick();
+  }
+}
+
+function toggleTouchUI(ev){
+  if (ev){
+    ev.preventDefault();
+    ev.stopPropagation();
+  }
+  setTouchOn(!touchOn);
+}
+
+// Toggle only from explicit pointer/touch on the toggle button.
+touchToggle.addEventListener("pointerdown", toggleTouchUI, { passive:false });
+touchToggle.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); }, { passive:false });
+// Prevent keyboard space/enter from toggling if button somehow gets focus.
+touchToggle.addEventListener("keydown", (e)=>{
+  if (e.code === "Space" || e.code === "Enter"){
+    e.preventDefault();
+    e.stopPropagation();
+  }
+});
+
+// Stop iOS from scrolling while using controls
+document.addEventListener("touchmove", (e)=>{ if(touchOn) e.preventDefault(); }, {passive:false});
+
+// Virtual key press/release
+function vKey(code, down){
+  if (down) keys.add(code);
+  else keys.delete(code);
+}
+
+// Bind a button to a key code (touch + mouse)
+function bindHold(btn, code){
+  if (!btn) return;
+
+  const press = (ev)=>{
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    if(!touchOn) return;
+    vKey(code, true);
+  };
+  const release = (ev)=>{
+    if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+    vKey(code, false);
+  };
+
+  // Touch (iPad Safari reliable)
+  btn.addEventListener("touchstart", press, {passive:false});
+  btn.addEventListener("touchend", release, {passive:false});
+  btn.addEventListener("touchcancel", release, {passive:false});
+
+  // Mouse (desktop testing)
+  btn.addEventListener("mousedown", press);
+  window.addEventListener("mouseup", release);
+
+  // Pointer events (modern)
+  btn.addEventListener("pointerdown", press);
+  btn.addEventListener("pointerup", release);
+  btn.addEventListener("pointercancel", release);
+  btn.addEventListener("pointerleave", release);
+
+  btn.addEventListener("contextmenu", (e)=>e.preventDefault());
+}
+
+const btnStartRace = document.getElementById("btnStartRace");
+if (btnStartRace){
+  const startFromButton = (ev)=>{
+    ev?.preventDefault?.();
+    ev?.stopPropagation?.();
+    startRace();
+  };
+  btnStartRace.addEventListener("touchstart", startFromButton, { passive:false });
+  btnStartRace.addEventListener("pointerdown", startFromButton, { passive:false });
+  btnStartRace.addEventListener("click", startFromButton, { passive:false });
+}
+
+// ----- Right thumb joystick (Arrow keys) -----
+const JOY_MAX = 52;      // max knob travel in px
+const JOY_DEAD = 0.275968; // normalized deadzone (another 12% less sensitive)
+let joyPointerId = null;
+
+function setJoystickKeys(nx, ny){
+  if (!touchOn){
+    vKey("ArrowUp", false);
+    vKey("ArrowDown", false);
+    vKey("ArrowLeft", false);
+    vKey("ArrowRight", false);
+    return;
+  }
+  vKey("ArrowUp", ny < -JOY_DEAD);
+  vKey("ArrowDown", ny > JOY_DEAD);
+  vKey("ArrowLeft", nx < -JOY_DEAD);
+  vKey("ArrowRight", nx > JOY_DEAD);
+}
+
+function resetJoystick(){
+  joyPointerId = null;
+  if (joyKnob) joyKnob.style.transform = "translate(0px, 0px)";
+  setJoystickKeys(0, 0);
+}
+
+function updateJoystickFromPointer(ev){
+  if (!joyBase || !joyKnob) return;
+  const rect = joyBase.getBoundingClientRect();
+  const cx = rect.left + rect.width * 0.5;
+  const cy = rect.top + rect.height * 0.5;
+  let dx = ev.clientX - cx;
+  let dy = ev.clientY - cy;
+
+  const len = Math.hypot(dx, dy) || 1;
+  if (len > JOY_MAX){
+    dx = (dx / len) * JOY_MAX;
+    dy = (dy / len) * JOY_MAX;
+  }
+
+  joyKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+  setJoystickKeys(dx / JOY_MAX, dy / JOY_MAX);
+}
+
+if (joyBase){
+  joyBase.addEventListener("pointerdown", (ev)=>{
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (!touchOn) return;
+    joyPointerId = ev.pointerId;
+    joyBase.setPointerCapture?.(ev.pointerId);
+    updateJoystickFromPointer(ev);
+  }, { passive:false });
+
+  joyBase.addEventListener("pointermove", (ev)=>{
+    if (joyPointerId !== ev.pointerId) return;
+    ev.preventDefault();
+    updateJoystickFromPointer(ev);
+  }, { passive:false });
+
+  const releaseJoy = (ev)=>{
+    if (joyPointerId !== null && ev.pointerId !== undefined && joyPointerId !== ev.pointerId) return;
+    ev.preventDefault?.();
+    resetJoystick();
+  };
+
+  joyBase.addEventListener("pointerup", releaseJoy, { passive:false });
+  joyBase.addEventListener("pointercancel", releaseJoy, { passive:false });
+  joyBase.addEventListener("lostpointercapture", ()=> resetJoystick());
+}
+addEventListener("keydown", (e)=> keys.add(e.code));
+addEventListener("keyup",   (e)=> keys.delete(e.code));
+
+let velY = 0;
+let onGround = false;
+let manualAltitude = null; // once you use R/F, we hold altitude (no gravity fall)
+let driveSpeed = 0;
+let boostSpeed = 0;
+let blueCatchupTierApplied = 0;
+
+const clock = new THREE.Clock();
+
+
+// ----- Lake collision helpers -----
+function isPointInLakeXZ(x, z){
+  // XZ bounds only (used internally)
+  if (!lakeMesh) return false;
+
+  const cx = lakeMesh.position.x;
+  const cz = lakeMesh.position.z;
+  const half = (LAKE_SIZE * 0.5) - LAKE_BLOCK_MARGIN;
+
+  return (Math.abs(x - cx) <= half) && (Math.abs(z - cz) <= half);
+}
+
+// True only if this XZ is actually WATER (terrain is below/near the water surface).
+function isWaterAtXZ(x, z){
+  if (!lakeMesh) return false;
+  if (!isPointInLakeXZ(x, z)) return false;
+
+  const waterY = lakeMesh.position.y;
+  const groundY = heightAtWorldXZ(x, z);
+
+  // If the ground is below (or just barely above) the water surface, treat it as water.
+  // This prevents "infinite lake collider" when the square lake bounds overlap higher land.
+  const WATER_TOL = 1.5; // how much land can stick up before it's considered "dry"
+  return groundY <= (waterY + WATER_TOL);
+}
+
+function markSafePosition(obj){
+  lastSafePos.copy(obj.position);
+}
+
+function applyLakeBlock(obj){
+  if (!LAKE_BLOCK_ENABLE || !lakeMesh) return;
+
+  if (!lastSafeInit){
+    lastSafePos.copy(obj.position);
+    lastSafeInit = true;
+    return;
+  }
+
+  // If we're not in the lake, update safe pos and exit
+  if (!isWaterAtXZ(obj.position.x, obj.position.z)){
+    lastSafePos.copy(obj.position);
+    return;
+  }
+
+  // --- Sliding collision (no jitter) ---
+  // We entered the lake this frame. Try to "slide" by canceling only the axis that caused entry.
+  const px = prevPos.x, pz = prevPos.z;
+  const nx = obj.position.x, nz = obj.position.z;
+
+  const tryX = { x: nx, z: pz }; // keep X move, cancel Z move
+  const tryZ = { x: px, z: nz }; // keep Z move, cancel X move
+
+  const okX = !isWaterAtXZ(tryX.x, tryX.z);
+  const okZ = !isWaterAtXZ(tryZ.x, tryZ.z);
+
+  if (okX && !okZ){
+    obj.position.x = tryX.x;
+    obj.position.z = tryX.z;
+  } else if (okZ && !okX){
+    obj.position.x = tryZ.x;
+    obj.position.z = tryZ.z;
+  } else if (okX && okZ){
+    // both work: choose the one that stays closer to intended movement
+    const dxX = Math.abs(nx - tryX.x) + Math.abs(nz - tryX.z);
+    const dxZ = Math.abs(nx - tryZ.x) + Math.abs(nz - tryZ.z);
+    if (dxX <= dxZ){
+      obj.position.x = tryX.x;
+      obj.position.z = tryX.z;
+    } else {
+      obj.position.x = tryZ.x;
+      obj.position.z = tryZ.z;
+    }
+  } else {
+    // neither works: revert fully
+    obj.position.x = px;
+    obj.position.z = pz;
+  }
+
+  // Clamp to terrain height and update safe pos (now guaranteed outside or reverted)
+  obj.position.y = heightAtWorldXZ(obj.position.x, obj.position.z) + PLAYER_EYE_HEIGHT;
+  lastSafePos.copy(obj.position);
+}
+
+
+
+
+/* =========================================================
+   🔵 BLUE BALL FIRING (Camitruck only, SAFE)
+   Hold F to fire. No enemies.
+   ========================================================= */
+const FIRE_ENABLE = true;
+const FIRE_COOLDOWN = 260; // ms
+const FIRE_SPEED = 48;    // world units / sec
+const FIRE_LIFE = 3.0;    // seconds
+const FIRE_RADIUS = 0.36; // increased by 100%
+const FIRE_MUZZLE_ABOVE_GROUND = 2.2; // keep shots level above terrain
+
+let lastFireTime = 0;
+const blueBalls = [];
+const __tmpBox = new THREE.Box3();
+const __tmpV3 = new THREE.Vector3();
+const __upV3 = new THREE.Vector3(0, 1, 0);
+const __vFwdA = new THREE.Vector3();
+const __vRightA = new THREE.Vector3();
+const __vMoveA = new THREE.Vector3();
+const __vLookRight = new THREE.Vector3();
+const __vAiFwdA = new THREE.Vector3();
+const __vFollowFwdA = new THREE.Vector3();
+const __vShotDirA = new THREE.Vector3();
+
+function spawnBlueBall(){
+  const geom = new THREE.SphereGeometry(FIRE_RADIUS, 12, 12);
+  const mat  = new THREE.MeshStandardMaterial({
+    color: 0x4fb6ff,
+    emissive: 0x1a6fd8,
+    emissiveIntensity: 0.6
+  });
+  const ball = new THREE.Mesh(geom, mat);
+
+  const obj = controls.getObject();
+  const yaw = obj.rotation.y;
+  const dir = __vShotDirA.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+
+  const sx = obj.position.x + dir.x * 1.2;
+  const sz = obj.position.z + dir.z * 1.2;
+  const sy = heightAtWorldXZ(sx, sz) + FIRE_MUZZLE_ABOVE_GROUND;
+
+  ball.position.set(sx, sy, sz);
+  scene.add(ball);
+
+  blueBalls.push({
+    mesh: ball,
+    vel: new THREE.Vector3(dir.x * FIRE_SPEED, dir.y * FIRE_SPEED, dir.z * FIRE_SPEED),
+    life: FIRE_LIFE
+  });
+}
+
+function tryFire(){
+  if (!FIRE_ENABLE) return;
+  const now = performance.now();
+  if (now - lastFireTime < FIRE_COOLDOWN) return;
+  lastFireTime = now;
+  spawnBlueBall();
+  playFireSound();
+}
+
+function updateBlueBalls(dt){
+  for (let i = blueBalls.length - 1; i >= 0; i--){
+    let removed = false;
+    const b = blueBalls[i];
+    b.mesh.position.addScaledVector(b.vel, dt);
+    // Keep trajectory level relative to terrain (prevents fast ground strike on slopes)
+    b.mesh.position.y = heightAtWorldXZ(b.mesh.position.x, b.mesh.position.z) + FIRE_MUZZLE_ABOVE_GROUND;
+
+    // Hit test vs targets (sphere center vs target AABB)
+    if (targets && targets.length){
+      const p = b.mesh.position;
+      for (let ti = targets.length - 1; ti >= 0; ti--){
+        const t = targets[ti];
+        if (!t || !t.box) continue;
+        const cp = t.box.clampPoint(p, __tmpV3);
+        const d2 = cp.distanceToSquared(p);
+        if (d2 <= (FIRE_RADIUS * FIRE_RADIUS)){
+          // sparkle burst at impact
+          spawnHitBurst(p, 0xff6666);
+          playHitSound();
+
+          // remove ball
+          scene.remove(b.mesh);
+          b.mesh.geometry.dispose();
+          b.mesh.material.dispose();
+          blueBalls.splice(i, 1);
+
+          registerTargetHit(ti);
+          removed = true;
+          break;
+        }
+      }
+      // if we removed the ball, continue outer loop
+      if (removed) continue;
+    }
+
+    // BADGUY_HITTEST: Hit test vs bad guy billboard (sphere center vs billboard AABB)
+    tryPlaceDebugTree2();
+
+  if (badGuy){
+      __tmpBox.setFromObject(badGuy);
+      const p = b.mesh.position;
+      const cp = __tmpBox.clampPoint(p, __tmpV3);
+      const d2 = cp.distanceToSquared(p);
+      if (d2 <= (FIRE_RADIUS * FIRE_RADIUS)){
+        // sparkle burst at impact
+        spawnHitBurst(p, 0xffffff);
+        playHitSound();
+        scene.remove(b.mesh);
+        b.mesh.geometry.dispose();
+        b.mesh.material.dispose();
+        blueBalls.splice(i, 1);
+        registerBadGuyHit();
+        continue;
+      }
+    }
+    b.life -= dt;
+    if (b.life <= 0){
+      scene.remove(b.mesh);
+      b.mesh.geometry.dispose();
+      b.mesh.material.dispose();
+      blueBalls.splice(i, 1);
+    }
+  }
+}
+
+
+function animate(){
+  // Lake ripples (very subtle)
+  updateLakeRipples(performance.now() * 0.001);
+
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.033, clock.getDelta());
+  ensureCopterAudioPlaying();
+
+  updateHitBursts(dt);
+  updateRoundTimer(dt);
+
+  // Space is used for boost (same as A), so no hold-to-fire here.
+  updateBlueBalls(dt);
+  updateTargets(dt);
+  tryPlaceDebugTree2();
+
+  if (badGuy){
+    // Smoothly turn to face Camitruck (yaw only)
+    const px = controls.getObject().position.x;
+    const pz = controls.getObject().position.z;
+    const dx = px - badGuy.position.x;
+    const dz = pz - badGuy.position.z;
+    const desired = Math.atan2(dx, dz); // yaw angle toward player
+    let current = badGuy.rotation.y;
+    // shortest-angle delta
+    let delta = desired - current;
+    delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+    const maxStep = BAD_GUY_TURN_SPEED * dt;
+    if (Math.abs(delta) <= maxStep) current = desired;
+    else current += Math.sign(delta) * maxStep;
+    badGuy.rotation.y = current;
+    // flash on hit
+    if (badGuyFlashT > 0){
+      badGuyFlashT = Math.max(0, badGuyFlashT - dt);
+      badGuy.material.emissive.setHex(0xffffff);
+      badGuy.material.emissiveIntensity = 0.9;
+    } else {
+      badGuy.material.emissive.setHex(0x000000);
+      badGuy.material.emissiveIntensity = 0.0;
+    }
+  }
+
+  // Tank input:
+  // Up/Down move while held and stop when released.
+  // A is temporary boost while held.
+  const forwardHeldRaw = keys.has("ArrowUp") || keys.has("KeyW");
+  const backHeldRaw = keys.has("ArrowDown") || keys.has("KeyS");
+  const boostHeldRaw = keys.has("KeyA") || keys.has("Space");
+  const controlsEnabled = raceStarted || orangeAutoRunActive;
+  const forwardHeld = controlsEnabled && forwardHeldRaw;
+  const backHeld = controlsEnabled && backHeldRaw;
+  const boostHeld = controlsEnabled && boostHeldRaw;
+
+  // Keyboard turning (like raycaster)
+  let turnRaw = 0;
+  if (keys.has("ArrowLeft"))  turnRaw += 1;
+  if (keys.has("ArrowRight")) turnRaw -= 1;
+  const turn = turnRaw * ARROW_TURN_INPUT_MULT;
+
+  if (true) {
+    const obj = controls.getObject();
+
+    // Update PNG billboard trees (WolfLand-safe)
+    if (typeof updateBillboardTrees === 'function') updateBillboardTrees(obj);
+
+    // Raycaster-style: use the player's yaw (turning) for forward direction.
+    // During orange autorun, controls drive an independent blue truck state (camera stays on orange).
+    let actorPos = obj.position;
+    let actorYaw = obj.rotation.y;
+    if (orangeAutoRunActive){
+      if (!blueControlActive){
+        blueControlPos.copy(obj.position);
+        blueControlYaw = obj.rotation.y;
+        blueControlActive = true;
+      }
+      actorPos = blueControlPos;
+      actorYaw = blueControlYaw;
+    }
+    const turnMult = orangeAutoRunActive ? BLUE_ZMODE_TURN_MULT : 1.0;
+    actorYaw += turn * TURN_SPEED * dt * turnMult * ARROW_TURN_SPEED_MULT;
+    if (orangeAutoRunActive) blueControlYaw = actorYaw;
+    else obj.rotation.y = actorYaw;
+
+    const fwd = __vFwdA.set(
+      -Math.sin(actorYaw),
+       0,
+      -Math.cos(actorYaw)
+    ).normalize();
+
+    const right = __vRightA.set(-fwd.z, 0, fwd.x).normalize();
+
+    if (boostHeld) boostSpeed = Math.min(TANK_BOOST_MAX - TANK_BASE_SPEED, boostSpeed + TANK_BOOST_ACCEL * dt);
+    else boostSpeed = 0;
+
+    if (blueEdgeSlowTimeLeft > 0){
+      blueEdgeSlowTimeLeft = Math.max(0, blueEdgeSlowTimeLeft - dt);
+    }
+    if (playerAiCollisionSlowTimeLeft > 0){
+      playerAiCollisionSlowTimeLeft = Math.max(0, playerAiCollisionSlowTimeLeft - dt);
+    }
+    const blueEdgeSlowMultNow = (blueEdgeSlowTimeLeft > 0) ? BLUE_EDGE_SLOW_MULT : 1.0;
+    const playerAiCollisionSlowMultNow = (playerAiCollisionSlowTimeLeft > 0) ? PLAYER_AI_COLLISION_SLOW_MULT : 1.0;
+    let playerSpeedMult = (currentTruckFile === "orange_truck.png")
+      ? (ORANGE_AUTORUN_SPEED / TANK_BASE_SPEED)
+      : (PLAYER_TRUCK_SPEED_MULT_MAP[currentTruckFile] || 1.0);
+    if (PLAYER_RANDOM_SPEED_ELIGIBLE.has(currentTruckFile)){
+      playerSpeedMult *= (1 + playerRandomSpeedDelta);
+    }
+    const tankSpeed = ((TANK_BASE_SPEED * playerSpeedMult) + boostSpeed) * blueEdgeSlowMultNow * playerAiCollisionSlowMultNow;
+    const forwardAxis = orangeAutoRunActive
+      ? (forwardHeld ? -1 : (backHeld ? 1 : 0))   // keep current post-Z behavior
+      : (forwardHeld ? 1 : (backHeld ? -1 : 0));  // reversed before Z
+
+    const sideAxis = orangeAutoRunActive ? (turn) : 0; // left/right slides blue in Z mode
+    const move = __vMoveA.set(0, 0, 0);
+    move.addScaledVector(fwd, forwardAxis * tankSpeed);
+    if (sideAxis !== 0) move.addScaledVector(right, sideAxis * tankSpeed * BLUE_ZMODE_LATERAL_MULT);
+    const isMoving = (Math.abs(forwardAxis) > 0) || (Math.abs(sideAxis) > 0);
+
+    // Save previous position (for collision resolution)
+    prevPos.copy(actorPos);
+
+    if (isMoving && move.lengthSq() > 1e-8) {
+      move.normalize().multiplyScalar(Math.abs(tankSpeed) * dt);
+      actorPos.add(move);
+    }
+
+    // Blue off-track/lake blocker disabled by request.
+
+    // --- Truck engine sound (plays while either truck is moving) ---
+    if (truckAudio){
+      const orangeMoving = orangeAutoRunActive || (AI_RACER_ENABLE && companionTruckPlane);
+      const anyTruckMoving = isMoving || orangeMoving;
+      if (anyTruckMoving && !truckSoundPlaying){
+        truckAudio.play().catch(()=>{});
+        truckSoundPlaying = true;
+      } else if (!anyTruckMoving && truckSoundPlaying){
+        truckAudio.pause();
+        truckAudio.currentTime = 0;
+        truckSoundPlaying = false;
+      }
+    }
+
+    // Blue center vs yellow border collision:
+    // 1) play skid on contact
+    // 2) prevent any further penetration off-track past yellow border.
+    if (raceTrackTotalLen > 1){
+      const blueS = projectTrackDistanceAtXZ(actorPos.x, actorPos.z);
+      const blueSample = sampleTrackAtDistance(blueS);
+      const fwdX = -Math.sin(blueSample.yaw);
+      const fwdZ = -Math.cos(blueSample.yaw);
+      const rightX = Math.cos(blueSample.yaw);
+      const rightZ = -Math.sin(blueSample.yaw);
+      const dxEdge = actorPos.x - blueSample.x;
+      const dzEdge = actorPos.z - blueSample.z;
+      const longitudinal = (dxEdge * fwdX) + (dzEdge * fwdZ);
+      const lateral = (dxEdge * rightX) + (dzEdge * rightZ);
+
+      const edgeWidth = Math.max(0.05, RACE_TRACK_WIDTH * RACE_TRACK_RAISED_EDGE_WIDTH_RATIO);
+      const edgeCenterOffset = (RACE_TRACK_WIDTH * 0.5) + (edgeWidth * 0.5);
+      const maxLateral = edgeCenterOffset;
+      const collidedYellow = Math.abs(lateral) >= maxLateral;
+
+      if (collidedYellow){
+        blueEdgeSlowTimeLeft = BLUE_EDGE_SLOW_DURATION;
+        const clampedLateral = Math.sign(lateral || 1) * maxLateral;
+        actorPos.x = blueSample.x + (fwdX * longitudinal) + (rightX * clampedLateral);
+        actorPos.z = blueSample.z + (fwdZ * longitudinal) + (rightZ * clampedLateral);
+
+        if (!blueEdgeSkidLatched){
+          const now = performance.now();
+          if ((now - blueEdgeLastSkidMs) >= BLUE_EDGE_SKID_COOLDOWN_MS){
+            playSkidSound();
+            blueEdgeLastSkidMs = now;
+          }
+        }
+      }
+      blueEdgeSkidLatched = collidedYellow;
+    } else {
+      blueEdgeSkidLatched = false;
+    }
+    // R/F vertical move (fly up/down). Safe: does not move the truck sprite.
+    let vMove = 0;
+    if (keys.has("KeyR") && !keys.has("KeyF")) vMove = 1;
+    else if (keys.has("KeyF") && !keys.has("KeyR")) vMove = -1;
+
+    if (vMove !== 0){
+      actorPos.y += vMove * RF_SPEED * dt;
+      velY = 0; // cancel gravity while actively moving vertically
+      manualAltitude = actorPos.y; // altitude-hold at new height
+    }
+
+
+
+    // --- Ground reference at current XZ ---
+const floorY = driveSurfaceYAt(actorPos.x, actorPos.z) + TRACK_PLAYER_SURFACE_OFFSET + PLAYER_EYE_HEIGHT;
+
+// Once you touch R/F, we enter "hover" altitude-hold mode.
+// In this mode, gravity is disabled and you stay at that altitude until R raises or F lowers.
+// Altitude-hold latch: once you touch R/F, we hold that altitude until you change it with R/F again.
+if ((keys.has("KeyR") || keys.has("KeyF")) && manualAltitude === null){
+  manualAltitude = actorPos.y;
+}
+
+if (manualAltitude === null) {
+  // Walk mode: stick to terrain (no jump, no falling)
+  actorPos.y = floorY;
+  velY = 0;
+  onGround = true;
+} else {
+  // Hover mode: hold altitude (but never go below the ground)
+  manualAltitude = Math.max(floorY, manualAltitude);
+  actorPos.y = manualAltitude;
+  velY = 0;
+  onGround = (actorPos.y <= floorY + 0.0001);
+}
+
+// Space now fires (no jump)
+
+
+    // Step 4: mountains follow player
+    if (mountainGroup){
+      mountainGroup.position.x = actorPos.x;
+      mountainGroup.position.z = actorPos.z;
+      mountainGroup.position.y = 0;
+  }
+  }
+
+  // Aircraft-style camera attitude: heading (yaw) + fixed nose-down pitch, zero roll.
+  {
+    const camObj = controls.getObject();
+    const yaw = camObj.rotation.y;
+    camObj.rotation.set(CAMERA_DOWN_PITCH, yaw, 0, "YXZ");
+    camera.rotation.z = 0;
+  }
+
+  updateTruckAvatar(dt);
+  updateNavOverlays();
+  updateXYZTracker();
+  updateRaceGapTracker();
+  updateRaceFinishMonitor();
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", () => {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+
+<div id="roundTimer" style="
+  position:fixed; left:50%; top:60px; transform:translateX(-50%);
+  padding:8px 12px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.62); color:#fff; font:700 15px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  z-index:9998; backdrop-filter: blur(4px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+  display:none;
+">⏱ Round <b>1:00</b></div>
+
+<div id="banner" style="
+  position:fixed; left:50%; top:14px; transform:translateX(-50%);
+  padding:10px 14px; border-radius:14px;
+  background:rgba(0,0,0,0.65); color:#fff; font:600 16px system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  display:none; z-index:9999; backdrop-filter: blur(6px);
+  box-shadow: 0 8px 22px rgba(0,0,0,0.35);
+"></div>
+
+<div id="raceFinishBoard" style="
+  position:fixed; left:50%; top:78%; transform:translate(-50%, -50%);
+  padding:22px 34px; border-radius:18px;
+  border:2px solid rgba(255,255,255,0.45);
+  background:rgba(0,0,0,0.78); color:#fff;
+  font:900 clamp(34px, 6.2vw, 82px)/1.06 'Arial Black', Impact, Haettenschweiler, 'Segoe UI', sans-serif;
+  letter-spacing:0.02em; text-align:center; text-transform:uppercase;
+  display:none; z-index:10040; backdrop-filter: blur(8px);
+  box-shadow: 0 16px 42px rgba(0,0,0,0.5);
+  pointer-events:none;
+"></div>
+
+<div id="xyzTracker" style="
+  position:fixed; right:18px; bottom:18px;
+  padding:8px 12px; border-radius:10px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.7); color:#fff;
+  font:700 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  z-index:9999; box-shadow:0 8px 20px rgba(0,0,0,.35);
+">X: 0.0  Y: 0.0  Z: 0.0</div>
+
+<div id="raceGapTracker" style="
+  position:fixed; right:18px; bottom:62px;
+  padding:8px 12px; border-radius:10px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.7); color:#fff;
+  font:700 13px/1.1 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  z-index:9999; box-shadow:0 8px 20px rgba(0,0,0,.35);
+">Gap: --</div>
+</body>
+
+</html>

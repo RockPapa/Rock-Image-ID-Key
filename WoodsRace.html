@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Woods Drive Movie</title>
+<style>
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    overflow: hidden;
+  }
+
+  #video {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    transform-origin: center center;
+    will-change: transform;
+  }
+
+  #aiTruck {
+    position: fixed;
+    width: min(11.170449675vw, 151.32px);
+    top: 97%;
+    left: 38vw;
+    transform: translateY(-150%);
+    z-index: 2;
+    pointer-events: none;
+    transform-origin: center center;
+    will-change: transform;
+  }
+
+  #playerTruck {
+    position: fixed;
+    width: min(14.4255065625vw, 196.2795px);
+    top: 90%;
+    left: 51vw;
+    z-index: 3;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+    will-change: transform;
+  }
+
+  #scene {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    transform-origin: center 35%;
+    will-change: transform;
+  }
+
+  #scene.camera-active {
+    animation: cameraDrift 5s ease-in-out infinite alternate;
+  }
+
+  #centerCube {
+    position: fixed;
+    left: 50%;
+    top: 23%;
+    width: 28px;
+    height: 28px;
+    transform-style: preserve-3d;
+    transform: translate(-50%, -50%) rotateX(-24deg) rotateY(30deg);
+    animation: cubeSpin 6s linear infinite;
+    --cubeColor: rgba(230, 230, 230, 0.58);
+    z-index: 9;
+    pointer-events: none;
+  }
+
+  .cube-face {
+    position: absolute;
+    inset: 0;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-sizing: border-box;
+    background: var(--cubeColor);
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.28);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255, 255, 255, 0.95);
+    font: 700 10px/1 Arial, sans-serif;
+    letter-spacing: 0.3px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.45);
+  }
+
+  .cube-front { transform: translateZ(14px); }
+  .cube-back { transform: rotateY(180deg) translateZ(14px); }
+  .cube-right { transform: rotateY(90deg) translateZ(14px); }
+  .cube-left { transform: rotateY(-90deg) translateZ(14px); }
+  .cube-top { transform: rotateX(90deg) translateZ(14px); }
+  .cube-bottom { transform: rotateX(-90deg) translateZ(14px); }
+
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  #startPanel {
+    width: min(93.1vw, 1629px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  #picksWrap {
+    position: relative;
+    width: min(93.1vw, 1496px);
+  }
+
+  #picksBanner {
+    display: block;
+    width: 100%;
+    max-height: none;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  #picksButtons {
+    position: absolute;
+    inset: 0;
+  }
+
+  .pick-hotspot {
+    position: absolute;
+    background: transparent;
+    border: 0;
+    outline: 0;
+    box-shadow: none;
+    border-radius: 8px;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1;
+  }
+
+  .pick-hotspot:hover {
+    border: 0;
+    box-shadow: none;
+  }
+
+  .pick-hotspot.selected {
+    border: 0;
+    box-shadow: none;
+  }
+
+  #startBtn {
+    border: 1px solid #fff;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    padding: 12px 20px;
+    font: 700 18px/1 Arial, sans-serif;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+
+  .crash-zone {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    z-index: 4;
+    pointer-events: none;
+    border: 0;
+    background: transparent;
+  }
+
+  #leftCrashZone {
+    clip-path: polygon(
+      0 0,
+      var(--leftCrashTopX, 30vw) 0,
+      var(--leftCrashBottomX, 21.84vw) 100%,
+      0 100%
+    );
+  }
+
+  #rightCrashZone {
+    clip-path: polygon(
+      calc(100% - var(--rightCrashTopX, 30vw)) 0,
+      100% 0,
+      100% 100%,
+      calc(100% - var(--rightCrashBottomX, 21.84vw)) 100%
+    );
+  }
+
+  #crashOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 11;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  #crashText {
+    color: #fff;
+    font: 700 28px/1 Arial, sans-serif;
+    letter-spacing: 0.5px;
+    background: rgba(110, 0, 0, 0.72);
+    border: 2px solid rgba(255, 140, 140, 0.9);
+    border-radius: 10px;
+    padding: 14px 18px;
+  }
+
+  #crashText.winner-flash {
+    font-size: clamp(44px, 8vw, 108px);
+    line-height: 1.05;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    text-align: center;
+    background: rgba(150, 0, 0, 0.9);
+    border: 3px solid rgba(255, 245, 180, 0.95);
+    box-shadow: 0 0 20px rgba(255, 120, 120, 0.75);
+    animation: winnerFlash 0.55s steps(2, end) infinite;
+  }
+
+  #startWarning {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 12;
+    display: none;
+    color: #fff;
+    font: 700 clamp(18px, 3.3vw, 36px)/1.15 Arial, sans-serif;
+    letter-spacing: 0.6px;
+    text-align: center;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.78);
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    padding: 14px 18px;
+    pointer-events: none;
+    max-width: min(92vw, 980px);
+  }
+
+  @keyframes winnerFlash {
+    0%, 49% {
+      opacity: 1;
+      transform: scale(1);
+      filter: brightness(1.2);
+    }
+    50%, 100% {
+      opacity: 0.35;
+      transform: scale(1.03);
+      filter: brightness(2.1);
+    }
+  }
+
+  #timeTracker {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 12;
+    color: #fff;
+    font: 700 16px/1 Arial, sans-serif;
+    letter-spacing: 0.4px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 8px;
+    padding: 8px 10px;
+    pointer-events: none;
+  }
+
+  #hitsHud {
+    position: fixed;
+    top: 64px;
+    left: 14px;
+    z-index: 12;
+    width: 220px;
+    color: #fff;
+    font: 700 14px/1 Arial, sans-serif;
+    letter-spacing: 0.35px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 8px;
+    padding: 8px 10px 10px;
+    pointer-events: none;
+  }
+
+  #lapWinnersHud {
+    position: fixed;
+    top: 124px;
+    left: 14px;
+    z-index: 12;
+    width: 220px;
+    color: #fff;
+    font: 700 14px/1 Arial, sans-serif;
+    letter-spacing: 0.35px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 8px;
+    padding: 8px 10px 10px;
+    pointer-events: none;
+  }
+
+  #lapWinnersLabel {
+    margin-bottom: 7px;
+  }
+
+  .lap-winner-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 2px 0;
+    opacity: 0.96;
+  }
+
+  #hitsLabel {
+    margin-bottom: 7px;
+  }
+
+  #hitsValue {
+    margin-top: 7px;
+    text-align: left;
+    opacity: 0.96;
+  }
+
+  @keyframes cameraDrift {
+    0% {
+      transform: translate3d(-0.6vw, -8.8vh, 0) perspective(1200px) rotateX(3deg) scale(1.02);
+    }
+    50% {
+      transform: translate3d(0.4vw, -9.4vh, 0) perspective(1200px) rotateX(3.6deg) scale(1.035);
+    }
+    100% {
+      transform: translate3d(-0.2vw, -9.1vh, 0) perspective(1200px) rotateX(3.2deg) scale(1.025);
+    }
+  }
+
+  @keyframes cubeSpin {
+    0% {
+      transform: translate(-50%, -50%) rotateX(-24deg) rotateY(0deg);
+    }
+    100% {
+      transform: translate(-50%, -50%) rotateX(-24deg) rotateY(360deg);
+    }
+  }
+
+  #touchControlsHud {
+    position: fixed;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    z-index: 13;
+    display: none;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    pointer-events: auto;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #touchToggleBtn {
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.62);
+    color: #fff;
+    font: 700 15px/1 Arial, sans-serif;
+    border-radius: 999px;
+    padding: 10px 14px;
+    letter-spacing: 0.4px;
+    touch-action: manipulation;
+    cursor: pointer;
+  }
+
+  #touchToggleBtn.on {
+    background: rgba(20, 130, 40, 0.78);
+    border-color: rgba(190, 255, 190, 0.95);
+  }
+
+  #joystickBase {
+    width: 152px;
+    height: 152px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.78);
+    background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.3), rgba(30, 30, 30, 0.7));
+    position: relative;
+    touch-action: none;
+    opacity: 0.96;
+  }
+
+  #joystickBase.off {
+    opacity: 0.32;
+  }
+
+  #joystickThumb {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.9);
+    background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.45), rgba(24, 24, 24, 0.88));
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  @media (orientation: landscape) {
+    #touchControlsHud {
+      display: flex;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="scene" class="camera-active">
+  <video
+    id="video"
+    src="images/road.mp4"
+    muted
+    loop
+    playsinline
+    preload="auto"
+  ></video>
+  <img id="aiTruck" src="images/orange_truck.png" alt="AI truck vehicle" />
+  <img id="playerTruck" src="images/blue_truck.png" alt="Player blue truck" />
+  <div id="centerCube" aria-hidden="true">
+    <div class="cube-face cube-front"></div>
+    <div class="cube-face cube-back"></div>
+    <div class="cube-face cube-right"></div>
+    <div class="cube-face cube-left"></div>
+    <div class="cube-face cube-top"></div>
+    <div class="cube-face cube-bottom"></div>
+  </div>
+  <div id="leftCrashZone" class="crash-zone"></div>
+  <div id="rightCrashZone" class="crash-zone"></div>
+  <audio id="carSound" src="images/car_sound.mp3" loop preload="auto"></audio>
+  <audio id="copterSound" src="images/copter_music.mp3" loop preload="auto"></audio>
+  <audio id="skidSound" src="images/skid.mp3" preload="auto"></audio>
+</div>
+<div id="startOverlay">
+  <div id="startPanel">
+    <div id="picksWrap">
+      <img id="picksBanner" src="images/picks.png" alt="Picks banner" />
+      <div id="picksButtons" role="group" aria-label="Choose blue truck"></div>
+    </div>
+    <button id="startBtn" type="button">Start Drive</button>
+  </div>
+</div>
+<div id="crashOverlay">
+  <div id="crashText"></div>
+</div>
+<div id="startWarning">DONT CRASH INTO ORANGE TRUCK OR ROADSIDE!</div>
+<div id="timeTracker">Lap: 1/5 | Time: 0s</div>
+<div id="hitsHud">
+  <div id="hitsLabel">COLLISION COUNT</div>
+  <div id="hitsValue">0</div>
+</div>
+<div id="lapWinnersHud" aria-live="polite">
+  <div id="lapWinnersLabel">Lap Winners</div>
+  <div class="lap-winner-row"><span>Lap 1</span><span class="lap-winner-value">--</span></div>
+  <div class="lap-winner-row"><span>Lap 2</span><span class="lap-winner-value">--</span></div>
+  <div class="lap-winner-row"><span>Lap 3</span><span class="lap-winner-value">--</span></div>
+  <div class="lap-winner-row"><span>Lap 4</span><span class="lap-winner-value">--</span></div>
+  <div class="lap-winner-row"><span>Lap 5</span><span class="lap-winner-value">--</span></div>
+</div>
+<div id="touchControlsHud" aria-label="Touch controls">
+  <button id="touchToggleBtn" type="button" class="on" aria-pressed="true">TOUCH: ON</button>
+  <div id="joystickBase" aria-hidden="true">
+    <div id="joystickThumb"></div>
+  </div>
+</div>
+<script>
+  const scene = document.getElementById("scene");
+  const video = document.getElementById("video");
+  const carSound = document.getElementById("carSound");
+  const copterSound = document.getElementById("copterSound");
+  const skidSound = document.getElementById("skidSound");
+  const aiTruck = document.getElementById("aiTruck");
+  const playerTruck = document.getElementById("playerTruck");
+  const leftCrashZone = document.getElementById("leftCrashZone");
+  const rightCrashZone = document.getElementById("rightCrashZone");
+  const startOverlay = document.getElementById("startOverlay");
+  const startBtn = document.getElementById("startBtn");
+  const picksButtons = document.getElementById("picksButtons");
+  const crashOverlay = document.getElementById("crashOverlay");
+  const crashText = document.getElementById("crashText");
+  const startWarning = document.getElementById("startWarning");
+  const timeTracker = document.getElementById("timeTracker");
+  const lapWinnerValues = Array.from(document.querySelectorAll(".lap-winner-value"));
+  const hitsValue = document.getElementById("hitsValue");
+  const centerCube = document.getElementById("centerCube");
+  const cubeFaces = Array.from(document.querySelectorAll(".cube-face"));
+  const touchToggleBtn = document.getElementById("touchToggleBtn");
+  const joystickBase = document.getElementById("joystickBase");
+  const joystickThumb = document.getElementById("joystickThumb");
+  const maxLaps = 5;
+  const earlyLapHitPenaltyPct = 0.115;
+  const lateLapHitPenaltyPct = 0.10;
+  const earlyLapHitCount = 3;
+  const lateLapHitCount = 3;
+  const minTruckScale = 0.32319;
+  const maxTruckScale = 0.8748;
+  const blueMaxTruckScale = maxTruckScale * 0.97;
+  let carSoundStarted = false;
+  let experienceStarted = false;
+  let lapCount = 1;
+  let lastMovieTime = 0;
+  let lastLapLeaderText = "Ahead: --";
+  let lastTimeTrackerText = "";
+  let edgeCollisionActive = false;
+  let truckCollisionActive = false;
+  let humanHitCount = 0;
+  let lapHumanHitCount = 0;
+  let hitPenaltyHistory = [];
+  let humanLapWins = 0;
+  let orangeLapWins = 0;
+  let startWarningTimeoutId = null;
+  let touchControlsEnabled = true;
+  let activeJoystickPointerId = null;
+  const joystickControls = { up: false, down: false, left: false, right: false };
+  let lastSkidAtMs = 0;
+  let prevBlueX = window.innerWidth * 0.51;
+  let prevOrangeX = window.innerWidth * 0.5;
+
+  const controls = {
+    up: false,
+    down: false,
+    left: false,
+    right: false
+  };
+
+  const truckState = {
+    x: window.innerWidth * 0.51,
+    y: window.innerHeight * 0.9,
+    scale: 1,
+    dropOffset: 0
+  };
+  const aiState = {
+    x: window.innerWidth * 0.5,
+    y: window.innerHeight * 0.9,
+    scale: 1,
+    dropOffset: 0
+  };
+  const maxForwardTaps = 16;
+  const blueMaxHeightReductionPct = 0.05;
+  let blueMaxUpCap = 1;
+  let forwardTapCount = 0;
+  let startY = truckState.y;
+  let minY = window.innerHeight * 0.54563456;
+  const upTravelFactor = 0.9431125;
+  const holdTapRatePerSecond = 8;
+  const passiveDecelRatePerSecond = 5.2;
+  const shrinkRelativeToUpFactor = 1.133;
+  const aiUpStartSeconds = 30;
+  const aiUpEndSeconds = 50;
+  const aiThirtyToFiftyBoostFactor = 1.5;
+  const aiMaxIncreaseFactor = 1.067;
+  const aiUpRateFactor = 0.95;
+  const aiInitialUpShrinkBoostFactor = 1.23;
+  const aiLeftLaneAdvanceFactor = 0.0525;
+  const orangeMaxUpUnits = 1.6;
+  const aiPrestartTravelProgress = 0.1;
+  const aiBlockMovePerFrame = 2.6;
+  const aiScriptedMovePerFrame = 1.1;
+  const aiPassDetectBesidePct = 0.06;
+  const aiPassDetectScaleDiffPct = 0.14;
+  const aiEndShiftStartSeconds = 30;
+  const aiEndTargetXPercent = 0.45;
+  const aiEndTargetMovePerFrame = 2.8;
+  const crashZoneBasePct = 0.18113004;
+  const crashZoneWidenByDepthPct = 0.567;
+  const crashZoneTopInwardExtraLeftPct = 0.16;
+  const rightCrashZoneAngleFromVerticalDeg = 20;
+  let crashZoneTopInwardExtraRightPct = crashZoneTopInwardExtraLeftPct * 1.03;
+  const crashZonePerspectiveStartYFactor = 0.92;
+  const crashZonePerspectiveEndYFactor = 0.2;
+  const movieSpeedFactor = 0.7942;
+  const blueHeightFactor = 0.97;
+  let currentCrashZonePct = crashZoneBasePct;
+  let forwardProgress = 0;
+  const aiLapCarryDecayPerFrame = 0.08;
+  const aiLapScriptedReleaseFramesDefault = 36;
+  let aiLapCarryTravelOffset = 0;
+  let aiLapStartCarryX = null;
+  let aiLapStartHoldFrames = 0;
+  let aiLapScriptedReleaseFrames = 0;
+  let viewportWidth = window.innerWidth;
+  let viewportHeight = window.innerHeight;
+  let playerTruckWidth = 0;
+  let aiTruckWidth = 0;
+  let lastCrashZoneBottomVw = -1;
+  let lastLeftCrashZoneTopVw = -1;
+  let lastRightCrashZoneTopVw = -1;
+  let cubeLeaderState = "neutral";
+  let horizonY = viewportHeight * 0.22;
+  let nearY = viewportHeight * 0.95;
+  let crashBottomY = viewportHeight * crashZonePerspectiveStartYFactor;
+  let crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
+  const bigfootPlayerSrc = "images/bigfoot.png";
+  const mazBackPlayerSrc = "images/maz_back.png";
+  const bigTruckPlayerSrc = "images/big_truck.png";
+  const playerTruckBaseWidthCss = "min(14.4255065625vw, 196.2795px)";
+  const bigfootSizeBoostFactor = 1.15;
+  const mazBackSizeBoostFactor = 1.24;
+  const bigTruckSizeBoostFactor = 1.24;
+  const numberedTruckChoices = [
+    { id: 1, src: "images/bigfoot.png", left: 12.5, top: 16.5, width: 20, height: 31 },
+    { id: 2, src: "images/blue_truck.png", left: 38.5, top: 16.5, width: 20, height: 31 },
+    { id: 3, src: "images/maz_back.png", left: 64.5, top: 16.5, width: 20, height: 31 },
+    { id: 4, src: "images/orange_truck.png", left: 12.5, top: 58.5, width: 20, height: 31 },
+    { id: 5, src: "images/truck2.png", left: 38.5, top: 58.5, width: 20, height: 31 },
+    { id: 6, src: "images/big_truck.png", left: 64.5, top: 58.5, width: 20, height: 31 }
+  ];
+  const truckNameById = {
+    1: "BIGFOOT",
+    2: "BLUE FORD",
+    3: "YELLOW MAZDA",
+    4: "ORANGE FORD",
+    5: "RED RANGER",
+    6: "MEGA MONSTER"
+  };
+  let selectedTruckChoiceId = 2;
+  let selectedBlueTruckSrc = playerTruck.getAttribute("src") || "images/blue_truck.png";
+
+  function setCubeFaceLabel(labelText) {
+    cubeFaces.forEach((face) => {
+      face.textContent = labelText;
+    });
+  }
+
+  function getFrontBodyProbeY(rect) {
+    return rect.top + (rect.height * 0.26);
+  }
+
+  function updateCubeLeaderColor(blueRect, orangeRect) {
+    if (!centerCube) return;
+    const blueProbeY = getFrontBodyProbeY(blueRect);
+    const orangeProbeY = getFrontBodyProbeY(orangeRect);
+    const yLeadThresholdPx = 12;
+    const blueLeads = blueProbeY < orangeProbeY - yLeadThresholdPx;
+    const orangeLeads = orangeProbeY < blueProbeY - yLeadThresholdPx;
+    let nextCubeLeaderState = "neutral";
+    if (blueLeads) nextCubeLeaderState = "blue";
+    if (orangeLeads) nextCubeLeaderState = "orange";
+    cubeLeaderState = nextCubeLeaderState;
+    if (blueLeads) {
+      centerCube.style.setProperty("--cubeColor", "rgba(65, 140, 255, 0.62)");
+      setCubeFaceLabel(`${selectedTruckChoiceId}`);
+    } else if (orangeLeads) {
+      centerCube.style.setProperty("--cubeColor", "rgba(255, 145, 40, 0.62)");
+      setCubeFaceLabel("AI");
+    } else {
+      centerCube.style.setProperty("--cubeColor", "rgba(230, 230, 230, 0.58)");
+      setCubeFaceLabel("--");
+    }
+  }
+
+  function applyBlueCollisionPenalty() {
+    lapHumanHitCount += 1;
+    const isEarlyHit = lapHumanHitCount <= earlyLapHitCount;
+    const isLateTierHit = lapHumanHitCount <= (earlyLapHitCount + lateLapHitCount);
+    const perHitPenaltyPct = isEarlyHit
+      ? earlyLapHitPenaltyPct
+      : (isLateTierHit ? lateLapHitPenaltyPct : lateLapHitPenaltyPct);
+    const perHitDecay = 1 - perHitPenaltyPct;
+    humanHitCount += 1;
+    hitPenaltyHistory.push(perHitDecay);
+    blueMaxUpCap = clamp(blueMaxUpCap * perHitDecay, 0, 1);
+    applyForwardTapPosition();
+    hitsValue.textContent = `${humanHitCount}`;
+  }
+
+  function resetLapWinnersHud() {
+    lapWinnerValues.forEach((entry) => {
+      entry.textContent = "--";
+    });
+  }
+
+  function setLapWinner(lapNumber, winnerText) {
+    const lapIndex = lapNumber - 1;
+    if (lapIndex < 0 || lapIndex >= lapWinnerValues.length) return;
+    lapWinnerValues[lapIndex].textContent = winnerText;
+  }
+
+  function showRaceWinnerBanner() {
+    let winnerText = "TIE";
+    if (humanLapWins > orangeLapWins) {
+      winnerText = getSelectedTruckName();
+    } else if (orangeLapWins > humanLapWins) {
+      winnerText = "ORANGE";
+    }
+    crashText.textContent = `WINNER: ${winnerText}`;
+    crashText.classList.add("winner-flash");
+    crashOverlay.style.display = "flex";
+  }
+
+  function getSelectedTruckName() {
+    return truckNameById[selectedTruckChoiceId] || "BLUE";
+  }
+
+  function isControlPressed(direction) {
+    return !!controls[direction] || !!joystickControls[direction];
+  }
+
+  function resetJoystickThumb() {
+    if (!joystickThumb) return;
+    joystickThumb.style.transform = "translate(-50%, -50%)";
+  }
+
+  function setTouchToggleState(isEnabled) {
+    touchControlsEnabled = isEnabled;
+    if (!touchToggleBtn || !joystickBase) return;
+    touchToggleBtn.classList.toggle("on", touchControlsEnabled);
+    joystickBase.classList.toggle("off", !touchControlsEnabled);
+    touchToggleBtn.setAttribute("aria-pressed", touchControlsEnabled ? "true" : "false");
+    touchToggleBtn.textContent = touchControlsEnabled ? "TOUCH: ON" : "TOUCH: OFF";
+    if (!touchControlsEnabled) {
+      joystickControls.up = false;
+      joystickControls.down = false;
+      joystickControls.left = false;
+      joystickControls.right = false;
+      activeJoystickPointerId = null;
+      resetJoystickThumb();
+    }
+  }
+
+  function updateJoystickFromPointer(clientX, clientY) {
+    if (!joystickBase || !joystickThumb) return;
+    const rect = joystickBase.getBoundingClientRect();
+    const centerX = rect.left + (rect.width / 2);
+    const centerY = rect.top + (rect.height / 2);
+    const maxThumbTravel = (rect.width * 0.5) - 30;
+    let dx = clientX - centerX;
+    let dy = clientY - centerY;
+    const dist = Math.hypot(dx, dy);
+    if (dist > maxThumbTravel && dist > 0.001) {
+      const ratio = maxThumbTravel / dist;
+      dx *= ratio;
+      dy *= ratio;
+    }
+    joystickThumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    const normX = dx / maxThumbTravel;
+    const normY = dy / maxThumbTravel;
+    const threshold = 0.28;
+    joystickControls.left = normX < -threshold;
+    joystickControls.right = normX > threshold;
+    joystickControls.up = normY < -threshold;
+    joystickControls.down = normY > threshold;
+  }
+
+  function refreshViewportCache() {
+    viewportWidth = window.innerWidth;
+    viewportHeight = window.innerHeight;
+    horizonY = viewportHeight * 0.22;
+    nearY = viewportHeight * 0.95;
+    crashBottomY = viewportHeight * crashZonePerspectiveStartYFactor;
+    crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
+    const rightAngleRad = (rightCrashZoneAngleFromVerticalDeg * Math.PI) / 180;
+    crashZoneTopInwardExtraRightPct = Math.tan(rightAngleRad) * (viewportHeight / viewportWidth);
+  }
+
+  function refreshTruckSizeCache() {
+    playerTruckWidth = playerTruck.clientWidth || 0;
+    aiTruckWidth = aiTruck.clientWidth || 0;
+  }
+
+  function resetPlayerTruckToStart() {
+    truckState.x = viewportWidth * 0.51;
+    forwardTapCount = 0;
+    applyForwardTapPosition();
+    prevBlueX = truckState.x;
+  }
+
+  function applyPlayerTruckSelectionSize() {
+    if (selectedBlueTruckSrc === bigfootPlayerSrc) {
+      playerTruck.style.width = `calc(${playerTruckBaseWidthCss} * ${bigfootSizeBoostFactor})`;
+    } else if (selectedBlueTruckSrc === mazBackPlayerSrc) {
+      playerTruck.style.width = `calc(${playerTruckBaseWidthCss} * ${mazBackSizeBoostFactor})`;
+    } else if (selectedBlueTruckSrc === bigTruckPlayerSrc) {
+      playerTruck.style.width = `calc(${playerTruckBaseWidthCss} * ${bigTruckSizeBoostFactor})`;
+    } else {
+      playerTruck.style.width = playerTruckBaseWidthCss;
+    }
+  }
+
+  function applyAiPrestartPose() {
+    aiState.x = viewportWidth * 0.5;
+    const aiTravelProgress = clamp(aiPrestartTravelProgress, 0, orangeMaxUpUnits);
+    const aiY = orangeUpUnitsToY(aiTravelProgress);
+    const aiTNorm = (aiY - horizonY) / (nearY - horizonY);
+    const aiDepth = clamp(aiTNorm, 0, 1);
+    const aiScaleDepth = clamp(1 - ((1 - aiDepth) * (shrinkRelativeToUpFactor * aiMaxIncreaseFactor)), 0, 1);
+    aiState.y = aiY;
+    aiState.scale = minTruckScale + aiScaleDepth * (maxTruckScale - minTruckScale);
+    aiTruck.style.display = "block";
+    aiTruck.style.left = `${aiState.x}px`;
+    aiTruck.style.top = `${aiState.y}px`;
+    aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
+  }
+
+  function tryStartEngineSound() {
+    if (carSoundStarted) return;
+    carSound.volume = 0.45;
+    carSound.play().then(() => {
+      carSoundStarted = true;
+      window.removeEventListener("pointerdown", tryStartEngineSound);
+      window.removeEventListener("keydown", tryStartEngineSound);
+      window.removeEventListener("touchstart", tryStartEngineSound);
+    }).catch(() => {
+      // Browser may block autoplay until user gesture.
+    });
+  }
+
+  function startExperience() {
+    if (experienceStarted) return;
+    experienceStarted = true;
+    playerTruck.src = selectedBlueTruckSrc;
+    aiTruck.src = "images/orange_truck.png";
+    applyPlayerTruckSelectionSize();
+    refreshTruckSizeCache();
+    edgeCollisionActive = false;
+    truckCollisionActive = false;
+    humanHitCount = 0;
+    lapHumanHitCount = 0;
+    hitPenaltyHistory = [];
+    humanLapWins = 0;
+    orangeLapWins = 0;
+    blueMaxUpCap = 1;
+    hitsValue.textContent = "0";
+    lastSkidAtMs = 0;
+    prevOrangeX = aiState.x;
+    lapCount = 1;
+    lastMovieTime = 0;
+    lastLapLeaderText = "Ahead: --";
+    resetLapWinnersHud();
+    video.playbackRate = movieSpeedFactor;
+    video.play().catch(() => {});
+    tryStartEngineSound();
+    copterSound.volume = 0.088;
+    copterSound.play().catch(() => {});
+    resetPlayerTruckToStart();
+    aiState.x = viewportWidth * 0.5;
+    aiState.y = startY;
+    aiState.scale = minTruckScale;
+    aiTruck.style.display = "block";
+    aiTruck.style.left = `${aiState.x}px`;
+    aiTruck.style.top = `${aiState.y}px`;
+    aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
+    startOverlay.style.display = "none";
+    crashOverlay.style.display = "none";
+    crashText.textContent = "";
+    crashText.classList.remove("winner-flash");
+    if (startWarning) {
+      startWarning.style.display = "block";
+      if (startWarningTimeoutId !== null) {
+        clearTimeout(startWarningTimeoutId);
+      }
+      startWarningTimeoutId = window.setTimeout(() => {
+        startWarning.style.display = "none";
+        startWarningTimeoutId = null;
+      }, 5000);
+    }
+    joystickControls.up = false;
+    joystickControls.down = false;
+    joystickControls.left = false;
+    joystickControls.right = false;
+    activeJoystickPointerId = null;
+    resetJoystickThumb();
+    requestAnimationFrame(updatePlayerTruck);
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function blueUpUnitsToY(blueUpUnits) {
+    const reducedForwardProgress = clamp(blueUpUnits, 0, blueMaxUpCap) * (1 - blueMaxHeightReductionPct);
+    return startY + (minY - startY) * (reducedForwardProgress * upTravelFactor);
+  }
+
+  function orangeUpUnitsToY(orangeUpUnits) {
+    return startY + (minY - startY) * clamp(orangeUpUnits, 0, orangeMaxUpUnits);
+  }
+
+  function yToOrangeUpUnits(yPx) {
+    const denom = (minY - startY);
+    if (Math.abs(denom) < 0.000001) return 0;
+    return clamp((yPx - startY) / denom, 0, orangeMaxUpUnits);
+  }
+
+  function playSkidSound() {
+    const now = performance.now();
+    if (now - lastSkidAtMs < 200) return;
+    lastSkidAtMs = now;
+    skidSound.currentTime = 0;
+    skidSound.play().catch(() => {});
+  }
+
+  function applyForwardTapPosition() {
+    forwardProgress = clamp(forwardTapCount / maxForwardTaps, 0, 1);
+    truckState.y = blueUpUnitsToY(forwardProgress);
+  }
+
+  function updateTruckPerspectiveScale() {
+    const tNorm = (truckState.y - horizonY) / (nearY - horizonY);
+    const depth = clamp(tNorm, 0, 1);
+    const scaleDepth = clamp(1 - ((1 - depth) * shrinkRelativeToUpFactor), 0, 1);
+    truckState.scale = minTruckScale + scaleDepth * (blueMaxTruckScale - minTruckScale);
+    truckState.dropOffset = depth * 23.184;
+    currentCrashZonePct = crashZoneBasePct * (1 + forwardProgress * crashZoneWidenByDepthPct);
+    const crashZoneBottomVw = currentCrashZonePct * 100;
+    const leftCrashZoneTopVw = (currentCrashZonePct + crashZoneTopInwardExtraLeftPct) * 100;
+    const rightCrashZoneTopVw = (currentCrashZonePct + crashZoneTopInwardExtraRightPct) * 100;
+    if (Math.abs(crashZoneBottomVw - lastCrashZoneBottomVw) > 0.001) {
+      leftCrashZone.style.setProperty("--leftCrashBottomX", `${crashZoneBottomVw}vw`);
+      rightCrashZone.style.setProperty("--rightCrashBottomX", `${crashZoneBottomVw}vw`);
+      lastCrashZoneBottomVw = crashZoneBottomVw;
+    }
+    if (Math.abs(leftCrashZoneTopVw - lastLeftCrashZoneTopVw) > 0.001) {
+      leftCrashZone.style.setProperty("--leftCrashTopX", `${leftCrashZoneTopVw}vw`);
+      lastLeftCrashZoneTopVw = leftCrashZoneTopVw;
+    }
+    if (Math.abs(rightCrashZoneTopVw - lastRightCrashZoneTopVw) > 0.001) {
+      rightCrashZone.style.setProperty("--rightCrashTopX", `${rightCrashZoneTopVw}vw`);
+      lastRightCrashZoneTopVw = rightCrashZoneTopVw;
+    }
+  }
+
+  function getCrashZonePctAtY(yPx, topInwardExtraPct) {
+    const yNorm = clamp((crashBottomY - yPx) / (crashBottomY - crashTopY), 0, 1);
+    const topPct = currentCrashZonePct + topInwardExtraPct;
+    return currentCrashZonePct + (topPct - currentCrashZonePct) * yNorm;
+  }
+
+  function checkCrashZones() {
+    const halfTruckWidth = (playerTruckWidth * truckState.scale) / 2;
+    const leftEdge = truckState.x - halfTruckWidth;
+    const rightEdge = truckState.x + halfTruckWidth;
+    const leftZoneWidth = viewportWidth * getCrashZonePctAtY(truckState.y, crashZoneTopInwardExtraLeftPct);
+    const rightZoneWidth = viewportWidth * getCrashZonePctAtY(truckState.y, crashZoneTopInwardExtraRightPct);
+    const leftRoadEdge = leftZoneWidth;
+    const rightRoadEdge = viewportWidth - rightZoneWidth;
+
+    const isEdgeCollision = leftEdge <= leftRoadEdge || rightEdge >= rightRoadEdge;
+    if (isEdgeCollision && !edgeCollisionActive) {
+      applyBlueCollisionPenalty();
+      playSkidSound();
+    }
+    edgeCollisionActive = isEdgeCollision;
+  }
+
+  function checkTruckCollision(blueRect, orangeRect) {
+    if (blueRect.width <= 0 || blueRect.height <= 0 || orangeRect.width <= 0 || orangeRect.height <= 0) {
+      truckCollisionActive = false;
+      return;
+    }
+
+    const collisionShrink = 0.05;
+    const blueInsetX = blueRect.width * collisionShrink * 0.5;
+    const blueInsetY = blueRect.height * collisionShrink * 0.5;
+    const orangeInsetX = orangeRect.width * collisionShrink * 0.5;
+    const orangeInsetY = orangeRect.height * collisionShrink * 0.5;
+
+    const blueLeft = blueRect.left + blueInsetX;
+    const blueRight = blueRect.right - blueInsetX;
+    const blueTop = blueRect.top + blueInsetY;
+    const blueBottom = blueRect.bottom - blueInsetY;
+    const orangeLeft = orangeRect.left + orangeInsetX;
+    const orangeRight = orangeRect.right - orangeInsetX;
+    const orangeTop = orangeRect.top + orangeInsetY;
+    const orangeBottom = orangeRect.bottom - orangeInsetY;
+
+    const overlapX = blueLeft <= orangeRight && blueRight >= orangeLeft;
+    const overlapY = blueTop <= orangeBottom && blueBottom >= orangeTop;
+    const isTruckCollision = overlapX && overlapY;
+    if (isTruckCollision && !truckCollisionActive) {
+      applyBlueCollisionPenalty();
+      playSkidSound();
+    }
+    truckCollisionActive = isTruckCollision;
+  }
+
+  function updatePlayerTruck() {
+    if (experienceStarted && aiTruck.style.display !== "block") {
+      aiTruck.style.display = "block";
+    }
+
+    if (experienceStarted) {
+      const sideSpeed = 4.2;
+      const holdDelta = holdTapRatePerSecond / 60;
+
+      if (isControlPressed("left")) truckState.x -= sideSpeed;
+      if (isControlPressed("right")) truckState.x += sideSpeed;
+      if (isControlPressed("up")) {
+        forwardTapCount = clamp(forwardTapCount + holdDelta, 0, maxForwardTaps);
+        applyForwardTapPosition();
+      } else if (isControlPressed("down")) {
+        forwardTapCount = clamp(forwardTapCount - (holdDelta * 1.15), 0, maxForwardTaps);
+        applyForwardTapPosition();
+      } else if (forwardTapCount > 0) {
+        const passiveDecelDelta = passiveDecelRatePerSecond / 60;
+        forwardTapCount = clamp(forwardTapCount - passiveDecelDelta, 0, maxForwardTaps);
+        applyForwardTapPosition();
+      }
+
+      truckState.x = clamp(truckState.x, 20, viewportWidth - 20);
+    }
+
+    updateTruckPerspectiveScale();
+    checkCrashZones();
+
+    playerTruck.style.left = `${truckState.x}px`;
+    playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
+    playerTruck.style.transform = `translate(-50%, -50%) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
+    const movieTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
+    const movieDuration = Number.isFinite(video.duration) ? video.duration : 0;
+    const didWrapLap = movieDuration > 0 && movieTime + 0.25 < lastMovieTime && lastMovieTime > movieDuration * 0.5;
+    if (didWrapLap) {
+      const completedLap = lapCount;
+      if (cubeLeaderState === "blue") {
+        lastLapLeaderText = "Ahead: Blue";
+        setLapWinner(completedLap, getSelectedTruckName());
+        humanLapWins += 1;
+      } else if (cubeLeaderState === "orange") {
+        lastLapLeaderText = "Ahead: Orange";
+        setLapWinner(completedLap, "Orange");
+        orangeLapWins += 1;
+      } else {
+        lastLapLeaderText = "Ahead: Tie";
+        setLapWinner(completedLap, "TIE");
+      }
+
+      if (completedLap >= maxLaps) {
+        experienceStarted = false;
+        controls.up = false;
+        controls.down = false;
+        controls.left = false;
+        controls.right = false;
+        joystickControls.up = false;
+        joystickControls.down = false;
+        joystickControls.left = false;
+        joystickControls.right = false;
+        activeJoystickPointerId = null;
+        resetJoystickThumb();
+        video.pause();
+        carSound.pause();
+        copterSound.pause();
+        copterSound.currentTime = 0;
+        applyAiPrestartPose();
+        showRaceWinnerBanner();
+      } else {
+        lapCount = completedLap + 1;
+        lapHumanHitCount = 0;
+        if (lapCount >= 2) {
+          const hitsToRecover = Math.min(2, hitPenaltyHistory.length);
+          for (let i = 0; i < hitsToRecover; i += 1) {
+            const recoveredDecay = hitPenaltyHistory.pop();
+            if (recoveredDecay > 0) {
+              blueMaxUpCap = clamp(blueMaxUpCap / recoveredDecay, 0, 1);
+            }
+          }
+          humanHitCount = Math.max(0, humanHitCount - hitsToRecover);
+          hitsValue.textContent = `${humanHitCount}`;
+        }
+        // For laps 2-5, restart both vehicles in the same formation as lap 1.
+        // Player starts back; orange AI starts ahead using the prestart pose.
+        resetPlayerTruckToStart();
+        applyAiPrestartPose();
+        aiLapCarryTravelOffset = 0;
+        aiLapStartCarryX = null;
+        aiLapStartHoldFrames = 0;
+        aiLapScriptedReleaseFrames = 0;
+        prevBlueX = truckState.x;
+        prevOrangeX = aiState.x;
+      }
+    }
+    const aiBaseX = viewportWidth * 0.5;
+    let aiLeftOffset = 0;
+    if (movieTime >= 12 && movieTime < 15) {
+      const shiftProgress = (movieTime - 12) / 3;
+      aiLeftOffset = -aiTruckWidth * shiftProgress;
+    } else if (movieTime >= 15 && movieTime < 21) {
+      aiLeftOffset = -aiTruckWidth;
+    } else if (movieTime >= 21 && movieTime < 29) {
+      const returnProgress = (movieTime - 21) / 8;
+      aiLeftOffset = -aiTruckWidth * (1 - returnProgress);
+    }
+    const aiScriptedX = aiBaseX + aiLeftOffset;
+    let aiLeftLaneAdvance = 0;
+    if (movieTime >= 12 && movieTime < 15) {
+      aiLeftLaneAdvance = ((movieTime - 12) / 3) * aiLeftLaneAdvanceFactor;
+    } else if (movieTime >= 15 && movieTime < 21) {
+      aiLeftLaneAdvance = aiLeftLaneAdvanceFactor;
+    } else if (movieTime >= 21 && movieTime < 29) {
+      aiLeftLaneAdvance = (1 - ((movieTime - 21) / 8)) * aiLeftLaneAdvanceFactor;
+    }
+    const aiForwardProgress = clamp((movieTime - aiUpStartSeconds) / (aiUpEndSeconds - aiUpStartSeconds), 0, 1) * aiThirtyToFiftyBoostFactor;
+    let aiTravelProgress = (aiForwardProgress + aiLeftLaneAdvance) * aiMaxIncreaseFactor * aiUpRateFactor * aiInitialUpShrinkBoostFactor;
+    if (movieDuration > 40 && movieTime >= 40) {
+      const returnToStartProgress = clamp((movieTime - 40) / (movieDuration - 40), 0, 1);
+      aiTravelProgress *= (1 - returnToStartProgress);
+    }
+    aiTravelProgress = clamp(aiTravelProgress + aiLapCarryTravelOffset, 0, orangeMaxUpUnits);
+    aiLapCarryTravelOffset += (0 - aiLapCarryTravelOffset) * aiLapCarryDecayPerFrame;
+    const aiY = orangeUpUnitsToY(aiTravelProgress);
+    const aiTNorm = (aiY - horizonY) / (nearY - horizonY);
+    const aiDepth = clamp(aiTNorm, 0, 1);
+    const aiScaleDepth = clamp(1 - ((1 - aiDepth) * (shrinkRelativeToUpFactor * aiMaxIncreaseFactor)), 0, 1);
+    aiState.scale = minTruckScale + aiScaleDepth * (maxTruckScale - minTruckScale);
+
+    // If blue accelerates to pass, orange gradually blocks by moving toward blue's lane.
+    const playerRect = playerTruck.getBoundingClientRect();
+    const aiRect = aiTruck.getBoundingClientRect();
+    const isBlueAccelerating = isControlPressed("up") || forwardTapCount > 0;
+    const overlapWidth = Math.max(0, Math.min(playerRect.right, aiRect.right) - Math.max(playerRect.left, aiRect.left));
+    const minBlueBesideWidth = playerRect.width * aiPassDetectBesidePct;
+    const blueBesideBy10Pct = (playerRect.width - overlapWidth) >= minBlueBesideWidth;
+    const scaleDiff = Math.abs(truckState.scale - aiState.scale);
+    const isSimilarUpShrink = scaleDiff <= (aiState.scale * aiPassDetectScaleDiffPct);
+    const orangeAheadOfBlue = aiRect.top < playerRect.top;
+    const blueRearApproachGapPx = playerRect.top - aiRect.bottom;
+    const blueCloseBehindOrange = blueRearApproachGapPx >= -24 && blueRearApproachGapPx <= (aiRect.height * 0.55);
+    const blueAttemptingPass = experienceStarted && orangeAheadOfBlue && isBlueAccelerating && blueBesideBy10Pct && isSimilarUpShrink && blueCloseBehindOrange;
+    const leftHoldStartSeconds = 27;
+    const shouldHoldLeftLane = movieTime >= leftHoldStartSeconds;
+    const aiHalfWidth = (aiTruckWidth * aiState.scale) / 2;
+    const aiLeftRoadInset = viewportWidth * getCrashZonePctAtY(aiY, crashZoneTopInwardExtraLeftPct);
+    const aiRightRoadInset = viewportWidth * getCrashZonePctAtY(aiY, crashZoneTopInwardExtraRightPct);
+    const aiMinX = aiLeftRoadInset + aiHalfWidth;
+    const aiMaxX = viewportWidth - aiRightRoadInset - aiHalfWidth;
+    const aiLeftHoldTargetX = aiMinX + (aiHalfWidth * 1.2825) + Math.max(10, aiHalfWidth * 0.1);
+
+    // On the first frame of a new lap, preserve exact lap-end X before releasing AI.
+    if (aiLapStartHoldFrames > 0 && aiLapStartCarryX !== null) {
+      aiState.x = aiLapStartCarryX;
+      aiLapStartHoldFrames -= 1;
+      if (aiLapStartHoldFrames <= 0) aiLapStartCarryX = null;
+    } else if (blueAttemptingPass) {
+      // Blocking takes precedence over forced-left behavior.
+      const blockDeltaX = truckState.x - aiState.x;
+      const blockStep = clamp(blockDeltaX, -aiBlockMovePerFrame, aiBlockMovePerFrame);
+      aiState.x += blockStep;
+    } else if (shouldHoldLeftLane) {
+      const leftDeltaX = aiLeftHoldTargetX - aiState.x;
+      const leftStep = clamp(leftDeltaX, -aiScriptedMovePerFrame, aiScriptedMovePerFrame);
+      aiState.x += leftStep;
+    } else {
+      const scriptedDeltaX = aiScriptedX - aiState.x;
+      const scriptedStep = clamp(scriptedDeltaX, -aiScriptedMovePerFrame, aiScriptedMovePerFrame);
+      aiState.x += scriptedStep;
+      if (aiLapScriptedReleaseFrames > 0) aiLapScriptedReleaseFrames -= 1;
+    }
+
+    if (movieDuration > aiEndShiftStartSeconds && movieTime >= aiEndShiftStartSeconds) {
+      const targetX = viewportWidth * aiEndTargetXPercent;
+      const towardTargetDelta = targetX - aiState.x;
+      aiState.x += clamp(towardTargetDelta, -aiEndTargetMovePerFrame, aiEndTargetMovePerFrame);
+    }
+
+    aiState.x = clamp(aiState.x, aiMinX, aiMaxX);
+    aiState.y = aiY;
+    aiTruck.style.left = `${aiState.x}px`;
+    aiTruck.style.top = `${aiY}px`;
+    aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
+    const blueVisualRect = playerTruck.getBoundingClientRect();
+    const orangeVisualRect = aiTruck.getBoundingClientRect();
+    updateCubeLeaderColor(blueVisualRect, orangeVisualRect);
+    checkTruckCollision(playerRect, aiRect);
+    prevBlueX = truckState.x;
+    prevOrangeX = aiState.x;
+    lastMovieTime = movieTime;
+    const movieSeconds = Math.floor(movieTime);
+    const nextTimeTrackerText = `Lap: ${lapCount}/${maxLaps} | Time: ${movieSeconds}s | ${lastLapLeaderText}`;
+    if (nextTimeTrackerText !== lastTimeTrackerText) {
+      timeTracker.textContent = nextTimeTrackerText;
+      lastTimeTrackerText = nextTimeTrackerText;
+    }
+    if (experienceStarted) requestAnimationFrame(updatePlayerTruck);
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp" || e.key === "ArrowDown" || e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+    }
+    if (e.key === "ArrowUp" && !e.repeat) {
+      forwardTapCount = clamp(forwardTapCount + 1, 0, maxForwardTaps);
+      applyForwardTapPosition();
+    }
+    if (e.key === "ArrowDown" && !e.repeat) {
+      forwardTapCount = clamp(forwardTapCount - 1, 0, maxForwardTaps);
+      applyForwardTapPosition();
+    }
+    if (e.key === "ArrowUp") controls.up = true;
+    if (e.key === "ArrowDown") controls.down = true;
+    if (e.key === "ArrowLeft") controls.left = true;
+    if (e.key === "ArrowRight") controls.right = true;
+  }, { passive: false });
+
+  window.addEventListener("keyup", (e) => {
+    if (e.key === "ArrowUp") controls.up = false;
+    if (e.key === "ArrowDown") controls.down = false;
+    if (e.key === "ArrowLeft") controls.left = false;
+    if (e.key === "ArrowRight") controls.right = false;
+  });
+
+  window.addEventListener("resize", () => {
+    refreshViewportCache();
+    refreshTruckSizeCache();
+    truckState.x = clamp(truckState.x, 20, viewportWidth - 20);
+    startY = viewportHeight * 0.9;
+    minY = viewportHeight * 0.54563456;
+    applyForwardTapPosition();
+    if (experienceStarted) {
+      aiState.x = clamp(aiState.x, 0, viewportWidth);
+      aiState.y = clamp(aiState.y, minY, startY);
+    } else {
+      applyAiPrestartPose();
+    }
+  });
+  if (touchToggleBtn && joystickBase && joystickThumb) {
+    touchToggleBtn.addEventListener("click", () => {
+      setTouchToggleState(!touchControlsEnabled);
+    });
+
+    joystickBase.addEventListener("pointerdown", (e) => {
+      if (!touchControlsEnabled) return;
+      e.preventDefault();
+      activeJoystickPointerId = e.pointerId;
+      joystickBase.setPointerCapture(e.pointerId);
+      updateJoystickFromPointer(e.clientX, e.clientY);
+      tryStartEngineSound();
+    }, { passive: false });
+
+    joystickBase.addEventListener("pointermove", (e) => {
+      if (!touchControlsEnabled) return;
+      if (activeJoystickPointerId !== e.pointerId) return;
+      e.preventDefault();
+      updateJoystickFromPointer(e.clientX, e.clientY);
+    }, { passive: false });
+
+    function releaseJoystickPointer(e) {
+      if (activeJoystickPointerId !== e.pointerId) return;
+      activeJoystickPointerId = null;
+      joystickControls.up = false;
+      joystickControls.down = false;
+      joystickControls.left = false;
+      joystickControls.right = false;
+      resetJoystickThumb();
+      if (joystickBase.hasPointerCapture(e.pointerId)) {
+        joystickBase.releasePointerCapture(e.pointerId);
+      }
+    }
+
+    joystickBase.addEventListener("pointerup", releaseJoystickPointer);
+    joystickBase.addEventListener("pointercancel", releaseJoystickPointer);
+    joystickBase.addEventListener("lostpointercapture", () => {
+      activeJoystickPointerId = null;
+      joystickControls.up = false;
+      joystickControls.down = false;
+      joystickControls.left = false;
+      joystickControls.right = false;
+      resetJoystickThumb();
+    });
+    setTouchToggleState(true);
+  }
+  refreshTruckSizeCache();
+
+  function renderPicksHotspots() {
+    if (!picksButtons) return;
+    picksButtons.innerHTML = "";
+    numberedTruckChoices.forEach((choice) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pick-hotspot";
+      if (choice.id === selectedTruckChoiceId) btn.classList.add("selected");
+      btn.style.left = `${choice.left}%`;
+      btn.style.top = `${choice.top}%`;
+      btn.style.width = `${choice.width}%`;
+      btn.style.height = `${choice.height}%`;
+      btn.setAttribute("aria-label", `Choose vehicle ${choice.id}`);
+      btn.addEventListener("click", () => {
+        selectedTruckChoiceId = choice.id;
+        selectedBlueTruckSrc = choice.src;
+        playerTruck.src = selectedBlueTruckSrc;
+        applyPlayerTruckSelectionSize();
+        refreshTruckSizeCache();
+        renderPicksHotspots();
+        startExperience();
+      });
+      picksButtons.appendChild(btn);
+    });
+  }
+
+  renderPicksHotspots();
+  applyForwardTapPosition();
+  updateTruckPerspectiveScale();
+  playerTruck.style.left = `${truckState.x}px`;
+  playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
+  playerTruck.style.transform = `translate(-50%, -50%) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
+  applyAiPrestartPose();
+  requestAnimationFrame(() => {
+    if (!experienceStarted) applyAiPrestartPose();
+  });
+  startBtn.style.display = "none";
+</script>
+</body>
+</html>

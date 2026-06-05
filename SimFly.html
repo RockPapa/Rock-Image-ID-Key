@@ -346,32 +346,45 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   letter-spacing:.04em;
 }
 .ipadThrottleSlider{
+  position:relative;
   display:block;
-  width:14px;
-  appearance:none;
+  width:18px;
   height:190px;
   margin:8px auto 0;
-  writing-mode:vertical-lr;
-  direction:rtl;
   border-radius:999px;
-  background:linear-gradient(0deg, #1d4ed8 0%, #0ea5e9 40%, #22c55e 70%, #eab308 100%);
+  background:rgba(10, 16, 28, .72);
   outline:none;
+  overflow:visible;
   touch-action:none;
 }
-.ipadThrottleSlider::-webkit-slider-thumb{
-  appearance:none;
-  width:28px;
-  height:28px;
-  border-radius:50%;
-  background:#fff;
-  border:1px solid rgba(0,0,0,.35);
+.ipadThrottleSlider::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:999px;
+  background:linear-gradient(0deg, #1d4ed8 0%, #0ea5e9 40%, #22c55e 70%, #eab308 100%);
+  opacity:.38;
 }
-.ipadThrottleSlider::-moz-range-thumb{
-  width:28px;
-  height:28px;
+.ipadThrottleFill{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  height:0%;
+  border-radius:999px;
+  background:linear-gradient(0deg, #1d4ed8 0%, #0ea5e9 40%, #22c55e 70%, #eab308 100%);
+}
+.ipadThrottleKnob{
+  position:absolute;
+  left:50%;
+  bottom:0%;
+  width:32px;
+  height:32px;
   border-radius:50%;
+  transform:translate(-50%, 50%);
   background:#fff;
   border:1px solid rgba(0,0,0,.35);
+  box-shadow:0 6px 12px rgba(0,0,0,.38);
 }
 .ipadBrakePedal{
   margin-right:4px;
@@ -733,7 +746,10 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
       <span>THROTTLE</span>
       <span id="ipadThrottleValue">0%</span>
     </div>
-    <input class="ipadThrottleSlider" id="ipadThrottleSlider" type="range" min="0" max="100" step="1" value="0">
+    <div class="ipadThrottleSlider" id="ipadThrottleSlider" role="slider" aria-label="iPad throttle" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="ipadThrottleFill" id="ipadThrottleFill"></div>
+      <div class="ipadThrottleKnob" id="ipadThrottleKnob"></div>
+    </div>
   </div>
   <button class="ipadBrakePedal" id="ipadBrakePedal" type="button" aria-label="Brake pedal">BRAKE</button>
 </div>
@@ -1559,7 +1575,10 @@ const throttleSlider = document.getElementById("throttleSlider");
 const throttleValue = document.getElementById("throttleValue");
 const ipadControlsToggle = document.getElementById("ipadControlsToggle");
 const ipadControlsPanel = document.getElementById("ipadControlsPanel");
+const ipadThrottleWrap = document.querySelector(".ipadThrottleWrap");
 const ipadThrottleSlider = document.getElementById("ipadThrottleSlider");
+const ipadThrottleFill = document.getElementById("ipadThrottleFill");
+const ipadThrottleKnob = document.getElementById("ipadThrottleKnob");
 const ipadThrottleValue = document.getElementById("ipadThrottleValue");
 const ipadBrakePedal = document.getElementById("ipadBrakePedal");
 const runwayDebugHud = document.getElementById("runwayDebugHud");
@@ -14782,6 +14801,8 @@ let ipadTiltCalibrateBetaSum = 0;
 let ipadTiltCalibrateGammaSum = 0;
 let ipadPitchInput = 0;
 let ipadBankInput = 0;
+let ipadTargetPitchRad = 0;
+let ipadTargetBankRad = 0;
 let pitchFlightActive = false;
 const pitchFlightDir = new THREE.Vector3(0, 0, -1);
 const __tmpCameraForward = new THREE.Vector3();
@@ -14795,6 +14816,9 @@ const IPAD_TILT_FILTER_ALPHA = 0.22;
 const IPAD_TILT_CALIBRATE_DELAY_MS = 450;
 const IPAD_TILT_RESPONSE_PER_SEC = 14.0;
 const IPAD_TILT_MAX_INPUT_CHANGE_PER_SEC = 2.4;
+const IPAD_PITCH_RATE_RAD_PER_SEC = THREE.MathUtils.degToRad(42.0);
+const IPAD_BANK_RATE_RAD_PER_SEC = THREE.MathUtils.degToRad(70.0);
+const IPAD_YAW_ASSIST = 1.18;
 let throttleSpeedMult = 1.00;
 let effectiveThrottleMult = 0.00;
 let currentSpeedMult = 0.00;
@@ -14851,7 +14875,13 @@ function setThrottleMult(next){
     throttleSlider.value = String(uiPct);
   }
   if(ipadThrottleSlider){
-    ipadThrottleSlider.value = String(uiPct);
+    ipadThrottleSlider.setAttribute("aria-valuenow", String(uiPct));
+  }
+  if(ipadThrottleFill){
+    ipadThrottleFill.style.height = uiPct + "%";
+  }
+  if(ipadThrottleKnob){
+    ipadThrottleKnob.style.bottom = uiPct + "%";
   }
   if(throttleValue){
     throttleValue.textContent = uiPct + "%";
@@ -14869,6 +14899,8 @@ function updateIpadControlsUi(){
   if(ipadControlsEnabled && !isLandscape()){
     ipadPitchInput = 0;
     ipadBankInput = 0;
+    ipadTargetPitchRad = 0;
+    ipadTargetBankRad = 0;
   }
   if(ipadControlsToggle){
     ipadControlsToggle.classList.toggle("on", ipadControlsEnabled);
@@ -14880,6 +14912,8 @@ function updateIpadControlsUi(){
   if(!ipadControlsEnabled){
     ipadPitchInput = 0;
     ipadBankInput = 0;
+    ipadTargetPitchRad = 0;
+    ipadTargetBankRad = 0;
     if(ipadBrakePedal) ipadBrakePedal.classList.remove("active");
   }
 }
@@ -14893,6 +14927,8 @@ function resetIpadTiltCalibration(){
   ipadTiltCalibrateGammaSum = 0;
   ipadPitchInput = 0;
   ipadBankInput = 0;
+  ipadTargetPitchRad = 0;
+  ipadTargetBankRad = 0;
 }
 
 function handleIpadOrientation(ev){
@@ -14938,6 +14974,10 @@ function approachIpadTiltInput(current, target, dt){
   return current + THREE.MathUtils.clamp(desired - current, -maxStep, maxStep);
 }
 
+function approachAngle(current, target, maxDelta){
+  return current + THREE.MathUtils.clamp(target - current, -maxDelta, maxDelta);
+}
+
 async function setIpadControlsEnabled(on){
   ipadControlsEnabled = !!on;
   if(ipadControlsEnabled){
@@ -14974,6 +15014,7 @@ if(ipadControlsToggle){
   });
 }
 if(ipadThrottleSlider){
+  let ipadThrottleDragging = false;
   const setIpadThrottleFromPct = (pct)=>{
     setThrottleMult((Math.max(0, Math.min(100, pct)) / 100) * THROTTLE_UI_FULL_SCALE_MULT);
   };
@@ -14985,24 +15026,30 @@ if(ipadThrottleSlider){
   };
   const beginIpadThrottleDrag = (ev)=>{
     if(ev) ev.preventDefault();
+    ipadThrottleDragging = true;
     const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
     setIpadThrottleFromClientY(t.clientY);
   };
   const moveIpadThrottleDrag = (ev)=>{
+    if(!ipadThrottleDragging) return;
     if(ev) ev.preventDefault();
     const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
     setIpadThrottleFromClientY(t.clientY);
   };
-  ipadThrottleSlider.addEventListener("input", ()=>{
-    const pct = Number(ipadThrottleSlider.value) || 0;
-    setIpadThrottleFromPct(pct);
-  });
+  const endIpadThrottleDrag = (ev)=>{
+    if(ev) ev.preventDefault();
+    ipadThrottleDragging = false;
+  };
   ipadThrottleSlider.addEventListener("pointerdown", beginIpadThrottleDrag);
-  ipadThrottleSlider.addEventListener("pointermove", (ev)=>{
-    if(ev.buttons) moveIpadThrottleDrag(ev);
-  });
+  if(ipadThrottleWrap) ipadThrottleWrap.addEventListener("pointerdown", beginIpadThrottleDrag);
+  window.addEventListener("pointermove", moveIpadThrottleDrag);
+  window.addEventListener("pointerup", endIpadThrottleDrag);
+  window.addEventListener("pointercancel", endIpadThrottleDrag);
   ipadThrottleSlider.addEventListener("touchstart", beginIpadThrottleDrag, { passive:false });
-  ipadThrottleSlider.addEventListener("touchmove", moveIpadThrottleDrag, { passive:false });
+  if(ipadThrottleWrap) ipadThrottleWrap.addEventListener("touchstart", beginIpadThrottleDrag, { passive:false });
+  window.addEventListener("touchmove", moveIpadThrottleDrag, { passive:false });
+  window.addEventListener("touchend", endIpadThrottleDrag, { passive:false });
+  window.addEventListener("touchcancel", endIpadThrottleDrag, { passive:false });
 }
 if(ipadBrakePedal){
   const pressBrake = (ev)=>{
@@ -16638,21 +16685,33 @@ function animate(){
     ipadPitchInput = approachIpadTiltInput(ipadPitchInput, 0, dt);
     ipadBankInput = approachIpadTiltInput(ipadBankInput, 0, dt);
   }
+  ipadTargetPitchRad = spawnPitchBaselineRad + (ipadPitchInput * CAMERA_LOOK_DOWN_MAX_RAD);
+  ipadTargetPitchRad = THREE.MathUtils.clamp(
+    ipadTargetPitchRad,
+    spawnPitchBaselineRad - CAMERA_LOOK_DOWN_MAX_RAD,
+    spawnPitchBaselineRad + CAMERA_LOOK_DOWN_MAX_RAD
+  );
+  ipadTargetBankRad = -ipadBankInput * ARROW_RIGHT_ROLL_MAX_RAD;
   {
     const targetRoll = ipadControlsEnabled
-      ? -ipadBankInput * ARROW_RIGHT_ROLL_MAX_RAD
+      ? ipadTargetBankRad
       : (arrowRightHeld && !arrowLeftHeld)
       ? -ARROW_RIGHT_ROLL_MAX_RAD
       : (arrowLeftHeld && !arrowRightHeld)
         ? ARROW_RIGHT_ROLL_MAX_RAD
         : 0;
-    const springAcc =
-      ((targetRoll - arrowRightRoll) * ARROW_ROLL_REBOUND_STIFFNESS) -
-      (arrowRightRollVel * ARROW_ROLL_REBOUND_DAMPING);
-    arrowRightRollVel += springAcc * dt;
-    arrowRightRoll += (arrowRightRollVel * dt);
-    const k = Math.min(1, Math.max(0, ARROW_RIGHT_ROLL_SMOOTH * dt));
-    arrowRightRoll += (targetRoll - arrowRightRoll) * (0.2 * k);
+    if(ipadControlsEnabled){
+      arrowRightRoll = approachAngle(arrowRightRoll, targetRoll, IPAD_BANK_RATE_RAD_PER_SEC * dt);
+      arrowRightRollVel = 0;
+    } else {
+      const springAcc =
+        ((targetRoll - arrowRightRoll) * ARROW_ROLL_REBOUND_STIFFNESS) -
+        (arrowRightRollVel * ARROW_ROLL_REBOUND_DAMPING);
+      arrowRightRollVel += springAcc * dt;
+      arrowRightRoll += (arrowRightRollVel * dt);
+      const k = Math.min(1, Math.max(0, ARROW_RIGHT_ROLL_SMOOTH * dt));
+      arrowRightRoll += (targetRoll - arrowRightRoll) * (0.2 * k);
+    }
     if(Math.abs(arrowRightRoll) < 1e-5 && Math.abs(arrowRightRollVel) < 1e-5 && targetRoll === 0){
       arrowRightRoll = 0;
       arrowRightRollVel = 0;
@@ -16660,11 +16719,7 @@ function animate(){
     camera.rotation.z = arrowRightRoll;
   }
   if(ipadControlsEnabled){
-    camera.rotation.x = THREE.MathUtils.clamp(
-      spawnPitchBaselineRad + (ipadPitchInput * CAMERA_LOOK_DOWN_MAX_RAD),
-      spawnPitchBaselineRad - CAMERA_LOOK_DOWN_MAX_RAD,
-      spawnPitchBaselineRad + CAMERA_LOOK_DOWN_MAX_RAD
-    );
+    camera.rotation.x = approachAngle(camera.rotation.x, ipadTargetPitchRad, IPAD_PITCH_RATE_RAD_PER_SEC * dt);
     if(Math.abs(ipadPitchInput) > 0.04 || Math.abs(ipadBankInput) > 0.04){
       camera.getWorldDirection(__tmpCameraForward);
       if(__tmpCameraForward.lengthSq() > 1e-8){
@@ -16754,7 +16809,7 @@ function animate(){
         -1,
         1
       );
-      turn += bankTurnInput * ARROW_TURN_RATE_SCALE;
+      turn += bankTurnInput * ARROW_TURN_RATE_SCALE * (ipadControlsEnabled ? IPAD_YAW_ASSIST : 1.0);
     } else {
       if(arrowLeftHeld) turn += ARROW_TURN_RATE_SCALE;
       if(arrowRightHeld) turn -= ARROW_TURN_RATE_SCALE;

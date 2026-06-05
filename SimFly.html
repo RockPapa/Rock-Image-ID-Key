@@ -14773,6 +14773,13 @@ let ipadTiltBaseBeta = 0;
 let ipadTiltBaseGamma = 0;
 let ipadTiltBeta = 0;
 let ipadTiltGamma = 0;
+let ipadTiltFilteredBeta = 0;
+let ipadTiltFilteredGamma = 0;
+let ipadTiltFilterReady = false;
+let ipadTiltCalibrateUntilMs = 0;
+let ipadTiltCalibrateCount = 0;
+let ipadTiltCalibrateBetaSum = 0;
+let ipadTiltCalibrateGammaSum = 0;
 let ipadPitchInput = 0;
 let ipadBankInput = 0;
 let pitchFlightActive = false;
@@ -14784,7 +14791,10 @@ let arrowBankTargetRoll = 0;
 const IPAD_TILT_PITCH_MAX_DEG = 14.0;
 const IPAD_TILT_BANK_MAX_DEG = 16.0;
 const IPAD_TILT_DEADBAND_DEG = 1.2;
-const IPAD_TILT_SMOOTH_PER_SEC = 18.0;
+const IPAD_TILT_FILTER_ALPHA = 0.22;
+const IPAD_TILT_CALIBRATE_DELAY_MS = 450;
+const IPAD_TILT_RESPONSE_PER_SEC = 14.0;
+const IPAD_TILT_MAX_INPUT_CHANGE_PER_SEC = 2.4;
 let throttleSpeedMult = 1.00;
 let effectiveThrottleMult = 0.00;
 let currentSpeedMult = 0.00;
@@ -14874,6 +14884,17 @@ function updateIpadControlsUi(){
   }
 }
 
+function resetIpadTiltCalibration(){
+  ipadTiltCalibrated = false;
+  ipadTiltFilterReady = false;
+  ipadTiltCalibrateUntilMs = performance.now() + IPAD_TILT_CALIBRATE_DELAY_MS;
+  ipadTiltCalibrateCount = 0;
+  ipadTiltCalibrateBetaSum = 0;
+  ipadTiltCalibrateGammaSum = 0;
+  ipadPitchInput = 0;
+  ipadBankInput = 0;
+}
+
 function handleIpadOrientation(ev){
   if(!ipadControlsEnabled) return;
   if(!isLandscape()) return;
@@ -14881,19 +14902,46 @@ function handleIpadOrientation(ev){
   const gamma = Number(ev.gamma);
   if(!Number.isFinite(beta) || !Number.isFinite(gamma)) return;
   ipadTiltAvailable = true;
-  if(!ipadTiltCalibrated){
-    ipadTiltBaseBeta = beta;
-    ipadTiltBaseGamma = gamma;
-    ipadTiltCalibrated = true;
+  if(!ipadTiltFilterReady){
+    ipadTiltFilteredBeta = beta;
+    ipadTiltFilteredGamma = gamma;
+    ipadTiltFilterReady = true;
+  } else {
+    ipadTiltFilteredBeta += (beta - ipadTiltFilteredBeta) * IPAD_TILT_FILTER_ALPHA;
+    ipadTiltFilteredGamma += (gamma - ipadTiltFilteredGamma) * IPAD_TILT_FILTER_ALPHA;
   }
-  ipadTiltBeta = beta;
-  ipadTiltGamma = gamma;
+  ipadTiltBeta = ipadTiltFilteredBeta;
+  ipadTiltGamma = ipadTiltFilteredGamma;
+  if(!ipadTiltCalibrated){
+    ipadTiltCalibrateBetaSum += ipadTiltFilteredBeta;
+    ipadTiltCalibrateGammaSum += ipadTiltFilteredGamma;
+    ipadTiltCalibrateCount += 1;
+    if(performance.now() >= ipadTiltCalibrateUntilMs && ipadTiltCalibrateCount >= 3){
+      ipadTiltBaseBeta = ipadTiltCalibrateBetaSum / ipadTiltCalibrateCount;
+      ipadTiltBaseGamma = ipadTiltCalibrateGammaSum / ipadTiltCalibrateCount;
+      ipadTiltCalibrated = true;
+    }
+  }
+}
+
+function normalizeIpadTilt(deltaDeg, maxDeg){
+  const mag = Math.abs(deltaDeg);
+  if(mag <= IPAD_TILT_DEADBAND_DEG) return 0;
+  const usable = Math.max(0.001, maxDeg - IPAD_TILT_DEADBAND_DEG);
+  return Math.sign(deltaDeg) * THREE.MathUtils.clamp((mag - IPAD_TILT_DEADBAND_DEG) / usable, 0, 1);
+}
+
+function approachIpadTiltInput(current, target, dt){
+  const alpha = Math.min(1, IPAD_TILT_RESPONSE_PER_SEC * dt);
+  const desired = current + ((target - current) * alpha);
+  const maxStep = Math.max(0.001, IPAD_TILT_MAX_INPUT_CHANGE_PER_SEC * dt);
+  return current + THREE.MathUtils.clamp(desired - current, -maxStep, maxStep);
 }
 
 async function setIpadControlsEnabled(on){
   ipadControlsEnabled = !!on;
   if(ipadControlsEnabled){
-    ipadTiltCalibrated = false;
+    resetIpadTiltCalibration();
     if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
       try{
         const permission = await DeviceOrientationEvent.requestPermission();
@@ -14912,9 +14960,10 @@ async function setIpadControlsEnabled(on){
 }
 
 window.addEventListener("deviceorientation", handleIpadOrientation, true);
+window.addEventListener("deviceorientationabsolute", handleIpadOrientation, true);
 window.addEventListener("resize", updateIpadControlsUi);
 window.addEventListener("orientationchange", ()=>{
-  ipadTiltCalibrated = false;
+  resetIpadTiltCalibration();
   updateIpadControlsUi();
 });
 
@@ -14925,10 +14974,35 @@ if(ipadControlsToggle){
   });
 }
 if(ipadThrottleSlider){
+  const setIpadThrottleFromPct = (pct)=>{
+    setThrottleMult((Math.max(0, Math.min(100, pct)) / 100) * THROTTLE_UI_FULL_SCALE_MULT);
+  };
+  const setIpadThrottleFromClientY = (clientY)=>{
+    const r = ipadThrottleSlider.getBoundingClientRect();
+    const y = Math.max(r.top, Math.min(r.bottom, Number(clientY) || r.bottom));
+    const pct = ((r.bottom - y) / Math.max(1, r.height)) * 100;
+    setIpadThrottleFromPct(pct);
+  };
+  const beginIpadThrottleDrag = (ev)=>{
+    if(ev) ev.preventDefault();
+    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    setIpadThrottleFromClientY(t.clientY);
+  };
+  const moveIpadThrottleDrag = (ev)=>{
+    if(ev) ev.preventDefault();
+    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    setIpadThrottleFromClientY(t.clientY);
+  };
   ipadThrottleSlider.addEventListener("input", ()=>{
     const pct = Number(ipadThrottleSlider.value) || 0;
-    setThrottleMult((pct / 100) * THROTTLE_UI_FULL_SCALE_MULT);
+    setIpadThrottleFromPct(pct);
   });
+  ipadThrottleSlider.addEventListener("pointerdown", beginIpadThrottleDrag);
+  ipadThrottleSlider.addEventListener("pointermove", (ev)=>{
+    if(ev.buttons) moveIpadThrottleDrag(ev);
+  });
+  ipadThrottleSlider.addEventListener("touchstart", beginIpadThrottleDrag, { passive:false });
+  ipadThrottleSlider.addEventListener("touchmove", moveIpadThrottleDrag, { passive:false });
 }
 if(ipadBrakePedal){
   const pressBrake = (ev)=>{
@@ -16556,19 +16630,13 @@ function animate(){
   if(ipadControlsEnabled && ipadTiltCalibrated){
     const betaDelta = ipadTiltBeta - ipadTiltBaseBeta;
     const gammaDelta = ipadTiltGamma - ipadTiltBaseGamma;
-    const pitchRaw = Math.abs(betaDelta) <= IPAD_TILT_DEADBAND_DEG
-      ? 0
-      : THREE.MathUtils.clamp(-betaDelta / IPAD_TILT_PITCH_MAX_DEG, -1, 1);
-    const bankRaw = Math.abs(gammaDelta) <= IPAD_TILT_DEADBAND_DEG
-      ? 0
-      : THREE.MathUtils.clamp(gammaDelta / IPAD_TILT_BANK_MAX_DEG, -1, 1);
-    const tiltAlpha = Math.min(1, IPAD_TILT_SMOOTH_PER_SEC * dt);
-    ipadPitchInput += (pitchRaw - ipadPitchInput) * tiltAlpha;
-    ipadBankInput += (bankRaw - ipadBankInput) * tiltAlpha;
+    const pitchTarget = -normalizeIpadTilt(betaDelta, IPAD_TILT_PITCH_MAX_DEG);
+    const bankTarget = normalizeIpadTilt(gammaDelta, IPAD_TILT_BANK_MAX_DEG);
+    ipadPitchInput = approachIpadTiltInput(ipadPitchInput, pitchTarget, dt);
+    ipadBankInput = approachIpadTiltInput(ipadBankInput, bankTarget, dt);
   } else {
-    const tiltAlpha = Math.min(1, IPAD_TILT_SMOOTH_PER_SEC * dt);
-    ipadPitchInput += (0 - ipadPitchInput) * tiltAlpha;
-    ipadBankInput += (0 - ipadBankInput) * tiltAlpha;
+    ipadPitchInput = approachIpadTiltInput(ipadPitchInput, 0, dt);
+    ipadBankInput = approachIpadTiltInput(ipadBankInput, 0, dt);
   }
   {
     const targetRoll = ipadControlsEnabled

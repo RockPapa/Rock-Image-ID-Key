@@ -183,6 +183,15 @@
   }
   .mainMenuBackBtn.on{ display:inline-block; }
   .mainMenuBackBtn:active{ transform:translateY(1px); }
+  .modeMenuBtn,
+  .trainingBtn,
+  .trainingBackBtn,
+  .flightControlsToggle,
+  .mainMenuBackBtn,
+  .ipadControlsToggle{
+    touch-action:manipulation;
+    -webkit-tap-highlight-color:transparent;
+  }
   @media (max-width: 820px){
     .modeMenuOverlay{ padding:18px; }
     .modeMenuCard{ min-height:68vh; padding:30px 22px 24px; }
@@ -14976,6 +14985,31 @@ function resetIpadJoystick(){
   setIpadJoystickKnob(0, 0);
 }
 
+function installIpadTouchButtonBridge(){
+  const selector = ".modeMenuBtn, .trainingBtn, .trainingBackBtn, .flightControlsToggle, .mainMenuBackBtn, .ipadControlsToggle";
+  let bridgedClickActive = false;
+  let lastTouchButtonMs = -10000;
+  document.addEventListener("touchend", (ev)=>{
+    const target = ev.target && ev.target.closest ? ev.target.closest(selector) : null;
+    if(!target || target.disabled) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    lastTouchButtonMs = performance.now();
+    bridgedClickActive = true;
+    target.click();
+    bridgedClickActive = false;
+  }, { passive:false });
+  document.addEventListener("click", (ev)=>{
+    if(bridgedClickActive) return;
+    const target = ev.target && ev.target.closest ? ev.target.closest(selector) : null;
+    if(!target) return;
+    if(performance.now() - lastTouchButtonMs < 550){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+  }, true);
+}
+
 function updateIpadJoystickFromPoint(clientX, clientY){
   if(!ipadJoyWrap) return;
   const r = ipadJoyWrap.getBoundingClientRect();
@@ -15005,6 +15039,8 @@ window.addEventListener("resize", updateIpadControlsUi);
 window.addEventListener("orientationchange", ()=>{
   updateIpadControlsUi();
 });
+
+installIpadTouchButtonBridge();
 
 if(ipadControlsToggle){
   ipadControlsToggle.addEventListener("click", (e)=>{

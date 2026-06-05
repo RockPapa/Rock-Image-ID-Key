@@ -56,22 +56,6 @@
   0%,100% { transform: scale(1); box-shadow: 0 10px 24px rgba(0,0,0,.45); }
   50% { transform: scale(1.02); box-shadow: 0 12px 30px rgba(255,237,138,.35); }
 }
-  #btnPickFolder{
-    position:fixed;
-    left:18px;
-    top:98px;
-    z-index:31;
-    display:inline-block;
-    margin:0;
-    padding:10px 12px;
-    border-radius:10px;
-    border:1px solid rgba(255,255,255,.24);
-    background:rgba(61,130,246,.92);
-    color:#fff;
-    font:700 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    cursor:pointer;
-  }
-  #btnPickFolder:hover{ filter:brightness(1.06); }
 code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 @media (max-width: 900px){
   .alienObjective{
@@ -81,7 +65,6 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
     width:calc(100vw - 36px);
     max-width:460px;
   }
-  #btnPickFolder{ top:170px; }
 }
 
 /* =========================
@@ -365,8 +348,6 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   </div>
 </div>
 
-<button id="btnPickFolder">Load TRUCK RESCUE FILES</button>
-<input id="folderInput" type="file" webkitdirectory directory multiple style="display:none;">
 <div class="hud hidden" id="hud"></div>
 
 <script type="module">
@@ -374,8 +355,7 @@ import * as THREE from "three";
 import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
-const pickedAssetMap = new Map();
-let pickedAssetUrlsToRevoke = [];
+const ASSET_BASE_DIR = "truck-rescue-files/";
 
 function normalizeAssetName(url){
   if(!url) return "";
@@ -385,69 +365,25 @@ function normalizeAssetName(url){
   return decodeURIComponent(last).toLowerCase();
 }
 
-function clearPickedAssets(){
-  for(const u of pickedAssetUrlsToRevoke){
-    try{ URL.revokeObjectURL(u); }catch(e){}
-  }
-  pickedAssetUrlsToRevoke = [];
-  pickedAssetMap.clear();
-}
-
-function setPickedFolderFiles(files){
-  clearPickedAssets();
-  for(const file of files){
-    const name = String(file.name || "").toLowerCase();
-    if(!name) continue;
-    const url = URL.createObjectURL(file);
-    pickedAssetUrlsToRevoke.push(url);
-    if(!pickedAssetMap.has(name)) pickedAssetMap.set(name, url);
-  }
-}
-
 function resolveAssetUrl(url){
-  if(!pickedAssetMap.size) return url;
-  const name = normalizeAssetName(url);
-  if(!name) return url;
-  return pickedAssetMap.get(name) || url;
+  const raw = String(url || "");
+  if(!raw) return raw;
+  if(/^(?:https?:|data:|blob:)/i.test(raw)) return raw;
+  if(raw.startsWith(ASSET_BASE_DIR)) return raw;
+  if(raw.startsWith("/") || raw.startsWith("./")) return raw;
+  const name = normalizeAssetName(raw);
+  const query = raw.includes("?") ? raw.slice(raw.indexOf("?")) : "";
+  const isAsset = /\.(?:png|jpe?g|gif|webp|mp3|m4a|wav|ogg|exr)$/i.test(name);
+  if(isAsset && (raw.indexOf("/") === -1 || raw.startsWith("../"))){
+    return ASSET_BASE_DIR + name + query;
+  }
+  return raw;
 }
-
-window.addEventListener("beforeunload", clearPickedAssets);
 
 const _origTextureLoad = THREE.TextureLoader.prototype.load;
 THREE.TextureLoader.prototype.load = function(url, onLoad, onProgress, onError){
   return _origTextureLoad.call(this, resolveAssetUrl(url), onLoad, onProgress, onError);
 };
-
-await new Promise((resolve)=>{
-  const btn = document.getElementById("btnPickFolder");
-  const input = document.getElementById("folderInput");
-  if(!btn || !input){ resolve(); return; }
-
-  // Hosted builds (GitHub Pages / web server) should load directly from TEX_DIR.
-  // Local file:// development keeps the manual folder picker workflow.
-  const hostedWeb = /^https?:$/i.test(String(location.protocol || ""));
-  if(hostedWeb){
-    btn.style.display = "none";
-    resolve();
-    return;
-  }
-
-  const choose = ()=>{
-    input.value = "";
-    input.click();
-  };
-  btn.addEventListener("click", choose);
-  input.addEventListener("change", (e)=>{
-    const files = Array.from((e && e.target && e.target.files) ? e.target.files : []);
-    if(!files.length){
-      btn.textContent = "Load TRUCK RESCUE FILES";
-      return;
-    }
-    setPickedFolderFiles(files);
-    btn.style.display = "none";
-    resolve();
-  });
-});
 
 /* =========================
    TWEAK ZONE (Dan knobs)
@@ -465,7 +401,7 @@ const LOW_ZONE_STUCK_HEALTH_PCT = 10;
 const LOW_ZONE_RESTICK_GRACE_SEC = 5.0;
 const LOW_ZONE_STUCK_ENABLE = false; // paused for later reinstatement
 
-const TEX_DIR = "truck-rescue-files/";
+const TEX_DIR = ASSET_BASE_DIR;
 const CAVE_EXTERIOR_TEXTURE_FILE = "Cave_art.png";
 const CAVE_INTERIOR_TEXTURE_FILE = "Cave_art.png";
 const CAVE_INTERIOR_TEXTURE_ASPECT = 1414.0 / 799.0; // Cave_art.png width / height
@@ -488,7 +424,7 @@ const COPTER_MUSIC_FILE = "copter_music.mp3";
 const COPTER_MUSIC_ENABLE = true;
 const COPTER_MUSIC_VOL = 0.196; // -30%
 const FIRE_RING_AMBIENT_FILE = "ring_of_fire.mp3";
-const FIRE_RING_AMBIENT_FALLBACK_FILE = "ring_of _fire.m4a";
+const FIRE_RING_AMBIENT_FALLBACK_FILE = "ring_of_fire.m4a";
 const FIRE_RING_AMBIENT_FALLBACK_FILE_2 = "fire.mp3";
 const FIRE_RING_AMBIENT_ENABLE = true;
 const FIRE_RING_AMBIENT_VOL = 0.62;
@@ -542,9 +478,9 @@ const ORANGE_TRUCK_RIGHT_FILE = "orange_truck_right.png";
 const ORANGE_TRUCK_HALF_LEFT_FILE = "orange_truck_half_left.png";
 const ORANGE_TRUCK_HALF_RIGHT_FILE = "orange_truck_half_right.png";
 const ORANGE_TRUCK_LEGACY_FILE = "orange_truck 2.png";
-const WHITE_TRUCK_BASE_FILE = "../VEHICLES/white_truck.png";
-const WHITE_TRUCK_LEFT_FILE = "../VEHICLES/white_truck_left.png";
-const WHITE_TRUCK_RIGHT_FILE = "../VEHICLES/white_truck_right.png";
+const WHITE_TRUCK_BASE_FILE = "white_truck.png";
+const WHITE_TRUCK_LEFT_FILE = "white_truck_left.png";
+const WHITE_TRUCK_RIGHT_FILE = "white_truck_right.png";
 const BIGFOOT_BASE_FILE = "bigfoot.png";
 const BIGFOOT_LEFT_FILE = "bigfoot_left.png";
 const BIGFOOT_RIGHT_FILE = "bigfoot_right.png";
@@ -1075,7 +1011,6 @@ const miniMapMetaWrap = document.querySelector(".miniMapMeta");
 const touchHintWrap = document.getElementById("touchHint");
 const touchToggleWrap = document.getElementById("touchToggle");
 const touchUIWrap = document.getElementById("touchUI");
-const pickFolderBtn = document.getElementById("btnPickFolder");
 let playerHealthPct = 100;
 const TRUCK_FIRE_HEALTH_THRESHOLD_PCT = 50;
 const GREEN_SQUARE_MARKER_X = -1000;

@@ -54,6 +54,14 @@
     overflow: hidden;
     transform-origin: center 35%;
     will-change: transform;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #scene.prestart #video,
+  #scene.prestart #aiTruck,
+  #scene.prestart #playerTruck {
+    display: none !important;
   }
 
   #scene.camera-active {
@@ -100,7 +108,7 @@
   #startOverlay {
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -131,6 +139,7 @@
   #picksButtons {
     position: absolute;
     inset: 0;
+    z-index: 4;
   }
 
   .pick-hotspot {
@@ -143,6 +152,8 @@
     cursor: pointer;
     padding: 0;
     z-index: 1;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .pick-hotspot:hover {
@@ -417,7 +428,7 @@
 </style>
 </head>
 <body>
-<div id="scene" class="camera-active">
+<div id="scene" class="camera-active prestart">
   <video
     id="video"
     src="images/road.mp4"
@@ -626,6 +637,7 @@
   };
   let selectedTruckChoiceId = 2;
   let selectedBlueTruckSrc = playerTruck.getAttribute("src") || "images/blue_truck.png";
+  let vehicleChoiceLocked = false;
 
   function setCubeFaceLabel(labelText) {
     cubeFaces.forEach((face) => {
@@ -818,7 +830,9 @@
 
   function startExperience() {
     if (experienceStarted) return;
+    vehicleChoiceLocked = true;
     experienceStarted = true;
+    scene.classList.remove("prestart");
     playerTruck.src = selectedBlueTruckSrc;
     aiTruck.src = "images/orange_truck.png";
     applyPlayerTruckSelectionSize();
@@ -1283,15 +1297,25 @@
       btn.style.width = `${choice.width}%`;
       btn.style.height = `${choice.height}%`;
       btn.setAttribute("aria-label", `Choose vehicle ${choice.id}`);
-      btn.addEventListener("click", () => {
+      const chooseVehicle = (ev) => {
+        if (ev) {
+          ev.preventDefault();
+          ev.stopPropagation();
+        }
+        if (vehicleChoiceLocked || experienceStarted) return;
+        vehicleChoiceLocked = true;
         selectedTruckChoiceId = choice.id;
         selectedBlueTruckSrc = choice.src;
         playerTruck.src = selectedBlueTruckSrc;
         applyPlayerTruckSelectionSize();
         refreshTruckSizeCache();
-        renderPicksHotspots();
         startExperience();
-      });
+      };
+      btn.addEventListener("pointerdown", chooseVehicle, { passive:false });
+      btn.addEventListener("click", (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      }, { passive:false });
       picksButtons.appendChild(btn);
     });
   }

@@ -7,6 +7,7 @@
 <style>
   html,body{margin:0;height:100%;background:#0b1220;overflow:hidden;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
   #hud{
+    display:none !important;
     position:fixed;left:118px;top:14px;z-index:10;
     background:rgba(10,20,35,.82);backdrop-filter: blur(3px);
     border:1px solid rgba(255,255,255,.14);
@@ -156,7 +157,7 @@
     top:14px;
     left:calc(118px + min(420px, calc(100vw - 28px)) + 20px);
     z-index:11;
-    width:min(360px, calc(100vw - 560px));
+    width:min(180px, calc(100vw - 560px));
     background:rgba(10,20,35,.82);
     border:1px solid rgba(255,255,255,.2);
     border-radius:10px;
@@ -256,7 +257,7 @@
   }
   @media (max-width: 1120px){
     #btnTouchControls{
-      left:118px;
+      left:calc(118px + min(420px, calc(100vw - 28px)) + 20px);
       top:74px;
     }
   }
@@ -276,7 +277,7 @@
   document.title = "Avatar Terrain";
 </script>
 
-<div id="hud">
+<div id="hud" aria-hidden="true">
   <h1>Avatar Terrain · folder auto-load (H hides HUD) · Build A</h1>
   <div class="tiny">
     Auto-loads assets from the local <code>images/</code> folder:
@@ -6536,7 +6537,7 @@ const hudEl = document.getElementById("hud");
 let hudVisible = true;
 function setHudVisible(v){
   hudVisible = !!v;
-  hudEl.style.display = hudVisible ? "block" : "none";
+  if(hudEl) hudEl.style.display = "none";
 }
 
 function updateModeButton(id, isOn){

@@ -14532,6 +14532,9 @@ const gyroState = {
   enabled:false,
   available:false,
   calibrated:false,
+  waitingForSensor:false,
+  lastEventMs:0,
+  noSensorTimer:0,
   rawPitchDeg:0,
   rawBankDeg:0,
   basePitchDeg:0,
@@ -14647,7 +14650,9 @@ function updateGyroButton(){
   if(!ipadGyroBtn) return;
   ipadGyroBtn.classList.toggle("on", gyroState.enabled);
   ipadGyroBtn.classList.toggle("warn", !gyroState.enabled && gyroState.available);
-  ipadGyroBtn.textContent = gyroState.enabled ? "GYRO ON" : "GYRO";
+  ipadGyroBtn.textContent = gyroState.enabled
+    ? (gyroState.waitingForSensor ? "GYRO WAIT" : "GYRO ON")
+    : "GYRO";
 }
 
 function calibrateGyroNeutral(){
@@ -14664,6 +14669,8 @@ function handleDeviceOrientation(ev){
   if(!GYRO_CONTROLS_ENABLE) return;
   if(ev.beta === null && ev.gamma === null) return;
   gyroState.available = true;
+  gyroState.waitingForSensor = false;
+  gyroState.lastEventMs = performance.now();
   const axes = getGyroAxesFromEvent(ev);
   gyroState.rawPitchDeg = axes.pitchDeg;
   gyroState.rawBankDeg = axes.bankDeg;
@@ -14673,28 +14680,53 @@ function handleDeviceOrientation(ev){
   const bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
   gyroState.pitchInput = THREE.MathUtils.clamp(pitchDelta / GYRO_PITCH_MAX_DEG, -1, 1);
   gyroState.bankInput = THREE.MathUtils.clamp(bankDelta / GYRO_BANK_MAX_DEG, -1, 1);
+  updateGyroButton();
+}
+
+async function requestGyroPermissionFromBrowser(){
+  let requested = false;
+  let denied = false;
+  const requesters = [
+    (typeof DeviceOrientationEvent !== "undefined") ? DeviceOrientationEvent : null,
+    (typeof DeviceMotionEvent !== "undefined") ? DeviceMotionEvent : null
+  ];
+  for(const api of requesters){
+    if(!api || typeof api.requestPermission !== "function") continue;
+    requested = true;
+    const permission = await api.requestPermission();
+    if(permission !== "granted") denied = true;
+  }
+  return requested ? !denied : true;
 }
 
 async function enableGyroControls(){
   if(!GYRO_CONTROLS_ENABLE) return;
   try{
-    if(typeof DeviceOrientationEvent !== "undefined" && typeof DeviceOrientationEvent.requestPermission === "function"){
-      const permission = await DeviceOrientationEvent.requestPermission();
-      if(permission !== "granted"){
-        gyroState.enabled = false;
-        updateGyroButton();
-        hudLine("⚠️ Gyro permission was not granted.");
-        return;
-      }
+    const permissionGranted = await requestGyroPermissionFromBrowser();
+    if(!permissionGranted){
+      gyroState.enabled = false;
+      gyroState.waitingForSensor = false;
+      updateGyroButton();
+      hudLine("⚠️ Gyro permission was not granted.");
+      return;
     }
     gyroState.enabled = true;
     if(gyroState.available) calibrateGyroNeutral();
     else gyroState.calibrated = false;
+    gyroState.waitingForSensor = !gyroState.available;
+    gyroState.noSensorTimer = window.setTimeout(()=>{
+      if(gyroState.enabled && !gyroState.available){
+        gyroState.waitingForSensor = true;
+        updateGyroButton();
+        hudLine("⚠️ Gyro is ON, but no iPad motion data is arriving. Check Safari Settings > Motion & Orientation Access, then reload.");
+      }
+    }, 1800);
     updateGyroButton();
-    hudLine("📱 Gyro flight controls <code>ON</code>. Hold iPad level, then tap GYRO again to recalibrate/off.");
+    hudLine("📱 Gyro flight controls <code>ON</code>. Hold iPad level, then tilt for pitch and bank.");
   }catch(err){
     console.warn("Gyro permission failed:", err);
     gyroState.enabled = false;
+    gyroState.waitingForSensor = false;
     updateGyroButton();
     hudLine("⚠️ Gyro controls unavailable on this browser.");
   }
@@ -14702,6 +14734,11 @@ async function enableGyroControls(){
 
 function disableGyroControls(){
   gyroState.enabled = false;
+  gyroState.waitingForSensor = false;
+  if(gyroState.noSensorTimer){
+    clearTimeout(gyroState.noSensorTimer);
+    gyroState.noSensorTimer = 0;
+  }
   gyroState.pitchInput = 0;
   gyroState.bankInput = 0;
   updateGyroButton();
@@ -14709,6 +14746,7 @@ function disableGyroControls(){
 }
 
 window.addEventListener("deviceorientation", handleDeviceOrientation, true);
+window.addEventListener("deviceorientationabsolute", handleDeviceOrientation, true);
 window.addEventListener("orientationchange", ()=>{
   gyroState.calibrated = false;
   if(gyroState.enabled) setTimeout(calibrateGyroNeutral, 250);
@@ -14728,7 +14766,8 @@ if(ipadGyroBtn){
     }
   };
   ipadGyroBtn.addEventListener("pointerdown", toggleGyroFromGesture, { passive:false });
-  ipadGyroBtn.addEventListener("click", (ev)=>{ ev.preventDefault(); ev.stopPropagation(); }, { passive:false });
+  ipadGyroBtn.addEventListener("touchend", toggleGyroFromGesture, { passive:false });
+  ipadGyroBtn.addEventListener("click", toggleGyroFromGesture, { passive:false });
   updateGyroButton();
 }
 

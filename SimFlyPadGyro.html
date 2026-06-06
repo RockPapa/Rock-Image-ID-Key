@@ -260,12 +260,36 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   font:700 13px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
   letter-spacing:.04em;
 }
+.ipadThrottleStepBtn{
+  display:block;
+  width:58px;
+  height:42px;
+  margin:6px auto;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(14,165,233,.74);
+  color:#fff;
+  box-shadow:0 8px 16px rgba(0,0,0,.32);
+  font:900 24px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  pointer-events:auto;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.ipadThrottleStepBtn:active{
+  transform:translateY(1px);
+  background:rgba(34,197,94,.82);
+}
+.ipadThrottleStepBtn.active{
+  transform:translateY(1px);
+  background:rgba(34,197,94,.82);
+}
 .ipadThrottleSlider{
   position:relative;
   display:block;
   width:18px;
-  height:190px;
-  margin:8px auto 0;
+  height:104px;
+  margin:4px auto;
   border-radius:999px;
   background:rgba(10, 16, 28, .72);
   outline:none;
@@ -655,10 +679,12 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
       <span>THROTTLE</span>
       <span id="ipadThrottleValue">0%</span>
     </div>
+    <button class="ipadThrottleStepBtn" id="ipadThrottleUp" type="button" aria-label="Increase throttle">▲</button>
     <div class="ipadThrottleSlider" id="ipadThrottleSlider" role="slider" aria-label="iPad throttle" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
       <div class="ipadThrottleFill" id="ipadThrottleFill"></div>
       <div class="ipadThrottleKnob" id="ipadThrottleKnob"></div>
     </div>
+    <button class="ipadThrottleStepBtn" id="ipadThrottleDown" type="button" aria-label="Decrease throttle">▼</button>
   </div>
   <button class="ipadBrakePedal" id="ipadBrakePedal" type="button" aria-label="Brake pedal">BRAKE</button>
   <button class="ipadGyroBtn" id="ipadGyroBtn" type="button" aria-label="Toggle gyro flight controls">GYRO</button>
@@ -1416,6 +1442,8 @@ const ipadThrottleSlider = document.getElementById("ipadThrottleSlider");
 const ipadThrottleFill = document.getElementById("ipadThrottleFill");
 const ipadThrottleKnob = document.getElementById("ipadThrottleKnob");
 const ipadThrottleValue = document.getElementById("ipadThrottleValue");
+const ipadThrottleUp = document.getElementById("ipadThrottleUp");
+const ipadThrottleDown = document.getElementById("ipadThrottleDown");
 const ipadBrakePedal = document.getElementById("ipadBrakePedal");
 const ipadGyroBtn = document.getElementById("ipadGyroBtn");
 const ipadJoyWrap = document.getElementById("ipadJoyWrap");
@@ -14600,6 +14628,11 @@ function setThrottleMult(next){
   }
 }
 
+function stepThrottle(direction){
+  const dir = direction < 0 ? -1 : 1;
+  setThrottleMult(throttleSpeedMult + (THROTTLE_STEP_MULT * dir));
+}
+
 function isLandscape(){
   return window.matchMedia("(orientation: landscape)").matches;
 }
@@ -14862,6 +14895,7 @@ if(ipadThrottleSlider){
     setIpadThrottleFromPct(pct);
   };
   const beginIpadThrottleDrag = (ev)=>{
+    if(ev && ev.target && ev.target.closest && ev.target.closest(".ipadThrottleStepBtn")) return;
     if(ev) ev.preventDefault();
     ipadThrottleDragging = true;
     const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
@@ -14888,6 +14922,56 @@ if(ipadThrottleSlider){
   window.addEventListener("touchend", endIpadThrottleDrag, { passive:false });
   window.addEventListener("touchcancel", endIpadThrottleDrag, { passive:false });
 }
+function bindThrottleStepButton(btn, direction){
+  if(!btn) return;
+  let repeatTimer = 0;
+  let repeatDelayTimer = 0;
+  let lastStepGestureMs = -10000;
+  const stopRepeat = (ev)=>{
+    if(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    if(repeatDelayTimer){
+      clearTimeout(repeatDelayTimer);
+      repeatDelayTimer = 0;
+    }
+    if(repeatTimer){
+      clearInterval(repeatTimer);
+      repeatTimer = 0;
+    }
+    btn.classList.remove("active");
+  };
+  const startRepeat = (ev)=>{
+    if(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    const now = performance.now();
+    if(now - lastStepGestureMs < 120) return;
+    lastStepGestureMs = now;
+    stepThrottle(direction);
+    btn.classList.add("active");
+    stopRepeat();
+    btn.classList.add("active");
+    repeatDelayTimer = window.setTimeout(()=>{
+      repeatTimer = window.setInterval(()=>stepThrottle(direction), 170);
+    }, 420);
+  };
+  btn.addEventListener("pointerdown", startRepeat);
+  btn.addEventListener("pointerup", stopRepeat);
+  btn.addEventListener("pointercancel", stopRepeat);
+  btn.addEventListener("pointerleave", stopRepeat);
+  btn.addEventListener("touchstart", startRepeat, { passive:false });
+  btn.addEventListener("touchend", stopRepeat, { passive:false });
+  btn.addEventListener("touchcancel", stopRepeat, { passive:false });
+  btn.addEventListener("click", (ev)=>{
+    ev.preventDefault();
+    ev.stopPropagation();
+  }, { passive:false });
+}
+bindThrottleStepButton(ipadThrottleUp, 1);
+bindThrottleStepButton(ipadThrottleDown, -1);
 if(ipadBrakePedal){
   const pressBrake = (ev)=>{
     if(ev) ev.preventDefault();

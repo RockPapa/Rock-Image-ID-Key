@@ -492,7 +492,7 @@ const COMPANION_TRUCK_ENABLE = true;
 const COMPANION_TRUCK_FILE = "orange_truck.png";
 const COMPANION_TRUCK_SIDE_OFFSET = -3.6; // side-by-side on opposite side of blue truck
 const AI_RACER_ENABLE = false;
-const ORANGE_AUTORUN_START_KEY = "KeyZ";
+const ORANGE_AUTORUN_START_KEY = "ArrowUp";
 const ORANGE_AUTORUN_LAPS = 1;
 const ORANGE_AUTORUN_SPEED = 5.544 * 1.30 * 1.30 * 1.50 * 1.02 * 1.03; // +3% more orange base speed
 const ORANGE_AUTORUN_TURN_RATE = 1.15; // smoother tank-style steering (smaller per-frame yaw steps)
@@ -1363,7 +1363,7 @@ window.addEventListener("keydown", (e)=>{
     if (targetsRemaining === 0) startNextWave();
     else resetCurrentWave();
   }
-  if (e.code === ORANGE_AUTORUN_START_KEY && !e.repeat){
+  if (e.code === ORANGE_AUTORUN_START_KEY && !e.repeat && !raceStarted){
     startRace();
   }
 });
@@ -3504,6 +3504,27 @@ function ensureStartupPanel(){
   root.style.zIndex = "10020";
   root.style.userSelect = "none";
   root.style.webkitUserSelect = "none";
+
+  const startHud = document.createElement("div");
+  startHud.textContent = "HOLD UP ARROW DOWN TO START RACE";
+  startHud.style.position = "absolute";
+  startHud.style.left = "50%";
+  startHud.style.top = "-82px";
+  startHud.style.transform = "translateX(-50%)";
+  startHud.style.width = "min(86vw, 720px)";
+  startHud.style.boxSizing = "border-box";
+  startHud.style.padding = "16px 22px";
+  startHud.style.borderRadius = "16px";
+  startHud.style.border = "1px solid rgba(255,255,255,.28)";
+  startHud.style.background = "rgba(10,14,22,.86)";
+  startHud.style.color = "#fff";
+  startHud.style.textAlign = "center";
+  startHud.style.font = "900 clamp(18px, 3.1vw, 34px)/1.05 system-ui, -apple-system, Segoe UI, Roboto, Arial";
+  startHud.style.letterSpacing = ".02em";
+  startHud.style.textShadow = "0 2px 10px rgba(0,0,0,.75)";
+  startHud.style.boxShadow = "0 12px 30px rgba(0,0,0,.45)";
+  startHud.style.pointerEvents = "none";
+  root.appendChild(startHud);
 
   const bg = document.createElement("img");
   bg.src = resolveAssetUrl("picks.png", { cacheBust:true });

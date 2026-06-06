@@ -1208,10 +1208,16 @@ function registerSuccessfulHunt(){
 }
 
 function getSightShotOrigin(){
-  _shotForward.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
-  _shotOrigin.copy(playerPos).addScaledVector(_shotForward, HUNT_GUN_SIGHT_DISTANCE);
   const fishAimAdjust = modeToggles.fish ? FISH_SIGHT_AIM_Y_OFFSET : 0;
-  _shotOrigin.y = playerPos.y + huntGunSightYOffset + fishAimAdjust;
+  if(camera){
+    camera.getWorldDirection(_shotForward).normalize();
+    _shotOrigin.copy(camera.position).addScaledVector(_shotForward, HUNT_GUN_SIGHT_DISTANCE);
+    _shotOrigin.y += (huntGunSightYOffset - HUNT_GUN_SIGHT_Y_OFFSET_DEFAULT) + fishAimAdjust;
+  }else{
+    _shotForward.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
+    _shotOrigin.copy(playerPos).addScaledVector(_shotForward, HUNT_GUN_SIGHT_DISTANCE);
+    _shotOrigin.y = playerPos.y + huntGunSightYOffset + fishAimAdjust;
+  }
   return _shotOrigin;
 }
 
@@ -3189,9 +3195,7 @@ function updateHuntVisual(){
   if(!hunting && !fishing){
     return;
   }
-  _huntVisualForward.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
-  _huntVisualSightPos.copy(playerPos).addScaledVector(_huntVisualForward, HUNT_GUN_SIGHT_DISTANCE);
-  _huntVisualSightPos.y = playerPos.y + huntGunSightYOffset;
+  _huntVisualSightPos.copy(getSightShotOrigin());
   if(hunting){
     const gunSight = ensureHuntGunSight();
     if(gunSight){
@@ -6846,7 +6850,7 @@ function animate(){
   // Avatar visible position
   if (avatar){
     avatar.position.copy(playerPos);
-    avatar.visible = !(redCabinCameraOnly || verticalCameraActive);
+    avatar.visible = !(redCabinCameraOnly || verticalCameraActive || modeToggles.hunt || modeToggles.fish);
   }
   handleTrackedConeTransition();
   handleTrackedConeCompassCollision();
@@ -6870,7 +6874,6 @@ function animate(){
   collectGirlPickup();
   collectGoldReward();
   updateTubeSpider(dt);
-  updateHuntVisual();
   updateHuntBullets(dt);
   updateWolfPack(dt);
   updateRedCabinChestAndGriz(dt);
@@ -6934,6 +6937,7 @@ function animate(){
     _animLook.add(_animLookPitchOffset);
     camera.lookAt(_animLook);
   }
+  updateHuntVisual();
 
   // Keep sky centered on camera to prevent seeing the dome edge
   if (typeof skyMesh !== 'undefined') skyMesh.position.copy(camera.position);

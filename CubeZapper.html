@@ -286,7 +286,8 @@ const TRUCK_DRAW_ON_TOP = true;
 // tiny sink to avoid floating
 
 // Heightmap
-const HEIGHTMAP_FILE = "height_map.jpg";
+const HEIGHTMAP_FILE = "height_map.png";
+const HEIGHTMAP_FALLBACK_FILES = ["height_map.jpg"];
 const USE_TERRAIN = true;
 
 // Terrain
@@ -315,7 +316,7 @@ const GRASS_ROUGH_EXR  =
 const GRASS_REPEAT = 90;
 
 // ===== TALL GRASS (Option B: grass cards) =====
-const TALL_GRASS_ENABLE = true;
+const TALL_GRASS_ENABLE = false;
 
 // Uses your existing grass color texture; for best look later, swap to a real grass-cutout PNG.
 const GRASS_CARD_COLOR_FILE = GRASS_COLOR_FILE; // reuse ground grass color
@@ -619,19 +620,21 @@ window.addEventListener("keydown", (e)=>{
 });
 
 // ---------- SCENE ----------
+const IS_TOUCH_DEVICE = ("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog(FOG_COLOR, FOG_NEAR, FOG_FAR);
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 30000);
 camera.position.set(0, PLAYER_EYE_HEIGHT, 6);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true });
+const renderer = new THREE.WebGLRenderer({ antialias: !IS_TOUCH_DEVICE, powerPreference: "high-performance" });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, IS_TOUCH_DEVICE ? 1.5 : 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = EXPOSURE;
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = !IS_TOUCH_DEVICE;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
@@ -1394,6 +1397,15 @@ function loadTextureSafe(url, { colorSpace=null } = {}){
   });
 }
 
+async function loadFirstTextureSafe(files, options = {}){
+  for (const file of files){
+    const url = TEX_DIR + file;
+    const tex = await loadTextureSafe(url, options);
+    if (tex && tex.image) return { tex, file };
+  }
+  return { tex: null, file: "" };
+}
+
 function loadEXRSafe(url){
   return new Promise((resolve) => {
     exrLoader.load(url, (tex)=>resolve(tex), undefined, ()=>resolve(null));
@@ -1658,16 +1670,25 @@ async function applyHeightmapToGround(){
   if (!USE_TERRAIN){
     hudLine("ℹ️ Terrain disabled (USE_TERRAIN=false).");
     terrainReady = false;
+    createTargets();
+    spawnBadGuy();
+    spawnBadGuy();
     return;
   }
 
-  const hmUrl = TEX_DIR + HEIGHTMAP_FILE;
-
-  // Heightmap is DATA (no sRGB)
-  const hmTex = await loadTextureSafe(hmUrl);
+  // Heightmap is DATA (no sRGB). Try PNG first, then JPG for older uploads.
+  const heightmapFiles = [HEIGHTMAP_FILE, ...HEIGHTMAP_FALLBACK_FILES];
+  const { tex: hmTex, file: loadedHeightmapFile } = await loadFirstTextureSafe(heightmapFiles);
   if (!hmTex || !hmTex.image){
-    hudLine(`❌ Heightmap missing: <code>${HEIGHTMAP_FILE}</code>`);
-    terrainReady = false;
+    hudLine(`⚠️ Heightmap missing: <code>${heightmapFiles.join("</code>, <code>")}</code>; using flat terrain.`);
+    terrainReady = true;
+    hmW = 0;
+    hmH = 0;
+    hmData = null;
+    createLake();
+    createTargets();
+    spawnBadGuy();
+    spawnBadGuy();
     return;
   }
 
@@ -1701,7 +1722,7 @@ async function applyHeightmapToGround(){
   ground.geometry.computeVertexNormals();
 
   terrainReady = true;
-  hudLine(`✅ Terrain applied: <code>${HEIGHTMAP_FILE}</code> (${hmW}×${hmH}), segments=${TERRAIN_SEGMENTS}, height=${TERRAIN_HEIGHT}`);
+  hudLine(`✅ Terrain applied: <code>${loadedHeightmapFile}</code> (${hmW}×${hmH}), segments=${TERRAIN_SEGMENTS}, height=${TERRAIN_HEIGHT}`);
 
 
   
@@ -2509,7 +2530,7 @@ const joyBase = document.getElementById("joyBase");
 const joyKnob = document.getElementById("joyKnob");
 
 function isTouchDevice(){
-  return ("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0);
+  return IS_TOUCH_DEVICE;
 }
 
 // default: show pad on touch devices; toggle exists everywhere

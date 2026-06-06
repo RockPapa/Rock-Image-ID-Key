@@ -701,8 +701,10 @@ function initIpadThumbstick(){
   if(!stick || !knob) return;
 
   let activePointerId = null;
-  const DEAD_ZONE = 0.25;
-  const STICK_DAMPING = 0.88; // slightly soften thumbstick response
+  const DEAD_ZONE_Y = 0.25;
+  const DEAD_ZONE_X = 0.38;
+  const STICK_DAMPING_Y = 0.88; // slightly soften thumbstick response
+  const STICK_DAMPING_X = 0.62; // reduce side-to-side sensitivity
 
   const applyStick = (ev)=>{
     const rect = stick.getBoundingClientRect();
@@ -719,16 +721,16 @@ function initIpadThumbstick(){
       dy *= s;
     }
 
-    const dampDx = dx * STICK_DAMPING;
-    const dampDy = dy * STICK_DAMPING;
+    const dampDx = dx * STICK_DAMPING_X;
+    const dampDy = dy * STICK_DAMPING_Y;
     const nx = dampDx / maxR;
     const ny = dampDy / maxR;
     knob.style.transform = `translate(calc(-50% + ${dampDx}px), calc(-50% + ${dampDy}px))`;
 
-    keyDown["ArrowLeft"] = nx < -DEAD_ZONE;
-    keyDown["ArrowRight"] = nx > DEAD_ZONE;
-    keyDown["ArrowUp"] = ny < -DEAD_ZONE;
-    keyDown["ArrowDown"] = ny > DEAD_ZONE;
+    keyDown["ArrowLeft"] = nx < -DEAD_ZONE_X;
+    keyDown["ArrowRight"] = nx > DEAD_ZONE_X;
+    keyDown["ArrowUp"] = ny < -DEAD_ZONE_Y;
+    keyDown["ArrowDown"] = ny > DEAD_ZONE_Y;
   };
 
   const releaseStick = ()=>{

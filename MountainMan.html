@@ -597,6 +597,8 @@ const HUNT_CACHE_GAIN_PER_KILL = 3;
 const HUNT_BULLETS_MAX = 5;
 const HUNT_GUN_SIGHT_DISTANCE = 220;
 const HUNT_GUN_SIGHT_SIZE = 190;
+const HUNT_CAMERA_SIGHT_DISTANCE = 300;
+const HUNT_CAMERA_SIGHT_SIZE = 90;
 const HUNT_GUN_SIGHT_Y_OFFSET_DEFAULT = 104;
 const HUNT_GUN_SIGHT_Y_OFFSET_MIN = -40; // lower floor so D can angle down further for fishing/hunting
 const HUNT_GUN_SIGHT_Y_OFFSET_MAX = 320; // higher ceiling so E can angle up further while hunting
@@ -1219,10 +1221,10 @@ function registerSuccessfulHunt(){
 }
 
 function getSightShotOrigin(){
-  _shotForward.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
-  _shotOrigin.copy(playerPos).addScaledVector(_shotForward, HUNT_GUN_SIGHT_DISTANCE);
-  const fishAimAdjust = modeToggles.fish ? FISH_SIGHT_AIM_Y_OFFSET : 0;
-  _shotOrigin.y = playerPos.y + huntGunSightYOffset + fishAimAdjust;
+  camera.getWorldDirection(_shotForward).normalize();
+  _shotOrigin.copy(camera.position).addScaledVector(_shotForward, HUNT_CAMERA_SIGHT_DISTANCE);
+  _shotOrigin.y += ((huntGunSightYOffset - HUNT_GUN_SIGHT_Y_OFFSET_DEFAULT) * 0.35);
+  if(modeToggles.fish) _shotOrigin.y += FISH_SIGHT_AIM_Y_OFFSET * 0.35;
   return _shotOrigin;
 }
 
@@ -1572,7 +1574,7 @@ const KNOWN_ASSET_FILES = [
   "right1.PNG","right2.PNG","right3.PNG","right4.PNG","right5.PNG",
   "day_sounds.mp3","crickets.mp3","wind.mp3","wolf_howl.mp3","splash.mp3","hiss.mp3","banjo.mp3",
   "fire.png","fire1.png","fire2.png","fire3.png","fire4.png","fire5.png","fire.mp3",
-  "walking_sound.mp3","log.png","girl.png","gold.png","boulder.png","spider.png",
+  "walking_sound.mp3","gun_sight.png","bow.png","log.png","girl.png","gold.png","boulder.png","spider.png",
   "bush.png","cactus.png","tree1.png","tree3.png","tree5.png","compass.png",
   "cabin.png","cave.png","door.png","wall.png","tin.png","chest.png","griz.png","ham.png","tomahawk.png","paper.png",
   "bear_sound.mp3","rich.png","win.png","wolf1.png","wolf2.png","wolf3.png","wolf4.png","wolf5.png","wolf6.png","wolf7.png","wolf8.png",
@@ -3114,6 +3116,13 @@ function ensureHuntGunSight(){
       if(ff){
         huntGunSightTexturePromise = loadTex(ff.url, { srgb:true })
           .then((tex)=>{
+            tex.wrapS = THREE.ClampToEdgeWrapping;
+            tex.wrapT = THREE.ClampToEdgeWrapping;
+            tex.magFilter = THREE.LinearFilter;
+            tex.minFilter = THREE.LinearFilter;
+            tex.generateMipmaps = false;
+            tex.premultiplyAlpha = true;
+            tex.needsUpdate = true;
             huntGunSightTexture = tex;
             huntGunSightTexturePromise = null;
             return tex;
@@ -3147,6 +3156,13 @@ function ensureFishBowSight(){
       if(ff){
         fishBowTexturePromise = loadTex(ff.url, { srgb:true })
           .then((tex)=>{
+            tex.wrapS = THREE.ClampToEdgeWrapping;
+            tex.wrapT = THREE.ClampToEdgeWrapping;
+            tex.magFilter = THREE.LinearFilter;
+            tex.minFilter = THREE.LinearFilter;
+            tex.generateMipmaps = false;
+            tex.premultiplyAlpha = true;
+            tex.needsUpdate = true;
             fishBowTexture = tex;
             fishBowTexturePromise = null;
             return tex;
@@ -3174,6 +3190,7 @@ function ensureFishBowSight(){
 
 const _huntVisualForward = new THREE.Vector3();
 const _huntVisualSightPos = new THREE.Vector3();
+const _huntVisualCameraUp = new THREE.Vector3();
 let _huntVisualAvatarHidden = false;
 let _huntVisualHuntShown = false;
 let _huntVisualFishShown = false;
@@ -3181,8 +3198,10 @@ function updateHuntVisual(){
   const hunting = !!modeToggles.hunt;
   const fishing = !!modeToggles.fish;
   const shouldHideAvatar = (hunting || fishing);
-  if(avatar && _huntVisualAvatarHidden !== shouldHideAvatar){
+  if(avatar){
     avatar.visible = !shouldHideAvatar;
+  }
+  if(avatar && _huntVisualAvatarHidden !== shouldHideAvatar){
     _huntVisualAvatarHidden = shouldHideAvatar;
   }
   if(!hunting){
@@ -3200,14 +3219,15 @@ function updateHuntVisual(){
   if(!hunting && !fishing){
     return;
   }
-  _huntVisualForward.set(-Math.sin(yaw), 0, -Math.cos(yaw)).normalize();
-  _huntVisualSightPos.copy(playerPos).addScaledVector(_huntVisualForward, HUNT_GUN_SIGHT_DISTANCE);
-  _huntVisualSightPos.y = playerPos.y + huntGunSightYOffset;
+  camera.getWorldDirection(_huntVisualForward).normalize();
+  _huntVisualSightPos.copy(camera.position).addScaledVector(_huntVisualForward, HUNT_CAMERA_SIGHT_DISTANCE);
+  _huntVisualCameraUp.set(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+  _huntVisualSightPos.addScaledVector(_huntVisualCameraUp, (huntGunSightYOffset - HUNT_GUN_SIGHT_Y_OFFSET_DEFAULT) * 0.35);
   if(hunting){
     const gunSight = ensureHuntGunSight();
     if(gunSight){
       gunSight.position.copy(_huntVisualSightPos);
-      gunSight.scale.set(HUNT_GUN_SIGHT_SIZE, HUNT_GUN_SIGHT_SIZE, 1);
+      gunSight.scale.set(HUNT_CAMERA_SIGHT_SIZE, HUNT_CAMERA_SIGHT_SIZE, 1);
       gunSight.visible = true;
       _huntVisualHuntShown = true;
     }
@@ -3216,7 +3236,7 @@ function updateHuntVisual(){
     const bowSight = ensureFishBowSight();
     if(bowSight){
       bowSight.position.copy(_huntVisualSightPos);
-      bowSight.scale.set(HUNT_GUN_SIGHT_SIZE, HUNT_GUN_SIGHT_SIZE, 1);
+      bowSight.scale.set(HUNT_CAMERA_SIGHT_SIZE, HUNT_CAMERA_SIGHT_SIZE, 1);
       bowSight.visible = true;
       _huntVisualFishShown = true;
     }
@@ -6949,6 +6969,7 @@ function animate(){
   // Keep sky centered on camera to prevent seeing the dome edge
   if (typeof skyMesh !== 'undefined') skyMesh.position.copy(camera.position);
   updateHorizonPositions();
+  updateHuntVisual();
 
   
   // Animate lake texture (gentle scrolling water)

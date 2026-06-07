@@ -42,7 +42,12 @@
     #npcCar2,
     #npcCar3,
     #npcCar4,
-    #npcCar5 {
+    #npcCar5,
+    #npcCar6,
+    #npcCar7,
+    #npcCar8,
+    #npcCar9,
+    #npcCar10 {
       position: absolute;
       width: 84px;
       height: auto;
@@ -197,12 +202,17 @@
   <!-- Player car (color set after selection) -->
   <img id="car" src="images/car.png" alt="car">
 
-  <!-- Five random-moving blue cars -->
+  <!-- Ten random-moving rover trucks -->
   <img id="npcCar1" src="images/blue_car.png" alt="blue car 1">
   <img id="npcCar2" src="images/blue_car.png" alt="blue car 2">
   <img id="npcCar3" src="images/blue_car.png" alt="blue car 3">
   <img id="npcCar4" src="images/blue_car.png" alt="blue car 4">
   <img id="npcCar5" src="images/blue_car.png" alt="blue car 5">
+  <img id="npcCar6" src="images/blue_car.png" alt="rover truck 6">
+  <img id="npcCar7" src="images/blue_car.png" alt="rover truck 7">
+  <img id="npcCar8" src="images/blue_car.png" alt="rover truck 8">
+  <img id="npcCar9" src="images/blue_car.png" alt="rover truck 9">
+  <img id="npcCar10" src="images/blue_car.png" alt="rover truck 10">
 
   <!-- UI sliders + hide-buttons toggle -->
   <div id="ui">
@@ -246,6 +256,11 @@
   const npcCar3     = document.getElementById("npcCar3");
   const npcCar4     = document.getElementById("npcCar4");
   const npcCar5     = document.getElementById("npcCar5");
+  const npcCar6     = document.getElementById("npcCar6");
+  const npcCar7     = document.getElementById("npcCar7");
+  const npcCar8     = document.getElementById("npcCar8");
+  const npcCar9     = document.getElementById("npcCar9");
+  const npcCar10    = document.getElementById("npcCar10");
   const speedSlider = document.getElementById("speedSlider");
   const speedValue  = document.getElementById("speedValue");
   const sizeSlider  = document.getElementById("sizeSlider");
@@ -264,13 +279,18 @@
   let carWorldX = 0;
   let carWorldY = 0;
 
-  // NPC state (5 blue cars)
+  // NPC state (10 random-moving rover trucks)
   const npcs = [
     { img: npcCar1, x: 0, y: 0, angle:   0, speed: 120, turnTimer: 0 },
     { img: npcCar2, x: 0, y: 0, angle: 180, speed: 120, turnTimer: 0 },
     { img: npcCar3, x: 0, y: 0, angle:  90, speed: 120, turnTimer: 0 },
     { img: npcCar4, x: 0, y: 0, angle:  40, speed: 120, turnTimer: 0 },
-    { img: npcCar5, x: 0, y: 0, angle: 230, speed: 120, turnTimer: 0 }
+    { img: npcCar5, x: 0, y: 0, angle: 230, speed: 120, turnTimer: 0 },
+    { img: npcCar6, x: 0, y: 0, angle: 315, speed: 120, turnTimer: 0 },
+    { img: npcCar7, x: 0, y: 0, angle: 135, speed: 120, turnTimer: 0 },
+    { img: npcCar8, x: 0, y: 0, angle: 270, speed: 120, turnTimer: 0 },
+    { img: npcCar9, x: 0, y: 0, angle:  15, speed: 120, turnTimer: 0 },
+    { img: npcCar10, x: 0, y: 0, angle: 205, speed: 120, turnTimer: 0 }
   ];
 
   // Camera
@@ -710,12 +730,27 @@
     npcs[2].x = worldW / 2 + 100;
     npcs[2].y = worldH / 2 + 250;
 
-    // Two more roaming cars with dispersed starts
+    // More roaming cars with dispersed starts
     npcs[3].x = worldW * 0.25;
     npcs[3].y = worldH * 0.28;
 
     npcs[4].x = worldW * 0.72;
     npcs[4].y = worldH * 0.35;
+
+    npcs[5].x = worldW * 0.18;
+    npcs[5].y = worldH * 0.72;
+
+    npcs[6].x = worldW * 0.42;
+    npcs[6].y = worldH * 0.16;
+
+    npcs[7].x = worldW * 0.84;
+    npcs[7].y = worldH * 0.62;
+
+    npcs[8].x = worldW * 0.58;
+    npcs[8].y = worldH * 0.82;
+
+    npcs[9].x = worldW * 0.35;
+    npcs[9].y = worldH * 0.55;
 
     updateCarSizeFromSlider();
     updatePositions();

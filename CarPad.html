@@ -272,6 +272,8 @@
 
   let worldW = 0;
   let worldH = 0;
+  let sceneNaturalW = 0;
+  let sceneNaturalH = 0;
 
   // Player car world coords
   let carWorldX = 0;
@@ -614,7 +616,36 @@
 
   // ---- Drawing / camera ----
 
+  function syncSceneWorldSize(scalePositions) {
+    if (!sceneNaturalW || !sceneNaturalH) return;
+
+    const oldW = worldW;
+    const oldH = worldH;
+    const scale = Math.max(
+      game.clientWidth / sceneNaturalW,
+      game.clientHeight / sceneNaturalH,
+      1
+    );
+
+    worldW = sceneNaturalW * scale;
+    worldH = sceneNaturalH * scale;
+    scene.style.width = worldW + "px";
+    scene.style.height = worldH + "px";
+
+    if (scalePositions && oldW > 0 && oldH > 0) {
+      const sx = worldW / oldW;
+      const sy = worldH / oldH;
+      carWorldX *= sx;
+      carWorldY *= sy;
+      npcs.forEach(npc => {
+        npc.x *= sx;
+        npc.y *= sy;
+      });
+    }
+  }
+
   function updatePositions() {
+    if (!worldW || !worldH) return;
     const vw = game.clientWidth;
     const vh = game.clientHeight;
 
@@ -681,8 +712,9 @@
   // ---- Startup ----
 
   scene.onload = () => {
-    worldW = scene.naturalWidth;
-    worldH = scene.naturalHeight;
+    sceneNaturalW = scene.naturalWidth;
+    sceneNaturalH = scene.naturalHeight;
+    syncSceneWorldSize(false);
 
     // Player in center
     carWorldX = worldW / 2;
@@ -724,6 +756,11 @@
     updatePositions();
     requestAnimationFrame(loop);
   };
+
+  window.addEventListener("resize", () => {
+    syncSceneWorldSize(true);
+    updatePositions();
+  });
 </script>
 
 </body>

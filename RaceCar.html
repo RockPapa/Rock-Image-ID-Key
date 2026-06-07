@@ -559,7 +559,7 @@ const TRUCK_DRAW_ON_TOP = true;
 // tiny sink to avoid floating
 
 // Heightmap
-const HEIGHTMAP_FILE = "height_map.jpg";
+const HEIGHTMAP_FILE = "height_map.png";
 const USE_TERRAIN = true;
 
 // Terrain
@@ -4457,7 +4457,7 @@ initMountains();
 // --- TWEAK ZONE (PNG TREES) ---
 const BILLBOARD_TREE_FILE1 = "tree1.png";
 const BILLBOARD_TREE_FILE2 = "tree2.png"; // optional variety
-const BILLBOARD_COUNT = 2000;            // many is OK (no per-tree shadows)
+const BILLBOARD_COUNT = 1000;            // many is OK (no per-tree shadows)
 const BILLBOARD_AREA  = 3000;           // spread radius
 const BILLBOARD_MAX_SLOPE = 28;         // avoid steep slopes
 
@@ -4726,7 +4726,7 @@ async function spawnTreesWhenReady(){
   }
 
   // --- Smarter placement: avoid steep slopes, create clumps ---
-  const TARGET_TREES = 220;         // more trees, still fine (simple geometry)
+  const TARGET_TREES = 110;         // more trees, still fine (simple geometry)
   const AREA = 1900;                // spread radius
   const MAX_SLOPE = 24;             // degrees (lower = fewer on hills)
   const CLUMP_CHANCE = 0.55;        // more natural clustering

@@ -692,6 +692,7 @@ const TWANG_SOUND_VOLUME = 0.75;
 const HUNT_BULLET_SPEED = 3200;
 const HUNT_BULLET_LIFE_SECONDS = 1.9;
 const HUNT_BULLET_RADIUS = 6;
+const FISH_BULLET_RADIUS = 16;
 const BUFFALO_LEFT_IMAGE_NAME = "buffalo_left.png";
 const BUFFALO_RIGHT_IMAGE_NAME = "buffalo_right.png";
 const NEW_BUFFALO_LEFT_IMAGE_NAME = "new_buffalo_left.png";
@@ -1416,9 +1417,9 @@ function registerSuccessfulFishCatch(){
 }
 
 function fireFishShot(){
-  if(fishAvailable <= 0) return false;
   playTwangShot();
-  spawnHuntBullet();
+  spawnHuntBullet({ radius: FISH_BULLET_RADIUS, color: 0xf6e7a6 });
+  if(fishAvailable <= 0) return false;
   const hitTrout = findShotTroutHit();
   if(!hitTrout) return false;
   hitTrout.userData.collected = true;
@@ -1431,11 +1432,11 @@ function fireFishShot(){
   return registerSuccessfulFishCatch();
 }
 
-function spawnHuntBullet(){
+function spawnHuntBullet({ radius = HUNT_BULLET_RADIUS, color = 0x0a0a0a } = {}){
   const origin = getSightShotOrigin();
   const aimDir = getAimDirectionFromCamera(origin);
-  const geo = new THREE.SphereGeometry(HUNT_BULLET_RADIUS, 8, 8);
-  const mat = new THREE.MeshBasicMaterial({ color: 0x0a0a0a });
+  const geo = new THREE.SphereGeometry(radius, 12, 12);
+  const mat = new THREE.MeshBasicMaterial({ color });
   const bullet = new THREE.Mesh(geo, mat);
   bullet.position.copy(origin);
   bullet.renderOrder = 45;
@@ -1657,7 +1658,7 @@ const KNOWN_ASSET_FILES = [
   "bush.png","cactus.png","tree1.png","tree3.png","tree5.png","compass.png",
   "cabin.png","cave.png","door.png","wall.png","tin.png","chest.png","griz.png","ham.png","tomahawk.png","paper.png",
   "bear_sound.mp3","rich.png","win.png","wolf1.png","wolf2.png","wolf3.png","wolf4.png","wolf5.png","wolf6.png","wolf7.png","wolf8.png",
-  "wolf_attack.mp3","wolf_sound","twang","trout.png","buffalo1.png","buffalo2.png","buffalo3.png"
+  "wolf_attack.mp3","wolf_sound.mp3","twang.mp3","trout.png","buffalo1.png","buffalo2.png","buffalo3.png"
 ];
 let folderFiles = KNOWN_ASSET_FILES.map((name)=>({ name, url: `${IMAGES_BASE_PATH}${name}`, type:"", size:0 }));
 const statusEl = document.getElementById("status");
@@ -6281,8 +6282,8 @@ function playMissileShot(){
 function ensureTwangSound(){
   if(twangSound) return twangSound;
   const ff = findExact(TWANG_SOUND_NAME) || findExact("twang");
-  if(!ff) return null;
-  const audio = new Audio(ff.url);
+  const audio = new Audio(ff ? ff.url : `${IMAGES_BASE_PATH}${TWANG_SOUND_NAME}`);
+  audio.preload = "auto";
   audio.volume = TWANG_SOUND_VOLUME;
   audio.loop = false;
   twangSound = audio;
@@ -6373,8 +6374,24 @@ function updateTubeHissLoop(){
 function playTwangShot(){
   const snd = ensureTwangSound();
   if(!snd) return;
-  snd.currentTime = 0;
-  snd.play().catch(()=>{});
+  try{
+    const shot = snd.cloneNode(true);
+    shot.volume = TWANG_SOUND_VOLUME;
+    shot.currentTime = 0;
+    shot.play().catch(()=>{
+      try{
+        snd.pause();
+        snd.currentTime = 0;
+        snd.play().catch(()=>{});
+      }catch(e){}
+    });
+  }catch(e){
+    try{
+      snd.pause();
+      snd.currentTime = 0;
+      snd.play().catch(()=>{});
+    }catch(_e){}
+  }
 }
 
 function startSplashLoop(){
@@ -6859,12 +6876,20 @@ if(btnTouchControls){
 updateTouchControlsUI();
 
 if(touchCollectBtn){
-  touchCollectBtn.addEventListener("pointerdown", async (e)=>{
+  let lastTouchActionMs = -10000;
+  const runTouchPrimaryAction = async (e)=>{
     if(!touchControlsEnabled) return;
     e.preventDefault();
+    e.stopPropagation();
+    const now = performance.now();
+    if(now - lastTouchActionMs < 180) return;
+    lastTouchActionMs = now;
     _unlockAudioPlayback();
     await handlePrimaryAction();
-  });
+  };
+  touchCollectBtn.addEventListener("pointerdown", runTouchPrimaryAction, { passive:false });
+  touchCollectBtn.addEventListener("touchstart", runTouchPrimaryAction, { passive:false });
+  touchCollectBtn.addEventListener("click", runTouchPrimaryAction, { passive:false });
 }
 
 if(touchJoystickEl){

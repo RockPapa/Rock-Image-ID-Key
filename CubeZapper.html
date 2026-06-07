@@ -410,19 +410,43 @@ let fireAudio = null;
 let hitAudio = null;
 let copterAudio = null;
 let lastCopterPlayTryMs = 0;
+let gameAudioUnlocked = false;
+const fireAudioPool = [];
+const hitAudioPool = [];
+let fireAudioPoolIndex = 0;
+let hitAudioPoolIndex = 0;
+
+function makeGameAudio(file, volume, loop = false){
+  const audio = new Audio(TEX_DIR + file + "?v=" + Date.now());
+  audio.preload = "auto";
+  audio.loop = loop;
+  audio.volume = volume;
+  return audio;
+}
+
+function primeAudioElement(audio){
+  if (!audio) return Promise.resolve();
+  const oldMuted = audio.muted;
+  audio.muted = true;
+  return audio.play().then(() => {
+    audio.pause();
+    audio.currentTime = 0;
+    audio.muted = oldMuted;
+  }).catch(() => {
+    audio.muted = oldMuted;
+  });
+}
 
 function initCopterAudio(){
   if (copterAudio || !COPTER_SOUND_FILE) return;
-  const url = TEX_DIR + COPTER_SOUND_FILE + "?v=" + Date.now();
-  copterAudio = new Audio(url);
-  copterAudio.loop = true;
-  copterAudio.volume = COPTER_SOUND_VOL;
+  copterAudio = makeGameAudio(COPTER_SOUND_FILE, COPTER_SOUND_VOL, true);
 
   // Start as soon as the user interacts (autoplay-safe).
-  const start = () => { ensureCopterAudioPlaying(); };
-  document.body.addEventListener("click", start, { passive: true });
-  document.body.addEventListener("touchstart", start, { passive: true });
-  document.body.addEventListener("keydown", start);
+  const start = () => { unlockGameAudio(); };
+  document.addEventListener("pointerdown", start, { passive: true, capture: true });
+  document.addEventListener("touchstart", start, { passive: true, capture: true });
+  document.addEventListener("click", start, { passive: true, capture: true });
+  document.addEventListener("keydown", start, { capture: true });
 }
 
 function ensureCopterAudioPlaying(){
@@ -436,32 +460,33 @@ function ensureCopterAudioPlaying(){
 
 function initFireSound(){
   if (fireAudio) return;
-  const url = TEX_DIR + FIRE_SOUND_FILE + "?v=" + Date.now();
-  fireAudio = new Audio(url);
-  fireAudio.volume = FIRE_SOUND_VOL;
-
-  // prime on first user gesture
-  document.body.addEventListener("click", () => {
-    fireAudio.play().then(() => {
-      fireAudio.pause();
-      fireAudio.currentTime = 0;
-    }).catch(()=>{});
-  }, { once:true });
+  fireAudio = makeGameAudio(FIRE_SOUND_FILE, FIRE_SOUND_VOL);
+  fireAudioPool.push(fireAudio);
+  for (let i = 1; i < 5; i++) fireAudioPool.push(makeGameAudio(FIRE_SOUND_FILE, FIRE_SOUND_VOL));
 }
 
 function initHitSound(){
   if (hitAudio) return;
-  const url = TEX_DIR + HIT_SOUND_FILE + "?v=" + Date.now();
-  hitAudio = new Audio(url);
-  hitAudio.volume = HIT_SOUND_VOL;
+  hitAudio = makeGameAudio(HIT_SOUND_FILE, HIT_SOUND_VOL);
+  hitAudioPool.push(hitAudio);
+  for (let i = 1; i < 4; i++) hitAudioPool.push(makeGameAudio(HIT_SOUND_FILE, HIT_SOUND_VOL));
+}
 
-  // prime on first user gesture
-  document.body.addEventListener("click", () => {
-    hitAudio.play().then(() => {
-      hitAudio.pause();
-      hitAudio.currentTime = 0;
-    }).catch(()=>{});
-  }, { once:true });
+function unlockGameAudio(){
+  initFireSound();
+  initHitSound();
+  initCopterAudio();
+  if (gameAudioUnlocked){
+    ensureCopterAudioPlaying();
+    return;
+  }
+  gameAudioUnlocked = true;
+  Promise.all([
+    ...fireAudioPool.map(primeAudioElement),
+    ...hitAudioPool.map(primeAudioElement)
+  ]).finally(() => {
+    ensureCopterAudioPlaying();
+  });
 }
 
 
@@ -541,17 +566,27 @@ function spawnHitBurst(worldPos, colorHex=0xffffff){
 
 function playFireSound(){
   try{
-    const a = new Audio(TEX_DIR + FIRE_SOUND_FILE + "?v=" + Date.now());
+    unlockGameAudio();
+    const pool = fireAudioPool.length ? fireAudioPool : [fireAudio].filter(Boolean);
+    if (!pool.length) return;
+    const a = pool[fireAudioPoolIndex % pool.length];
+    fireAudioPoolIndex++;
     a.volume = FIRE_SOUND_VOL;
-    a.play();
+    a.currentTime = 0;
+    a.play().catch(()=>{});
   }catch(e){}
 }
 
 function playHitSound(){
   try{
-    const a = new Audio(TEX_DIR + HIT_SOUND_FILE + "?v=" + Date.now());
+    unlockGameAudio();
+    const pool = hitAudioPool.length ? hitAudioPool : [hitAudio].filter(Boolean);
+    if (!pool.length) return;
+    const a = pool[hitAudioPoolIndex % pool.length];
+    hitAudioPoolIndex++;
     a.volume = HIT_SOUND_VOL;
-    a.play();
+    a.currentTime = 0;
+    a.play().catch(()=>{});
   }catch(e){}
 }
 
@@ -2568,6 +2603,7 @@ function bindHold(btn, code){
   const press = (ev)=>{
     if(ev){ ev.preventDefault(); ev.stopPropagation(); }
     if(!touchOn) return;
+    unlockGameAudio();
     vKey(code, true);
   };
   const release = (ev)=>{

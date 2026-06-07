@@ -1493,7 +1493,7 @@ const GREEN_RING_NIGHT_TRIGGER_RANGE_FT = 300.0; // start night mode 300 horizon
 const GREEN_ZONE_NIGHT_MODE_ENABLE = false; // disable terrain/location-driven night switch
 const GREEN_FIRE_RING_ENABLE = false;
 const GREEN_FIRE_RING_BEHAVIOR_ENABLE = false; // visuals/animation only; disable gameplay behavior
-const GREEN_FIRE_RING_COUNT = 33;
+const GREEN_FIRE_RING_COUNT = 0;
 const GREEN_FIRE_RING_DIAMETER_FT = 200.0;
 const GREEN_FIRE_RING_FLAME_WIDTH_FT = 16.0;
 const GREEN_FIRE_RING_FLAME_HEIGHT_FT = 24.0;
@@ -1501,7 +1501,7 @@ const GREEN_FIRE_RING_FLAME_LIFT_FT = 0.0;
 const GREEN_BIGFOOT_RING_ENABLE = false;
 const GREEN_BIGFOOT_RING_FILE = "yeti.png";
 const GREEN_BIGFOOT_PASS_THROUGH_FILE = "goddess2.png";
-const GREEN_BIGFOOT_RING_COUNT = 20;
+const GREEN_BIGFOOT_RING_COUNT = 0;
 const GREEN_BIGFOOT_RING_DIAMETER_FT = 190.0;
 const GREEN_BIGFOOT_RING_WIDTH_FT = 25.2;
 const GREEN_BIGFOOT_RING_HEIGHT_FT = 30.6;
@@ -10007,6 +10007,8 @@ function updateGreenBrideChamber(){
 }
 
 function ensureGreenFireRing(){
+  clearGreenFireRing();
+  return;
   if(!GREEN_FIRE_RING_ENABLE){
     clearGreenFireRing();
     return;
@@ -10344,6 +10346,8 @@ function ensureGreenFireRing(){
 }
 
 function updateGreenFireRing(dt){
+  clearGreenFireRing();
+  return;
   if(!greenFireRingGroup || !greenFireRingGroup.parent || !greenFireRingFlames.length || !truckFireTextures.length) return;
 
   greenFireRingAnimSec += Math.max(0, dt || 0);
@@ -13519,6 +13523,9 @@ function playAudioOnceWithCallback(a, onDone) {
 }
 
 function playRingLandingSequencePigThenEscape(){
+  ringLandingSequenceInProgress = false;
+  ringLandingSequenceDone = false;
+  return;
   if(!ringLandingSequenceInProgress) return;
 
   if(ringLandingPigRemaining > 0){
@@ -13542,6 +13549,10 @@ function playRingLandingSequencePigThenEscape(){
 }
 
 function startRingLandingSequence(){
+  ringLandingSequenceStarted = false;
+  ringLandingSequenceInProgress = false;
+  ringLandingSequenceDone = false;
+  return;
   if(ringLandingSequenceStarted || ringLandingSequenceDone || ringLandingSequenceInProgress) return;
   ringLandingSequenceStarted = true;
   ringLandingSequenceInProgress = true;
@@ -13564,6 +13575,7 @@ function initRingSuccessAudio() {
 }
 
 function setupRingSuccessEcho(){
+  return;
   if(!ringSuccessAudio) return;
   if(ringSuccessAudioSource || ringSuccessAudioDryGain || ringSuccessAudioWetGain || ringSuccessAudioDelay || ringSuccessAudioFeedback) return;
   const AC = window.AudioContext || window.webkitAudioContext;
@@ -13598,6 +13610,9 @@ function playRingSuccessAudioWithEcho() {
 }
 
 function updateRingOfFireSequenceAudio(isAirborneRingVehicle, x, z, groundedNow){
+  ringSuccessArmedForExit = false;
+  ringSuccessPlayed = false;
+  return;
   if(!GREEN_FIRE_RING_BEHAVIOR_ENABLE) return;
   const insideRing = GREEN_FIRE_RING_ENABLE && isInsideGreenFireRingArea(x, z);
 
@@ -14545,6 +14560,7 @@ let arrowLeftHeld = false;
 let arrowRightHeld = false;
 let ipadControlsEnabled = true;
 const ipadJoyState = { up:false, down:false, left:false, right:false };
+const IPAD_JOYSTICK_PITCH_RESPONSE = 0.85;
 let pitchFlightActive = false;
 const pitchFlightDir = new THREE.Vector3(0, 0, -1);
 const __tmpCameraForward = new THREE.Vector3();
@@ -14843,7 +14859,7 @@ function updateIpadJoystickFromPoint(clientX, clientY){
     dy *= radius / mag;
   }
   const nx = dx / radius;
-  const ny = dy / radius;
+  const ny = (dy / radius) * IPAD_JOYSTICK_PITCH_RESPONSE;
   const dead = 0.28;
   setIpadJoystickKnob(nx, ny);
   setIpadJoystickArrows({
@@ -16002,6 +16018,9 @@ function isInsideGreenSquareArea(x, z){
 }
 
 function isInsideGreenFireRingArea(x, z){
+  void x;
+  void z;
+  return false;
   const ft = WORLD_UNITS_PER_FOOT;
   const ringRadius = Math.max(2.0 * ft, (GREEN_FIRE_RING_DIAMETER_FT * 0.5) * ft);
   const dx = x - GREEN_SQUARE_MARKER_X;
@@ -16010,6 +16029,10 @@ function isInsideGreenFireRingArea(x, z){
 }
 
 function isWithinGreenFireRingTriggerRange(x, z, extraRangeFt = FIRE_RING_AMBIENT_TRIGGER_RANGE_FT){
+  void x;
+  void z;
+  void extraRangeFt;
+  return false;
   const ft = WORLD_UNITS_PER_FOOT;
   const ringRadius = Math.max(2.0 * ft, (GREEN_FIRE_RING_DIAMETER_FT * 0.5) * ft);
   const extra = Math.max(0, Number(extraRangeFt) || 0) * ft;
@@ -16020,6 +16043,11 @@ function isWithinGreenFireRingTriggerRange(x, z, extraRangeFt = FIRE_RING_AMBIEN
 }
 
 function applyGreenFireRingFeatureCollision(obj, prevX, prevZ, radius = TRUCK_COLLISION_RADIUS){
+  void obj;
+  void prevX;
+  void prevZ;
+  void radius;
+  return false;
   if(!GREEN_FIRE_RING_BEHAVIOR_ENABLE) return false;
   if(!obj || !GREEN_FIRE_RING_ENABLE) return false;
   const r = Math.max(0.2, radius || TRUCK_COLLISION_RADIUS);

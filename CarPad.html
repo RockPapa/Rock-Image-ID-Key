@@ -142,60 +142,51 @@
       filter: brightness(1.15);
     }
 
-    /* ==== THUMB JOYSTICK CONTROLS (iPad-friendly layout) ==== */
+    /* ==== iPAD TOUCH CONTROLS ==== */
     #touchControls {
       position: absolute;
+      left: 34px;
       right: 34px;
       bottom: 34px;
       z-index: 3;
-      display: flex;
-      align-items: center;
+      display: grid;
+      grid-template-columns: 60.8px 60.8px 1fr 60.8px;
+      grid-template-rows: 60.8px 60.8px 60.8px;
+      gap: 8px;
       user-select: none;
       -webkit-user-select: none;
       touch-action: none;
     }
 
-    #thumbJoystick {
-      width: 174px;
-      height: 174px;
-      border-radius: 50%;
+    .touchBtn {
+      width: 60.8px;
+      height: 60.8px;
+      border-radius: 12px;
       border: 2px solid rgba(255,255,255,0.72);
-      background: radial-gradient(circle at 35% 30%, rgba(255,255,255,0.24), rgba(0,0,0,0.54));
-      box-shadow: 0 12px 28px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.16);
-      position: relative;
+      background: rgba(0,0,0,0.58);
+      color: #fff;
+      font-size: 27.2px;
+      font-weight: bold;
+      line-height: 1;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.42);
       cursor: pointer;
       touch-action: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    #thumbJoystick::before,
-    #thumbJoystick::after {
-      content: "";
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(255,255,255,0.24);
+    .touchBtn:active,
+    .touchBtn.isPressed {
+      background: rgba(255,255,255,0.22);
     }
 
-    #thumbJoystick::before { width: 2px; height: 118px; }
-    #thumbJoystick::after { width: 118px; height: 2px; }
-
-    #thumbKnob {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 72px;
-      height: 72px;
-      border-radius: 50%;
-      border: 2px solid rgba(255,255,255,0.88);
-      background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.50), rgba(20,20,20,0.84));
-      box-shadow: 0 8px 18px rgba(0,0,0,0.48);
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-    }
+    .touchBtn.up    { grid-column: 4; grid-row: 1; }
+    .touchBtn.left  { grid-column: 1; grid-row: 2; }
+    .touchBtn.right { grid-column: 2; grid-row: 2; }
+    .touchBtn.down  { grid-column: 4; grid-row: 3; }
 
     @media (min-width: 900px) {
       #touchControls {
+        left: 46px;
         right: 46px;
         bottom: 46px;
       }
@@ -231,13 +222,13 @@
     <div style="margin-top:8px;">Car Size: <span id="sizeValue"></span> px</div>
     <input type="range" id="sizeSlider" min="50" max="150" value="84">
 
-    <button id="toggleButtons">Hide Joystick</button>
+    <button id="toggleButtons">Hide Controls</button>
   </div>
 
   <!-- Color choice overlay -->
   <div id="colorMenu">
     <h2>Choose Your Car Color</h2>
-    <p>Pick a color, then drive with the arrow keys or thumb joystick!</p>
+    <p>Pick a color, then drive with the arrow keys or iPad controls!</p>
     <div>
       <button data-color="red">Red</button>
       <button data-color="blue">Blue</button>
@@ -247,11 +238,12 @@
     </div>
   </div>
 
-  <!-- TOUCH CONTROLS: THUMB JOYSTICK -->
+  <!-- TOUCH CONTROLS: iPAD BUTTONS -->
   <div id="touchControls">
-    <div id="thumbJoystick" aria-label="Drive joystick" role="application">
-      <div id="thumbKnob"></div>
-    </div>
+    <button class="touchBtn up" data-dir="up" aria-label="Drive forward">&uarr;</button>
+    <button class="touchBtn left" data-dir="left" aria-label="Turn left">&larr;</button>
+    <button class="touchBtn right" data-dir="right" aria-label="Turn right">&rarr;</button>
+    <button class="touchBtn down" data-dir="down" aria-label="Reverse">&darr;</button>
   </div>
 </div>
 
@@ -276,8 +268,7 @@
   const colorMenu   = document.getElementById("colorMenu");
   const toggleButtons = document.getElementById("toggleButtons");
   const touchControls = document.getElementById("touchControls");
-  const thumbJoystick = document.getElementById("thumbJoystick");
-  const thumbKnob = document.getElementById("thumbKnob");
+  const touchButtons = document.querySelectorAll(".touchBtn");
 
   let worldW = 0;
   let worldH = 0;
@@ -471,7 +462,7 @@
     if (crashed) return;
     crashed = true;
 
-    resetJoystick();
+    resetTouchControls();
 
     crashSound.currentTime = 0;
     crashSound.play().catch(() => {});
@@ -509,86 +500,69 @@
     if (e.key === "ArrowDown")  { backwardPressed = false; stopEngine(); e.preventDefault(); }
   });
 
-  // ---- THUMB JOYSTICK ----
+  // ---- iPAD TOUCH CONTROLS ----
 
-  let activeJoystickPointerId = null;
+  function setTouchDirection(dir, pressed) {
+    if (!gameStarted) return;
 
-  function resetJoystick() {
-    activeJoystickPointerId = null;
+    if (dir === "left") leftPressed = pressed;
+    if (dir === "right") rightPressed = pressed;
+    if (dir === "up") forwardPressed = pressed;
+    if (dir === "down") backwardPressed = pressed;
+
+    if (pressed && (dir === "up" || dir === "down")) {
+      startEngine();
+    } else {
+      stopEngine();
+    }
+  }
+
+  function resetTouchControls() {
     leftPressed = false;
     rightPressed = false;
     forwardPressed = false;
     backwardPressed = false;
-    if (thumbKnob) thumbKnob.style.transform = "translate(-50%, -50%)";
+    touchButtons.forEach(btn => btn.classList.remove("isPressed"));
     stopEngine();
   }
 
-  function updateJoystickFromPoint(clientX, clientY) {
-    if (!thumbJoystick || !thumbKnob || !gameStarted) return;
-    const rect = thumbJoystick.getBoundingClientRect();
-    const cx = rect.left + rect.width * 0.5;
-    const cy = rect.top + rect.height * 0.5;
-    const maxR = Math.max(24, rect.width * 0.34);
-    let dx = clientX - cx;
-    let dy = clientY - cy;
-    const dist = Math.hypot(dx, dy);
-    if (dist > maxR) {
-      const s = maxR / dist;
-      dx *= s;
-      dy *= s;
-    }
+  touchButtons.forEach(btn => {
+    const dir = btn.getAttribute("data-dir");
 
-    thumbKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-
-    const nx = dx / maxR;
-    const ny = dy / maxR;
-    const turnDead = 0.24;
-    const driveDead = 0.24;
-    leftPressed = nx < -turnDead;
-    rightPressed = nx > turnDead;
-    forwardPressed = ny < -driveDead;
-    backwardPressed = ny > driveDead;
-    if (forwardPressed || backwardPressed) startEngine();
-    else stopEngine();
-  }
-
-  if (thumbJoystick) {
-    thumbJoystick.addEventListener("pointerdown", (e) => {
+    btn.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       if (!gameStarted) return;
-      activeJoystickPointerId = e.pointerId;
-      thumbJoystick.setPointerCapture(e.pointerId);
-      updateJoystickFromPoint(e.clientX, e.clientY);
+      btn.setPointerCapture(e.pointerId);
+      btn.classList.add("isPressed");
+      setTouchDirection(dir, true);
     }, { passive:false });
 
-    thumbJoystick.addEventListener("pointermove", (e) => {
-      if (activeJoystickPointerId !== e.pointerId) return;
+    const releaseButton = (e) => {
       e.preventDefault();
-      updateJoystickFromPoint(e.clientX, e.clientY);
-    }, { passive:false });
-
-    const endJoystick = (e) => {
-      if (activeJoystickPointerId !== e.pointerId) return;
-      e.preventDefault();
-      if (thumbJoystick.hasPointerCapture(e.pointerId)) {
-        thumbJoystick.releasePointerCapture(e.pointerId);
+      if (btn.hasPointerCapture(e.pointerId)) {
+        btn.releasePointerCapture(e.pointerId);
       }
-      resetJoystick();
+      btn.classList.remove("isPressed");
+      setTouchDirection(dir, false);
     };
-    thumbJoystick.addEventListener("pointerup", endJoystick, { passive:false });
-    thumbJoystick.addEventListener("pointercancel", endJoystick, { passive:false });
-    thumbJoystick.addEventListener("lostpointercapture", resetJoystick);
-  }
+
+    btn.addEventListener("pointerup", releaseButton, { passive:false });
+    btn.addEventListener("pointercancel", releaseButton, { passive:false });
+    btn.addEventListener("lostpointercapture", () => {
+      btn.classList.remove("isPressed");
+      setTouchDirection(dir, false);
+    });
+  });
 
   // ---- Hide / Show touch controls toggle ----
   toggleButtons.addEventListener("click", () => {
     if (touchControls.style.display === "none") {
-      touchControls.style.display = "flex";
-      toggleButtons.textContent = "Hide Joystick";
+      touchControls.style.display = "grid";
+      toggleButtons.textContent = "Hide Controls";
     } else {
-      resetJoystick();
+      resetTouchControls();
       touchControls.style.display = "none";
-      toggleButtons.textContent = "Show Joystick";
+      toggleButtons.textContent = "Show Controls";
     }
   });
 

@@ -588,7 +588,7 @@ let startSound = null;
 let waitingForStartKey = false;
 let ipadControlsOn = false;
 const IPAD_VERTICAL_SPEED_MULT = 1.12;// +12% for iPad R/F buttons
-const IPAD_TURN_SPEED_MULT = 0.60;
+const IPAD_TURN_SPEED_MULT = 0.55;
 const ipadButtonDown = Object.create(null);
 let preloadingAssets = true;
 let hudLoadWrapEl = null;
@@ -703,9 +703,9 @@ function initIpadThumbstick(){
 
   let activePointerId = null;
   const DEAD_ZONE_Y = 0.25;
-  const DEAD_ZONE_X = 0.30;
+  const DEAD_ZONE_X = 0.32;
   const STICK_DAMPING_Y = 0.88; // slightly soften thumbstick response
-  const STICK_DAMPING_X = 0.45; // softened side-to-side sensitivity
+  const STICK_DAMPING_X = 0.44; // softened side-to-side sensitivity
 
   const applyStick = (ev)=>{
     const rect = stick.getBoundingClientRect();

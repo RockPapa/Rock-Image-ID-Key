@@ -69,6 +69,32 @@
     background:linear-gradient(90deg,#5eead4,#8ff1a6);
     transition:width .2s ease;
   }
+  #startInstructionsHUD{
+    position:fixed;
+    left:50%;
+    top:118px;
+    transform:translateX(-50%);
+    z-index:13;
+    width:min(620px, calc(100vw - 28px));
+    padding:12px 14px;
+    border-radius:12px;
+    background:rgba(10,20,35,.84);
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 16px 44px rgba(0,0,0,.38);
+    color:#fff;
+    font:800 14px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+    letter-spacing:.02em;
+    text-align:left;
+    pointer-events:none;
+    transition:opacity .28s ease, visibility .28s ease;
+  }
+  #startInstructionsHUD.hidden{
+    opacity:0;
+    visibility:hidden;
+  }
+  #startInstructionsHUD div + div{
+    margin-top:6px;
+  }
   #canvasWrap{position:fixed;inset:0}
   #topRightBar{
     position:fixed;top:14px;right:14px;z-index:11;
@@ -352,6 +378,13 @@
 <div id="loadingProgressHUD" aria-label="Loading progress">
   <div id="loadingProgressLabel">Loading 0%</div>
   <div id="loadingProgressTrack"><div id="loadingProgressFill"></div></div>
+</div>
+
+<div id="startInstructionsHUD" aria-live="polite">
+  <div>TAP MOUNTAIN MAN BUTTON TO WALK.</div>
+  <div>YOU MUST COLLECT FIRE WOOD AND TAP THE START FIRE BUTTON EVERY NIGHT.</div>
+  <div>SPACE BAR COLLECTS FRUIT (IPAD USE FIRE/COLLECT BUTTON).</div>
+  <div>TO HUNT OR FISH TAP HUNT OR FISH BUTTON (SPACE BAR FIRES OR FIRE/COLLECT BUTTON).</div>
 </div>
 
 <div id="miniCompass" aria-label="Mini compass">
@@ -1631,6 +1664,12 @@ const statusEl = document.getElementById("status");
 const loadingProgressHUD = document.getElementById("loadingProgressHUD");
 const loadingProgressFill = document.getElementById("loadingProgressFill");
 const loadingProgressLabel = document.getElementById("loadingProgressLabel");
+const startInstructionsHUD = document.getElementById("startInstructionsHUD");
+if(startInstructionsHUD){
+  window.setTimeout(()=>{
+    startInstructionsHUD.classList.add("hidden");
+  }, 10000);
+}
 function setStatus(html){
   if(statusEl) statusEl.innerHTML = html;
 }
@@ -1897,8 +1936,30 @@ function _playNightStartHowl(){
 function _unlockAudioPlayback(){
   if (_audioGestureUnlocked) return;
   _audioGestureUnlocked = true;
+  primeActionSoundsForTouch();
   _tryStartDaySound();
   _tryStartNightSounds();
+}
+
+function primeAudioElement(audio){
+  if(!audio) return Promise.resolve();
+  const wasMuted = audio.muted;
+  audio.muted = true;
+  return audio.play().then(()=>{
+    audio.pause();
+    audio.currentTime = 0;
+    audio.muted = wasMuted;
+  }).catch(()=>{
+    audio.muted = wasMuted;
+  });
+}
+
+function primeActionSoundsForTouch(){
+  const sounds = [
+    ensureTwangSound(),
+    ensureMissileSound()
+  ].filter(Boolean);
+  for(const snd of sounds) primeAudioElement(snd);
 }
 
 function updateDaySoundState(daylightFactor){
@@ -6801,6 +6862,7 @@ if(touchCollectBtn){
   touchCollectBtn.addEventListener("pointerdown", async (e)=>{
     if(!touchControlsEnabled) return;
     e.preventDefault();
+    _unlockAudioPlayback();
     await handlePrimaryAction();
   });
 }
@@ -7109,6 +7171,8 @@ function animate(){
 }
 animate();
 window.addEventListener("click", _unlockAudioPlayback);
+window.addEventListener("pointerdown", _unlockAudioPlayback, { passive:true, capture:true });
+window.addEventListener("touchstart", _unlockAudioPlayback, { passive:true, capture:true });
 window.addEventListener("keydown", _unlockAudioPlayback);
 </script>
 

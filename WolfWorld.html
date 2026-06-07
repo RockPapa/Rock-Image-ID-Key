@@ -163,14 +163,6 @@
     align-items:flex-end;
   }
 
-  .tcActions{
-    display:grid;
-    grid-template-columns:110px 110px;
-    grid-template-rows:64px 64px;
-    gap:10px;
-    pointer-events:none;
-  }
-
   .tcBtn{
     width:100%;
     height:100%;
@@ -185,11 +177,15 @@
   }
   .tcBtn:active{ background:rgba(255,255,255,0.20); }
   .tcSmall{ font-size:14px; }
-  .tcWide{ grid-column: span 2; }
   .tcArrowBtn{
     width:104px;
     height:82px;
     font:800 34px/1 system-ui, -apple-system, Segoe UI, Roboto;
+  }
+  .tcShootBtn{
+    width:104px;
+    height:64px;
+    font:800 15px/1 system-ui, -apple-system, Segoe UI, Roboto;
   }
 
 </style>
@@ -2333,28 +2329,12 @@ requestAnimationFrame(frame);
     <div class="tcArrowCol leftArrows" aria-label="Left and right movement">
       <button class="tcBtn tcArrowBtn" data-hold="ArrowLeft" aria-label="Left">←</button>
       <button class="tcBtn tcArrowBtn" data-hold="ArrowRight" aria-label="Right">→</button>
-    </div>
-
-    <div class="tcActions">
-      <button class="tcBtn tcSmall" data-tap="Space">SHOOT</button>
-      <button class="tcBtn tcSmall" data-tap="Space">SHOOT</button>
-      <button class="tcBtn tcWide tcSmall" data-tap="KeyK">WOLF</button>
-      <button class="tcBtn tcWide tcSmall" data-tap="KeyP">RESET</button>
+      <button class="tcBtn tcShootBtn" data-tap="Space" aria-label="Shoot">SHOOT</button>
     </div>
 
     <div class="tcArrowCol rightArrows" aria-label="Forward and back movement">
       <button class="tcBtn tcArrowBtn" data-hold="ArrowUp" aria-label="Up">↑</button>
       <button class="tcBtn tcArrowBtn" data-hold="ArrowDown" aria-label="Down">↓</button>
-    </div>
-  </div>
-
-  <div style="height:10px"></div>
-
-  <div class="tcRow">
-    <div style="flex:1"></div>
-    <div class="tcActions" style="grid-template-columns:110px 110px;">
-      <button class="tcBtn tcWide tcSmall" data-tap="KeyR">RESTART</button>
-      <button class="tcBtn tcWide tcSmall" data-tap="Space">SHOOT</button>
     </div>
   </div>
 </div>

@@ -147,19 +147,6 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   pointer-events:none;
 }
 
-.touchHint{
-  position:fixed; left:18px; bottom:252px; z-index:26;
-  padding:10px 12px;
-  border-radius:12px;
-  background:rgba(20,24,32,.62);
-  color:#fff;
-  font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  border:1px solid rgba(255,255,255,.16);
-  box-shadow:0 10px 22px rgba(0,0,0,.40);
-  display:none;
-}
-.touchHint.on{ display:block; }
-
 @media (orientation: portrait){
   .touchUI.on{ display:none; }
   .touchUI.landscapeOnly{ display:none; }
@@ -310,8 +297,6 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
     </div>
   </div>
 </div>
-
-<div class="touchHint" id="touchHint">Tip: Tap <b>📱 CONTROLS</b> to show/hide iPad controls (landscape).</div>
 
 <div class="healthWrap" id="healthWrap" aria-label="Health">
   <div class="healthTop">
@@ -699,17 +684,17 @@ const LAKE_BUSH_COUNT = 1500;
 const LAKE_BUSH_SIZE = { w: 6.5, h: 7.8 };
 const LAKE_BUSH_LIFT = 0.16128;
 const LOW_TREE_FILE = "tree1.png";
-const LOW_TREE_COUNT = 113;
+const LOW_TREE_COUNT = 0;
 const LOW_TREE_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE_LIFT = -0.06;
 const LOW_TREE_DROP_PCT = 0.05;
 const LOW_TREE3_FILE = "tree3.png";
-const LOW_TREE3_COUNT = 113;
+const LOW_TREE3_COUNT = 0;
 const LOW_TREE3_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE3_LIFT = -0.06;
 const LOW_TREE3_DROP_PCT = 0.10;
 const MID_TREE7_FILE = "tree7.png";
-const MID_TREE7_COUNT = 150;
+const MID_TREE7_COUNT = 0;
 const MID_TREE7_SIZE = { w: 16.0, h: 24.0 };
 const MID_TREE7_LIFT = -0.06;
 const MID_TREE7_DROP_PCT = 0.10;
@@ -743,7 +728,7 @@ const L_JUMP_ADVANCE_DIST = TRUCK_W * PUEBLO_TRUCK_LENGTHS_PER_10FT; // 10ft adv
 const PUEBLO_TOP_ENTRY_ASSIST = TRUCK_W * PUEBLO_TRUCK_LENGTHS_PER_10FT * 2.0; // allow landing transition up to ~20ft below top
 const PUEBLO_TOP_EXIT_GRACE_SEC = 0.8; // prevent re-mantle lock when stepping off top
 const GRAVITY    = 30;
-const TREE_COLLISION_ENABLE = true;
+const TREE_COLLISION_ENABLE = false;
 const TRUCK_COLLISION_RADIUS = 1.05;
 const TUNNEL_WALL_COLLISION_RADIUS_SCALE = 0.80; // <1 widens interior drive zone before wall block
 const TUNNEL_ENTRANCE_CLEARANCE_FT = 6.0; // keep tunnel mouths collision-open for cleaner entry/exit
@@ -768,7 +753,7 @@ const TUNNEL_MOUTH_BOULDER_FILE = "boulder.png";
 const TUNNEL_MOUTH_BOULDER_BASE_SIZE_FT = 9.0;
 const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.png";
 const TUNNEL_MOUTH_BOULDER2_COUNT = 8;
-const TUNNEL_MOUTH_TREES_ENABLE = true;
+const TUNNEL_MOUTH_TREES_ENABLE = false;
 const TUNNEL_MOUTH_TREE1_COUNT = 1;
 const TUNNEL_MOUTH_TREE3_COUNT = 1;
 const TUNNEL_MOUTH_SIGN_ENABLE = true;
@@ -986,7 +971,6 @@ const alienObjectiveTitleEl = alienObjectiveWrap ? alienObjectiveWrap.querySelec
 const alienObjectiveCountsEl = alienObjectiveWrap ? alienObjectiveWrap.querySelector(".alienObjectiveCounts") : null;
 const miniCompassWrap = document.getElementById("miniCompass");
 const miniMapMetaWrap = document.querySelector(".miniMapMeta");
-const touchHintWrap = document.getElementById("touchHint");
 const touchToggleWrap = document.getElementById("touchToggle");
 const touchUIWrap = document.getElementById("touchUI");
 let playerHealthPct = 100;
@@ -7267,7 +7251,6 @@ function enterPostAlienClearMode(){
 
   if(miniCompassWrap) miniCompassWrap.style.display = "none";
   if(miniMapMetaWrap) miniMapMetaWrap.style.display = "none";
-  if(touchHintWrap) touchHintWrap.style.display = "none";
   if(touchToggleWrap) touchToggleWrap.style.display = "none";
   if(touchUIWrap) touchUIWrap.style.display = "none";
   if(pickFolderBtn) pickFolderBtn.style.display = "none";
@@ -10215,6 +10198,8 @@ function clearLowZoneTrees(){
 }
 
 async function createLowZoneTrees(){
+  clearLowZoneTrees();
+  if (LOW_TREE_COUNT <= 0) return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.low;
   if (!zone) return;
@@ -10287,6 +10272,8 @@ function clearLowZoneTree3(){
 }
 
 async function createLowZoneTree3(){
+  clearLowZoneTree3();
+  if (LOW_TREE3_COUNT <= 0) return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.low;
   if (!zone) return;
@@ -10363,6 +10350,8 @@ function clearMidZoneTree7(){
 }
 
 async function createMidZoneTree7(){
+  clearMidZoneTree7();
+  if (MID_TREE7_COUNT <= 0) return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.medium;
   if (!zone) return;
@@ -12880,7 +12869,6 @@ const keys = new Set();
    ========================= */
 const touchToggle = document.getElementById("touchToggle");
 const touchUI = document.getElementById("touchUI");
-const touchHint = document.getElementById("touchHint");
 const joyWrap = document.getElementById("joyWrap");
 const joyStick = document.getElementById("joyStick");
 
@@ -12897,7 +12885,6 @@ function refreshTouchUI(){
   const show = !!(touchOn && isLandscape());
   touchUI.classList.toggle("on", show);
   touchUI.classList.toggle("landscapeOnly", !isLandscape());
-  touchHint.classList.toggle("on", !!isTouchDevice());
 }
 
 refreshTouchUI();
@@ -12908,7 +12895,6 @@ touchToggle.addEventListener("click", (e)=>{
   e.preventDefault();
   touchOn = !touchOn;
   refreshTouchUI();
-  touchHint.classList.remove("on");
 });
 
 // Stop iOS scroll gestures while using controls

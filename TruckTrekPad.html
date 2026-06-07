@@ -699,17 +699,17 @@ const LAKE_BUSH_COUNT = 1500;
 const LAKE_BUSH_SIZE = { w: 6.5, h: 7.8 };
 const LAKE_BUSH_LIFT = 0.16128;
 const LOW_TREE_FILE = "tree1.png";
-const LOW_TREE_COUNT = 450;
+const LOW_TREE_COUNT = 113;
 const LOW_TREE_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE_LIFT = -0.06;
 const LOW_TREE_DROP_PCT = 0.05;
 const LOW_TREE3_FILE = "tree3.png";
-const LOW_TREE3_COUNT = 450;
+const LOW_TREE3_COUNT = 113;
 const LOW_TREE3_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE3_LIFT = -0.06;
 const LOW_TREE3_DROP_PCT = 0.10;
 const MID_TREE7_FILE = "tree7.png";
-const MID_TREE7_COUNT = 600;
+const MID_TREE7_COUNT = 150;
 const MID_TREE7_SIZE = { w: 16.0, h: 24.0 };
 const MID_TREE7_LIFT = -0.06;
 const MID_TREE7_DROP_PCT = 0.10;
@@ -769,8 +769,8 @@ const TUNNEL_MOUTH_BOULDER_BASE_SIZE_FT = 9.0;
 const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.png";
 const TUNNEL_MOUTH_BOULDER2_COUNT = 8;
 const TUNNEL_MOUTH_TREES_ENABLE = true;
-const TUNNEL_MOUTH_TREE1_COUNT = 2;
-const TUNNEL_MOUTH_TREE3_COUNT = 2;
+const TUNNEL_MOUTH_TREE1_COUNT = 1;
+const TUNNEL_MOUTH_TREE3_COUNT = 1;
 const TUNNEL_MOUTH_SIGN_ENABLE = true;
 const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
@@ -12956,6 +12956,7 @@ if(btnVehicleJ){
 // Right-side thumb joystick -> Arrow keys
 const joystickState = { up:false, down:false, left:false, right:false };
 let joyActive = false;
+let joyPointerId = null;
 const JOY_CENTER = { x:110, y:110 };
 const JOY_RADIUS = 88;
 const JOY_DEAD = 0.28;
@@ -12982,6 +12983,7 @@ function setJoyKnob(nx, ny){
 
 function resetJoystick(){
   joyActive = false;
+  joyPointerId = null;
   setArrowFromJoystick({ up:false, down:false, left:false, right:false });
   setJoyKnob(0, 0);
 }
@@ -13011,20 +13013,59 @@ function updateJoystickFromClient(clientX, clientY){
 }
 
 if(joyWrap){
+  const getTrackedTouch = (ev)=>{
+    if(!ev.changedTouches && !ev.touches) return null;
+    const touches = ev.touches || ev.changedTouches;
+    if(joyPointerId !== null){
+      for(const touch of touches){
+        if(touch.identifier === joyPointerId) return touch;
+      }
+      return null;
+    }
+    return touches[0] || null;
+  };
+  const getTrackedChangedTouch = (ev)=>{
+    const touches = ev.changedTouches || ev.touches;
+    if(!touches) return null;
+    if(joyPointerId !== null){
+      for(const touch of touches){
+        if(touch.identifier === joyPointerId) return touch;
+      }
+      return null;
+    }
+    return touches[0] || null;
+  };
   const start = (ev)=>{
     if(!touchOn || !isLandscape()) return;
+    if(joyActive) return;
     joyActive = true;
-    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    if(ev.pointerId !== undefined){
+      joyPointerId = ev.pointerId;
+      joyWrap.setPointerCapture?.(ev.pointerId);
+    }else{
+      const touch = getTrackedTouch(ev);
+      joyPointerId = touch ? touch.identifier : null;
+    }
+    const t = getTrackedTouch(ev) || ev;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
   const move = (ev)=>{
     if(!joyActive) return;
-    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    if(ev.pointerId !== undefined && joyPointerId !== ev.pointerId) return;
+    const t = getTrackedTouch(ev) || ev;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
-  const end = (ev)=>{ if(ev) ev.preventDefault(); resetJoystick(); };
+  const end = (ev)=>{
+    if(ev && ev.pointerId !== undefined && joyPointerId !== ev.pointerId) return;
+    if(ev && (ev.changedTouches || ev.touches)){
+      const matchingTouch = getTrackedChangedTouch(ev);
+      if(!matchingTouch && joyPointerId !== null) return;
+    }
+    if(ev) ev.preventDefault();
+    resetJoystick();
+  };
 
   joyWrap.addEventListener("touchstart", start, {passive:false});
   joyWrap.addEventListener("touchmove", move, {passive:false});
@@ -13032,9 +13073,10 @@ if(joyWrap){
   joyWrap.addEventListener("touchcancel", end, {passive:false});
 
   joyWrap.addEventListener("pointerdown", start);
-  window.addEventListener("pointermove", move);
-  window.addEventListener("pointerup", end);
-  window.addEventListener("pointercancel", end);
+  joyWrap.addEventListener("pointermove", move);
+  joyWrap.addEventListener("pointerup", end);
+  joyWrap.addEventListener("pointercancel", end);
+  joyWrap.addEventListener("lostpointercapture", resetJoystick);
 }
 
 resetJoystick();

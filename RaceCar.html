@@ -86,6 +86,13 @@
   height:116px;
   font-size:24px;
 }
+.startRaceWrap{
+  position:fixed;
+  left:18px;
+  bottom:18px;
+  z-index:31;
+  pointer-events:none;
+}
 .touchBtn.startRace{
   width:166px;
   height:74px;
@@ -125,18 +132,46 @@
   color:rgba(255,255,255,.8);
 }
 
-.touchHint{
-  position:fixed; left:18px; bottom:252px; z-index:26;
-  padding:10px 12px;
-  border-radius:12px;
-  background:rgba(20,24,32,.62);
-  color:#fff;
-  font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  border:1px solid rgba(255,255,255,.16);
-  box-shadow:0 10px 22px rgba(0,0,0,.40);
-  display:none;
+.startupLoader{
+  position:fixed;
+  left:18px;
+  top:18px;
+  z-index:29;
+  width:220px;
+  padding:8px 9px 9px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(20,24,32,.72);
+  box-shadow:0 10px 24px rgba(0,0,0,.42);
+  pointer-events:none;
+  transition:opacity .28s ease, visibility .28s ease;
 }
-.touchHint.on{ display:block; }
+.startupLoader.hidden{
+  opacity:0;
+  visibility:hidden;
+}
+.startupLoaderLabel{
+  color:#fff;
+  font:800 10px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  opacity:.88;
+  margin-bottom:6px;
+}
+.startupLoaderTrack{
+  width:100%;
+  height:9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  overflow:hidden;
+}
+.startupLoaderFill{
+  width:0%;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#38bdf8,#7ddf8e);
+  transition:width .2s ease;
+}
 
 /* iPad landscape tuning: larger targets and lower-right thumb joystick */
 @media (orientation: landscape) and (pointer: coarse){
@@ -162,8 +197,12 @@
   }
   .touchLeft{
     left:14px;
-    bottom:10px;
+    bottom:106px;
     gap:12px;
+  }
+  .startRaceWrap{
+    left:14px;
+    bottom:12px;
   }
   .touchBtn{
     width:104px;
@@ -316,13 +355,16 @@
       <div class="joyKnob" id="joyKnob"></div>
     </div>
   </div>
-
-  <div class="touchLeft">
-    <div class="touchBtn startRace" id="btnStartRace">START RACE</div>
-  </div>
 </div>
 
-<div class="touchHint" id="touchHint">Tip: Tap <b>📱 Controls</b> to show/hide joystick + buttons.</div>
+<div class="startRaceWrap">
+  <div class="touchBtn startRace" id="btnStartRace">START RACE</div>
+</div>
+
+<div class="startupLoader" id="startupLoader" aria-label="Loading progress">
+  <div class="startupLoaderLabel" id="startupLoaderLabel">Loading 0%</div>
+  <div class="startupLoaderTrack"><div class="startupLoaderFill" id="startupLoaderFill"></div></div>
+</div>
 
 <div class="hud" id="hud">
   <b>WALK MODE</b><br>
@@ -763,6 +805,75 @@ function rgb255ToThree(rgb){
 }
 
 const hud = document.getElementById("hud");
+const startupLoader = document.getElementById("startupLoader");
+const startupLoaderFill = document.getElementById("startupLoaderFill");
+const startupLoaderLabel = document.getElementById("startupLoaderLabel");
+let startupLoaderCanFinish = false;
+let startupManualTaskTotal = 0;
+let startupManualTaskDone = 0;
+let startupManualTaskActive = 0;
+let startupManagerLoaded = 0;
+let startupManagerTotal = 0;
+let startupManagerActive = false;
+
+function updateStartupLoader(label="Loading"){
+  if (!startupLoader || startupLoader.classList.contains("hidden")) return;
+  const manualPct = startupManualTaskTotal ? (startupManualTaskDone / startupManualTaskTotal) : 0;
+  const managerPct = startupManagerTotal ? (startupManagerLoaded / startupManagerTotal) : (startupManagerActive ? 0 : 1);
+  const pct = Math.max(4, Math.min(99, Math.round(((manualPct * 0.55) + (managerPct * 0.45)) * 100)));
+  if (startupLoaderFill) startupLoaderFill.style.width = pct + "%";
+  if (startupLoaderLabel) startupLoaderLabel.textContent = `${label} ${pct}%`;
+}
+
+function finishStartupLoader(){
+  if (!startupLoader) return;
+  if (startupLoaderFill) startupLoaderFill.style.width = "100%";
+  if (startupLoaderLabel) startupLoaderLabel.textContent = "Ready 100%";
+  requestAnimationFrame(()=>startupLoader.classList.add("hidden"));
+}
+
+function maybeFinishStartupLoader(){
+  if (!startupLoaderCanFinish) return;
+  if (startupManualTaskActive > 0) return;
+  if (startupManagerActive) return;
+  finishStartupLoader();
+}
+
+function trackStartupTask(label){
+  startupManualTaskTotal++;
+  startupManualTaskActive++;
+  updateStartupLoader(label);
+  let done = false;
+  return ()=>{
+    if (done) return;
+    done = true;
+    startupManualTaskDone++;
+    startupManualTaskActive = Math.max(0, startupManualTaskActive - 1);
+    updateStartupLoader(label);
+    maybeFinishStartupLoader();
+  };
+}
+
+THREE.DefaultLoadingManager.onStart = function(_url, loaded, total){
+  startupManagerActive = true;
+  startupManagerLoaded = loaded;
+  startupManagerTotal = total;
+  updateStartupLoader("Assets");
+};
+THREE.DefaultLoadingManager.onProgress = function(_url, loaded, total){
+  startupManagerActive = true;
+  startupManagerLoaded = loaded;
+  startupManagerTotal = total;
+  updateStartupLoader("Assets");
+};
+THREE.DefaultLoadingManager.onLoad = function(){
+  startupManagerActive = false;
+  startupManagerLoaded = Math.max(startupManagerLoaded, startupManagerTotal || 1);
+  startupManagerTotal = Math.max(startupManagerTotal, startupManagerLoaded);
+  updateStartupLoader("Assets");
+  maybeFinishStartupLoader();
+};
+
 function hudLine(html){ return; }
 function showBanner(msg){ const b=document.getElementById("banner"); if(!b) return; b.innerHTML = msg; b.style.display="block"; }
 function hideBanner(){ const b=document.getElementById("banner"); if(!b) return; b.style.display="none"; }
@@ -3256,6 +3367,8 @@ const mat = new THREE.MeshStandardMaterial({
 
 
 async function applyHeightmapToGround(){
+  const finishLoadingTask = trackStartupTask("Terrain");
+  try {
   if (!USE_TERRAIN){
     hudLine("ℹ️ Terrain disabled (USE_TERRAIN=false).");
     terrainReady = false;
@@ -3404,6 +3517,9 @@ async function applyHeightmapToGround(){
   removeStartupPanel();
   updateTruckAvatar(1/60);
   ensureStartupPanel();
+  } finally {
+    finishLoadingTask();
+  }
 }
 applyHeightmapToGround();
 
@@ -4185,6 +4301,8 @@ initSkidSound();
 
 // ---------- GRASS (PBR) ----------
 (async function initGrass(){
+  const finishLoadingTask = trackStartupTask("Grass");
+  try {
   const colorUrl  = resolveAssetUrl(GRASS_COLOR_FILE);
 
   const useNormalEXR = !!GRASS_NORMAL_EXR && !IS_FILE_PROTOCOL;
@@ -4230,6 +4348,9 @@ initSkidSound();
   } else {
     hudLine(`⚠️ Grass missing: <code>${GRASS_COLOR_FILE}</code>`);
   }
+  } finally {
+    finishLoadingTask();
+  }
 })();
 
 /* =========================================================
@@ -4245,6 +4366,8 @@ initSkidSound();
 let tallGrassMesh = null;
 
 async function createTallGrass(){
+  const finishLoadingTask = trackStartupTask("Tall grass");
+  try {
   if (!TALL_GRASS_ENABLE) return;
 
   // Wait for terrain so we can place blades on the ground
@@ -4330,6 +4453,9 @@ async function createTallGrass(){
   tallGrassMesh.instanceMatrix.needsUpdate = true;
 
   hudLine(`🌾 Tall grass ON: <code>${GRASS_CARD_COUNT}</code> cards · height via <code>${GRASS_CARD_HEIGHT_FILE}</code>`);
+  } finally {
+    finishLoadingTask();
+  }
 }
 
 function mulberry32(seed){
@@ -4589,6 +4715,8 @@ function makeBillboardTree(x, z){
 }
 
 async function spawnBillboardTreesWhenReady(){
+  const finishLoadingTask = trackStartupTask("Trees");
+  try {
   const start = performance.now();
   while (!terrainReady && performance.now() - start < 4000) {
     await new Promise(r => setTimeout(r, 50));
@@ -4618,6 +4746,9 @@ async function spawnBillboardTreesWhenReady(){
 
   hudLine(`🌲 PNG trees placed: <code>${placed + 1}</code> (shadow LOD max <code>${BILLBOARD_SHADOW_MAX}</code>)`);
 hudLine(`🌲 Tree1: <code id=\"t1c\">0</code> &nbsp; Tree2: <code id=\"t2c\">0</code> (tree2 chance ${Math.round(TREE2_CHANCE*100)}%)`);
+  } finally {
+    finishLoadingTask();
+  }
 }
 spawnBillboardTreesWhenReady();
 
@@ -4720,6 +4851,8 @@ function makePineTree(x, z){
 }
 
 async function spawnTreesWhenReady(){
+  const finishLoadingTask = trackStartupTask("Pines");
+  try {
   const start = performance.now();
   while (!terrainReady && performance.now() - start < 3000) {
     await new Promise(r => setTimeout(r, 50));
@@ -4770,8 +4903,13 @@ async function spawnTreesWhenReady(){
   }
 
   hudLine(`🌲 Better trees placed: <code>${placed}</code> (tries ${tries})`);
+  } finally {
+    finishLoadingTask();
+  }
 }
 spawnTreesWhenReady();
+startupLoaderCanFinish = true;
+maybeFinishStartupLoader();
 
 /* =========================================================
    MOVEMENT + TERRAIN COLLISION
@@ -4786,7 +4924,6 @@ const keys = new Set();
    ========================= */
 const touchToggle = document.getElementById("touchToggle");
 const touchUI = document.getElementById("touchUI");
-const touchHint = document.getElementById("touchHint");
 const joyBase = document.getElementById("joyBase");
 const joyKnob = document.getElementById("joyKnob");
 
@@ -4797,7 +4934,6 @@ function isTouchDevice(){
 // default: show pad on touch devices; toggle exists everywhere
 touchOn = isTouchDevice();
 touchUI.classList.toggle("on", touchOn);
-touchHint.classList.toggle("on", isTouchDevice());
 
 function updateTouchToggleUI(){
   if (!touchToggle) return;
@@ -4815,7 +4951,6 @@ function clearTouchKeys(){
 function setTouchOn(on){
   touchOn = !!on;
   touchUI.classList.toggle("on", touchOn);
-  touchHint.classList.remove("on");
   updateTouchToggleUI();
   if (!touchOn){
     clearTouchKeys();
@@ -4884,11 +5019,17 @@ function bindHold(btn, code){
 }
 
 const btnStartRace = document.getElementById("btnStartRace");
+let raceStartPending = false;
 if (btnStartRace){
   const startFromButton = (ev)=>{
     ev?.preventDefault?.();
     ev?.stopPropagation?.();
-    startRace();
+    if (raceStarted || raceStartPending) return;
+    raceStartPending = true;
+    setTimeout(()=>{
+      raceStartPending = false;
+      if (!raceStarted) startRace();
+    }, 2000);
   };
   btnStartRace.addEventListener("touchstart", startFromButton, { passive:false });
   btnStartRace.addEventListener("pointerdown", startFromButton, { passive:false });

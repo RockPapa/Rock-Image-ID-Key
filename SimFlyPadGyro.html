@@ -351,7 +351,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   position:fixed;
   left:118px;
   bottom:112px;
-  z-index:33;
+  z-index:10050;
   width:84px;
   height:44px;
   border-radius:12px;
@@ -361,7 +361,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   font:900 13px/1 system-ui,-apple-system,Segoe UI,Roboto,Arial;
   box-shadow:0 10px 24px rgba(0,0,0,.45);
   pointer-events:auto;
-  touch-action:manipulation;
+  touch-action:none;
   -webkit-tap-highlight-color:transparent;
 }
 .ipadGyroBtn.on{
@@ -14576,7 +14576,7 @@ const GYRO_PREFLIGHT_CALIBRATION_MS = 3000;
 const GYRO_PREFLIGHT_MIN_SAMPLES = 6;
 const GYRO_PITCH_SIGN = -1;
 const GYRO_PITCH_SENSITIVITY = 0.70;
-const GYRO_BANK_SENSITIVITY = 0.24;
+const GYRO_BANK_SENSITIVITY = 0.168;
 const GYRO_INPUT_DEADZONE = 0.035;
 const GYRO_PITCH_DRIFT_MAX_DEG = 7.0;
 const GYRO_PITCH_DRIFT_CORRECT_PER_SEC = 0.018;
@@ -14897,21 +14897,24 @@ window.addEventListener("orientationchange", ()=>{
 });
 if(ipadGyroBtn){
   let lastGyroToggleMs = -10000;
-  const toggleGyroFromGesture = async (ev)=>{
+  let lastGyroPrimaryTapMs = -10000;
+  const toggleGyroFromGesture = async (ev, isFallbackClick = false)=>{
     ev.preventDefault();
     ev.stopPropagation();
     const now = performance.now();
-    if(now - lastGyroToggleMs < 450) return;
+    if(isFallbackClick && now - lastGyroPrimaryTapMs < 900) return;
+    if(now - lastGyroToggleMs < 300) return;
     lastGyroToggleMs = now;
+    if(!isFallbackClick) lastGyroPrimaryTapMs = now;
     if(gyroState.enabled){
       disableGyroControls();
     } else {
       await enableGyroControls();
     }
   };
-  ipadGyroBtn.addEventListener("pointerdown", toggleGyroFromGesture, { passive:false });
-  ipadGyroBtn.addEventListener("touchend", toggleGyroFromGesture, { passive:false });
-  ipadGyroBtn.addEventListener("click", toggleGyroFromGesture, { passive:false });
+  ipadGyroBtn.addEventListener("pointerdown", (ev)=>toggleGyroFromGesture(ev), { passive:false });
+  ipadGyroBtn.addEventListener("touchstart", (ev)=>toggleGyroFromGesture(ev), { passive:false });
+  ipadGyroBtn.addEventListener("click", (ev)=>toggleGyroFromGesture(ev, true), { passive:false });
   updateGyroButton();
 }
 

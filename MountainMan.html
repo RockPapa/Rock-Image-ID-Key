@@ -28,6 +28,47 @@
   #hud .ok{color:#8ff1a6}
   #hud .bad{color:#ff8686}
   #status{margin-top:6px;font-size:12px;opacity:.95;line-height:1.25}
+  #loadingProgressHUD{
+    position:fixed;
+    left:118px;
+    top:14px;
+    z-index:11;
+    width:220px;
+    padding:7px 8px 8px;
+    border-radius:10px;
+    background:rgba(10,20,35,.78);
+    border:1px solid rgba(255,255,255,.18);
+    box-shadow:0 12px 32px rgba(0,0,0,.30);
+    pointer-events:none;
+    transition:opacity .28s ease, visibility .28s ease;
+  }
+  #loadingProgressHUD.hidden{
+    opacity:0;
+    visibility:hidden;
+  }
+  #loadingProgressLabel{
+    color:#fff;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    opacity:.88;
+    margin-bottom:5px;
+  }
+  #loadingProgressTrack{
+    width:100%;
+    height:9px;
+    border-radius:999px;
+    background:rgba(255,255,255,.14);
+    overflow:hidden;
+  }
+  #loadingProgressFill{
+    width:0%;
+    height:100%;
+    border-radius:999px;
+    background:linear-gradient(90deg,#5eead4,#8ff1a6);
+    transition:width .2s ease;
+  }
   #canvasWrap{position:fixed;inset:0}
   #topRightBar{
     position:fixed;top:14px;right:14px;z-index:11;
@@ -306,6 +347,11 @@
       <div id="healthBar"><div id="healthFill"></div></div>
     </div>
   </div>
+</div>
+
+<div id="loadingProgressHUD" aria-label="Loading progress">
+  <div id="loadingProgressLabel">Loading 0%</div>
+  <div id="loadingProgressTrack"><div id="loadingProgressFill"></div></div>
 </div>
 
 <div id="miniCompass" aria-label="Mini compass">
@@ -841,7 +887,7 @@ const TREASURE_CAVE_WIN_IMAGE = "win.png";
 const TREASURE_CAVE_BOULDERS_PER_SIDE = 50;
 const TREASURE_CAVE_ENTRANCE_BOULDER_COUNT = 6;
 const TREASURE_CAVE_TREE_IMAGE = "tree5.png";
-const TREASURE_CAVE_TREES_PER_SIDE = 50;
+const TREASURE_CAVE_TREES_PER_SIDE = 38;
 const TRACKED_CONE_X = -6771.8;
 const TRACKED_CONE_Y = 695.3;
 const TRACKED_CONE_RIGHT_SHIFT_X = 0;
@@ -1582,8 +1628,23 @@ const KNOWN_ASSET_FILES = [
 ];
 let folderFiles = KNOWN_ASSET_FILES.map((name)=>({ name, url: `${IMAGES_BASE_PATH}${name}`, type:"", size:0 }));
 const statusEl = document.getElementById("status");
+const loadingProgressHUD = document.getElementById("loadingProgressHUD");
+const loadingProgressFill = document.getElementById("loadingProgressFill");
+const loadingProgressLabel = document.getElementById("loadingProgressLabel");
 function setStatus(html){
   if(statusEl) statusEl.innerHTML = html;
+}
+function setLoadingProgress(percent, label="Loading"){
+  const pct = Math.max(0, Math.min(100, Math.round(percent)));
+  if(loadingProgressHUD) loadingProgressHUD.classList.remove("hidden");
+  if(loadingProgressFill) loadingProgressFill.style.width = pct + "%";
+  if(loadingProgressLabel) loadingProgressLabel.textContent = `${label} ${pct}%`;
+}
+function finishLoadingProgress(){
+  setLoadingProgress(100, "Ready");
+  requestAnimationFrame(()=>{
+    if(loadingProgressHUD) loadingProgressHUD.classList.add("hidden");
+  });
 }
 
 function simplifyHudAfterFolderLoad(){
@@ -3770,20 +3831,20 @@ const BUSH_LOW_ELEV = {
 const TREE3_LOW_ELEV = {
   MIN_FRAC: LOW_TREE_START_FRAC,
   MAX_FRAC: 0.30,   // top of low-elevation hardwood zone
-  COUNT: 100,
+  COUNT: 75,
   MAX_TRIES: 6000
 };
 const TREE1_LOW_ELEV = {
   MIN_FRAC: TREE3_LOW_ELEV.MIN_FRAC,
   MAX_FRAC: TREE3_LOW_ELEV.MAX_FRAC,
-  COUNT: 100,
+  COUNT: 75,
   MAX_TRIES: 6000
 };
 /***********************************************************************/
 const TREE5_MID_ELEV = {
   MIN_FRAC: 0.31,   // just above tree3 band
   MAX_FRAC: 0.50,
-  COUNT: 170,
+  COUNT: 128,
   MAX_TRIES: 7000
 };
 const CACTUS_HIGH_ELEV = {
@@ -6303,6 +6364,7 @@ function isPlayerInWater(){
 
 async function buildTerrain(){
   const myBuild = ++buildSerial;
+  setLoadingProgress(18, "Terrain");
   resetLakeState();
   // Sync sliders (if present) to hardwired values
   const elH = document.getElementById("rngHeight"); if (elH) elH.value = TERRAIN_HEIGHT_FIXED;
@@ -6322,15 +6384,16 @@ async function buildTerrain(){
   const rm = findExact(ROUGHNESS_NAME);
   const lakef = findExact(LAKE_ALBEDO_NAME);
 
-  if(!hm){ setStatus(`❌ Missing <b>${HM_NAME}</b> in the picked folder.`); return; }
-  if(!al){ setStatus(`❌ Missing <b>${ALBEDO_NAME}</b> in the picked folder.`); return; }
+  if(!hm){ setLoadingProgress(0, "Missing"); setStatus(`❌ Missing <b>${HM_NAME}</b> in the picked folder.`); return; }
+  if(!al){ setLoadingProgress(0, "Missing"); setStatus(`❌ Missing <b>${ALBEDO_NAME}</b> in the picked folder.`); return; }
 
+  setLoadingProgress(25, "Heightmap");
   setStatus(`✅ Indexed ${folderFiles.length} files from <b>images/</b>. Decoding <b>${HM_NAME}</b>…`);
 
   // decode heightmap into pixels
   let img;
   try{ img = await loadImage(hm.url); }
-  catch(e){ console.error(e); setStatus(`❌ Could not decode <b>${HM_NAME}</b>.`); return; }
+  catch(e){ console.error(e); setLoadingProgress(0, "Error"); setStatus(`❌ Could not decode <b>${HM_NAME}</b>.`); return; }
 
   hmW = img.naturalWidth || img.width;
   hmH = img.naturalHeight || img.height;
@@ -6346,9 +6409,10 @@ async function buildTerrain(){
   }
   rayHeightTexture = createRayHeightDataTexture();
 
+  setLoadingProgress(38, "Textures");
   setStatus(`✅ Heightmap ready (${hmW}×${hmH}). Loading <b>${ALBEDO_NAME}</b>…`);
   try{ albedoTex = await loadTex(al.url, { srgb:true }); }
-  catch(e){ console.error(e); setStatus(`❌ Could not load <b>${ALBEDO_NAME}</b>.`); return; }
+  catch(e){ console.error(e); setLoadingProgress(0, "Error"); setStatus(`❌ Could not load <b>${ALBEDO_NAME}</b>.`); return; }
 
   // Optional: normal + roughness components (if present in folder)
   let normalTex = null;
@@ -6383,6 +6447,7 @@ async function buildTerrain(){
 
   // Build mesh
   if (myBuild !== buildSerial) return;
+  setLoadingProgress(52, "Terrain");
   resetFireTextures();
   disposeGround();
 
@@ -6487,6 +6552,7 @@ float computeRayOcclusion(vec3 worldPos){
   lakeOverlay = buildLakeOverlay(size, seg, height, lakeTex);
   addWorldDecor(lakeOverlay);
   initCubeCabinHideWindow();
+  setLoadingProgress(62, "World");
   await placeCabin();
   await placeRedSquareWalls();
   await placeCave();
@@ -6508,6 +6574,7 @@ float computeRayOcclusion(vec3 worldPos){
   placeStartPost(playerPos.x + START_POST_OFFSET_X, playerPos.z + START_POST_OFFSET_Z);
   await placeWolfFramesSprite();
 
+  setLoadingProgress(74, "Scenery");
   await buildMountainRing();
   if (myBuild !== buildSerial) return;
   await placeTroutInLake();
@@ -6523,6 +6590,7 @@ float computeRayOcclusion(vec3 worldPos){
   await placeFixedBoulder();
   await placeTubeSpider();
   removeTreesInsideTreasureCaveTube();
+  setLoadingProgress(96, "Finishing");
   setStatus(`✅ Built terrain with lowest-basin lake${lakeTex ? " using lake_albedo.png" : " using fallback lake color"}. Shore grass flipbook is parked for later. Day/night cycle is active. Tank controls: ArrowLeft/ArrowRight turn, ArrowUp/ArrowDown (or W/S) drive, A/D strafe (disabled in hunt/fish). E/D aim offset in hunt/fish. Fixed terrain dimensions active. Mountain ring loaded if ${HORIZON_TEXTURE} is present. (Height=${height}, Size=${size}, Seg=${seg})`);
 }
 
@@ -6530,17 +6598,21 @@ float computeRayOcclusion(vec3 worldPos){
    Direct /images bootstrap (no file picker).
    ============================================================ */
 async function initFromImagesFolder(){
+  setLoadingProgress(8, "Assets");
   setStatus("Loading assets from <b>images/</b>…");
   await ensureAvatarTextures();
+  setLoadingProgress(14, "Avatar");
   await createOrUpdateAvatarSprite();
   await buildTerrain();
   await createOrUpdateAvatarSprite();
   simplifyHudAfterFolderLoad();
+  finishLoadingProgress();
 }
 
 document.getElementById("btnRebuild").addEventListener("click", async ()=>{
   if(!folderFiles.length){ setStatus("No assets indexed in images/."); return; }
   await buildTerrain();
+  finishLoadingProgress();
 });
 
 function setFixedReadouts(){ /* HUD sliders removed; terrain values remain hardwired in JS. */ }

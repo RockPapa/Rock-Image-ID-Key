@@ -445,8 +445,8 @@ const PLAZA_TRUCK_RESTRICT_COOLDOWN_MS = 1200;
 // ----- TRUCK AVATAR (Phase 1) -----
 const TRUCK_AVATAR_ENABLE = true;
 const TRUCK_FILE = "blue_truck.png";
-const TRUCK_LEFT_FILE = "blue_truck_left.png";
-const TRUCK_RIGHT_FILE = "blue_truck_right.png";
+const TRUCK_LEFT_FILE = TRUCK_FILE;
+const TRUCK_RIGHT_FILE = TRUCK_FILE;
 const LEGGOMAN_SPRITESHEET_FILE = "boy.jpg";
 const LEGGOMAN_SPRITESHEET_COLS = 5;
 const LEGGOMAN_SPRITESHEET_ROWS = 3;
@@ -463,35 +463,35 @@ const LEGGOMAN_FRAME_SEC = 0.09;
 const LEGGOMAN_HEIGHT_SCALE = 1.375; // +25% from 1.10 for larger sprite-sheet animation
 const LEGGOMAN_WIDTH_SCALE = 0.596288; // +25% from 0.4770304 for larger sprite-sheet animation
 const TRUCK2_FILE = "truck2.png";
-const TRUCK2_LEFT_FILE = "truck2_left.png";
-const TRUCK2_RIGHT_FILE = "truck2_right.png";
+const TRUCK2_LEFT_FILE = TRUCK2_FILE;
+const TRUCK2_RIGHT_FILE = TRUCK2_FILE;
 const TRUCK3_FILE = "truck3.png";
 const CYBER_TRUCK_FILE = "cyber.png";
-const CYBER_TRUCK_LEFT_FILE = "cyber_left.png";
-const CYBER_TRUCK_RIGHT_FILE = "cyber_right.png";
+const CYBER_TRUCK_LEFT_FILE = CYBER_TRUCK_FILE;
+const CYBER_TRUCK_RIGHT_FILE = CYBER_TRUCK_FILE;
 const MAZ_VEHICLE_BASE_FILE = "maz_back.png";
-const MAZ_VEHICLE_LEFT_FILE = "maz_left.png";
-const MAZ_VEHICLE_RIGHT_FILE = "maz_right.png";
+const MAZ_VEHICLE_LEFT_FILE = MAZ_VEHICLE_BASE_FILE;
+const MAZ_VEHICLE_RIGHT_FILE = MAZ_VEHICLE_BASE_FILE;
 const ORANGE_TRUCK_BASE_FILE = "orange_truck.png";
-const ORANGE_TRUCK_LEFT_FILE = "orange_truck_left.png";
-const ORANGE_TRUCK_RIGHT_FILE = "orange_truck_right.png";
-const ORANGE_TRUCK_HALF_LEFT_FILE = "orange_truck_half_left.png";
-const ORANGE_TRUCK_HALF_RIGHT_FILE = "orange_truck_half_right.png";
+const ORANGE_TRUCK_LEFT_FILE = ORANGE_TRUCK_BASE_FILE;
+const ORANGE_TRUCK_RIGHT_FILE = ORANGE_TRUCK_BASE_FILE;
+const ORANGE_TRUCK_HALF_LEFT_FILE = ORANGE_TRUCK_BASE_FILE;
+const ORANGE_TRUCK_HALF_RIGHT_FILE = ORANGE_TRUCK_BASE_FILE;
 const ORANGE_TRUCK_LEGACY_FILE = "orange_truck 2.png";
 const WHITE_TRUCK_BASE_FILE = "white_truck.png";
-const WHITE_TRUCK_LEFT_FILE = "white_truck_left.png";
-const WHITE_TRUCK_RIGHT_FILE = "white_truck_right.png";
+const WHITE_TRUCK_LEFT_FILE = WHITE_TRUCK_BASE_FILE;
+const WHITE_TRUCK_RIGHT_FILE = WHITE_TRUCK_BASE_FILE;
 const BIGFOOT_BASE_FILE = "bigfoot.png";
-const BIGFOOT_LEFT_FILE = "bigfoot_left.png";
-const BIGFOOT_RIGHT_FILE = "bigfoot_right.png";
+const BIGFOOT_LEFT_FILE = BIGFOOT_BASE_FILE;
+const BIGFOOT_RIGHT_FILE = BIGFOOT_BASE_FILE;
 const BIG_TRUCK_BASE_FILE = "big_truck.png";
-const BIG_TRUCK_LEFT_FILE = "big_truck_left.png";
-const BIG_TRUCK_RIGHT_FILE = "big_truck_right.png";
+const BIG_TRUCK_LEFT_FILE = BIG_TRUCK_BASE_FILE;
+const BIG_TRUCK_RIGHT_FILE = BIG_TRUCK_BASE_FILE;
 const BIG_TRUCK_SCALE_MULT = 0.95; // reduce Big Truck avatar size by 5%
 const VEHICLE_TRIPLET_SCALE_MULT = 1.656; // additional +15% (total +65.6% from baseline) for all vehicle base/left/right triplets
 const VEHICLE_BACK_VIEW_SCALE_MULT = 0.7744; // additional -12% (total 22.56% below baseline) when showing back view via Up/W input
 const ORANGE_TURN_PREVIEW_SEC = 0.00;
-const ORANGE_TURN_PREVIEW_NUDGE = 0.18;
+const ORANGE_TURN_PREVIEW_NUDGE = 0.0;
 const ORANGE_TURN_HALF_STAGE_AT = 0.33;
 const TRUCK3_SCALE_MULT = 1.25;
 const COPTER_ACTIVE_SCALE_MULT = 1.6; // +60% when copter vehicle is active
@@ -11243,58 +11243,34 @@ function getNextTruckFile(currentFile){
 }
 
 function getSpawnTruckDirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return TRUCK_LEFT_FILE;
-  if(keys.has("ArrowRight")) return TRUCK_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return TRUCK_FILE;
   return TRUCK_FILE;
 }
 
 function getTruck2DirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return TRUCK2_LEFT_FILE;
-  if(keys.has("ArrowRight")) return TRUCK2_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return TRUCK2_FILE;
   return TRUCK2_FILE;
 }
 
 function getMazDirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return MAZ_VEHICLE_LEFT_FILE;
-  if(keys.has("ArrowRight")) return MAZ_VEHICLE_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return MAZ_VEHICLE_BASE_FILE;
   return MAZ_VEHICLE_BASE_FILE;
 }
 
 function getOrangeTruckDirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return ORANGE_TRUCK_HALF_LEFT_FILE;
-  if(keys.has("ArrowRight")) return ORANGE_TRUCK_HALF_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return ORANGE_TRUCK_BASE_FILE;
   return ORANGE_TRUCK_BASE_FILE;
 }
 
 function getWhiteTruckDirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return WHITE_TRUCK_LEFT_FILE;
-  if(keys.has("ArrowRight")) return WHITE_TRUCK_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return WHITE_TRUCK_BASE_FILE;
   return WHITE_TRUCK_BASE_FILE;
 }
 
 function getBigfootDirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return BIGFOOT_LEFT_FILE;
-  if(keys.has("ArrowRight")) return BIGFOOT_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return BIGFOOT_BASE_FILE;
   return BIGFOOT_BASE_FILE;
 }
 
 function getCyberDirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return CYBER_TRUCK_LEFT_FILE;
-  if(keys.has("ArrowRight")) return CYBER_TRUCK_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return CYBER_TRUCK_FILE;
   return CYBER_TRUCK_FILE;
 }
 
 function getBigTruckDirectionalFileByInput(){
-  if(keys.has("ArrowLeft")) return BIG_TRUCK_LEFT_FILE;
-  if(keys.has("ArrowRight")) return BIG_TRUCK_RIGHT_FILE;
-  if(keys.has("ArrowUp")) return BIG_TRUCK_BASE_FILE;
   return BIG_TRUCK_BASE_FILE;
 }
 
@@ -11612,36 +11588,6 @@ function initTruckAvatar
 function updateTruckAvatar(dt=0.016){
   if(!truckPlane) return;
 
-  // Orange truck turn blend: instant back <-> one-eighth view swap.
-  const isOrangeVehicleActive = (currentVehicleFile === ORANGE_TRUCK_BASE_FILE || currentVehicleFile === ORANGE_TRUCK_LEGACY_FILE);
-  const orangeLeftHeld = isOrangeVehicleActive && keys.has("ArrowLeft");
-  const orangeRightHeld = isOrangeVehicleActive && keys.has("ArrowRight");
-  const orangeTurnHeld = orangeLeftHeld || orangeRightHeld;
-  const orangeLeftPressed = orangeLeftHeld && !orangeTurnPrevLeftHeld;
-  const orangeRightPressed = orangeRightHeld && !orangeTurnPrevRightHeld;
-  if(isOrangeVehicleActive && (orangeLeftPressed || orangeRightPressed)){
-    orangeTurnPreviewTimer = ORANGE_TURN_PREVIEW_SEC;
-    orangeTurnPreviewDir = orangeLeftPressed ? -1 : 1;
-  }
-  if(!isOrangeVehicleActive){
-    orangeTurnPreviewTimer = 0.0;
-    orangeTurnPreviewDir = 0;
-  }
-  if(orangeTurnPreviewTimer > 0){
-    orangeTurnPreviewTimer = Math.max(0, orangeTurnPreviewTimer - Math.max(0, dt));
-  }
-  const orangeTurnPreviewActive = isOrangeVehicleActive && orangeTurnHeld && orangeTurnPreviewTimer > 0;
-  const orangeTurnPhase01 = (ORANGE_TURN_PREVIEW_SEC > 1e-6) ? (1.0 - (orangeTurnPreviewTimer / ORANGE_TURN_PREVIEW_SEC)) : 1.0;
-  const orangeHalfStageActive = orangeTurnPreviewActive && orangeTurnPhase01 >= ORANGE_TURN_HALF_STAGE_AT;
-  const orangeTurnPreviewFile = orangeTurnPreviewActive
-    ? (orangeHalfStageActive
-      ? (orangeTurnPreviewDir < 0 ? ORANGE_TRUCK_HALF_LEFT_FILE : ORANGE_TRUCK_HALF_RIGHT_FILE)
-      : ORANGE_TRUCK_BASE_FILE)
-    : "";
-  const orangeTurnPreviewNudge = orangeTurnPreviewActive ? (orangeTurnPreviewDir * ORANGE_TURN_PREVIEW_NUDGE) : 0;
-  orangeTurnPrevLeftHeld = orangeLeftHeld;
-  orangeTurnPrevRightHeld = orangeRightHeld;
-
   const upHeld = keys.has("ArrowUp") || keys.has("KeyW");
   const leftHeld = keys.has("ArrowLeft") || keys.has("KeyA");
   const rightHeld = keys.has("ArrowRight") || keys.has("KeyD");
@@ -11691,9 +11637,7 @@ function updateTruckAvatar(dt=0.016){
 
     const pickupScale = ((currentVehicleFile === BIG_TRUCK_BASE_FILE) ? BIG_TRUCK_SCALE_MULT : 1.0) * VEHICLE_TRIPLET_SCALE_MULT * backViewScaleMult;
     truckPlane.scale.set(pickupScale, pickupScale, 1.0);
-    const directionalTex = orangeTurnPreviewFile
-      ? getPlazaExitChoiceTexture(orangeTurnPreviewFile)
-      : getDirectionalVehicleTextureForCurrent();
+    const directionalTex = getDirectionalVehicleTextureForCurrent();
     const desiredTex = directionalTex || truckTex;
     // Ensure we snap back to the active vehicle texture after toggle.
     const mat = truckPlane.material;
@@ -11707,9 +11651,7 @@ function updateTruckAvatar(dt=0.016){
     const activeScale = (baseScale * vehicleScale) * VEHICLE_TRIPLET_SCALE_MULT * backViewScaleMult;
     const copterHeightScale = (currentVehicleFile === GODDESS_COPTER_MARKER_FILE) ? 0.7744 : 1.0;
     truckPlane.scale.set(activeScale, activeScale * copterHeightScale, 1.0);
-    const directionalTex = orangeTurnPreviewFile
-      ? getPlazaExitChoiceTexture(orangeTurnPreviewFile)
-      : getDirectionalVehicleTextureForCurrent();
+    const directionalTex = getDirectionalVehicleTextureForCurrent();
     const desiredTex = directionalTex || leggomanGoalTex;
     const mat = truckPlane.material;
     const currentTex = (mat && mat.uniforms && mat.uniforms.map) ? mat.uniforms.map.value : mat.map;
@@ -11834,7 +11776,7 @@ function updateTruckAvatar(dt=0.016){
     renderRoll = truckTerrainRoll + truckTurnSway + vibeRoll;
   }
 
-  truckPlane.position.set(x + (fwd.x * renderFwdOffset) + (right.x * orangeTurnPreviewNudge), baseTruckY, z + (fwd.z * renderFwdOffset) + (right.z * orangeTurnPreviewNudge));
+  truckPlane.position.set(x + (fwd.x * renderFwdOffset), baseTruckY, z + (fwd.z * renderFwdOffset));
   truckPlane.rotation.set(renderPitch, yaw, renderRoll);
 
   if(truckShadowProxy){

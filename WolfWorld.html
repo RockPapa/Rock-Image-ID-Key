@@ -276,6 +276,8 @@ function loadTouchEnabled(){
   return true;
 }
 let touchEnabled = loadTouchEnabled();
+let virtualForwardHeld = false;
+const TOUCH_FORWARD_SPEED_MULT = 1.12;
 
 function applyTouchUI(){
   if(!touchToggle || !touchControls) return;
@@ -290,6 +292,7 @@ function setTouchEnabled(v){
   if(!touchEnabled){
     clearVirtualArrowKeys();
     keys.delete("Space");
+    virtualForwardHeld = false;
   }
   applyTouchUI();
   c.focus();
@@ -323,10 +326,12 @@ function bindHold(btn, code){
     e.preventDefault();
     unlockAudioOnce();
     keys.add(code);
+    if(code === "ArrowUp") virtualForwardHeld = true;
     c.focus();
   };
   const up = (e) => {
     e.preventDefault();
+    if(code === "ArrowUp") virtualForwardHeld = false;
     keys.delete(code);
   };
   btn.addEventListener("pointerdown", down, {passive:false});
@@ -359,6 +364,7 @@ document.querySelectorAll(".tcBtn").forEach(btn => {
 // anti-stuck keys (same spirit as Luke2)
 function clearKeys(){
   keys.clear();
+  virtualForwardHeld = false;
 }
 addEventListener("blur", clearKeys);
 addEventListener("pagehide", clearKeys);
@@ -2177,7 +2183,10 @@ function frame(now){
 
   let step = 0;
   if(!gameOver){
-    if(keys.has("ArrowUp"))   step += (MOVE_SPEED_BASE * speedMult) * dt;
+    if(keys.has("ArrowUp")) {
+      const forwardSpeedMult = virtualForwardHeld ? TOUCH_FORWARD_SPEED_MULT : 1;
+      step += (MOVE_SPEED_BASE * speedMult * forwardSpeedMult) * dt;
+    }
     if(keys.has("ArrowDown")) step -= (MOVE_SPEED_BASE * speedMult) * dt;
   }
   updateWalkingSound(!gameOver && step !== 0);

@@ -148,38 +148,19 @@
     pointer-events:none;
   }
 
-  .tcJoyCol{
-    flex:1;
+  .tcArrowCol{
     display:flex;
-    justify-content:flex-end;
+    flex-direction:column;
+    gap:12px;
+    pointer-events:none;
+  }
+
+  .tcArrowCol.leftArrows{
+    align-items:flex-start;
+  }
+
+  .tcArrowCol.rightArrows{
     align-items:flex-end;
-    pointer-events:none;
-  }
-
-  .tcJoy{
-    width:148px;
-    height:148px;
-    border-radius:999px;
-    background:rgba(0,0,0,0.42);
-    border:1px solid rgba(255,255,255,0.18);
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.06);
-    position:relative;
-    pointer-events:auto;
-    touch-action:none;
-  }
-
-  .tcJoyKnob{
-    width:62px;
-    height:62px;
-    border-radius:999px;
-    position:absolute;
-    left:50%;
-    top:50%;
-    transform:translate(-50%,-50%);
-    background:rgba(255,255,255,0.24);
-    border:1px solid rgba(255,255,255,0.34);
-    box-shadow:0 8px 16px rgba(0,0,0,0.25);
-    pointer-events:none;
   }
 
   .tcActions{
@@ -205,33 +186,16 @@
   .tcBtn:active{ background:rgba(255,255,255,0.20); }
   .tcSmall{ font-size:14px; }
   .tcWide{ grid-column: span 2; }
-
-  .pcHint{
-    position:fixed;
-    top:16px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:10000;
-    padding:10px 14px;
-    border-radius:12px;
-    border:1px solid rgba(255,255,255,.18);
-    background:rgba(20,24,32,.82);
-    color:#fff;
-    font:700 16px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    box-shadow:0 10px 22px rgba(0,0,0,.45);
-    pointer-events:none;
-    animation:hidePcHint 5s forwards;
-  }
-  @keyframes hidePcHint{
-    0%, 92%{ opacity:1; }
-    100%{ opacity:0; visibility:hidden; }
+  .tcArrowBtn{
+    width:104px;
+    height:82px;
+    font:800 34px/1 system-ui, -apple-system, Segoe UI, Roboto;
   }
 
 </style>
 </head>
 
 <body>
-<div class="pcHint">Computers use arrow keys and space bar</div>
 <canvas id="c" tabindex="0"></canvas>
 
 <script>
@@ -295,8 +259,6 @@ const TOUCH_STORE_KEY = "wolfgrove_touch_controls";
 
 const touchToggle = document.getElementById("touchToggle");
 const touchControls = document.getElementById("touchControls");
-const thumbJoyEl = document.getElementById("thumbJoy");
-const thumbJoyKnobEl = document.getElementById("thumbJoyKnob");
 
 function clearVirtualArrowKeys(){
   keys.delete("ArrowUp");
@@ -332,7 +294,6 @@ function setTouchEnabled(v){
   if(!touchEnabled){
     clearVirtualArrowKeys();
     keys.delete("Space");
-    resetThumbJoystick();
   }
   applyTouchUI();
   c.focus();
@@ -399,88 +360,9 @@ document.querySelectorAll(".tcBtn").forEach(btn => {
   if(tap)  bindTap(btn, tap);
 });
 
-const JOY_DEADZONE = 0.24;
-let joyPointerId = null;
-
-function resetThumbJoystick(){
-  joyPointerId = null;
-  clearVirtualArrowKeys();
-  if(thumbJoyKnobEl){
-    thumbJoyKnobEl.style.transform = "translate(-50%,-50%)";
-  }
-}
-
-function updateThumbJoystick(clientX, clientY){
-  if(!thumbJoyEl || !thumbJoyKnobEl) return;
-  const r = thumbJoyEl.getBoundingClientRect();
-  const cx = r.left + (r.width / 2);
-  const cy = r.top + (r.height / 2);
-  let dx = clientX - cx;
-  let dy = clientY - cy;
-
-  const max = (r.width / 2) - (thumbJoyKnobEl.offsetWidth / 2) - 2;
-  const dist = Math.hypot(dx, dy);
-  if(dist > max){
-    const t = max / dist;
-    dx *= t;
-    dy *= t;
-  }
-
-  const nx = dx / Math.max(1, max);
-  const ny = dy / Math.max(1, max);
-
-  if(Math.abs(nx) > JOY_DEADZONE){
-    if(nx < 0){ keys.add("ArrowLeft"); keys.delete("ArrowRight"); }
-    else      { keys.add("ArrowRight"); keys.delete("ArrowLeft"); }
-  }else{
-    keys.delete("ArrowLeft");
-    keys.delete("ArrowRight");
-  }
-
-  if(Math.abs(ny) > JOY_DEADZONE){
-    if(ny < 0){ keys.add("ArrowUp"); keys.delete("ArrowDown"); }
-    else      { keys.add("ArrowDown"); keys.delete("ArrowUp"); }
-  }else{
-    keys.delete("ArrowUp");
-    keys.delete("ArrowDown");
-  }
-
-  thumbJoyKnobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-}
-
-if(thumbJoyEl){
-  thumbJoyEl.addEventListener("pointerdown", (e) => {
-    if(!touchEnabled) return;
-    e.preventDefault();
-    unlockAudioOnce();
-    joyPointerId = e.pointerId;
-    thumbJoyEl.setPointerCapture(e.pointerId);
-    updateThumbJoystick(e.clientX, e.clientY);
-    c.focus();
-  }, {passive:false});
-
-  thumbJoyEl.addEventListener("pointermove", (e) => {
-    if(!touchEnabled) return;
-    if(joyPointerId !== e.pointerId) return;
-    e.preventDefault();
-    updateThumbJoystick(e.clientX, e.clientY);
-  }, {passive:false});
-
-  const endJoy = (e) => {
-    if(joyPointerId !== e.pointerId) return;
-    e.preventDefault();
-    resetThumbJoystick();
-  };
-
-  thumbJoyEl.addEventListener("pointerup", endJoy, {passive:false});
-  thumbJoyEl.addEventListener("pointercancel", endJoy, {passive:false});
-  thumbJoyEl.addEventListener("lostpointercapture", () => resetThumbJoystick(), {passive:false});
-}
-
 // anti-stuck keys (same spirit as Luke2)
 function clearKeys(){
   keys.clear();
-  resetThumbJoystick();
 }
 addEventListener("blur", clearKeys);
 addEventListener("pagehide", clearKeys);
@@ -518,7 +400,6 @@ const MOVE_SPEED_BASE = CAMI_START_SPEED;
 
 const WOLF_HIT_HEALTH_LOSS = 15;
 const WOLF_HIT_SPEED_LOSS  = 0.07;
-const SPIDER_HIT_HEALTH_LOSS = 10;
 
 const NIGHT_HEALTH_LOSS = 10;
 const NIGHT_SPEED_LOSS  = 0.05;
@@ -556,9 +437,6 @@ function addSpeedMult(delta){
 function applyWolfHitPenalty(){
   addHealth(-WOLF_HIT_HEALTH_LOSS);
   addSpeedMult(-WOLF_HIT_SPEED_LOSS);
-}
-function applySpiderHitPenalty(){
-  addHealth(-SPIDER_HIT_HEALTH_LOSS);
 }
 function applyNightPenalty(){
   addHealth(-NIGHT_HEALTH_LOSS);
@@ -855,7 +733,7 @@ function updateWalkingSound(isMoving){
 const FIRE_ENABLED = true;
 const FIRE_FPS = 14;
 const FIRE_SPRITE_SCALE = .59 * 1.7;
-const FIRE_YSHIFT = 0.12;
+const FIRE_YSHIFT = 0.02;
 const FIRE_CROP = { x: 0.18, y: 0.02, w: 0.64, h: 0.96 };
 const FIRE_FRAME_COUNT = 5;
 
@@ -1010,8 +888,6 @@ const BLUE_BALL_YSHIFT = 0.18;
 const BLUE_BALL_SPAWN_AHEAD = 0.70;
 const SABER_KILL_HEALTH_BONUS = 10;
 const SABER_MISS_HEALTH_PENALTY = 5;
-const SPIDER_HIT_RADIUS = 0.95;
-const SPIDER_COUNT = 4; // original + 3 more
 
 const blueBalls = [];
 
@@ -1043,20 +919,6 @@ function updateBlueBalls(dt){
         b.unresolved = false;
         playSfxWithUnlock(tigerSfx);
         b.life = 0;
-      }
-    }
-
-    for(let si=0; si<spiders.length; si++){
-      if(!activeSpiderIdxSet.has(si)) continue;
-      const s = spiders[si];
-      if(!s.alive) continue;
-      const sx = b.x - s.x;
-      const sy = b.y - s.y;
-      if((sx*sx + sy*sy) <= (SPIDER_HIT_RADIUS * SPIDER_HIT_RADIUS)){
-        s.alive = false;
-        b.unresolved = false;
-        b.life = 0;
-        break;
       }
     }
 
@@ -1167,8 +1029,6 @@ let NIGHT_SPEED_MUL = .5;
 let time01          = 0.58;
 let prevTime01      = time01;
 const DAY_LENGTH_SEC = 90;
-const DAY_DURATION_SCALE = 1.30;   // +30% duration
-const NIGHT_DURATION_SCALE = 0.70; // -30% duration
 
 const NIGHT_PENALTY_START_NF = 0.82;
 let wasNight = false;
@@ -1183,49 +1043,9 @@ const FIRE_SAFE_NIGHT_THRESHOLD = 0.55;
 const FIRE_EXIT_NIGHT_HEALTH_PENALTY = 5;   // ✅ lose 5% health if you leave fire safe zone at night
 let wasInFireSafeZone = false;
 
-/* =========================================================
-   EAST HEADING VIOLATION
-========================================================= */
-const EAST_TARGET_DEG = 270;
-const EAST_TOLERANCE_DEG = 10;
-const EAST_VIOLATION_SECONDS = 2.0;
-const EAST_VIOLATION_HEALTH_PENALTY = 5;
-let eastOffTimer = 0;
-let eastViolationArmed = true;
-
-function angleDiffDeg(a, b){
-  let d = Math.abs(a - b) % 360;
-  if(d > 180) d = 360 - d;
-  return d;
-}
-
-function applyEastHeadingRule(dt){
-  const headingDeg = ((ang * 180 / Math.PI) % 360 + 360) % 360;
-  const offBy = angleDiffDeg(headingDeg, EAST_TARGET_DEG);
-  const inRange = offBy <= EAST_TOLERANCE_DEG;
-
-  if(inRange){
-    eastOffTimer = 0;
-    eastViolationArmed = true;
-    return;
-  }
-
-  eastOffTimer += dt;
-  if(eastViolationArmed && eastOffTimer > EAST_VIOLATION_SECONDS){
-    addHealth(-EAST_VIOLATION_HEALTH_PENALTY);
-    eastViolationArmed = false;
-  }
-}
-
 
 function isNightEnoughForFireSafe(){
   return NIGHT_ENABLED && nightLit.nightFactor >= FIRE_SAFE_NIGHT_THRESHOLD;
-}
-function playerNearFireAnimation(){
-  if(!FIRE_ENABLED || !fireActive) return false;
-  const dx = posX - fireX;
-  const dy = posY - fireY;
-  return (dx*dx + dy*dy) <= (FIRE_SAFE_RADIUS * FIRE_SAFE_RADIUS);
 }
 function camiInFireSafeZone(){
   if(!FIRE_SAFE_ENABLED || !FIRE_ENABLED) return false;
@@ -1351,7 +1171,6 @@ const MOON_LIFT    = 0.12;
 const NIGHT_TINT = { r: 10, g: 25, b: 30 };
 const NIGHT_TINT_ALPHA_AT_FULL_NIGHT = 0.18;
 const VIGNETTE_STRENGTH = 0.35;
-const SUN_BRIGHTNESS_BOOST = 1.30;
 
 function clamp01(x){ return x<0?0:(x>1?1:x); }
 function smoothstep(e0,e1,x){
@@ -1381,8 +1200,8 @@ function computeNight(t01){
   else if (t01 > 0.12 && t01 < 0.38) phase = "Dawn";
 
   const SKY = {
-    dayTop:    {r: 20,  g: 52,  b: 125},
-    dayH:      {r: 215, g: 240, b: 255},
+    dayTop:    {r: 12,  g: 34,  b: 92 },
+    dayH:      {r: 190, g: 228, b: 255},
     duskTop:   {r: 35,  g: 35,  b: 90 },
     duskH:     {r: 140, g: 85,  b: 120},
     nightTop:  {r: 5,   g: 10,  b: 25 },
@@ -1496,7 +1315,7 @@ const MOUNTAIN_BAND_PX       = 70;   // 🔧 bigger band = taller mountains
 const MOUNTAIN_COLOR         = { r: 120, g: 135, b: 155 }; // gray-blue
 const MOUNTAIN_HAZE_STRENGTH = 0.55; // 🔧 stronger haze/visibility
 
-const FOG_NEAR = 10, FOG_FAR = 120, FLOOR_NEAR_DIM=0.94, FOG_COLOR={r:205,g:220,b:235};
+const FOG_NEAR = 10, FOG_FAR = 120, FLOOR_NEAR_DIM=0.85, FOG_COLOR={r:205,g:220,b:235};
 
 function renderSkyAndFloor(){
   const w=c.width, h=c.height, half=h>>1;
@@ -1596,11 +1415,6 @@ function renderSkyAndFloor(){
       g = (g * FLOOR_NEAR_DIM) | 0;
       b = (b * FLOOR_NEAR_DIM) | 0;
 
-      const dayBoost = 1 + (nightLit.sun * (SUN_BRIGHTNESS_BOOST - 1));
-      r = Math.min(255, (r * dayBoost) | 0);
-      g = Math.min(255, (g * dayBoost) | 0);
-      b = Math.min(255, (b * dayBoost) | 0);
-
       r = (r + (FOG_COLOR.r - r) * fog) | 0;
       g = (g + (FOG_COLOR.g - g) * fog) | 0;
       b = (b + (FOG_COLOR.b - b) * fog) | 0;
@@ -1622,7 +1436,6 @@ function renderSkyAndFloor(){
 const treeImg = new Image(); treeImg.src = "images/tree1.png";
 const rockImg = new Image(); rockImg.src = "images/rock.png";
 const lambImg = new Image(); lambImg.src = "images/lambchop.png";
-const spiderImg = new Image(); spiderImg.src = "images/spider.png";
 
 // =========================================================
 // 🏠 HUT (goal / exit)
@@ -2161,29 +1974,6 @@ function drawSpriteStretchedX(img, sx, sy, scale, stretchX, stretchY=1, yShiftFa
   ctx.drawImage(img, x, y, w, h);
 }
 
-function drawGroundShadow(wx, wy, scale, yShiftFactor=0, strength=0.22){
-  const p = projectSprite(wx, wy);
-  if(!p) return;
-
-  const size = p.size * scale;
-  const x = p.screenX;
-  const y0 = (p.h/2 - size/2);
-  const y = y0 + (size * yShiftFactor);
-  const baseY = y + (size * 0.88);
-
-  const rx = Math.max(2, size * 0.28);
-  const ry = Math.max(1, size * 0.10);
-  const alpha = Math.min(0.95, strength * 1.2 * (0.25 + nightLit.sun * 0.75));
-
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = "rgba(0,0,0,1)";
-  ctx.beginPath();
-  ctx.ellipse(x, baseY, rx, ry, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
 function drawBlueBallSprite(wx, wy, scale, yShiftFactor){
   const p = projectSprite(wx, wy);
   if(!p) return;
@@ -2308,7 +2098,7 @@ function updateWolf(dt){
     return;
   }
 
-  const fireSafe = playerNearFireAnimation();
+  const fireSafe = camiInFireSafeZone();
   const camiSafe = (camZ > 0.10) || fireSafe;
 
   const dx = posX - wolfX;
@@ -2338,155 +2128,6 @@ function updateWolf(dt){
 
   wolfX += wolfVX * dt;
   wolfY += wolfVY * dt;
-}
-
-/* =========================================================
-   🕷️ SPIDER (chase + repeating attack every 3 seconds)
-========================================================= */
-const SPIDER_SPRITE_SCALE = 0.72;
-const SPIDER_SPEED = 0.95;
-const SPIDER_TURN = 6.0;
-const SPIDER_CATCH_DIST = 0.90;
-const SPIDER_ATTACK_COOLDOWN = 20.0;
-const SPIDER_FRONT_REPOSITION_DIST = 6.5;
-const SPIDER_ATTACK_PAIR_SIZE = 2;
-const SPIDER_PAIR_SWITCH_SEC = 20.0;
-const SPIDER_PAIR_RESPAWN_SEC = 20.0;
-
-const spiders = [];
-let spiderPairOffset = 0;
-let spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
-let spiderRespawnTimer = SPIDER_PAIR_RESPAWN_SEC;
-let spiderNextGlobalAttackAtMs = 0;
-let activeSpiderIdxSet = new Set();
-
-function resetSpiders(putInFront=false){
-  spiders.length = 0;
-  spiderPairOffset = 0;
-  spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
-  spiderRespawnTimer = SPIDER_PAIR_RESPAWN_SEC;
-  spiderNextGlobalAttackAtMs = 0;
-  activeSpiderIdxSet = new Set();
-  const frontBase = putInFront ? 8.0 : -8.0;
-  for(let i=0; i<SPIDER_COUNT; i++){
-    const side = (i - (SPIDER_COUNT - 1) / 2) * 1.5;
-    const frontJitter = (Math.random() * 2.0) - 1.0;
-    const front = frontBase + frontJitter;
-    spiders.push({
-      x: posX + dirX * front + (dirY) * (2.0 + side),
-      y: posY + dirY * front + (-dirX) * (2.0 + side),
-      vx: 0,
-      vy: 0,
-      attackTimer: 0,
-      alive: true
-    });
-  }
-  for(let i=0; i<Math.min(SPIDER_ATTACK_PAIR_SIZE, spiders.length); i++){
-    activeSpiderIdxSet.add(i);
-  }
-}
-resetSpiders(true);
-
-function respawnSpiderPair(){
-  const deadIdx = [];
-  for(let i=0; i<spiders.length; i++){
-    if(!spiders[i].alive) deadIdx.push(i);
-  }
-  if(!deadIdx.length) return;
-
-  const spawnCount = Math.min(SPIDER_ATTACK_PAIR_SIZE, deadIdx.length);
-  for(let n=0; n<spawnCount; n++){
-    const i = deadIdx[n];
-    const s = spiders[i];
-    const side = (i - (SPIDER_COUNT - 1) / 2) * 1.2;
-    const front = SPIDER_FRONT_REPOSITION_DIST + (Math.random() * 1.4 - 0.7);
-    s.x = posX + dirX * front + (-dirY) * side;
-    s.y = posY + dirY * front + ( dirX) * side;
-    s.vx = 0;
-    s.vy = 0;
-    s.attackTimer = 0;
-    s.alive = true;
-  }
-}
-
-function updateSpiders(dt, nowMs){
-  if(gameOver) return;
-  const fireSafe = playerNearFireAnimation();
-  const camiSafe = (camZ > 0.10) || fireSafe;
-
-  spiderRespawnTimer -= dt;
-  if(spiderRespawnTimer <= 0){
-    respawnSpiderPair();
-    spiderRespawnTimer = SPIDER_PAIR_RESPAWN_SEC;
-  }
-
-  const aliveIdx = [];
-  for(let i=0; i<spiders.length; i++){
-    if(spiders[i].alive) aliveIdx.push(i);
-  }
-  if(!aliveIdx.length) return;
-
-  spiderPairTimer -= dt;
-  if(spiderPairTimer <= 0){
-    const step = Math.min(SPIDER_ATTACK_PAIR_SIZE, aliveIdx.length);
-    spiderPairOffset = (spiderPairOffset + step) % aliveIdx.length;
-    spiderPairTimer = SPIDER_PAIR_SWITCH_SEC;
-  }
-
-  const activeSet = new Set();
-  const activeCount = Math.min(SPIDER_ATTACK_PAIR_SIZE, aliveIdx.length);
-  for(let k=0; k<activeCount; k++){
-    activeSet.add(aliveIdx[(spiderPairOffset + k) % aliveIdx.length]);
-  }
-  activeSpiderIdxSet = activeSet;
-
-  for(let i=0; i<spiders.length; i++){
-    const s = spiders[i];
-    if(!s.alive) continue;
-
-    // Keep spiders in front hemisphere so wolf is the only rear chaser.
-    const rx = s.x - posX;
-    const ry = s.y - posY;
-    const inFrontDot = (rx * dirX + ry * dirY);
-    if(inFrontDot < 0.15){
-      const side = (i - (SPIDER_COUNT - 1) / 2) * 1.2;
-      const front = SPIDER_FRONT_REPOSITION_DIST + (Math.random() * 1.4 - 0.7);
-      s.x = posX + dirX * front + (-dirY) * side;
-      s.y = posY + dirY * front + ( dirX) * side;
-      s.vx = 0;
-      s.vy = 0;
-    }
-
-    if(!activeSet.has(i)){
-      // Non-active spiders hold their lane while waiting for the next pair turn.
-      s.vx *= 0.8;
-      s.vy *= 0.8;
-      continue;
-    }
-
-    const dx = posX - s.x;
-    const dy = posY - s.y;
-    const dist = Math.hypot(dx, dy) || 1;
-
-    s.attackTimer = Math.max(0, s.attackTimer - dt);
-    if(!camiSafe && dist < SPIDER_CATCH_DIST && s.attackTimer <= 0 && nowMs >= spiderNextGlobalAttackAtMs){
-      playSfx(screamSfx);
-      applySpiderHitPenalty();
-      s.attackTimer = SPIDER_ATTACK_COOLDOWN;
-      spiderNextGlobalAttackAtMs = nowMs + (SPIDER_ATTACK_COOLDOWN * 1000);
-    }
-
-    const ux = dx / dist;
-    const uy = dy / dist;
-    const desiredVX = ux * SPIDER_SPEED;
-    const desiredVY = uy * SPIDER_SPEED;
-    const k = Math.min(1, SPIDER_TURN * dt);
-    s.vx += (desiredVX - s.vx) * k;
-    s.vy += (desiredVY - s.vy) * k;
-
-    s.x += s.vx * dt;
-    s.y += s.vy * dt;
-  }
 }
 
 /* =========================================================
@@ -2553,13 +2194,7 @@ function frame(now){
   }
 
   if(!NIGHT_PAUSED){
-    let rate = (1 / DAY_LENGTH_SEC) * NIGHT_SPEED_MUL;
-    const sunRawNow = (Math.cos((time01 - 0.5) * Math.PI * 2) + 1) / 2;
-    if(sunRawNow >= 0.5){
-      rate *= (1 / DAY_DURATION_SCALE);   // slower during daytime
-    }else{
-      rate *= (1 / NIGHT_DURATION_SCALE); // faster during nighttime
-    }
+    const rate = (1 / DAY_LENGTH_SEC) * NIGHT_SPEED_MUL;
     time01 = (time01 + dt * rate) % 1;
   }
   if(time01 < prevTime01){
@@ -2577,8 +2212,6 @@ function frame(now){
   updateNightFireSpawn(nightLit);
   updateDayFoodSpawn(nightLit);
   updateDaySaber(nightLit, dt);
-
-  if(!gameOver) applyEastHeadingRule(dt);
 
   if(!gameOver) tryFoodPickup();
   if(!gameOver) tryFireBonus();
@@ -2599,7 +2232,6 @@ function frame(now){
 
   updateAmbience(nightLit);
   if(!gameOver) updateWolf(dt);
-  if(!gameOver) updateSpiders(dt, now);
   if(!gameOver) updateLamb(dt);
   if(!gameOver) tryLambPickup(dt);
   checkHutCollision();
@@ -2651,35 +2283,12 @@ function frame(now){
     const dx = wolfX - posX, dy = wolfY - posY;
     sprites.push({x:wolfX, y:wolfY, d2:dx*dx+dy*dy, kind:"wolf"});
   }
-  for(let i=0; i<spiders.length; i++){
-    if(!activeSpiderIdxSet.has(i)) continue;
-    const s = spiders[i];
-    if(!s.alive) continue;
-    const dx = s.x - posX, dy = s.y - posY;
-    sprites.push({x:s.x, y:s.y, d2:dx*dx+dy*dy, kind:"spider"});
-  }
 
   sprites.sort((a,b)=>b.d2-a.d2);
 
   for(const s of sprites){
     if(s.kind === "wolf"){
-      drawGroundShadow(s.x, s.y, WOLF_SPRITE_SCALE, 0.35, 0.30);
-    }else if(s.kind === "spider"){
-      drawGroundShadow(s.x, s.y, SPIDER_SPRITE_SCALE, 0.36, 0.26);
-    }else if(s.kind === "lamb"){
-      drawGroundShadow(s.x, s.y, LAMB_SPRITE_SCALE, 0.35, 0.22);
-    }else if(s.kind === "rock"){
-      drawGroundShadow(s.x, s.y, ROCK_SPRITE_SCALE, 0.30, 0.18);
-    }else if(s.kind === "hut"){
-      drawGroundShadow(s.x, s.y, HUT_SPRITE_SCALE, 0.0, 0.24);
-    }else if(s.kind === "tree"){
-      drawGroundShadow(s.x, s.y, TREE_SPRITE_SCALE, 0.0, 0.14);
-    }
-
-    if(s.kind === "wolf"){
       drawWolfFramesSprite(s.x, s.y, WOLF_SPRITE_SCALE, 0.35);
-    }else if(s.kind === "spider"){
-      drawSprite(spiderImg, s.x, s.y, SPIDER_SPRITE_SCALE, "rgba(230,230,230,0.90)", 0.36);
     }else if(s.kind === "lamb"){
       drawSprite(lambImg, s.x, s.y, LAMB_SPRITE_SCALE, "rgba(255,230,230,0.85)", 0.35);
     }else if(s.kind === "rock"){
@@ -2721,6 +2330,11 @@ requestAnimationFrame(frame);
 
 <div id="touchControls">
   <div class="tcRow">
+    <div class="tcArrowCol leftArrows" aria-label="Left and right movement">
+      <button class="tcBtn tcArrowBtn" data-hold="ArrowLeft" aria-label="Left">←</button>
+      <button class="tcBtn tcArrowBtn" data-hold="ArrowRight" aria-label="Right">→</button>
+    </div>
+
     <div class="tcActions">
       <button class="tcBtn tcSmall" data-tap="Space">SHOOT</button>
       <button class="tcBtn tcSmall" data-tap="Space">SHOOT</button>
@@ -2728,12 +2342,10 @@ requestAnimationFrame(frame);
       <button class="tcBtn tcWide tcSmall" data-tap="KeyP">RESET</button>
     </div>
 
-    <div class="tcJoyCol">
-      <div class="tcJoy" id="thumbJoy" aria-label="Thumb Joystick">
-        <div class="tcJoyKnob" id="thumbJoyKnob"></div>
-      </div>
+    <div class="tcArrowCol rightArrows" aria-label="Forward and back movement">
+      <button class="tcBtn tcArrowBtn" data-hold="ArrowUp" aria-label="Up">↑</button>
+      <button class="tcBtn tcArrowBtn" data-hold="ArrowDown" aria-label="Down">↓</button>
     </div>
-
   </div>
 
   <div style="height:10px"></div>

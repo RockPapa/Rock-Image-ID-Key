@@ -702,9 +702,9 @@ function initIpadThumbstick(){
 
   let activePointerId = null;
   const DEAD_ZONE_Y = 0.25;
-  const DEAD_ZONE_X = 0.38;
+  const DEAD_ZONE_X = 0.45;
   const STICK_DAMPING_Y = 0.88; // slightly soften thumbstick response
-  const STICK_DAMPING_X = 0.62; // reduce side-to-side sensitivity
+  const STICK_DAMPING_X = 0.54; // reduce side-to-side sensitivity
 
   const applyStick = (ev)=>{
     const rect = stick.getBoundingClientRect();

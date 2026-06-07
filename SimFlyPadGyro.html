@@ -14575,7 +14575,8 @@ const GYRO_BANK_RESPONSE_PER_SEC = 7.0;
 const GYRO_PREFLIGHT_CALIBRATION_MS = 3000;
 const GYRO_PREFLIGHT_MIN_SAMPLES = 6;
 const GYRO_PITCH_SIGN = -1;
-const GYRO_BANK_SENSITIVITY = 0.85;
+const GYRO_PITCH_SENSITIVITY = 0.78;
+const GYRO_BANK_SENSITIVITY = 0.78;
 const gyroState = {
   enabled:false,
   available:false,
@@ -14786,7 +14787,7 @@ function handleDeviceOrientation(ev){
   if(!gyroState.calibrated) return;
   const pitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
   const bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
-  gyroState.pitchInput = THREE.MathUtils.clamp(pitchDelta / GYRO_PITCH_MAX_DEG, -1, 1);
+  gyroState.pitchInput = THREE.MathUtils.clamp((pitchDelta / GYRO_PITCH_MAX_DEG) * GYRO_PITCH_SENSITIVITY, -1, 1);
   gyroState.bankInput = THREE.MathUtils.clamp((bankDelta / GYRO_BANK_MAX_DEG) * GYRO_BANK_SENSITIVITY, -1, 1);
   updateGyroButton();
 }

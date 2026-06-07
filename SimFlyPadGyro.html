@@ -14572,10 +14572,16 @@ const GYRO_PITCH_MAX_DEG = 28.0;
 const GYRO_BANK_MAX_DEG = 32.0;
 const GYRO_PITCH_RESPONSE_PER_SEC = 5.5;
 const GYRO_BANK_RESPONSE_PER_SEC = 7.0;
+const GYRO_PREFLIGHT_CALIBRATION_MS = 900;
 const gyroState = {
   enabled:false,
   available:false,
   calibrated:false,
+  calibrating:false,
+  calibrationStartMs:0,
+  calibrationPitchSum:0,
+  calibrationBankSum:0,
+  calibrationSamples:0,
   waitingForSensor:false,
   lastEventMs:0,
   noSensorTimer:0,
@@ -14700,7 +14706,7 @@ function updateGyroButton(){
   ipadGyroBtn.classList.toggle("on", gyroState.enabled);
   ipadGyroBtn.classList.toggle("warn", !gyroState.enabled && gyroState.available);
   ipadGyroBtn.textContent = gyroState.enabled
-    ? (gyroState.waitingForSensor ? "GYRO WAIT" : "GYRO ON")
+    ? (gyroState.waitingForSensor ? "GYRO WAIT" : (gyroState.calibrating ? "HOLD LEVEL" : "GYRO ON"))
     : "GYRO";
 }
 
@@ -14712,6 +14718,50 @@ function calibrateGyroNeutral(){
   gyroState.smoothedPitchInput = 0;
   gyroState.smoothedBankInput = 0;
   gyroState.calibrated = true;
+  gyroState.calibrating = false;
+  gyroState.calibrationStartMs = 0;
+  gyroState.calibrationPitchSum = 0;
+  gyroState.calibrationBankSum = 0;
+  gyroState.calibrationSamples = 0;
+}
+
+function startGyroPreflightCalibration(){
+  gyroState.calibrated = false;
+  gyroState.calibrating = true;
+  gyroState.calibrationStartMs = performance.now();
+  gyroState.calibrationPitchSum = 0;
+  gyroState.calibrationBankSum = 0;
+  gyroState.calibrationSamples = 0;
+  gyroState.pitchInput = 0;
+  gyroState.bankInput = 0;
+  gyroState.smoothedPitchInput = 0;
+  gyroState.smoothedBankInput = 0;
+  updateGyroButton();
+}
+
+function collectGyroPreflightCalibration(){
+  if(!gyroState.calibrating) return false;
+  gyroState.calibrationPitchSum += gyroState.rawPitchDeg;
+  gyroState.calibrationBankSum += gyroState.rawBankDeg;
+  gyroState.calibrationSamples++;
+  const elapsedMs = performance.now() - gyroState.calibrationStartMs;
+  if(elapsedMs < GYRO_PREFLIGHT_CALIBRATION_MS && gyroState.calibrationSamples < 10) return true;
+  const n = Math.max(1, gyroState.calibrationSamples);
+  gyroState.basePitchDeg = gyroState.calibrationPitchSum / n;
+  gyroState.baseBankDeg = gyroState.calibrationBankSum / n;
+  gyroState.pitchInput = 0;
+  gyroState.bankInput = 0;
+  gyroState.smoothedPitchInput = 0;
+  gyroState.smoothedBankInput = 0;
+  gyroState.calibrated = true;
+  gyroState.calibrating = false;
+  gyroState.calibrationStartMs = 0;
+  gyroState.calibrationPitchSum = 0;
+  gyroState.calibrationBankSum = 0;
+  gyroState.calibrationSamples = 0;
+  hudLine("📱 Gyro calibrated. Tilt gently for pitch and bank.");
+  updateGyroButton();
+  return true;
 }
 
 function handleDeviceOrientation(ev){
@@ -14723,8 +14773,13 @@ function handleDeviceOrientation(ev){
   const axes = getGyroAxesFromEvent(ev);
   gyroState.rawPitchDeg = axes.pitchDeg;
   gyroState.rawBankDeg = axes.bankDeg;
-  if(!gyroState.calibrated) calibrateGyroNeutral();
   if(!gyroState.enabled) return;
+  if(gyroState.calibrating){
+    collectGyroPreflightCalibration();
+    return;
+  }
+  if(!gyroState.calibrated) startGyroPreflightCalibration();
+  if(!gyroState.calibrated) return;
   const pitchDelta = gyroState.rawPitchDeg - gyroState.basePitchDeg;
   const bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
   gyroState.pitchInput = THREE.MathUtils.clamp(pitchDelta / GYRO_PITCH_MAX_DEG, -1, 1);
@@ -14760,8 +14815,11 @@ async function enableGyroControls(){
       return;
     }
     gyroState.enabled = true;
-    if(gyroState.available) calibrateGyroNeutral();
-    else gyroState.calibrated = false;
+    if(gyroState.available) startGyroPreflightCalibration();
+    else {
+      gyroState.calibrated = false;
+      gyroState.calibrating = false;
+    }
     gyroState.waitingForSensor = !gyroState.available;
     gyroState.noSensorTimer = window.setTimeout(()=>{
       if(gyroState.enabled && !gyroState.available){
@@ -14771,7 +14829,7 @@ async function enableGyroControls(){
       }
     }, 1800);
     updateGyroButton();
-    hudLine("📱 Gyro flight controls <code>ON</code>. Hold iPad level, then tilt for pitch and bank.");
+    hudLine("📱 Hold iPad in flying position for gyro calibration.");
   }catch(err){
     console.warn("Gyro permission failed:", err);
     gyroState.enabled = false;
@@ -14784,6 +14842,12 @@ async function enableGyroControls(){
 function disableGyroControls(){
   gyroState.enabled = false;
   gyroState.waitingForSensor = false;
+  gyroState.calibrated = false;
+  gyroState.calibrating = false;
+  gyroState.calibrationStartMs = 0;
+  gyroState.calibrationPitchSum = 0;
+  gyroState.calibrationBankSum = 0;
+  gyroState.calibrationSamples = 0;
   if(gyroState.noSensorTimer){
     clearTimeout(gyroState.noSensorTimer);
     gyroState.noSensorTimer = 0;
@@ -14798,7 +14862,8 @@ window.addEventListener("deviceorientation", handleDeviceOrientation, true);
 window.addEventListener("deviceorientationabsolute", handleDeviceOrientation, true);
 window.addEventListener("orientationchange", ()=>{
   gyroState.calibrated = false;
-  if(gyroState.enabled) setTimeout(calibrateGyroNeutral, 250);
+  gyroState.calibrating = false;
+  if(gyroState.enabled) setTimeout(startGyroPreflightCalibration, 250);
 });
 if(ipadGyroBtn){
   let lastGyroToggleMs = -10000;

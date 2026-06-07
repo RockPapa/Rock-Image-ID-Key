@@ -428,7 +428,7 @@ const LOW_ZONE_BLEND_BAND = 1.5;
 const LOW_ZONE_END_FRAC = 0.55;
 const HIGH_ZONE_START_FRAC = 0.66;
 const LOW_ZONE_STUCK_DURATION_SEC = 3.0;
-const LOW_ZONE_STUCK_HEALTH_PCT = 9.5;
+const LOW_ZONE_STUCK_HEALTH_PCT = 9.025;
 const LOW_ZONE_RESTICK_GRACE_SEC = 5.0;
 const LOW_ZONE_STUCK_ENABLE = false; // paused for later reinstatement
 
@@ -517,7 +517,7 @@ const JOURNEY_HAZARD_SPAWN_AHEAD_FT = 30.0;
 const JOURNEY_HAZARD_SPAWN_INTERVAL_SEC = 1.35;
 const JOURNEY_HAZARD_MAX_ACTIVE = 8;
 const JOURNEY_HAZARD_DESPAWN_DIST_FT = 320.0;
-const JOURNEY_HAZARD_HIT_HEALTH_PCT = 14.25;
+const JOURNEY_HAZARD_HIT_HEALTH_PCT = 13.5375;
 const LEGGOMAN_GOAL_ARC_DEG = 30.0;
 const LEGGOMAN_GOAL_DIST_WIDTHS = 25.0;
 const LEGGOMAN_GOAL_DIST_MULT = 1.716;// 12% closer than previous setting
@@ -586,7 +586,7 @@ const PORTAL_ENTRY_AUDIO_FILE = "portsl.mp3";
 const PORTAL_ENTRY_AUDIO_FALLBACK_FILE = "portal.mp3";
 const PORTAL_ENTRY_AUDIO_VOL = 1.0;
 const PUEBLO_WARRIOR_COLLISION_RADIUS_FT = 5.0;
-const PUEBLO_WARRIOR_HIT_HEALTH_PCT = 9.5;
+const PUEBLO_WARRIOR_HIT_HEALTH_PCT = 9.025;
 const PUEBLO_GUIDE_GODDESS_OFFSET_FT = 9.0;
 const PUEBLO_GUIDE_GODDESS_LIFT_FT = 12.0;
 const PUEBLO_GUIDE_GODDESS_DURATION_SEC = 8.0;
@@ -730,17 +730,17 @@ const LAKE_BUSH_COUNT = 1500;
 const LAKE_BUSH_SIZE = { w: 6.5, h: 7.8 };
 const LAKE_BUSH_LIFT = 0.16128;
 const LOW_TREE_FILE = "tree1.png";
-const LOW_TREE_COUNT = 113;
+const LOW_TREE_COUNT = 170;
 const LOW_TREE_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE_LIFT = -0.06;
 const LOW_TREE_DROP_PCT = 0.05;
 const LOW_TREE3_FILE = "tree3.png";
-const LOW_TREE3_COUNT = 113;
+const LOW_TREE3_COUNT = 170;
 const LOW_TREE3_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE3_LIFT = -0.06;
 const LOW_TREE3_DROP_PCT = 0.10;
 const MID_TREE7_FILE = "tree7.png";
-const MID_TREE7_COUNT = 150;
+const MID_TREE7_COUNT = 225;
 const MID_TREE7_SIZE = { w: 16.0, h: 24.0 };
 const MID_TREE7_LIFT = -0.06;
 const MID_TREE7_DROP_PCT = 0.10;
@@ -762,7 +762,7 @@ const CLAMP_OUTSIDE_TERRAIN = true;
 
 // Player
 const PLAYER_EYE_HEIGHT = 3.25;
-const MOVE_SPEED = 13.995828; // reduced by another 10%
+const MOVE_SPEED = 10.496871; // reduced by another 25%
 const TURN_SPEED = 1.3104; // +30% from previous turn speed // raycaster-style keyboard turning (radians/sec)
 const COPTER_PLAYER_FLY_SPEED = MOVE_SPEED * 1.30;
 const COPTER_PLAYER_VERTICAL_SPEED = MOVE_SPEED * 1.30;
@@ -800,8 +800,8 @@ const TUNNEL_MOUTH_BOULDER_BASE_SIZE_FT = 9.0;
 const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.png";
 const TUNNEL_MOUTH_BOULDER2_COUNT = 8;
 const TUNNEL_MOUTH_TREES_ENABLE = true;
-const TUNNEL_MOUTH_TREE1_COUNT = 1;
-const TUNNEL_MOUTH_TREE3_COUNT = 1;
+const TUNNEL_MOUTH_TREE1_COUNT = 2;
+const TUNNEL_MOUTH_TREE3_COUNT = 2;
 const TUNNEL_MOUTH_SIGN_ENABLE = true;
 const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
@@ -863,11 +863,11 @@ const TUNNEL_REAPER_BOSS_2_TRIGGER_AFTER_REAPER2_FT = 100.0;
 const TUNNEL_REAPER_BOSS_3_TRIGGER_AFTER_REAPER3_FT = 100.0;
 const TUNNEL_REAPER_BOSS_4_TRIGGER_AFTER_REAPER4_FT = 50.0;
 const TUNNEL_REAPER_BOSS_4_SHOT_INTERVAL_SEC = 0.96;
-const TUNNEL_REAPER_BOSS_4_SHOT_SPEED = 36.0;
+const TUNNEL_REAPER_BOSS_4_SHOT_SPEED = 27.0;
 const TUNNEL_REAPER_BOSS_4_SHOT_LIFE_SEC = 4.5;
 const TUNNEL_REAPER_BOSS_4_SHOT_RADIUS = 0.24;
 const TUNNEL_REAPER_BOSS_4_HITS_FOR_DAMAGE = 2;
-const TUNNEL_REAPER_BOSS_4_DAMAGE_PCT = 14.25;
+const TUNNEL_REAPER_BOSS_4_DAMAGE_PCT = 13.5375;
 const TREE_TRUNK_RADIUS_FACTOR = 0.18;
 
 // Grass textures**********************//
@@ -1335,7 +1335,7 @@ function updateLowZoneStuckState(dt){
   const shouldStick = inLowZone && lowZoneStuckTimer <= 0 && lowZoneRestickGraceTimer <= 0;
   if(shouldStick){
     adjustPlayerHealthPct(-LOW_ZONE_STUCK_HEALTH_PCT);
-    showBanner("⛔ <b>STUCK</b> &nbsp; -9.5% HEALTH");
+    showBanner("⛔ <b>STUCK</b> &nbsp; -9.025% HEALTH");
     lowZoneStuckTimer = LOW_ZONE_STUCK_DURATION_SEC;
   }
 
@@ -4281,7 +4281,7 @@ function applyTunnelReaperBossContactPenalty(obj, radius = TRUCK_COLLISION_RADIU
       if(latchName === "r3") tunnelReaperBoss2ContactApplied = true;
       if(latchName === "r4") tunnelReaperBoss3ContactApplied = true;
       if(latchName === "r5") tunnelReaperBoss4ContactApplied = true;
-      adjustPlayerHealthPct(-14.25);
+      adjustPlayerHealthPct(-13.5375);
       spawnHitBurst(new THREE.Vector3(boss.position.x, boss.position.y, boss.position.z), 0xff7a7a);
     } else if(!hit && applied){
       if(latchName === "r2") tunnelReaperBossContactApplied = false;
@@ -6771,10 +6771,10 @@ let aliensCleared = false;
 const ALIEN_SHOTS_ENABLE = true;
 const ALIEN_SHOT_INTERVAL_MIN = 0.55; // 50% faster fire frequency
 const ALIEN_SHOT_INTERVAL_MAX = 1.0;  // 50% faster fire frequency
-const ALIEN_SHOT_SPEED = 51; // 50% faster projectile speed
+const ALIEN_SHOT_SPEED = 38.25; // reduced by 25%
 const ALIEN_SHOT_LIFE = 4.0;
 const ALIEN_SHOT_RADIUS = 0.20;
-const ALIEN_SHOT_DAMAGE = 8.2935; // eased 5% from 8.73
+const ALIEN_SHOT_DAMAGE = 7.878825; // eased another 5%
 const alienGreenBalls = [];
 let snakeRowGroup = null;
 let snakeRowTexture = null;
@@ -7390,13 +7390,13 @@ let badGuy = null;
 const TANK_ENABLE = false;
 const TANK_FILE = "tank.png";
 const TANK_SCALE = 5.0; // +25% size
-const TANK_MOVE_SPEED = 8.0;
+const TANK_MOVE_SPEED = 6.0;
 const TANK_STOP_DIST = 16.0;
 const TANK_FIRE_RANGE = 68.0;
 const TANK_APPROACH_FWD = 18.0; // spawn directly in front of avatruck
 const TANK_APPROACH_SIDE = 0.0; // no side offset: right in front
 const TANK_SHOT_INTERVAL_SEC = 1.232; // 12% less frequent
-const TANK_SHOT_SPEED = 22.0;
+const TANK_SHOT_SPEED = 16.5;
 const TANK_SHOT_LIFE_SEC = 4.0;
 const TANK_SHOT_RADIUS = 0.22;
 const TANK_HITS_TO_KILL = 2; // one more hit required to destroy tank
@@ -7408,7 +7408,7 @@ const TANK_PASSED_KILL_LENGTHS = 50.0;
 const FIREBALL_ENABLE = true;
 const FIREBALL_FILE = "fireball.png";
 const FIREBALL_SCALE = 3.4;
-const FIREBALL_MOVE_SPEED = 11.76; // +12% speed
+const FIREBALL_MOVE_SPEED = 8.82; // reduced by 25%
 const FIREBALL_CRASH_RADIUS = 1.1;
 const FIREBALL_START_DELAY_SEC = 30.0;
 const FIREBALL_RESPAWN_SEC = 5.0;
@@ -7447,7 +7447,7 @@ const COPTER_VIEW_FWD = 6.0; // slightly ahead so it stays visible while flying 
 const COPTER_VIEW_SIDE = 0.0;
 const COPTER_EXIT_FWD = 28.0;
 const COPTER_EXIT_SIDE = 44.0;
-const COPTER_MOVE_SPEED = 14.0;
+const COPTER_MOVE_SPEED = 10.5;
 const COPTER_FOLLOW_SEC = 5.0;
 const COPTER_WAIT_SEC = 5.0;
 const COPTER_BOB_AMP = 0.35;
@@ -7479,10 +7479,10 @@ const COPTER_FRONT_START_DIST = 72.0;
 const COPTER_REAR_START_DIST = 72.0;
 const COPTER_FAR_AHEAD_DIST = 120.0;
 const COPTER_BEHIND_EXIT_DOT = -2.0; // turn almost immediately after passing truck
-const COPTER_SHOT_SPEED = 19.36; // -12%
+const COPTER_SHOT_SPEED = 14.52; // reduced by 25%
 const COPTER_SHOT_LIFE_SEC = 5.0;
 const COPTER_SHOT_RADIUS = 0.176; // -12%
-const COPTER_SHOT_DAMAGE_PCT = 4.75;
+const COPTER_SHOT_DAMAGE_PCT = 4.5125;
 const COPTER_HIT_STREAK_FOR_FIRE = 2; // reduced hit streak needed for burn trigger
 const TRUCK_FIRE_FRAME_SEC = 0.10;
 const TRUCK_FIRE_DURATION_SEC = 6.0;
@@ -9291,7 +9291,7 @@ function updateTankOrangeBalls(dt){
     }
 
     if(hitTruck){
-      adjustPlayerHealthPct(-14.25);
+      adjustPlayerHealthPct(-13.5375);
       spawnHitBurst(p, 0xffa34a);
       scene.remove(b.mesh);
       b.mesh.geometry.dispose();
@@ -9466,7 +9466,7 @@ function updateFireball(dt){
   }
 
   if(hitTruck){
-    adjustPlayerHealthPct(-14.25);
+    adjustPlayerHealthPct(-13.5375);
     spawnHitBurst(fireball.position, 0xff7a33);
     destroyFireballAndScheduleNext(false);
   }
@@ -12355,10 +12355,10 @@ function applyTunnelReaperContactPenalty(obj, radius = TRUCK_COLLISION_RADIUS){
       if(node.userData.isFinalTunnelReaperPair){
         if(!finalTunnelReaperPenaltyApplied){
           finalTunnelReaperPenaltyApplied = true;
-          adjustPlayerHealthPct(-9.5);
+          adjustPlayerHealthPct(-9.025);
         }
       } else {
-        adjustPlayerHealthPct(-9.5);
+        adjustPlayerHealthPct(-9.025);
       }
       spawnHitBurst(new THREE.Vector3(pos.x, pos.y + (hr * 0.15), pos.z), 0xff5555);
     } else if(!hit && node.userData.reaperContactApplied){
@@ -12385,7 +12385,7 @@ function applyFinalTunnelReaperPassPenalty(obj, radius = TRUCK_COLLISION_RADIUS)
   if(Math.abs(closest.s - finalPairS) <= triggerHalfWindow){
     finalTunnelReaperPenaltyApplied = true;
     playTunnelReaperMadAudio();
-    adjustPlayerHealthPct(-9.5);
+    adjustPlayerHealthPct(-9.025);
     spawnHitBurst(new THREE.Vector3(obj.position.x, obj.position.y + 1.2, obj.position.z), 0xff5555);
   }
 }
@@ -14708,7 +14708,7 @@ const hitAnyCaveWall = !!(hitSpawnHalfCaveWall || hitFullCaveWall || hitInterior
 if(hitAnyCaveWall && !caveWallContactApplied){
   caveWallContactApplied = true;
   playCaveWallSkidAudio();
-  adjustPlayerHealthPct(-9.5);
+  adjustPlayerHealthPct(-9.025);
 } else if(!hitAnyCaveWall && caveWallContactApplied){
   caveWallContactApplied = false;
 }
@@ -14820,7 +14820,7 @@ const lHitAnyCaveWall = !!(lHitSpawnHalfCaveWall || lHitFullCaveWall || lHitInte
 if(lHitAnyCaveWall && !caveWallContactApplied){
   caveWallContactApplied = true;
   playCaveWallSkidAudio();
-  adjustPlayerHealthPct(-9.5);
+  adjustPlayerHealthPct(-9.025);
 } else if(!lHitAnyCaveWall && caveWallContactApplied){
   caveWallContactApplied = false;
 }

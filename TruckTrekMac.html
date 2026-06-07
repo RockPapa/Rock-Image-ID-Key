@@ -278,29 +278,6 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   letter-spacing:.03em;
   opacity:.95;
 }
-#startInstructionHUD{
-  position:fixed;
-  left:50%;
-  top:74px;
-  transform:translateX(-50%);
-  z-index:32;
-  max-width:min(840px, calc(100vw - 36px));
-  padding:12px 16px;
-  border-radius:12px;
-  border:1px solid rgba(255,255,255,.24);
-  background:rgba(20,24,32,.82);
-  color:#fff;
-  box-shadow:0 14px 34px rgba(0,0,0,.45);
-  font:900 clamp(15px, 2.4vw, 24px)/1.22 system-ui, -apple-system, Segoe UI, Roboto, Arial;
-  letter-spacing:.03em;
-  text-align:center;
-  pointer-events:none;
-  transition:opacity .28s ease, visibility .28s ease;
-}
-#startInstructionHUD.hidden{
-  opacity:0;
-  visibility:hidden;
-}
 
 </style>
 
@@ -317,8 +294,6 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
 <body>
 
 <button class="touchToggle" id="touchToggle" aria-label="Toggle on-screen controls">📱 CONTROLS</button>
-
-<div id="startInstructionHUD">WHEN YOUR TRUCK CATCHES FIRE, HIT J KEY AND RUN FORWARD TO THE NEXT TRUCK</div>
 
 <div class="touchUI" id="touchUI">
   <div class="touchLeft">
@@ -349,7 +324,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
 </div>
 <div class="alienObjective" id="alienObjective" aria-live="polite">
   <div class="alienObjectiveTitle">YOU MUST KILL ALL THE ALIENS</div>
-  <div class="alienObjectiveCounts">Killed: <b id="alienKilled">0</b> | Total: <b id="alienTotal">0</b> | Left: <b id="alienLeft">0</b></div>
+  <div class="alienObjectiveCounts">Total: <b id="alienTotal">0</b> | Left: <b id="alienLeft">0</b></div>
 </div>
 
 
@@ -381,12 +356,6 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
 const ASSET_BASE_DIR = "truck-rescue-files/";
-const startInstructionHUD = document.getElementById("startInstructionHUD");
-if(startInstructionHUD){
-  window.setTimeout(()=>{
-    startInstructionHUD.classList.add("hidden");
-  }, 10000);
-}
 
 function normalizeAssetName(url){
   if(!url) return "";
@@ -428,7 +397,7 @@ const LOW_ZONE_BLEND_BAND = 1.5;
 const LOW_ZONE_END_FRAC = 0.55;
 const HIGH_ZONE_START_FRAC = 0.66;
 const LOW_ZONE_STUCK_DURATION_SEC = 3.0;
-const LOW_ZONE_STUCK_HEALTH_PCT = 9.025;
+const LOW_ZONE_STUCK_HEALTH_PCT = 10;
 const LOW_ZONE_RESTICK_GRACE_SEC = 5.0;
 const LOW_ZONE_STUCK_ENABLE = false; // paused for later reinstatement
 
@@ -476,6 +445,8 @@ const PLAZA_TRUCK_RESTRICT_COOLDOWN_MS = 1200;
 // ----- TRUCK AVATAR (Phase 1) -----
 const TRUCK_AVATAR_ENABLE = true;
 const TRUCK_FILE = "blue_truck.png";
+const TRUCK_LEFT_FILE = "blue_truck_left.png";
+const TRUCK_RIGHT_FILE = "blue_truck_right.png";
 const LEGGOMAN_SPRITESHEET_FILE = "boy.jpg";
 const LEGGOMAN_SPRITESHEET_COLS = 5;
 const LEGGOMAN_SPRITESHEET_ROWS = 3;
@@ -492,20 +463,40 @@ const LEGGOMAN_FRAME_SEC = 0.09;
 const LEGGOMAN_HEIGHT_SCALE = 1.375; // +25% from 1.10 for larger sprite-sheet animation
 const LEGGOMAN_WIDTH_SCALE = 0.596288; // +25% from 0.4770304 for larger sprite-sheet animation
 const TRUCK2_FILE = "truck2.png";
+const TRUCK2_LEFT_FILE = "truck2_left.png";
+const TRUCK2_RIGHT_FILE = "truck2_right.png";
 const TRUCK3_FILE = "truck3.png";
+const CYBER_TRUCK_FILE = "cyber.png";
+const CYBER_TRUCK_LEFT_FILE = "cyber_left.png";
+const CYBER_TRUCK_RIGHT_FILE = "cyber_right.png";
 const MAZ_VEHICLE_BASE_FILE = "maz_back.png";
+const MAZ_VEHICLE_LEFT_FILE = "maz_left.png";
+const MAZ_VEHICLE_RIGHT_FILE = "maz_right.png";
 const ORANGE_TRUCK_BASE_FILE = "orange_truck.png";
+const ORANGE_TRUCK_LEFT_FILE = "orange_truck_left.png";
+const ORANGE_TRUCK_RIGHT_FILE = "orange_truck_right.png";
+const ORANGE_TRUCK_HALF_LEFT_FILE = "orange_truck_half_left.png";
+const ORANGE_TRUCK_HALF_RIGHT_FILE = "orange_truck_half_right.png";
 const ORANGE_TRUCK_LEGACY_FILE = "orange_truck 2.png";
+const WHITE_TRUCK_BASE_FILE = "white_truck.png";
+const WHITE_TRUCK_LEFT_FILE = "white_truck_left.png";
+const WHITE_TRUCK_RIGHT_FILE = "white_truck_right.png";
 const BIGFOOT_BASE_FILE = "bigfoot.png";
+const BIGFOOT_LEFT_FILE = "bigfoot_left.png";
+const BIGFOOT_RIGHT_FILE = "bigfoot_right.png";
 const BIG_TRUCK_BASE_FILE = "big_truck.png";
-const CYBER_TRUCK_FILE = BIG_TRUCK_BASE_FILE;
+const BIG_TRUCK_LEFT_FILE = "big_truck_left.png";
+const BIG_TRUCK_RIGHT_FILE = "big_truck_right.png";
 const BIG_TRUCK_SCALE_MULT = 0.95; // reduce Big Truck avatar size by 5%
-const VEHICLE_TRIPLET_SCALE_MULT = 1.656; // additional +15% (total +65.6% from baseline) for all vehicle back-view sprites
+const VEHICLE_TRIPLET_SCALE_MULT = 1.656; // additional +15% (total +65.6% from baseline) for all vehicle base/left/right triplets
 const VEHICLE_BACK_VIEW_SCALE_MULT = 0.7744; // additional -12% (total 22.56% below baseline) when showing back view via Up/W input
+const ORANGE_TURN_PREVIEW_SEC = 0.00;
+const ORANGE_TURN_PREVIEW_NUDGE = 0.18;
+const ORANGE_TURN_HALF_STAGE_AT = 0.33;
 const TRUCK3_SCALE_MULT = 1.25;
 const COPTER_ACTIVE_SCALE_MULT = 1.6; // +60% when copter vehicle is active
 const PLAZA_EXIT_VEHICLE_CHOICES_ENABLE = true;
-const PLAZA_EXIT_VEHICLE_FILES = [BIGFOOT_BASE_FILE, TRUCK_FILE, BIG_TRUCK_BASE_FILE, MAZ_VEHICLE_BASE_FILE, ORANGE_TRUCK_BASE_FILE, TRUCK2_FILE];
+const PLAZA_EXIT_VEHICLE_FILES = [ORANGE_TRUCK_BASE_FILE, "yellow_car.png", "blue_car.png", CYBER_TRUCK_FILE];
 const PLAZA_EXIT_VEHICLE_SPAWN_AHEAD_FT = 45.0; // +50% farther from plaza entrance
 const PLAZA_EXIT_VEHICLE_SIDE_SPACING_FT = 26.0; // wider spacing prevents dual-collision picks
 const PLAZA_EXIT_VEHICLE_COLLISION_RADIUS_FT = 7.0;
@@ -517,7 +508,7 @@ const JOURNEY_HAZARD_SPAWN_AHEAD_FT = 30.0;
 const JOURNEY_HAZARD_SPAWN_INTERVAL_SEC = 1.35;
 const JOURNEY_HAZARD_MAX_ACTIVE = 8;
 const JOURNEY_HAZARD_DESPAWN_DIST_FT = 320.0;
-const JOURNEY_HAZARD_HIT_HEALTH_PCT = 13.5375;
+const JOURNEY_HAZARD_HIT_HEALTH_PCT = 15;
 const LEGGOMAN_GOAL_ARC_DEG = 30.0;
 const LEGGOMAN_GOAL_DIST_WIDTHS = 25.0;
 const LEGGOMAN_GOAL_DIST_MULT = 1.716;// 12% closer than previous setting
@@ -586,7 +577,7 @@ const PORTAL_ENTRY_AUDIO_FILE = "portsl.mp3";
 const PORTAL_ENTRY_AUDIO_FALLBACK_FILE = "portal.mp3";
 const PORTAL_ENTRY_AUDIO_VOL = 1.0;
 const PUEBLO_WARRIOR_COLLISION_RADIUS_FT = 5.0;
-const PUEBLO_WARRIOR_HIT_HEALTH_PCT = 9.025;
+const PUEBLO_WARRIOR_HIT_HEALTH_PCT = 10;
 const PUEBLO_GUIDE_GODDESS_OFFSET_FT = 9.0;
 const PUEBLO_GUIDE_GODDESS_LIFT_FT = 12.0;
 const PUEBLO_GUIDE_GODDESS_DURATION_SEC = 8.0;
@@ -730,17 +721,17 @@ const LAKE_BUSH_COUNT = 1500;
 const LAKE_BUSH_SIZE = { w: 6.5, h: 7.8 };
 const LAKE_BUSH_LIFT = 0.16128;
 const LOW_TREE_FILE = "tree1.png";
-const LOW_TREE_COUNT = 170;
+const LOW_TREE_COUNT = 1500;
 const LOW_TREE_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE_LIFT = -0.06;
 const LOW_TREE_DROP_PCT = 0.05;
 const LOW_TREE3_FILE = "tree3.png";
-const LOW_TREE3_COUNT = 170;
+const LOW_TREE3_COUNT = 1500;
 const LOW_TREE3_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE3_LIFT = -0.06;
 const LOW_TREE3_DROP_PCT = 0.10;
 const MID_TREE7_FILE = "tree7.png";
-const MID_TREE7_COUNT = 225;
+const MID_TREE7_COUNT = 2000;
 const MID_TREE7_SIZE = { w: 16.0, h: 24.0 };
 const MID_TREE7_LIFT = -0.06;
 const MID_TREE7_DROP_PCT = 0.10;
@@ -762,7 +753,7 @@ const CLAMP_OUTSIDE_TERRAIN = true;
 
 // Player
 const PLAYER_EYE_HEIGHT = 3.25;
-const MOVE_SPEED = 10.496871; // reduced by another 25%
+const MOVE_SPEED = 25.245; // reduced by 25%
 const TURN_SPEED = 1.3104; // +30% from previous turn speed // raycaster-style keyboard turning (radians/sec)
 const COPTER_PLAYER_FLY_SPEED = MOVE_SPEED * 1.30;
 const COPTER_PLAYER_VERTICAL_SPEED = MOVE_SPEED * 1.30;
@@ -800,8 +791,8 @@ const TUNNEL_MOUTH_BOULDER_BASE_SIZE_FT = 9.0;
 const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.png";
 const TUNNEL_MOUTH_BOULDER2_COUNT = 8;
 const TUNNEL_MOUTH_TREES_ENABLE = true;
-const TUNNEL_MOUTH_TREE1_COUNT = 2;
-const TUNNEL_MOUTH_TREE3_COUNT = 2;
+const TUNNEL_MOUTH_TREE1_COUNT = 8;
+const TUNNEL_MOUTH_TREE3_COUNT = 8;
 const TUNNEL_MOUTH_SIGN_ENABLE = true;
 const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
@@ -863,11 +854,11 @@ const TUNNEL_REAPER_BOSS_2_TRIGGER_AFTER_REAPER2_FT = 100.0;
 const TUNNEL_REAPER_BOSS_3_TRIGGER_AFTER_REAPER3_FT = 100.0;
 const TUNNEL_REAPER_BOSS_4_TRIGGER_AFTER_REAPER4_FT = 50.0;
 const TUNNEL_REAPER_BOSS_4_SHOT_INTERVAL_SEC = 0.96;
-const TUNNEL_REAPER_BOSS_4_SHOT_SPEED = 27.0;
+const TUNNEL_REAPER_BOSS_4_SHOT_SPEED = 36.0;
 const TUNNEL_REAPER_BOSS_4_SHOT_LIFE_SEC = 4.5;
 const TUNNEL_REAPER_BOSS_4_SHOT_RADIUS = 0.24;
 const TUNNEL_REAPER_BOSS_4_HITS_FOR_DAMAGE = 2;
-const TUNNEL_REAPER_BOSS_4_DAMAGE_PCT = 13.5375;
+const TUNNEL_REAPER_BOSS_4_DAMAGE_PCT = 15;
 const TREE_TRUNK_RADIUS_FACTOR = 0.18;
 
 // Grass textures**********************//
@@ -1010,7 +1001,6 @@ const miniMapProg = document.getElementById("miniMapProg");
 const miniMapCtx = miniMapCanvas ? miniMapCanvas.getContext("2d") : null;
 const healthFill = document.getElementById("healthFill");
 const healthValue = document.getElementById("healthValue");
-const alienKilledEl = document.getElementById("alienKilled");
 const alienTotalEl = document.getElementById("alienTotal");
 const alienLeftEl = document.getElementById("alienLeft");
 const alienObjectiveWrap = document.getElementById("alienObjective");
@@ -1287,12 +1277,8 @@ function setAlienObjectiveMode(mode){
 }
 
 function updateAlienObjectiveHUD(){
-  const total = Math.max(0, Math.round(alienObjectiveTotal));
-  const left = Math.max(0, Math.round(targetsRemaining));
-  const killed = Math.max(0, total - left);
-  if(alienKilledEl) alienKilledEl.textContent = String(killed);
-  if(alienTotalEl) alienTotalEl.textContent = String(total);
-  if(alienLeftEl) alienLeftEl.textContent = String(left);
+  if(alienTotalEl) alienTotalEl.textContent = String(Math.max(0, Math.round(alienObjectiveTotal)));
+  if(alienLeftEl) alienLeftEl.textContent = String(Math.max(0, Math.round(targetsRemaining)));
 }
 
 function updateLowZoneStuckState(dt){
@@ -1335,7 +1321,7 @@ function updateLowZoneStuckState(dt){
   const shouldStick = inLowZone && lowZoneStuckTimer <= 0 && lowZoneRestickGraceTimer <= 0;
   if(shouldStick){
     adjustPlayerHealthPct(-LOW_ZONE_STUCK_HEALTH_PCT);
-    showBanner("⛔ <b>STUCK</b> &nbsp; -9.025% HEALTH");
+    showBanner("⛔ <b>STUCK</b> &nbsp; -5% HEALTH");
     lowZoneStuckTimer = LOW_ZONE_STUCK_DURATION_SEC;
   }
 
@@ -4281,7 +4267,7 @@ function applyTunnelReaperBossContactPenalty(obj, radius = TRUCK_COLLISION_RADIU
       if(latchName === "r3") tunnelReaperBoss2ContactApplied = true;
       if(latchName === "r4") tunnelReaperBoss3ContactApplied = true;
       if(latchName === "r5") tunnelReaperBoss4ContactApplied = true;
-      adjustPlayerHealthPct(-13.5375);
+      adjustPlayerHealthPct(-15);
       spawnHitBurst(new THREE.Vector3(boss.position.x, boss.position.y, boss.position.z), 0xff7a7a);
     } else if(!hit && applied){
       if(latchName === "r2") tunnelReaperBossContactApplied = false;
@@ -6766,15 +6752,14 @@ let nextWaveT = 0;
 let targets = []; // { mesh, box, shotCooldown }
 let targetsRemaining = TARGET_BASE_COUNT;
 let targetFlashT = 0;
-let aliensCleared = false;
 
 const ALIEN_SHOTS_ENABLE = true;
 const ALIEN_SHOT_INTERVAL_MIN = 0.55; // 50% faster fire frequency
 const ALIEN_SHOT_INTERVAL_MAX = 1.0;  // 50% faster fire frequency
-const ALIEN_SHOT_SPEED = 38.25; // reduced by 25%
+const ALIEN_SHOT_SPEED = 51; // 50% faster projectile speed
 const ALIEN_SHOT_LIFE = 4.0;
 const ALIEN_SHOT_RADIUS = 0.20;
-const ALIEN_SHOT_DAMAGE = 7.878825; // eased another 5%
+const ALIEN_SHOT_DAMAGE = 8.73; // 1.5x previous alien hit damage
 const alienGreenBalls = [];
 let snakeRowGroup = null;
 let snakeRowTexture = null;
@@ -7030,7 +7015,6 @@ function updateSnakeAmbushOnJourney(obj){
 
 function createTargets(){
   if (!TARGET_ENABLE) return;
-  aliensCleared = false;
 
   // pick candidate XZ points around current truck/player position
   const obj = controls.getObject();
@@ -7206,12 +7190,6 @@ function updateTargets(dt){
     targetFlashT = Math.max(0, targetFlashT - dt);
   }
 
-  if(alienObjectiveMode === "combat"){
-    targetsRemaining = Math.max(0, targets.length);
-    updateAlienObjectiveHUD();
-    if(targetsRemaining <= 0) winIfDone();
-  }
-
   if(!ALIEN_SHOTS_ENABLE || !targets.length) return;
 
   for(const t of targets){
@@ -7318,10 +7296,7 @@ function enterPostAlienClearMode(){
 }
 
 function winIfDone(){
-  if (targetsRemaining <= 0 && !aliensCleared){
-    aliensCleared = true;
-    targetsRemaining = 0;
-    updateAlienObjectiveHUD();
+  if (targetsRemaining === 0){
     MINI_MAP_SHOW_BLUE_SQUARE = true;
     playToBlueSquareAudio();
     postClearCopterSuppressed = false;
@@ -7363,7 +7338,7 @@ function registerTargetHit(targetIndex){
   disposeTargetMaterials(t.mesh);
 
   targets.splice(targetIndex, 1);
-  targetsRemaining = Math.max(0, targets.length);
+  targetsRemaining = targets.length;
   setTargetsLeftHUD();
   winIfDone();
 }
@@ -7390,13 +7365,13 @@ let badGuy = null;
 const TANK_ENABLE = false;
 const TANK_FILE = "tank.png";
 const TANK_SCALE = 5.0; // +25% size
-const TANK_MOVE_SPEED = 6.0;
+const TANK_MOVE_SPEED = 8.0;
 const TANK_STOP_DIST = 16.0;
 const TANK_FIRE_RANGE = 68.0;
 const TANK_APPROACH_FWD = 18.0; // spawn directly in front of avatruck
 const TANK_APPROACH_SIDE = 0.0; // no side offset: right in front
 const TANK_SHOT_INTERVAL_SEC = 1.232; // 12% less frequent
-const TANK_SHOT_SPEED = 16.5;
+const TANK_SHOT_SPEED = 22.0;
 const TANK_SHOT_LIFE_SEC = 4.0;
 const TANK_SHOT_RADIUS = 0.22;
 const TANK_HITS_TO_KILL = 2; // one more hit required to destroy tank
@@ -7408,7 +7383,7 @@ const TANK_PASSED_KILL_LENGTHS = 50.0;
 const FIREBALL_ENABLE = true;
 const FIREBALL_FILE = "fireball.png";
 const FIREBALL_SCALE = 3.4;
-const FIREBALL_MOVE_SPEED = 8.82; // reduced by 25%
+const FIREBALL_MOVE_SPEED = 11.76; // +12% speed
 const FIREBALL_CRASH_RADIUS = 1.1;
 const FIREBALL_START_DELAY_SEC = 30.0;
 const FIREBALL_RESPAWN_SEC = 5.0;
@@ -7447,7 +7422,7 @@ const COPTER_VIEW_FWD = 6.0; // slightly ahead so it stays visible while flying 
 const COPTER_VIEW_SIDE = 0.0;
 const COPTER_EXIT_FWD = 28.0;
 const COPTER_EXIT_SIDE = 44.0;
-const COPTER_MOVE_SPEED = 10.5;
+const COPTER_MOVE_SPEED = 14.0;
 const COPTER_FOLLOW_SEC = 5.0;
 const COPTER_WAIT_SEC = 5.0;
 const COPTER_BOB_AMP = 0.35;
@@ -7479,10 +7454,10 @@ const COPTER_FRONT_START_DIST = 72.0;
 const COPTER_REAR_START_DIST = 72.0;
 const COPTER_FAR_AHEAD_DIST = 120.0;
 const COPTER_BEHIND_EXIT_DOT = -2.0; // turn almost immediately after passing truck
-const COPTER_SHOT_SPEED = 14.52; // reduced by 25%
+const COPTER_SHOT_SPEED = 19.36; // -12%
 const COPTER_SHOT_LIFE_SEC = 5.0;
 const COPTER_SHOT_RADIUS = 0.176; // -12%
-const COPTER_SHOT_DAMAGE_PCT = 4.5125;
+const COPTER_SHOT_DAMAGE_PCT = 5.0;
 const COPTER_HIT_STREAK_FOR_FIRE = 2; // reduced hit streak needed for burn trigger
 const TRUCK_FIRE_FRAME_SEC = 0.10;
 const TRUCK_FIRE_DURATION_SEC = 6.0;
@@ -9291,7 +9266,7 @@ function updateTankOrangeBalls(dt){
     }
 
     if(hitTruck){
-      adjustPlayerHealthPct(-13.5375);
+      adjustPlayerHealthPct(-15);
       spawnHitBurst(p, 0xffa34a);
       scene.remove(b.mesh);
       b.mesh.geometry.dispose();
@@ -9466,7 +9441,7 @@ function updateFireball(dt){
   }
 
   if(hitTruck){
-    adjustPlayerHealthPct(-13.5375);
+    adjustPlayerHealthPct(-15);
     spawnHitBurst(fireball.position, 0xff7a33);
     destroyFireballAndScheduleNext(false);
   }
@@ -10615,7 +10590,11 @@ let leggomanGoalMesh = null;
 let leggomanGoalTex = null;
 let leggomanGoalTexFile = "";
 let currentVehicleFile = TRUCK_FILE;
-const TRUCK_SEQUENCE = [BIGFOOT_BASE_FILE, TRUCK_FILE, BIG_TRUCK_BASE_FILE, MAZ_VEHICLE_BASE_FILE, ORANGE_TRUCK_BASE_FILE, TRUCK2_FILE];
+let orangeTurnPreviewTimer = 0.0;
+let orangeTurnPreviewDir = 0;
+let orangeTurnPrevLeftHeld = false;
+let orangeTurnPrevRightHeld = false;
+const TRUCK_SEQUENCE = [ORANGE_TRUCK_BASE_FILE, TRUCK2_FILE, MAZ_VEHICLE_BASE_FILE, WHITE_TRUCK_BASE_FILE, BIGFOOT_BASE_FILE, BIG_TRUCK_BASE_FILE, CYBER_TRUCK_FILE];
 let plazaExitVehicleChoicesGroup = null;
 const plazaExitVehicleChoices = [];
 const plazaExitVehicleTextures = new Map();
@@ -10837,7 +10816,9 @@ function spawnPlazaExitVehicleChoices(actorObj){
   const baseX = actorObj.position.x + (fwdX * ahead);
   const baseZ = actorObj.position.z + (fwdZ * ahead);
 
-  const availableFiles = PLAZA_EXIT_VEHICLE_FILES;
+  const availableFiles = cyberUnlocked
+    ? PLAZA_EXIT_VEHICLE_FILES
+    : PLAZA_EXIT_VEHICLE_FILES.filter(f => f !== CYBER_TRUCK_FILE);
 
   for(let i = 0; i < availableFiles.length; i++){
     const file = availableFiles[i];
@@ -10884,11 +10865,6 @@ function spawnPlazaExitVehicleChoices(actorObj){
 function updatePlazaExitVehicleChoiceCollision(obj){
   if(!obj) return;
   const avatarRadius = TRUCK_COLLISION_RADIUS;
-
-  if(avatarMode === "leggoman" && isLeggomanTouchingTruck2Goal()){
-    switchToTruck2Avatar();
-    return;
-  }
 
   if(cyberFrontVehicleMesh && cyberFrontVehicleMesh.visible){
     const dx = obj.position.x - cyberFrontVehicleMesh.position.x;
@@ -11267,30 +11243,58 @@ function getNextTruckFile(currentFile){
 }
 
 function getSpawnTruckDirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return TRUCK_LEFT_FILE;
+  if(keys.has("ArrowRight")) return TRUCK_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return TRUCK_FILE;
   return TRUCK_FILE;
 }
 
 function getTruck2DirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return TRUCK2_LEFT_FILE;
+  if(keys.has("ArrowRight")) return TRUCK2_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return TRUCK2_FILE;
   return TRUCK2_FILE;
 }
 
 function getMazDirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return MAZ_VEHICLE_LEFT_FILE;
+  if(keys.has("ArrowRight")) return MAZ_VEHICLE_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return MAZ_VEHICLE_BASE_FILE;
   return MAZ_VEHICLE_BASE_FILE;
 }
 
 function getOrangeTruckDirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return ORANGE_TRUCK_HALF_LEFT_FILE;
+  if(keys.has("ArrowRight")) return ORANGE_TRUCK_HALF_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return ORANGE_TRUCK_BASE_FILE;
   return ORANGE_TRUCK_BASE_FILE;
 }
 
+function getWhiteTruckDirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return WHITE_TRUCK_LEFT_FILE;
+  if(keys.has("ArrowRight")) return WHITE_TRUCK_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return WHITE_TRUCK_BASE_FILE;
+  return WHITE_TRUCK_BASE_FILE;
+}
+
 function getBigfootDirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return BIGFOOT_LEFT_FILE;
+  if(keys.has("ArrowRight")) return BIGFOOT_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return BIGFOOT_BASE_FILE;
   return BIGFOOT_BASE_FILE;
 }
 
 function getCyberDirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return CYBER_TRUCK_LEFT_FILE;
+  if(keys.has("ArrowRight")) return CYBER_TRUCK_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return CYBER_TRUCK_FILE;
   return CYBER_TRUCK_FILE;
 }
 
 function getBigTruckDirectionalFileByInput(){
+  if(keys.has("ArrowLeft")) return BIG_TRUCK_LEFT_FILE;
+  if(keys.has("ArrowRight")) return BIG_TRUCK_RIGHT_FILE;
+  if(keys.has("ArrowUp")) return BIG_TRUCK_BASE_FILE;
   return BIG_TRUCK_BASE_FILE;
 }
 
@@ -11306,6 +11310,9 @@ function getDirectionalVehicleTextureForCurrent(){
   }
   if(currentVehicleFile === ORANGE_TRUCK_BASE_FILE || currentVehicleFile === ORANGE_TRUCK_LEGACY_FILE){
     return getPlazaExitChoiceTexture(getOrangeTruckDirectionalFileByInput());
+  }
+  if(currentVehicleFile === WHITE_TRUCK_BASE_FILE){
+    return getPlazaExitChoiceTexture(getWhiteTruckDirectionalFileByInput());
   }
   if(currentVehicleFile === BIGFOOT_BASE_FILE){
     return getPlazaExitChoiceTexture(getBigfootDirectionalFileByInput());
@@ -11605,7 +11612,40 @@ function initTruckAvatar
 function updateTruckAvatar(dt=0.016){
   if(!truckPlane) return;
 
-  const backViewScaleMult = VEHICLE_BACK_VIEW_SCALE_MULT;
+  // Orange truck turn blend: instant back <-> one-eighth view swap.
+  const isOrangeVehicleActive = (currentVehicleFile === ORANGE_TRUCK_BASE_FILE || currentVehicleFile === ORANGE_TRUCK_LEGACY_FILE);
+  const orangeLeftHeld = isOrangeVehicleActive && keys.has("ArrowLeft");
+  const orangeRightHeld = isOrangeVehicleActive && keys.has("ArrowRight");
+  const orangeTurnHeld = orangeLeftHeld || orangeRightHeld;
+  const orangeLeftPressed = orangeLeftHeld && !orangeTurnPrevLeftHeld;
+  const orangeRightPressed = orangeRightHeld && !orangeTurnPrevRightHeld;
+  if(isOrangeVehicleActive && (orangeLeftPressed || orangeRightPressed)){
+    orangeTurnPreviewTimer = ORANGE_TURN_PREVIEW_SEC;
+    orangeTurnPreviewDir = orangeLeftPressed ? -1 : 1;
+  }
+  if(!isOrangeVehicleActive){
+    orangeTurnPreviewTimer = 0.0;
+    orangeTurnPreviewDir = 0;
+  }
+  if(orangeTurnPreviewTimer > 0){
+    orangeTurnPreviewTimer = Math.max(0, orangeTurnPreviewTimer - Math.max(0, dt));
+  }
+  const orangeTurnPreviewActive = isOrangeVehicleActive && orangeTurnHeld && orangeTurnPreviewTimer > 0;
+  const orangeTurnPhase01 = (ORANGE_TURN_PREVIEW_SEC > 1e-6) ? (1.0 - (orangeTurnPreviewTimer / ORANGE_TURN_PREVIEW_SEC)) : 1.0;
+  const orangeHalfStageActive = orangeTurnPreviewActive && orangeTurnPhase01 >= ORANGE_TURN_HALF_STAGE_AT;
+  const orangeTurnPreviewFile = orangeTurnPreviewActive
+    ? (orangeHalfStageActive
+      ? (orangeTurnPreviewDir < 0 ? ORANGE_TRUCK_HALF_LEFT_FILE : ORANGE_TRUCK_HALF_RIGHT_FILE)
+      : ORANGE_TRUCK_BASE_FILE)
+    : "";
+  const orangeTurnPreviewNudge = orangeTurnPreviewActive ? (orangeTurnPreviewDir * ORANGE_TURN_PREVIEW_NUDGE) : 0;
+  orangeTurnPrevLeftHeld = orangeLeftHeld;
+  orangeTurnPrevRightHeld = orangeRightHeld;
+
+  const upHeld = keys.has("ArrowUp") || keys.has("KeyW");
+  const leftHeld = keys.has("ArrowLeft") || keys.has("KeyA");
+  const rightHeld = keys.has("ArrowRight") || keys.has("KeyD");
+  const backViewScaleMult = (upHeld && !leftHeld && !rightHeld) ? VEHICLE_BACK_VIEW_SCALE_MULT : 1.0;
 
   if(avatarMode === "leggoman"){
     ensureLeggomanIdleStandTexture();
@@ -11651,7 +11691,9 @@ function updateTruckAvatar(dt=0.016){
 
     const pickupScale = ((currentVehicleFile === BIG_TRUCK_BASE_FILE) ? BIG_TRUCK_SCALE_MULT : 1.0) * VEHICLE_TRIPLET_SCALE_MULT * backViewScaleMult;
     truckPlane.scale.set(pickupScale, pickupScale, 1.0);
-    const directionalTex = getDirectionalVehicleTextureForCurrent();
+    const directionalTex = orangeTurnPreviewFile
+      ? getPlazaExitChoiceTexture(orangeTurnPreviewFile)
+      : getDirectionalVehicleTextureForCurrent();
     const desiredTex = directionalTex || truckTex;
     // Ensure we snap back to the active vehicle texture after toggle.
     const mat = truckPlane.material;
@@ -11665,7 +11707,9 @@ function updateTruckAvatar(dt=0.016){
     const activeScale = (baseScale * vehicleScale) * VEHICLE_TRIPLET_SCALE_MULT * backViewScaleMult;
     const copterHeightScale = (currentVehicleFile === GODDESS_COPTER_MARKER_FILE) ? 0.7744 : 1.0;
     truckPlane.scale.set(activeScale, activeScale * copterHeightScale, 1.0);
-    const directionalTex = getDirectionalVehicleTextureForCurrent();
+    const directionalTex = orangeTurnPreviewFile
+      ? getPlazaExitChoiceTexture(orangeTurnPreviewFile)
+      : getDirectionalVehicleTextureForCurrent();
     const desiredTex = directionalTex || leggomanGoalTex;
     const mat = truckPlane.material;
     const currentTex = (mat && mat.uniforms && mat.uniforms.map) ? mat.uniforms.map.value : mat.map;
@@ -11790,7 +11834,7 @@ function updateTruckAvatar(dt=0.016){
     renderRoll = truckTerrainRoll + truckTurnSway + vibeRoll;
   }
 
-  truckPlane.position.set(x + (fwd.x * renderFwdOffset), baseTruckY, z + (fwd.z * renderFwdOffset));
+  truckPlane.position.set(x + (fwd.x * renderFwdOffset) + (right.x * orangeTurnPreviewNudge), baseTruckY, z + (fwd.z * renderFwdOffset) + (right.z * orangeTurnPreviewNudge));
   truckPlane.rotation.set(renderPitch, yaw, renderRoll);
 
   if(truckShadowProxy){
@@ -12355,10 +12399,10 @@ function applyTunnelReaperContactPenalty(obj, radius = TRUCK_COLLISION_RADIUS){
       if(node.userData.isFinalTunnelReaperPair){
         if(!finalTunnelReaperPenaltyApplied){
           finalTunnelReaperPenaltyApplied = true;
-          adjustPlayerHealthPct(-9.025);
+          adjustPlayerHealthPct(-10);
         }
       } else {
-        adjustPlayerHealthPct(-9.025);
+        adjustPlayerHealthPct(-10);
       }
       spawnHitBurst(new THREE.Vector3(pos.x, pos.y + (hr * 0.15), pos.z), 0xff5555);
     } else if(!hit && node.userData.reaperContactApplied){
@@ -12385,7 +12429,7 @@ function applyFinalTunnelReaperPassPenalty(obj, radius = TRUCK_COLLISION_RADIUS)
   if(Math.abs(closest.s - finalPairS) <= triggerHalfWindow){
     finalTunnelReaperPenaltyApplied = true;
     playTunnelReaperMadAudio();
-    adjustPlayerHealthPct(-9.025);
+    adjustPlayerHealthPct(-10);
     spawnHitBurst(new THREE.Vector3(obj.position.x, obj.position.y + 1.2, obj.position.z), 0xff5555);
   }
 }
@@ -13008,7 +13052,6 @@ if(btnVehicleJ){
 // Right-side thumb joystick -> Arrow keys
 const joystickState = { up:false, down:false, left:false, right:false };
 let joyActive = false;
-let joyPointerId = null;
 const JOY_CENTER = { x:110, y:110 };
 const JOY_RADIUS = 88;
 const JOY_DEAD = 0.28;
@@ -13035,7 +13078,6 @@ function setJoyKnob(nx, ny){
 
 function resetJoystick(){
   joyActive = false;
-  joyPointerId = null;
   setArrowFromJoystick({ up:false, down:false, left:false, right:false });
   setJoyKnob(0, 0);
 }
@@ -13065,59 +13107,20 @@ function updateJoystickFromClient(clientX, clientY){
 }
 
 if(joyWrap){
-  const getTrackedTouch = (ev)=>{
-    if(!ev.changedTouches && !ev.touches) return null;
-    const touches = ev.touches || ev.changedTouches;
-    if(joyPointerId !== null){
-      for(const touch of touches){
-        if(touch.identifier === joyPointerId) return touch;
-      }
-      return null;
-    }
-    return touches[0] || null;
-  };
-  const getTrackedChangedTouch = (ev)=>{
-    const touches = ev.changedTouches || ev.touches;
-    if(!touches) return null;
-    if(joyPointerId !== null){
-      for(const touch of touches){
-        if(touch.identifier === joyPointerId) return touch;
-      }
-      return null;
-    }
-    return touches[0] || null;
-  };
   const start = (ev)=>{
     if(!touchOn || !isLandscape()) return;
-    if(joyActive) return;
     joyActive = true;
-    if(ev.pointerId !== undefined){
-      joyPointerId = ev.pointerId;
-      joyWrap.setPointerCapture?.(ev.pointerId);
-    }else{
-      const touch = getTrackedTouch(ev);
-      joyPointerId = touch ? touch.identifier : null;
-    }
-    const t = getTrackedTouch(ev) || ev;
+    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
   const move = (ev)=>{
     if(!joyActive) return;
-    if(ev.pointerId !== undefined && joyPointerId !== ev.pointerId) return;
-    const t = getTrackedTouch(ev) || ev;
+    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
-  const end = (ev)=>{
-    if(ev && ev.pointerId !== undefined && joyPointerId !== ev.pointerId) return;
-    if(ev && (ev.changedTouches || ev.touches)){
-      const matchingTouch = getTrackedChangedTouch(ev);
-      if(!matchingTouch && joyPointerId !== null) return;
-    }
-    if(ev) ev.preventDefault();
-    resetJoystick();
-  };
+  const end = (ev)=>{ if(ev) ev.preventDefault(); resetJoystick(); };
 
   joyWrap.addEventListener("touchstart", start, {passive:false});
   joyWrap.addEventListener("touchmove", move, {passive:false});
@@ -13125,10 +13128,9 @@ if(joyWrap){
   joyWrap.addEventListener("touchcancel", end, {passive:false});
 
   joyWrap.addEventListener("pointerdown", start);
-  joyWrap.addEventListener("pointermove", move);
-  joyWrap.addEventListener("pointerup", end);
-  joyWrap.addEventListener("pointercancel", end);
-  joyWrap.addEventListener("lostpointercapture", resetJoystick);
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", end);
+  window.addEventListener("pointercancel", end);
 }
 
 resetJoystick();
@@ -14708,7 +14710,7 @@ const hitAnyCaveWall = !!(hitSpawnHalfCaveWall || hitFullCaveWall || hitInterior
 if(hitAnyCaveWall && !caveWallContactApplied){
   caveWallContactApplied = true;
   playCaveWallSkidAudio();
-  adjustPlayerHealthPct(-9.025);
+  adjustPlayerHealthPct(-10);
 } else if(!hitAnyCaveWall && caveWallContactApplied){
   caveWallContactApplied = false;
 }
@@ -14820,7 +14822,7 @@ const lHitAnyCaveWall = !!(lHitSpawnHalfCaveWall || lHitFullCaveWall || lHitInte
 if(lHitAnyCaveWall && !caveWallContactApplied){
   caveWallContactApplied = true;
   playCaveWallSkidAudio();
-  adjustPlayerHealthPct(-9.025);
+  adjustPlayerHealthPct(-10);
 } else if(!lHitAnyCaveWall && caveWallContactApplied){
   caveWallContactApplied = false;
 }

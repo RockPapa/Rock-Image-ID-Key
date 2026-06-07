@@ -1172,17 +1172,17 @@ const LAKE_BUSH_COUNT = 1500;
 const LAKE_BUSH_SIZE = { w: 6.5, h: 7.8 };
 const LAKE_BUSH_LIFT = 0.16128;
 const LOW_TREE_FILE = "tree1.png";
-const LOW_TREE_COUNT = 281;
+const LOW_TREE_COUNT = 0;
 const LOW_TREE_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE_LIFT = -0.06;
 const LOW_TREE_DROP_PCT = 0.05;
 const LOW_TREE3_FILE = "tree3.png";
-const LOW_TREE3_COUNT = 281;
+const LOW_TREE3_COUNT = 0;
 const LOW_TREE3_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE3_LIFT = -0.06;
 const LOW_TREE3_DROP_PCT = 0.10;
 const MID_TREE7_FILE = "tree7.png";
-const MID_TREE7_COUNT = 375;
+const MID_TREE7_COUNT = 0;
 const MID_TREE7_SIZE = { w: 16.0, h: 24.0 };
 const MID_TREE7_LIFT = -0.06;
 const MID_TREE7_DROP_PCT = 0.10;
@@ -1194,7 +1194,7 @@ const AVATAR_RENDER_ORDER = 2000; // keep controlled avatar above tree/bush bill
 // tiny sink to avoid floating
 
 // Heightmap
-const HEIGHTMAP_FILE = "height_map.png";
+const HEIGHTMAP_FILE = "height_map_small.png";
 const USE_TERRAIN = true;
 
 // Terrain
@@ -1242,8 +1242,8 @@ const TUNNEL_MOUTH_BOULDER_BASE_SIZE_FT = 9.0;
 const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.png";
 const TUNNEL_MOUTH_BOULDER2_COUNT = 8;
 const TUNNEL_MOUTH_TREES_ENABLE = false;
-const TUNNEL_MOUTH_TREE1_COUNT = 6;
-const TUNNEL_MOUTH_TREE3_COUNT = 6;
+const TUNNEL_MOUTH_TREE1_COUNT = 0;
+const TUNNEL_MOUTH_TREE3_COUNT = 0;
 const TUNNEL_MOUTH_SIGN_ENABLE = false;
 const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
@@ -11875,6 +11875,8 @@ function clearLowZoneTrees(){
 }
 
 async function createLowZoneTrees(){
+  clearLowZoneTrees();
+  if (LOW_TREE_COUNT <= 0) return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.low;
   if (!zone) return;
@@ -11885,8 +11887,6 @@ async function createLowZoneTrees(){
     return;
   }
   tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-
-  clearLowZoneTrees();
 
   lowTreeGeo = new THREE.PlaneGeometry(LOW_TREE_SIZE.w, LOW_TREE_SIZE.h);
   lowTreeMat = new THREE.MeshBasicMaterial({
@@ -11947,6 +11947,8 @@ function clearLowZoneTree3(){
 }
 
 async function createLowZoneTree3(){
+  clearLowZoneTree3();
+  if (LOW_TREE3_COUNT <= 0) return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.low;
   if (!zone) return;
@@ -11957,8 +11959,6 @@ async function createLowZoneTree3(){
     return;
   }
   tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-
-  clearLowZoneTree3();
 
   lowTree3Geo = new THREE.PlaneGeometry(LOW_TREE3_SIZE.w, LOW_TREE3_SIZE.h);
   lowTree3Mat = new THREE.MeshBasicMaterial({
@@ -12023,6 +12023,8 @@ function clearMidZoneTree7(){
 }
 
 async function createMidZoneTree7(){
+  clearMidZoneTree7();
+  if (MID_TREE7_COUNT <= 0) return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.medium;
   if (!zone) return;
@@ -12033,8 +12035,6 @@ async function createMidZoneTree7(){
     return;
   }
   tex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-
-  clearMidZoneTree7();
 
   midTree7Geo = new THREE.PlaneGeometry(MID_TREE7_SIZE.w, MID_TREE7_SIZE.h);
   midTree7Mat = new THREE.MeshBasicMaterial({
@@ -14575,8 +14575,11 @@ const GYRO_BANK_RESPONSE_PER_SEC = 7.0;
 const GYRO_PREFLIGHT_CALIBRATION_MS = 3000;
 const GYRO_PREFLIGHT_MIN_SAMPLES = 6;
 const GYRO_PITCH_SIGN = -1;
-const GYRO_PITCH_SENSITIVITY = 0.78;
-const GYRO_BANK_SENSITIVITY = 0.78;
+const GYRO_PITCH_SENSITIVITY = 0.70;
+const GYRO_BANK_SENSITIVITY = 0.46;
+const GYRO_INPUT_DEADZONE = 0.035;
+const GYRO_PITCH_DRIFT_MAX_DEG = 7.0;
+const GYRO_PITCH_DRIFT_CORRECT_PER_SEC = 0.018;
 const gyroState = {
   enabled:false,
   available:false,
@@ -14596,7 +14599,8 @@ const gyroState = {
   pitchInput:0,
   bankInput:0,
   smoothedPitchInput:0,
-  smoothedBankInput:0
+  smoothedBankInput:0,
+  lastDriftCorrectionMs:0
 };
 let throttleSpeedMult = 1.00;
 let effectiveThrottleMult = 0.00;
@@ -14705,6 +14709,11 @@ function getGyroAxesFromEvent(ev){
   return { pitchDeg: beta, bankDeg: gamma };
 }
 
+function applyGyroDeadzone(v){
+  if(Math.abs(v) <= GYRO_INPUT_DEADZONE) return 0;
+  return Math.sign(v) * ((Math.abs(v) - GYRO_INPUT_DEADZONE) / (1 - GYRO_INPUT_DEADZONE));
+}
+
 function updateGyroButton(){
   if(!ipadGyroBtn) return;
   ipadGyroBtn.classList.toggle("on", gyroState.enabled);
@@ -14727,6 +14736,7 @@ function calibrateGyroNeutral(){
   gyroState.calibrationPitchSum = 0;
   gyroState.calibrationBankSum = 0;
   gyroState.calibrationSamples = 0;
+  gyroState.lastDriftCorrectionMs = performance.now();
 }
 
 function startGyroPreflightCalibration(){
@@ -14740,6 +14750,7 @@ function startGyroPreflightCalibration(){
   gyroState.bankInput = 0;
   gyroState.smoothedPitchInput = 0;
   gyroState.smoothedBankInput = 0;
+  gyroState.lastDriftCorrectionMs = 0;
   updateGyroButton();
 }
 
@@ -14764,6 +14775,7 @@ function collectGyroPreflightCalibration(){
   gyroState.calibrationPitchSum = 0;
   gyroState.calibrationBankSum = 0;
   gyroState.calibrationSamples = 0;
+  gyroState.lastDriftCorrectionMs = performance.now();
   hudLine("📱 Gyro calibrated. Tilt gently for pitch and bank.");
   updateGyroButton();
   return true;
@@ -14787,8 +14799,20 @@ function handleDeviceOrientation(ev){
   if(!gyroState.calibrated) return;
   const pitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
   const bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
-  gyroState.pitchInput = THREE.MathUtils.clamp((pitchDelta / GYRO_PITCH_MAX_DEG) * GYRO_PITCH_SENSITIVITY, -1, 1);
-  gyroState.bankInput = THREE.MathUtils.clamp((bankDelta / GYRO_BANK_MAX_DEG) * GYRO_BANK_SENSITIVITY, -1, 1);
+  if(Math.abs(pitchDelta) <= GYRO_PITCH_DRIFT_MAX_DEG){
+    const nowMs = gyroState.lastEventMs;
+    const dtSec = gyroState.lastDriftCorrectionMs > 0
+      ? Math.min(0.1, Math.max(0, (nowMs - gyroState.lastDriftCorrectionMs) / 1000))
+      : 0;
+    const driftAlpha = Math.min(1, GYRO_PITCH_DRIFT_CORRECT_PER_SEC * dtSec);
+    gyroState.basePitchDeg += (gyroState.rawPitchDeg - gyroState.basePitchDeg) * driftAlpha;
+    gyroState.lastDriftCorrectionMs = nowMs;
+  } else {
+    gyroState.lastDriftCorrectionMs = gyroState.lastEventMs;
+  }
+  const correctedPitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
+  gyroState.pitchInput = applyGyroDeadzone(THREE.MathUtils.clamp((correctedPitchDelta / GYRO_PITCH_MAX_DEG) * GYRO_PITCH_SENSITIVITY, -1, 1));
+  gyroState.bankInput = applyGyroDeadzone(THREE.MathUtils.clamp((bankDelta / GYRO_BANK_MAX_DEG) * GYRO_BANK_SENSITIVITY, -1, 1));
   updateGyroButton();
 }
 
@@ -14859,6 +14883,7 @@ function disableGyroControls(){
   }
   gyroState.pitchInput = 0;
   gyroState.bankInput = 0;
+  gyroState.lastDriftCorrectionMs = 0;
   updateGyroButton();
   hudLine("📱 Gyro flight controls <code>OFF</code>.");
 }

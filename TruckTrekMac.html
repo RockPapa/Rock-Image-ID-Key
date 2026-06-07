@@ -349,7 +349,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
 </div>
 <div class="alienObjective" id="alienObjective" aria-live="polite">
   <div class="alienObjectiveTitle">YOU MUST KILL ALL THE ALIENS</div>
-  <div class="alienObjectiveCounts">Total: <b id="alienTotal">0</b> | Left: <b id="alienLeft">0</b></div>
+  <div class="alienObjectiveCounts">Killed: <b id="alienKilled">0</b> | Total: <b id="alienTotal">0</b> | Left: <b id="alienLeft">0</b></div>
 </div>
 
 
@@ -762,7 +762,7 @@ const CLAMP_OUTSIDE_TERRAIN = true;
 
 // Player
 const PLAYER_EYE_HEIGHT = 3.25;
-const MOVE_SPEED = 17.6715; // reduced by 30%
+const MOVE_SPEED = 15.55092; // reduced by another 12%
 const TURN_SPEED = 1.3104; // +30% from previous turn speed // raycaster-style keyboard turning (radians/sec)
 const COPTER_PLAYER_FLY_SPEED = MOVE_SPEED * 1.30;
 const COPTER_PLAYER_VERTICAL_SPEED = MOVE_SPEED * 1.30;
@@ -1010,6 +1010,7 @@ const miniMapProg = document.getElementById("miniMapProg");
 const miniMapCtx = miniMapCanvas ? miniMapCanvas.getContext("2d") : null;
 const healthFill = document.getElementById("healthFill");
 const healthValue = document.getElementById("healthValue");
+const alienKilledEl = document.getElementById("alienKilled");
 const alienTotalEl = document.getElementById("alienTotal");
 const alienLeftEl = document.getElementById("alienLeft");
 const alienObjectiveWrap = document.getElementById("alienObjective");
@@ -1286,8 +1287,12 @@ function setAlienObjectiveMode(mode){
 }
 
 function updateAlienObjectiveHUD(){
-  if(alienTotalEl) alienTotalEl.textContent = String(Math.max(0, Math.round(alienObjectiveTotal)));
-  if(alienLeftEl) alienLeftEl.textContent = String(Math.max(0, Math.round(targetsRemaining)));
+  const total = Math.max(0, Math.round(alienObjectiveTotal));
+  const left = Math.max(0, Math.round(targetsRemaining));
+  const killed = Math.max(0, total - left);
+  if(alienKilledEl) alienKilledEl.textContent = String(killed);
+  if(alienTotalEl) alienTotalEl.textContent = String(total);
+  if(alienLeftEl) alienLeftEl.textContent = String(left);
 }
 
 function updateLowZoneStuckState(dt){
@@ -7199,6 +7204,12 @@ function updateAlienGreenBalls(dt){
 function updateTargets(dt){
   if (targetFlashT > 0){
     targetFlashT = Math.max(0, targetFlashT - dt);
+  }
+
+  if(alienObjectiveMode === "combat"){
+    targetsRemaining = Math.max(0, targets.length);
+    updateAlienObjectiveHUD();
+    if(targetsRemaining <= 0) winIfDone();
   }
 
   if(!ALIEN_SHOTS_ENABLE || !targets.length) return;

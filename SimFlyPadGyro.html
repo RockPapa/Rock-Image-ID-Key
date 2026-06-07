@@ -14572,7 +14572,9 @@ const GYRO_PITCH_MAX_DEG = 28.0;
 const GYRO_BANK_MAX_DEG = 32.0;
 const GYRO_PITCH_RESPONSE_PER_SEC = 5.5;
 const GYRO_BANK_RESPONSE_PER_SEC = 7.0;
-const GYRO_PREFLIGHT_CALIBRATION_MS = 900;
+const GYRO_PREFLIGHT_CALIBRATION_MS = 3000;
+const GYRO_PREFLIGHT_MIN_SAMPLES = 6;
+const GYRO_PITCH_SIGN = -1;
 const gyroState = {
   enabled:false,
   available:false,
@@ -14745,7 +14747,8 @@ function collectGyroPreflightCalibration(){
   gyroState.calibrationBankSum += gyroState.rawBankDeg;
   gyroState.calibrationSamples++;
   const elapsedMs = performance.now() - gyroState.calibrationStartMs;
-  if(elapsedMs < GYRO_PREFLIGHT_CALIBRATION_MS && gyroState.calibrationSamples < 10) return true;
+  if(elapsedMs < GYRO_PREFLIGHT_CALIBRATION_MS) return true;
+  if(gyroState.calibrationSamples < GYRO_PREFLIGHT_MIN_SAMPLES) return true;
   const n = Math.max(1, gyroState.calibrationSamples);
   gyroState.basePitchDeg = gyroState.calibrationPitchSum / n;
   gyroState.baseBankDeg = gyroState.calibrationBankSum / n;
@@ -14780,7 +14783,7 @@ function handleDeviceOrientation(ev){
   }
   if(!gyroState.calibrated) startGyroPreflightCalibration();
   if(!gyroState.calibrated) return;
-  const pitchDelta = gyroState.rawPitchDeg - gyroState.basePitchDeg;
+  const pitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
   const bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
   gyroState.pitchInput = THREE.MathUtils.clamp(pitchDelta / GYRO_PITCH_MAX_DEG, -1, 1);
   gyroState.bankInput = THREE.MathUtils.clamp(bankDelta / GYRO_BANK_MAX_DEG, -1, 1);

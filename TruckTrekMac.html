@@ -6761,6 +6761,7 @@ let nextWaveT = 0;
 let targets = []; // { mesh, box, shotCooldown }
 let targetsRemaining = TARGET_BASE_COUNT;
 let targetFlashT = 0;
+let aliensCleared = false;
 
 const ALIEN_SHOTS_ENABLE = true;
 const ALIEN_SHOT_INTERVAL_MIN = 0.55; // 50% faster fire frequency
@@ -7024,6 +7025,7 @@ function updateSnakeAmbushOnJourney(obj){
 
 function createTargets(){
   if (!TARGET_ENABLE) return;
+  aliensCleared = false;
 
   // pick candidate XZ points around current truck/player position
   const obj = controls.getObject();
@@ -7305,7 +7307,10 @@ function enterPostAlienClearMode(){
 }
 
 function winIfDone(){
-  if (targetsRemaining === 0){
+  if (targetsRemaining <= 0 && !aliensCleared){
+    aliensCleared = true;
+    targetsRemaining = 0;
+    updateAlienObjectiveHUD();
     MINI_MAP_SHOW_BLUE_SQUARE = true;
     playToBlueSquareAudio();
     postClearCopterSuppressed = false;
@@ -7347,7 +7352,7 @@ function registerTargetHit(targetIndex){
   disposeTargetMaterials(t.mesh);
 
   targets.splice(targetIndex, 1);
-  targetsRemaining = targets.length;
+  targetsRemaining = Math.max(0, targets.length);
   setTargetsLeftHUD();
   winIfDone();
 }

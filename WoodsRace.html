@@ -22,8 +22,9 @@
     object-fit: cover;
     transform-origin: center center;
     will-change: transform;
-    pointer-events: none;
+    pointer-events: none !important;
     touch-action: none;
+    -webkit-user-drag: none;
     -webkit-user-select: none;
     user-select: none;
   }
@@ -369,12 +370,12 @@
     position: fixed;
     right: max(16px, env(safe-area-inset-right));
     bottom: max(16px, env(safe-area-inset-bottom));
-    z-index: 13;
+    z-index: 10000;
     display: none;
     flex-direction: column;
     align-items: flex-end;
     gap: 10px;
-    pointer-events: auto;
+    pointer-events: none;
     user-select: none;
     -webkit-user-select: none;
   }
@@ -388,6 +389,7 @@
     padding: 10px 14px;
     letter-spacing: 0.4px;
     touch-action: manipulation;
+    pointer-events: auto;
     cursor: pointer;
   }
 
@@ -404,6 +406,7 @@
     background: radial-gradient(circle at 35% 32%, rgba(255, 255, 255, 0.3), rgba(30, 30, 30, 0.7));
     position: relative;
     touch-action: none;
+    pointer-events: auto;
     opacity: 0.96;
   }
 
@@ -439,6 +442,7 @@
     muted
     loop
     playsinline
+    webkit-playsinline
     preload="auto"
   ></video>
   <img id="aiTruck" src="images/orange_truck.png" alt="AI truck vehicle" />
@@ -513,6 +517,12 @@
   const touchToggleBtn = document.getElementById("touchToggleBtn");
   const joystickBase = document.getElementById("joystickBase");
   const joystickThumb = document.getElementById("joystickThumb");
+  const isTouchRaceDevice = (
+    "ontouchstart" in window ||
+    navigator.maxTouchPoints > 0 ||
+    (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
+  );
+  const fallbackMovieDurationSeconds = 46.3;
   const maxLaps = 5;
   const earlyLapHitPenaltyPct = 0.115;
   const lateLapHitPenaltyPct = 0.10;
@@ -542,6 +552,8 @@
   let prevBlueX = window.innerWidth * 0.51;
   let prevOrangeX = window.innerWidth * 0.5;
   let lastLapWrapAtMs = -10000;
+  let touchRaceClockStartMs = 0;
+  let touchRaceLapIndex = 0;
 
   const controls = {
     up: false,
@@ -831,6 +843,24 @@
     aiTruck.style.opacity = "1";
   }
 
+  function getRaceMovieDuration() {
+    const duration = Number(video.duration);
+    return Number.isFinite(duration) && duration > 5 ? duration : fallbackMovieDurationSeconds;
+  }
+
+  function getRaceClockElapsedSeconds(nowMs) {
+    return Math.max(0, ((nowMs - touchRaceClockStartMs) / 1000) * movieSpeedFactor);
+  }
+
+  function getRaceMovieTime(nowMs, movieDuration) {
+    if (!isTouchRaceDevice) {
+      const videoTime = Number(video.currentTime);
+      return Number.isFinite(videoTime) ? videoTime : 0;
+    }
+    const elapsedSeconds = getRaceClockElapsedSeconds(nowMs);
+    return movieDuration > 0 ? elapsedSeconds % movieDuration : elapsedSeconds;
+  }
+
   function tryStartEngineSound() {
     if (carSoundStarted) return;
     carSound.volume = 0.45;
@@ -867,8 +897,13 @@
     lapCount = 1;
     lastMovieTime = 0;
     lastLapWrapAtMs = -10000;
+    touchRaceClockStartMs = performance.now();
+    touchRaceLapIndex = 0;
     lastLapLeaderText = "Ahead: --";
     resetLapWinnersHud();
+    video.controls = false;
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
     video.playbackRate = movieSpeedFactor;
     video.play().catch(() => {});
     tryStartEngineSound();
@@ -1048,17 +1083,23 @@
     playerTruck.style.left = `${truckState.x}px`;
     playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
     playerTruck.style.transform = `translate(-50%, -50%) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
-    const movieTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
-    const movieDuration = Number.isFinite(video.duration) ? video.duration : 0;
     const nowMs = performance.now();
-    const didWrapLap = (
-      movieDuration > 5 &&
-      lastMovieTime > movieDuration - 0.75 &&
-      movieTime < 0.75 &&
-      nowMs - lastLapWrapAtMs > 2000
-    );
+    const movieDuration = getRaceMovieDuration();
+    const movieTime = getRaceMovieTime(nowMs, movieDuration);
+    const nextTouchLapIndex = isTouchRaceDevice && movieDuration > 5
+      ? Math.floor(getRaceClockElapsedSeconds(nowMs) / movieDuration)
+      : touchRaceLapIndex;
+    const didWrapLap = isTouchRaceDevice
+      ? nextTouchLapIndex > touchRaceLapIndex
+      : (
+        movieDuration > 5 &&
+        lastMovieTime > movieDuration - 0.75 &&
+        movieTime < 0.75 &&
+        nowMs - lastLapWrapAtMs > 2000
+      );
     if (didWrapLap) {
       lastLapWrapAtMs = nowMs;
+      touchRaceLapIndex = nextTouchLapIndex;
       const completedLap = lapCount;
       if (cubeLeaderState === "blue") {
         lastLapLeaderText = "Ahead: Blue";

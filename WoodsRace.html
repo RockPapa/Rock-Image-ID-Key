@@ -22,6 +22,10 @@
     object-fit: cover;
     transform-origin: center center;
     will-change: transform;
+    pointer-events: none;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   #aiTruck {
@@ -537,6 +541,7 @@
   let lastSkidAtMs = 0;
   let prevBlueX = window.innerWidth * 0.51;
   let prevOrangeX = window.innerWidth * 0.5;
+  let lastLapWrapAtMs = -10000;
 
   const controls = {
     up: false,
@@ -815,6 +820,17 @@
     aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
   }
 
+  function keepRaceTrucksVisible() {
+    if (!experienceStarted) return;
+    scene.classList.remove("prestart");
+    playerTruck.style.display = "block";
+    playerTruck.style.visibility = "visible";
+    playerTruck.style.opacity = "1";
+    aiTruck.style.display = "block";
+    aiTruck.style.visibility = "visible";
+    aiTruck.style.opacity = "1";
+  }
+
   function tryStartEngineSound() {
     if (carSoundStarted) return;
     carSound.volume = 0.45;
@@ -850,6 +866,7 @@
     prevOrangeX = aiState.x;
     lapCount = 1;
     lastMovieTime = 0;
+    lastLapWrapAtMs = -10000;
     lastLapLeaderText = "Ahead: --";
     resetLapWinnersHud();
     video.playbackRate = movieSpeedFactor;
@@ -862,6 +879,8 @@
     aiState.y = startY;
     aiState.scale = minTruckScale;
     aiTruck.style.display = "block";
+    playerTruck.style.display = "block";
+    keepRaceTrucksVisible();
     aiTruck.style.left = `${aiState.x}px`;
     aiTruck.style.top = `${aiState.y}px`;
     aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
@@ -1000,9 +1019,7 @@
   }
 
   function updatePlayerTruck() {
-    if (experienceStarted && aiTruck.style.display !== "block") {
-      aiTruck.style.display = "block";
-    }
+    keepRaceTrucksVisible();
 
     if (experienceStarted) {
       const sideSpeed = 4.2;
@@ -1033,8 +1050,15 @@
     playerTruck.style.transform = `translate(-50%, -50%) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
     const movieTime = Number.isFinite(video.currentTime) ? video.currentTime : 0;
     const movieDuration = Number.isFinite(video.duration) ? video.duration : 0;
-    const didWrapLap = movieDuration > 0 && movieTime + 0.25 < lastMovieTime && lastMovieTime > movieDuration * 0.5;
+    const nowMs = performance.now();
+    const didWrapLap = (
+      movieDuration > 5 &&
+      lastMovieTime > movieDuration - 0.75 &&
+      movieTime < 0.75 &&
+      nowMs - lastLapWrapAtMs > 2000
+    );
     if (didWrapLap) {
+      lastLapWrapAtMs = nowMs;
       const completedLap = lapCount;
       if (cubeLeaderState === "blue") {
         lastLapLeaderText = "Ahead: Blue";
@@ -1272,14 +1296,7 @@
 
     joystickBase.addEventListener("pointerup", releaseJoystickPointer);
     joystickBase.addEventListener("pointercancel", releaseJoystickPointer);
-    joystickBase.addEventListener("lostpointercapture", () => {
-      activeJoystickPointerId = null;
-      joystickControls.up = false;
-      joystickControls.down = false;
-      joystickControls.left = false;
-      joystickControls.right = false;
-      resetJoystickThumb();
-    });
+    joystickBase.addEventListener("lostpointercapture", () => {});
     setTouchToggleState(true);
   }
   refreshTruckSizeCache();

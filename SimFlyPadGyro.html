@@ -167,7 +167,8 @@
     user-select:none;
   }
   .healthTop{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; letter-spacing:.08em; }
-  .healthTop span:first-child{ color:#bae6fd; }
+  .healthWrap.loading .healthTop span:first-child{ color:#bae6fd; }
+  .healthWrap.points .healthTop span:first-child{ color:#bbf7d0; }
   .healthTrack{ width:100%; height:14px; border-radius:4px; overflow:hidden; background:rgba(5,10,14,.86); border:1px solid rgba(148,163,184,.38); }
 .healthFill{ width:0%; height:100%; background:linear-gradient(90deg, #38bdf8 0%, #22c55e 58%, #facc15 100%); transition:width .18s ease; box-shadow:0 0 14px rgba(56,189,248,.48); }
 .alienObjective{
@@ -549,6 +550,34 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   font:700 22px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
   letter-spacing:.04em;
 }
+.reverseViewToggle{
+  position:fixed;
+  right:calc(50% + 72px);
+  bottom:118px;
+  z-index:30;
+  min-width:184px;
+  padding:10px 16px;
+  border-radius:10px;
+  border:1px solid rgba(125,211,252,.42);
+  background:rgba(8,13,18,.82);
+  color:#dff7ff;
+  box-shadow:0 10px 24px rgba(0,0,0,.45);
+  backdrop-filter: blur(4px);
+  user-select:none;
+  text-align:center;
+  font:900 13px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing:.06em;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.reverseViewToggle.on{
+  background:rgba(14,165,233,.86);
+  border-color:rgba(186,230,253,.72);
+  color:#fff;
+}
+.reverseViewToggle:active{
+  transform:translateY(1px);
+}
 .airspeedHud{
   position:fixed;
   right:calc(50% + 72px);
@@ -730,9 +759,9 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   <button class="ipadControlModeToggle" id="ipadControlModeToggle" type="button" aria-label="Switch iPad control mode">JOYSTICK</button>
 </div>
 
-<div class="healthWrap" id="healthWrap" aria-label="Loading">
+<div class="healthWrap loading" id="healthWrap" aria-label="Loading">
   <div class="healthTop">
-    <span>LOADING</span>
+    <span id="healthLabel">LOADING</span>
     <span id="healthValue">0%</span>
   </div>
   <div class="healthTrack">
@@ -765,6 +794,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   </div>
   <div class="miniCompassReadout" id="miniCompassReadout">N 000°</div>
 </div>
+<button class="reverseViewToggle" id="reverseViewToggle" type="button" aria-label="Toggle reverse view" aria-pressed="false">REVERSE VIEW</button>
 <div class="pitchHud" id="pitchHud" aria-live="polite">PITCH 0.0°</div>
 <div class="airspeedHud" id="airspeedHud" aria-live="polite">AIRSPEED 0 KT</div>
 <div class="altimeterHud" id="altimeterHud" aria-live="polite">ALT 0 AGL</div>
@@ -839,24 +869,50 @@ function resolveAssetUrl(url){
 }
 
 const _origTextureLoad = THREE.TextureLoader.prototype.load;
-const assetLoadingState = { total:0, loaded:0 };
+const assetLoadingState = { total:0, loaded:0, complete:false, quietTimer:0 };
 
 function updateAssetLoadingBar(){
+  if(assetLoadingState.complete) return;
+  const wrap = document.getElementById("healthWrap");
+  const label = document.getElementById("healthLabel");
   const fill = document.getElementById("healthFill");
   const value = document.getElementById("healthValue");
   const pct = assetLoadingState.total > 0
     ? Math.max(0, Math.min(100, Math.round((assetLoadingState.loaded / assetLoadingState.total) * 100)))
     : 0;
+  if(wrap){
+    wrap.classList.add("loading");
+    wrap.classList.remove("points");
+    wrap.setAttribute("aria-label", "Loading");
+  }
+  if(label) label.textContent = "LOADING";
   if(fill) fill.style.width = pct + "%";
   if(value) value.textContent = pct + "%";
+  if(assetLoadingState.total > 0 && assetLoadingState.loaded >= assetLoadingState.total){
+    if(assetLoadingState.quietTimer) window.clearTimeout(assetLoadingState.quietTimer);
+    assetLoadingState.quietTimer = window.setTimeout(()=>finishAssetLoadingBar(), 800);
+  }
 }
 
 function finishAssetLoad(){
+  if(assetLoadingState.complete) return;
   assetLoadingState.loaded = Math.min(assetLoadingState.total, assetLoadingState.loaded + 1);
   updateAssetLoadingBar();
 }
 
+function finishAssetLoadingBar(){
+  if(assetLoadingState.complete) return;
+  if(assetLoadingState.total > 0 && assetLoadingState.loaded < assetLoadingState.total) return;
+  assetLoadingState.complete = true;
+  setPlayerHealthPct(100);
+}
+
 function trackAssetLoad(startLoad){
+  if(assetLoadingState.complete) return startLoad(()=>{});
+  if(assetLoadingState.quietTimer){
+    window.clearTimeout(assetLoadingState.quietTimer);
+    assetLoadingState.quietTimer = 0;
+  }
   assetLoadingState.total++;
   updateAssetLoadingBar();
   return startLoad(finishAssetLoad);
@@ -1562,6 +1618,7 @@ const alienObjectiveTitleEl = alienObjectiveWrap ? alienObjectiveWrap.querySelec
 const alienObjectiveCountsEl = alienObjectiveWrap ? alienObjectiveWrap.querySelector(".alienObjectiveCounts") : null;
 const miniCompassWrap = document.getElementById("miniCompass");
 const miniMapMetaWrap = document.querySelector(".miniMapMeta");
+const reverseViewToggle = document.getElementById("reverseViewToggle");
 const planeViewOverlay = document.getElementById("planeViewOverlay");
 const planeViewImage = document.getElementById("planeViewImage");
 const PLANE_VIEW_IMAGE_FILE = "cessna.png";
@@ -1800,6 +1857,17 @@ function respawnPlayerToPreviousStage(){
 
 function setPlayerHealthPct(pct){
   playerHealthPct = Math.max(0, Math.min(100, Number(pct) || 0));
+  if(!assetLoadingState.complete) return;
+  const healthWrap = document.getElementById("healthWrap");
+  const healthLabel = document.getElementById("healthLabel");
+  if(healthWrap){
+    healthWrap.classList.remove("loading");
+    healthWrap.classList.add("points");
+    healthWrap.setAttribute("aria-label", "Points");
+  }
+  if(healthLabel) healthLabel.textContent = "POINTS";
+  if(healthFill) healthFill.style.width = playerHealthPct + "%";
+  if(healthValue) healthValue.textContent = Math.round(playerHealthPct) + " PTS";
 }
 
 function adjustPlayerHealthPct(delta){
@@ -2921,6 +2989,14 @@ scene.fog = new THREE.Fog(FOG_COLOR, FOG_NEAR, FOG_FAR);
 const camera = new THREE.PerspectiveCamera(114.24, innerWidth/innerHeight, 0.1, 30000);
 const rearViewCamera = new THREE.PerspectiveCamera(114.24, innerWidth/innerHeight, 0.1, 30000);
 let rearViewEnabled = false;
+function setRearViewEnabled(on){
+  rearViewEnabled = !!on;
+  if(reverseViewToggle){
+    reverseViewToggle.classList.toggle("on", rearViewEnabled);
+    reverseViewToggle.setAttribute("aria-pressed", rearViewEnabled ? "true" : "false");
+  }
+  updatePlaneViewOverlay();
+}
 camera.position.set(AVATRUCK_SPAWN_X, getResolvedSpawnYWorldAtXZ(AVATRUCK_SPAWN_X, AVATRUCK_SPAWN_Z), AVATRUCK_SPAWN_Z);
 const RENDER_PIXEL_RATIO_MAX = 1.5;
 const renderer = new THREE.WebGLRenderer({
@@ -3066,7 +3142,7 @@ function returnToMainMenu(){
   gameModeSelected = false;
   stopPlaneZeroThrottleWindAudio();
   stopMotorAudio();
-  rearViewEnabled = false;
+  setRearViewEnabled(false);
   setPlaneViewEnabled(false);
   setMainMenuBackButtonVisible(false);
   showPlaneSelectScreen();
@@ -3460,7 +3536,7 @@ if(btnModeFreeFlight){
     trainingFreezeActive = false;
     hideAllModePanels();
     resetPlayerToSpawnStationary("Free Flight start");
-    rearViewEnabled = false;
+    setRearViewEnabled(false);
     setPlaneViewEnabled(true);
     setMainMenuBackButtonVisible(true);
     hudLine("✈️ Mode selected: <code>Free Flight</code>.");
@@ -3505,7 +3581,7 @@ if(btnTryTakingOff){
     trainingFreezeActive = false;
     hideAllModePanels();
     gameModeSelected = true;
-    rearViewEnabled = false;
+    setRearViewEnabled(false);
     setPlaneViewEnabled(true);
     setMainMenuBackButtonVisible(true);
     hudLine(label);
@@ -3553,7 +3629,7 @@ const startLandingTrainingFromMenu = (label, landingTest = false)=>{
     trainingFreezeActive = false;
     hideAllModePanels();
     gameModeSelected = true;
-    rearViewEnabled = false;
+    setRearViewEnabled(false);
     startLandingTrainingRun();
     setPlaneViewEnabled(true);
     setMainMenuBackButtonVisible(true);
@@ -12244,10 +12320,6 @@ let motorAudio = null;
 let motorAudioB = null;
 let motorAudioPlaying = false;
 let motorAudioOffsetScheduled = false;
-let brakeSkidAudio = null;
-let brakeSkidAudioPlaying = false;
-let brakeSkidAudioStartPending = false;
-let brakeSkidPulseTimer = 0.0;
 let brakeHeld = false;
 let brakeToggleActive = false;
 let brakeGroundActivePrev = false;
@@ -13784,52 +13856,6 @@ function playCaveWallSkidAudio(){
   });
 }
 
-function ensureBrakeSkidAudio(){
-  const url = resolveAssetUrl(TEX_DIR + CAVE_WALL_SKID_AUDIO_FILE + "?v=1");
-  if(!brakeSkidAudio){
-    brakeSkidAudio = new Audio(url);
-    brakeSkidAudio.loop = true;
-    brakeSkidAudio.volume = CAVE_WALL_SKID_AUDIO_VOL;
-    brakeSkidAudio.preload = "auto";
-  } else if(brakeSkidAudio.src !== url){
-    brakeSkidAudio.src = url;
-  }
-}
-
-function playBrakeSkidAudio(){
-  ensureBrakeSkidAudio();
-  if(brakeSkidAudioPlaying || brakeSkidAudioStartPending) return;
-  brakeSkidAudioStartPending = true;
-  const skidUrl = resolveAssetUrl(TEX_DIR + CAVE_WALL_SKID_AUDIO_FILE + "?v=1");
-  const liveLoop = new Audio(skidUrl);
-  liveLoop.loop = true;
-  liveLoop.volume = CAVE_WALL_SKID_AUDIO_VOL;
-  liveLoop.preload = "auto";
-  liveLoop.play().then(()=>{
-    brakeSkidAudio = liveLoop;
-    brakeSkidAudioPlaying = true;
-    brakeSkidAudioStartPending = false;
-  }).catch(()=>{
-    if(!brakeSkidAudio) return;
-    try{ brakeSkidAudio.currentTime = 0; }catch(e){}
-    brakeSkidAudio.play().then(()=>{
-      brakeSkidAudioPlaying = true;
-      brakeSkidAudioStartPending = false;
-    }).catch(()=>{});
-    brakeSkidAudioStartPending = false;
-  });
-}
-
-function stopBrakeSkidAudio(){
-  brakeSkidAudioStartPending = false;
-  if(!brakeSkidAudio) return;
-  try{
-    brakeSkidAudio.pause();
-    brakeSkidAudio.currentTime = 0;
-  }catch(e){}
-  brakeSkidAudioPlaying = false;
-}
-
 function finishTunnelExitGoddessEncounter() {
   if(tunnelExitGoddessVoiceTrimTimer){
     clearTimeout(tunnelExitGoddessVoiceTrimTimer);
@@ -14609,7 +14635,6 @@ const BRAKE_GROUND_TARGET_STOP_SEC = 20.0; // holding B on ground should target 
 const BRAKE_HARD_STOP_SEC = 10.0; // active wheel brakes should target about a 10s rollout stop
 const RUNWAY_BRAKE_HIDDEN_NEGATIVE_THROTTLE_MULT = -0.15; // B applies hidden braking force during idle runway rollout only
 const RUNWAY_BRAKE_HIDDEN_EFFECTIVENESS = 0.35; // tuned for Cessna-like wheel braking, not reverse thrust
-const BRAKE_SKID_PULSE_SEC = 0.32;
 const RUNWAY_LANDING_EVAL_COOLDOWN_SEC = 1.2;
 const LANDING_SPECIAL_BEHAVIOR_ENABLE = true; // enable landing-specific approach + rollout behavior
 const ROLLOUT_BEHAVIOR_ENABLE = false; // disabled to rebuild runway/terrain/brake rollout from scratch
@@ -14853,6 +14878,19 @@ if(ipadControlModeToggle){
   ipadControlModeToggle.addEventListener("click", toggleIpadControlMode, { passive:false });
   ipadControlModeToggle.addEventListener("touchend", toggleIpadControlMode, { passive:false });
 }
+if(reverseViewToggle){
+  let lastReverseViewToggleMs = -10000;
+  const toggleReverseView = (ev)=>{
+    ev.preventDefault();
+    ev.stopPropagation();
+    const now = performance.now();
+    if(now - lastReverseViewToggleMs < 450) return;
+    lastReverseViewToggleMs = now;
+    setRearViewEnabled(!rearViewEnabled);
+  };
+  reverseViewToggle.addEventListener("click", toggleReverseView, { passive:false });
+  reverseViewToggle.addEventListener("touchend", toggleReverseView, { passive:false });
+}
 if(ipadJoyWrap){
   let ipadJoyActive = false;
   const startIpadJoy = (ev)=>{
@@ -15062,8 +15100,7 @@ addEventListener("keydown", (e)=>{
     lKeyJumpLungePending = true;
   }
   if(e.code === "KeyR" && !e.repeat){
-    rearViewEnabled = !rearViewEnabled;
-    updatePlaneViewOverlay();
+    setRearViewEnabled(!rearViewEnabled);
     hudLine(rearViewEnabled ? "👀 Rear view <code>ON</code> (180°)." : "👀 Rear view <code>OFF</code>.");
     e.preventDefault();
     return;
@@ -16989,13 +17026,6 @@ function animate(){
         landingRolloutBrakeLatched = false;
         landingRolloutSpeedLatched = false;
       }
-      brakeSkidPulseTimer = Math.max(0, brakeSkidPulseTimer - dt);
-      if(brakeSkidPulseTimer <= 0){
-        brakeSkidPulseTimer = BRAKE_SKID_PULSE_SEC;
-      }
-    } else if(!brakeActiveNow){
-      brakeSkidPulseTimer = 0.0;
-      stopBrakeSkidAudio();
     }
     if(groundRolloutActive){
       const rolloutSpeedNow = speedNow;
@@ -17044,10 +17074,6 @@ function animate(){
         }
       }
       effectiveThrottleMult = 0.0;
-      if(groundRolloutBrakeActiveNow){
-        brakeSkidPulseTimer = 0.0;
-        stopBrakeSkidAudio();
-      }
     }
     const effectiveSpeedMult = movementLocked ? 0 : currentSpeedMult;
 
@@ -17272,17 +17298,24 @@ function animate(){
         onGround = true;
         stallActive = false;
         stopStallAudio();
-        if(!powerOffTerrainTouchdownNow && powerOffTerrainDescentActive){
+        if(!powerOffTerrainTouchdownNow && powerOffDescentActive){
+          const runwayLandingSkidWillBeEvaluated =
+            powerOffRunwayDescentActive &&
+            runwayLandingArmed &&
+            runwayLastAction === "takeoff" &&
+            runwayTakeoffClimbConfirmed;
           powerOffTerrainTouchdownNow = true;
           pitchFlightActive = false;
-          terrainLandingRolloutActive = true;
-          terrainLandingRolloutSpeedMult = POWER_OFF_HOLD_SPEED_KT / Math.max(1e-6, WORLD_SPEED_MULT_TO_KT);
-          currentSpeedMult = terrainLandingRolloutSpeedMult;
-          landingRolloutStopRemainingSec = 0.0;
-          landingRolloutStopDeadlineMs = 0;
-          landingRolloutBrakeActivePrev = false;
+          if(powerOffTerrainDescentActive){
+            terrainLandingRolloutActive = true;
+            terrainLandingRolloutSpeedMult = POWER_OFF_HOLD_SPEED_KT / Math.max(1e-6, WORLD_SPEED_MULT_TO_KT);
+            currentSpeedMult = terrainLandingRolloutSpeedMult;
+            landingRolloutStopRemainingSec = 0.0;
+            landingRolloutStopDeadlineMs = 0;
+            landingRolloutBrakeActivePrev = false;
+          }
           stopPlaneZeroThrottleWindAudio();
-          playCaveWallSkidAudio();
+          if(!runwayLandingSkidWillBeEvaluated) playCaveWallSkidAudio();
         }
         if((onCubeTopXZ || onRunwayTopXZ || onTerrainRunwayTopNow) && wasAirbornePitch){
           const tdSpeedKt = getCurrentAirspeedKnots();

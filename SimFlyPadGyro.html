@@ -14579,10 +14579,9 @@ const GYRO_PITCH_SENSITIVITY = 0.56;
 const GYRO_BANK_SENSITIVITY = 0.168;
 const GYRO_YAW_TURN_MULT = 1.30;
 const GYRO_INPUT_DEADZONE = 0.035;
-const GYRO_PITCH_DRIFT_MAX_DEG = 7.0;
 const GYRO_BANK_DRIFT_MAX_DEG = 5.0;
-const GYRO_PITCH_DRIFT_CORRECT_PER_SEC = 0.018;
 const GYRO_BANK_DRIFT_CORRECT_PER_SEC = 0.014;
+const GYRO_SENSOR_STALE_MS = 900;
 const gyroState = {
   enabled:false,
   available:false,
@@ -14754,6 +14753,9 @@ function startGyroPreflightCalibration(){
   gyroState.smoothedPitchInput = 0;
   gyroState.smoothedBankInput = 0;
   gyroState.lastDriftCorrectionMs = 0;
+  camera.rotation.x = spawnPitchBaselineRad;
+  camera.getWorldDirection(__tmpCameraForward);
+  pitchFlightDir.copy(__tmpCameraForward).normalize();
   updateGyroButton();
 }
 
@@ -14806,11 +14808,6 @@ function handleDeviceOrientation(ev){
   const dtSec = gyroState.lastDriftCorrectionMs > 0
     ? Math.min(0.1, Math.max(0, (nowMs - gyroState.lastDriftCorrectionMs) / 1000))
     : 0;
-  if(Math.abs(pitchDelta) <= GYRO_PITCH_DRIFT_MAX_DEG){
-    const driftAlpha = Math.min(1, GYRO_PITCH_DRIFT_CORRECT_PER_SEC * dtSec);
-    gyroState.basePitchDeg += (gyroState.rawPitchDeg - gyroState.basePitchDeg) * driftAlpha;
-    pitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
-  }
   if(Math.abs(bankDelta) <= GYRO_BANK_DRIFT_MAX_DEG){
     const driftAlpha = Math.min(1, GYRO_BANK_DRIFT_CORRECT_PER_SEC * dtSec);
     gyroState.baseBankDeg += (gyroState.rawBankDeg - gyroState.baseBankDeg) * driftAlpha;
@@ -14889,7 +14886,12 @@ function disableGyroControls(){
   }
   gyroState.pitchInput = 0;
   gyroState.bankInput = 0;
+  gyroState.smoothedPitchInput = 0;
+  gyroState.smoothedBankInput = 0;
   gyroState.lastDriftCorrectionMs = 0;
+  camera.rotation.x = spawnPitchBaselineRad;
+  camera.getWorldDirection(__tmpCameraForward);
+  pitchFlightDir.copy(__tmpCameraForward).normalize();
   updateGyroButton();
   hudLine("📱 Gyro flight controls <code>OFF</code>.");
 }
@@ -14913,7 +14915,8 @@ if(ipadGyroBtn){
     lastGyroToggleMs = now;
     if(!isFallbackClick) lastGyroPrimaryTapMs = now;
     if(gyroState.enabled){
-      disableGyroControls();
+      startGyroPreflightCalibration();
+      hudLine("📱 Hold iPad in flying position for gyro recalibration.");
     } else {
       await enableGyroControls();
     }
@@ -16703,6 +16706,12 @@ function animate(){
   const camPosX = camera.position.x;
   const camPosZ = camera.position.z;
   const playerObj = controls.getObject();
+  if(gyroState.enabled && !gyroState.calibrating && gyroState.lastEventMs > 0 && (performance.now() - gyroState.lastEventMs) > GYRO_SENSOR_STALE_MS){
+    gyroState.pitchInput = 0;
+    gyroState.bankInput = 0;
+    gyroState.waitingForSensor = true;
+    updateGyroButton();
+  }
   if(gyroState.enabled){
     const pitchAlpha = Math.min(1, GYRO_PITCH_RESPONSE_PER_SEC * dt);
     const bankAlpha = Math.min(1, GYRO_BANK_RESPONSE_PER_SEC * dt);

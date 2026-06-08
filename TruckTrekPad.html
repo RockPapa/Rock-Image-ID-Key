@@ -581,8 +581,8 @@ const PUEBLO_GUIDE_VOICE_FILE_GAIN = 15.0; // +100% from prior 7.5x setting
 const TO_BLUE_SQUARE_AUDIO_FILE = "to_blue_square.m4a";
 const TO_BLUE_SQUARE_AUDIO_VOL = 1.0; // HTMLMediaElement volume must stay in [0,1]
 const TO_BLUE_SQUARE_AUDIO_GAIN = 1.75; // +75% perceived boost via WebAudio gain
-const PORTAL_ENTRY_AUDIO_FILE = "portsl.mp3";
-const PORTAL_ENTRY_AUDIO_FALLBACK_FILE = "portal.mp3";
+const PORTAL_ENTRY_AUDIO_FILE = "portal.mp3";
+const PORTAL_ENTRY_AUDIO_FALLBACK_FILE = "";
 const PORTAL_ENTRY_AUDIO_VOL = 1.0;
 const PUEBLO_WARRIOR_COLLISION_RADIUS_FT = 5.0;
 const PUEBLO_WARRIOR_HIT_HEALTH_PCT = 10;
@@ -9782,7 +9782,7 @@ ground.castShadow = false;
    LAKE (STEP L1) — simple, safe water plane (low BSOD risk)
    ========================================================= */
 
-const LAKE_ENABLE = true;
+const LAKE_ENABLE = false;
 const LAKE_SIZE = 2200;      // bigger so you can't miss it      // width/length of lake plane (world units)
 
 // Lake placement:

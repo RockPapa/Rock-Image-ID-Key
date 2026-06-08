@@ -755,6 +755,12 @@ const AVATAR_RENDER_ORDER = 2000; // keep controlled avatar above tree/bush bill
 const HEIGHTMAP_FILE = "height_map.png";
 const USE_TERRAIN = true;
 
+// World sizes
+const GROUND_SIZE = 6000;
+const VISUAL_GROUND_SIZE = IPAD_ZONE_ACTIVATION_ENABLE ? 1500 : GROUND_SIZE;
+const VISUAL_TERRAIN_SEGMENTS = IPAD_ZONE_ACTIVATION_ENABLE ? 96 : 256;
+const IPAD_TERRAIN_PATCH_RECENTER_DIST = VISUAL_GROUND_SIZE * 0.22;
+
 // Terrain
 const TERRAIN_SEGMENTS = VISUAL_TERRAIN_SEGMENTS;
 const TERRAIN_HEIGHT   = 172.30752;
@@ -963,11 +969,6 @@ const FOG_COLOR  = 0x8fb6ff;   // bluer fog
 const FOG_NEAR   = 1400;       // start fog farther out
 const FOG_FAR    = 14000;      // fade much farther away
 
-// World sizes
-const GROUND_SIZE = 6000;
-const VISUAL_GROUND_SIZE = IPAD_ZONE_ACTIVATION_ENABLE ? 1500 : GROUND_SIZE;
-const VISUAL_TERRAIN_SEGMENTS = IPAD_ZONE_ACTIVATION_ENABLE ? 96 : 256;
-const IPAD_TERRAIN_PATCH_RECENTER_DIST = VISUAL_GROUND_SIZE * 0.22;
 const SKY_RADIUS  = 9000;
 
 // STEP 4: Far mountain rings

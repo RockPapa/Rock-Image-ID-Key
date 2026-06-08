@@ -20,37 +20,45 @@
     width: 100vw;
     height: 100vh;
     object-fit: cover;
+    transform: translateZ(0);
     transform-origin: center center;
     will-change: transform;
+    z-index: 0;
     pointer-events: none !important;
     touch-action: none;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
     -webkit-user-drag: none;
     -webkit-user-select: none;
     user-select: none;
   }
 
   #aiTruck {
-    position: fixed;
+    position: absolute;
     width: min(11.170449675vw, 151.32px);
     top: 97%;
     left: 38vw;
-    transform: translateY(-150%);
-    z-index: 2;
+    transform: translate3d(-50%, -138%, 0) scale(1);
+    z-index: 8;
     pointer-events: none;
     transform-origin: center center;
     will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 
   #playerTruck {
-    position: fixed;
+    position: absolute;
     width: min(14.4255065625vw, 196.2795px);
     top: 90%;
     left: 51vw;
-    z-index: 3;
+    z-index: 9;
     pointer-events: none;
-    transform: translate(-50%, -50%);
+    transform: translate3d(-50%, -50%, 0) scale(1);
     transform-origin: center center;
     will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
   }
 
   #scene {
@@ -59,6 +67,10 @@
     overflow: hidden;
     transform-origin: center 35%;
     will-change: transform;
+    isolation: isolate;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
     z-index: 0;
     pointer-events: none;
   }
@@ -363,6 +375,13 @@
     }
     100% {
       transform: translate(-50%, -50%) rotateX(-24deg) rotateY(360deg);
+    }
+  }
+
+  @media (pointer: coarse) {
+    #scene.camera-active {
+      animation: none;
+      transform: translateZ(0);
     }
   }
 
@@ -829,7 +848,7 @@
     aiTruck.style.display = "block";
     aiTruck.style.left = `${aiState.x}px`;
     aiTruck.style.top = `${aiState.y}px`;
-    aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
+    aiTruck.style.transform = `translate3d(-50%, -138%, 0) scale(${aiState.scale})`;
   }
 
   function keepRaceTrucksVisible() {
@@ -918,7 +937,7 @@
     keepRaceTrucksVisible();
     aiTruck.style.left = `${aiState.x}px`;
     aiTruck.style.top = `${aiState.y}px`;
-    aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
+    aiTruck.style.transform = `translate3d(-50%, -138%, 0) scale(${aiState.scale})`;
     startOverlay.style.display = "none";
     crashOverlay.style.display = "none";
     crashText.textContent = "";
@@ -1082,7 +1101,7 @@
 
     playerTruck.style.left = `${truckState.x}px`;
     playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
-    playerTruck.style.transform = `translate(-50%, -50%) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
+    playerTruck.style.transform = `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
     const nowMs = performance.now();
     const movieDuration = getRaceMovieDuration();
     const movieTime = getRaceMovieTime(nowMs, movieDuration);
@@ -1245,7 +1264,7 @@
     aiState.y = aiY;
     aiTruck.style.left = `${aiState.x}px`;
     aiTruck.style.top = `${aiY}px`;
-    aiTruck.style.transform = `translate(-50%, -138%) scale(${aiState.scale})`;
+    aiTruck.style.transform = `translate3d(-50%, -138%, 0) scale(${aiState.scale})`;
     const blueVisualRect = playerTruck.getBoundingClientRect();
     const orangeVisualRect = aiTruck.getBoundingClientRect();
     updateCubeLeaderColor(blueVisualRect, orangeVisualRect);
@@ -1383,7 +1402,7 @@
   updateTruckPerspectiveScale();
   playerTruck.style.left = `${truckState.x}px`;
   playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
-  playerTruck.style.transform = `translate(-50%, -50%) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
+  playerTruck.style.transform = `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
   applyAiPrestartPose();
   requestAnimationFrame(() => {
     if (!experienceStarted) applyAiPrestartPose();

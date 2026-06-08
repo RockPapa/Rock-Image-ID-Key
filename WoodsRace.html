@@ -81,6 +81,30 @@
     display: none !important;
   }
 
+  #scene.movie-only #aiTruck,
+  #scene.movie-only #playerTruck,
+  #scene.movie-only #centerCube,
+  #scene.movie-only .crash-zone {
+    display: none !important;
+  }
+
+  #scene.movie-only #video {
+    display: block !important;
+  }
+
+  body.movie-only #startOverlay,
+  body.movie-only #crashOverlay,
+  body.movie-only #startWarning,
+  body.movie-only #timeTracker,
+  body.movie-only #hitsHud,
+  body.movie-only #lapWinnersHud {
+    display: none !important;
+  }
+
+  body.movie-only #touchControlsHud {
+    display: flex;
+  }
+
   #scene.camera-active {
     animation: cameraDrift 5s ease-in-out infinite alternate;
   }
@@ -454,7 +478,7 @@
 </style>
 </head>
 <body>
-<div id="scene" class="camera-active prestart">
+<div id="scene" class="movie-only">
   <video
     id="video"
     src="images/road.mp4"
@@ -534,8 +558,10 @@
   const centerCube = document.getElementById("centerCube");
   const cubeFaces = Array.from(document.querySelectorAll(".cube-face"));
   const touchToggleBtn = document.getElementById("touchToggleBtn");
+  const touchControlsHud = document.getElementById("touchControlsHud");
   const joystickBase = document.getElementById("joystickBase");
   const joystickThumb = document.getElementById("joystickThumb");
+  const MOVIE_ONLY_MODE = true;
   const isTouchRaceDevice = (
     "ontouchstart" in window ||
     navigator.maxTouchPoints > 0 ||
@@ -580,6 +606,25 @@
     left: false,
     right: false
   };
+
+  function startMovieOnlyMode() {
+    document.body.classList.add("movie-only");
+    scene.classList.add("movie-only");
+    scene.classList.remove("camera-active", "prestart");
+    video.controls = false;
+    video.muted = true;
+    video.loop = true;
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+    const playMovie = () => {
+      video.play().catch(() => {});
+    };
+    playMovie();
+    window.addEventListener("pointerdown", playMovie, { once:true });
+    window.addEventListener("touchstart", playMovie, { once:true, passive:true });
+    window.addEventListener("click", playMovie, { once:true });
+    if (touchControlsHud) touchControlsHud.style.display = "flex";
+  }
 
   const truckState = {
     x: window.innerWidth * 0.51,
@@ -894,6 +939,10 @@
   }
 
   function startExperience() {
+    if (MOVIE_ONLY_MODE) {
+      startMovieOnlyMode();
+      return;
+    }
     if (experienceStarted) return;
     vehicleChoiceLocked = true;
     experienceStarted = true;
@@ -1408,6 +1457,7 @@
     if (!experienceStarted) applyAiPrestartPose();
   });
   startBtn.style.display = "none";
+  if (MOVIE_ONLY_MODE) startMovieOnlyMode();
 </script>
 </body>
 </html>

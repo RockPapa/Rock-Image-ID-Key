@@ -7209,7 +7209,9 @@ function updateAlienGreenBalls(dt){
     }
 
     if(hitTruck){
-      adjustPlayerHealthPct(-ALIEN_SHOT_DAMAGE);
+      if(canAlienBulletsDamageTruck()){
+        adjustPlayerHealthPct(-ALIEN_SHOT_DAMAGE);
+      }
       spawnHitBurst(b.mesh.position, 0x2fff75);
       scene.remove(b.mesh);
       if(b.mesh.geometry) b.mesh.geometry.dispose();
@@ -10637,6 +10639,7 @@ let walkingSoundPlaying = false;
 let startSpawnMusicAudio = null;
 let startSpawnMusicTriggered = false;
 let startSpawnMusicPlaying = false;
+let startSpawnMusicComplete = false;
 let driveMusicAudio = null;
 let copterPassAudio = null;
 let playerCopterFlightAudio = null;
@@ -12707,6 +12710,20 @@ function initStartSpawnMusicAudio(){
   startSpawnMusicAudio = new Audio(resolveAssetUrl(url));
   startSpawnMusicAudio.loop = false; // play once only at first spawn
   startSpawnMusicAudio.volume = START_SPAWN_MUSIC_VOL;
+  startSpawnMusicAudio.addEventListener("ended", ()=>{
+    startSpawnMusicComplete = true;
+    startSpawnMusicPlaying = false;
+  });
+}
+
+function canAlienBulletsDamageTruck(){
+  if(startSpawnMusicComplete) return true;
+  if(startSpawnMusicAudio && startSpawnMusicAudio.ended){
+    startSpawnMusicComplete = true;
+    startSpawnMusicPlaying = false;
+    return true;
+  }
+  return false;
 }
 
 function playStartSpawnMusicOnce(){

@@ -6751,6 +6751,7 @@ function ensurePuebloCornerCrystals(){
    ========================================================= */
 const TARGET_ENABLE = true;
 const TARGET_SIZE = 3.0;
+const TARGET_HITBOX_SCALE = 1.15;
 const TARGET_BASE_COUNT = 10;
 const TARGET_PER_WAVE   = 0;
 const TARGET_MAX_COUNT  = 10;
@@ -7093,7 +7094,8 @@ const targetTex = new THREE.TextureLoader().load(
   ()=> hudLine("❌ Missing <code>alein.png</code>")
 );
 
-const geo = new THREE.BoxGeometry(TARGET_SIZE, TARGET_SIZE, TARGET_SIZE);
+const targetHitboxSize = TARGET_SIZE * TARGET_HITBOX_SCALE;
+const geo = new THREE.BoxGeometry(targetHitboxSize, targetHitboxSize, targetHitboxSize);
 const hitMat = new THREE.MeshBasicMaterial({
   color: 0xff3333,
   transparent: true,
@@ -7110,7 +7112,7 @@ const alienMat = new THREE.SpriteMaterial({
 });
 
 for (const p of pts){
-  const y = heightAtWorldXZ(p.x, p.z) + (TARGET_SIZE * 0.5);
+  const y = heightAtWorldXZ(p.x, p.z) + (targetHitboxSize * 0.5);
   const m = new THREE.Mesh(geo, hitMat.clone());
   m.position.set(p.x, y, p.z);
   m.castShadow = false;
@@ -14363,7 +14365,7 @@ function applyLakeBlock(obj){
 const FIRE_ENABLE = true;
 const FIRE_COOLDOWN = 260; // ms
 const FIRE_SPEED = 90;    // world units / sec (boosted so shots always outrun max truck speed)
-const FIRE_LIFE = 3.0;    // seconds
+const FIRE_LIFE = 4.0;    // seconds
 const FIRE_RADIUS = 0.18;
 const FIRE_MUZZLE_ABOVE_GROUND = 2.2;
 const FIRE_PITCH_STEP_DEG = 2.0;

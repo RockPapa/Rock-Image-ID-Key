@@ -375,7 +375,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
 .ipadJoyWrap{
   position:fixed;
   left:calc(50% + 322px);
-  bottom:126px;
+  bottom:150px;
   z-index:31;
   width:128px;
   height:128px;
@@ -426,7 +426,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
 .ipadArrowPad{
   position:fixed;
   left:calc(50% + 300px);
-  bottom:112px;
+  bottom:136px;
   z-index:31;
   width:172px;
   height:150px;
@@ -466,6 +466,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   .ipadJoyWrap{ display:none; }
   .ipadArrowPad{ display:none; }
   .ipadControlModeToggle{ display:none; }
+  .reverseViewToggle{ display:none; }
 }
 
 .miniCompass{
@@ -552,11 +553,12 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
 }
 .reverseViewToggle{
   position:fixed;
-  right:calc(50% + 72px);
-  bottom:118px;
+  left:calc(50% + 300px);
+  bottom:82px;
   z-index:30;
-  min-width:184px;
-  padding:10px 16px;
+  width:172px;
+  height:44px;
+  padding:0 12px;
   border-radius:10px;
   border:1px solid rgba(125,211,252,.42);
   background:rgba(8,13,18,.82);
@@ -567,6 +569,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   text-align:center;
   font:900 13px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
   letter-spacing:.06em;
+  pointer-events:auto;
   touch-action:manipulation;
   -webkit-tap-highlight-color:transparent;
 }
@@ -12392,6 +12395,7 @@ let tunnelReaperFollowupAudio = null;
 let tunnelReaperMadAudio = null;
 let caveWallContactApplied = false;
 let caveWallSkidAudio = null;
+let caveWallSkidAudioUnlocked = false;
 let tunnelExitGoddessVoiceAudio = null;
 let tunnelExitGoddessVoiceCtx = null;
 let tunnelExitGoddessVoiceGain = null;
@@ -13842,19 +13846,47 @@ function initCaveWallSkidAudio(){
   caveWallSkidAudio.preload = "auto";
 }
 
+function unlockCaveWallSkidAudio(){
+  if(caveWallSkidAudioUnlocked) return;
+  initCaveWallSkidAudio();
+  if(!caveWallSkidAudio) return;
+  const priorVolume = caveWallSkidAudio.volume;
+  caveWallSkidAudio.volume = 0.001;
+  caveWallSkidAudio.play().then(()=>{
+    caveWallSkidAudio.pause();
+    try{ caveWallSkidAudio.currentTime = 0; }catch(e){}
+    caveWallSkidAudio.volume = priorVolume;
+    caveWallSkidAudioUnlocked = true;
+  }).catch(()=>{
+    caveWallSkidAudio.volume = priorVolume;
+  });
+}
+
 function playCaveWallSkidAudio(){
   initCaveWallSkidAudio();
   const skidUrl = resolveAssetUrl(TEX_DIR + CAVE_WALL_SKID_AUDIO_FILE + "?v=1");
+  if(caveWallSkidAudio){
+    try{ caveWallSkidAudio.currentTime = 0; }catch(e){}
+    caveWallSkidAudio.play().catch(()=>{
+      const oneShot = new Audio(skidUrl);
+      oneShot.loop = false;
+      oneShot.volume = CAVE_WALL_SKID_AUDIO_VOL;
+      oneShot.preload = "auto";
+      oneShot.play().catch(()=>{});
+    });
+    return;
+  }
   const oneShot = new Audio(skidUrl);
   oneShot.loop = false;
   oneShot.volume = CAVE_WALL_SKID_AUDIO_VOL;
   oneShot.preload = "auto";
-  oneShot.play().catch(()=>{
-    if(!caveWallSkidAudio) return;
-    try{ caveWallSkidAudio.currentTime = 0; }catch(e){}
-    caveWallSkidAudio.play().catch(()=>{});
-  });
+  oneShot.play().catch(()=>{});
 }
+
+window.addEventListener("click", unlockCaveWallSkidAudio, { once:true });
+window.addEventListener("pointerdown", unlockCaveWallSkidAudio, { once:true });
+window.addEventListener("touchstart", unlockCaveWallSkidAudio, { once:true });
+window.addEventListener("keydown", unlockCaveWallSkidAudio, { once:true });
 
 function finishTunnelExitGoddessEncounter() {
   if(tunnelExitGoddessVoiceTrimTimer){

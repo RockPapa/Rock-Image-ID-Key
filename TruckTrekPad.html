@@ -311,8 +311,6 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   </div>
 </div>
 
-<div class="touchHint" id="touchHint">Tip: Tap <b>📱 CONTROLS</b> to show/hide iPad controls (landscape).</div>
-
 <div class="healthWrap" id="healthWrap" aria-label="Health">
   <div class="healthTop">
     <span>HEALTH</span>
@@ -462,6 +460,7 @@ const LEGGOMAN_SPRITESHEET_ROWS = 3;
 const LEGGOMAN_FILES = ["lg1.png", "lg2.png", "lg3.png", "lg4.png", "lg5.png", "lg6.png", "lg7.png", "lg8.png", "lg9.png"]; // fallback only
 const LEGGOMAN_IDLE_FRAME_IDX = 11; // row 3, second frame (front-facing)
 const LEGGOMAN_IDLE_STAND_FILE = "boy copy.jpg"; // custom still frame when avatar is not moving
+const LEGGOMAN_USE_IDLE_STAND_FILE = false;
 const LEGGOMAN_RUN_UP_SEQ = [0, 1, 2, 3, 4];
 const LEGGOMAN_RUN_SIDE_SEQ = [5, 6, 7, 8, 9];
 const LEGGOMAN_RUN_DOWN_SEQ = [10, 11, 13, 11];
@@ -11273,7 +11272,7 @@ function ensureLeggomanIdleStandTexture(){
 }
 
 function preloadLeggomanTextures(){
-  ensureLeggomanIdleStandTexture();
+  if(LEGGOMAN_USE_IDLE_STAND_FILE) ensureLeggomanIdleStandTexture();
   if(leggomanTextures.length || leggomanPreloadStarted) return;
   leggomanPreloadStarted = true;
   const loader = new THREE.TextureLoader();
@@ -11532,7 +11531,7 @@ function switchToTruck2Avatar(){
 
 function detachBurningTruckAndSwitchToLeggoman(){
   if(!truckPlane) return false;
-  const first = leggomanTextures[0];
+  const first = leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX] || leggomanTextures[0];
   if(!first){
     hudLine("⚠️ Leggoman frames missing/loading (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code> fallback <code>lg1.png-lg9.png</code>). Staying on pickup.");
     return false;
@@ -11576,7 +11575,7 @@ function toggleAvatarMode(){
   const burnActive = canUseBurnDetach && !!(truckFireSprite && truckFireSprite.visible && truckFireTimer > 0);
 
   const switchToLeggomanAnytime = ()=>{
-    const first = leggomanTextures[0];
+    const first = leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX] || leggomanTextures[0];
     if(!first){
       hudLine("⚠️ Leggoman frames missing/loading (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code> fallback <code>lg1.png-lg9.png</code>). Staying on pickup.");
       return false;
@@ -11600,8 +11599,7 @@ function toggleAvatarMode(){
 
   if(avatarMode === "leggoman"){
     if(!leggomanGoalTex) placeLeggomanTruck2Goal();
-    if(switchToTruck2Avatar()) return;
-    hudLine("⚠️ Next truck not ready yet. Try J again in a moment.");
+    hudLine("🧱 Walk the boy into the truck sprite to enter it.");
     return;
   }
 }
@@ -11728,7 +11726,7 @@ function updateTruckAvatar(dt=0.016){
   const backViewScaleMult = (upHeld && !leftHeld && !rightHeld) ? VEHICLE_BACK_VIEW_SCALE_MULT : 1.0;
 
   if(avatarMode === "leggoman"){
-    ensureLeggomanIdleStandTexture();
+    if(LEGGOMAN_USE_IDLE_STAND_FILE) ensureLeggomanIdleStandTexture();
     ensureLeggomanAvatarMaterial();
     const up = keys.has("ArrowUp") || keys.has("KeyW");
     const right = keys.has("ArrowRight") || keys.has("KeyD");
@@ -11763,7 +11761,7 @@ function updateTruckAvatar(dt=0.016){
     const texIdx = seq[Math.min(seq.length - 1, leggomanFrameIdx)];
     const movingFrameTex = leggomanTextures[texIdx] || leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX];
     const frameTex = isStandingStill
-      ? (leggomanIdleStandTex || movingFrameTex)
+      ? (movingFrameTex || (LEGGOMAN_USE_IDLE_STAND_FILE ? leggomanIdleStandTex : null))
       : movingFrameTex;
     if(frameTex) setTruckAvatarTexture(frameTex);
     truckPlane.scale.set((mirrorX ? -1 : 1) * LEGGOMAN_WIDTH_SCALE, LEGGOMAN_HEIGHT_SCALE, 1.0);
@@ -13057,7 +13055,7 @@ function refreshTouchUI(){
   const show = !!(touchOn && isLandscape());
   touchUI.classList.toggle("on", show);
   touchUI.classList.toggle("landscapeOnly", !isLandscape());
-  touchHint.classList.toggle("on", !!isTouchDevice());
+  if(touchHint) touchHint.classList.toggle("on", !!isTouchDevice());
 }
 
 refreshTouchUI();
@@ -13068,7 +13066,7 @@ touchToggle.addEventListener("click", (e)=>{
   e.preventDefault();
   touchOn = !touchOn;
   refreshTouchUI();
-  touchHint.classList.remove("on");
+  if(touchHint) touchHint.classList.remove("on");
 });
 
 // Stop iOS scroll gestures while using controls
@@ -13131,9 +13129,16 @@ bindHold(document.getElementById("btnAuxDown"), "KeyS");
 
 const btnVehicleJ = document.getElementById("btnVehicleJ");
 if(btnVehicleJ){
+  let lastVehicleJTapMs = -1e9;
   const onPressJ = (ev)=>{
-    if(ev) ev.preventDefault();
+    if(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
     if(!touchOn || !isLandscape()) return;
+    const now = performance.now();
+    if(now - lastVehicleJTapMs < 220) return;
+    lastVehicleJTapMs = now;
     toggleAvatarMode();
   };
   btnVehicleJ.addEventListener("touchstart", onPressJ, {passive:false});
@@ -14854,6 +14859,9 @@ applyPuebloPlazaTruckOnlyAccess(obj, prevPos.x, prevPos.z, TRUCK_COLLISION_RADIU
     updatePlazaExitVehicleChoiceCollision(obj);
     updateJourneyHazardCubes(dt, obj, fwd, isMoving);
     updateSnakeAmbushOnJourney(obj);
+    if(avatarMode === "leggoman" && isLeggomanTouchingTruck2Goal()){
+      switchToTruck2Avatar();
+    }
 
     // --- Movement audio by avatar mode ---
     if (goddessEncounterMovementLocked){

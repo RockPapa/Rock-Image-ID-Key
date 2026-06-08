@@ -356,13 +356,15 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
 const ASSET_BASE_DIR = "truck-rescue-files/";
-const IS_IPAD_LIKE = /iPad|iPhone|iPod/i.test(navigator.userAgent || "") || ((navigator.platform || "") === "MacIntel" && navigator.maxTouchPoints > 1);
+const IS_TOUCH_LIKE = ("ontouchstart" in window) || (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+const IS_IPAD_LIKE = /iPad|iPhone|iPod|Mobile/i.test(navigator.userAgent || "") || ((navigator.platform || "") === "MacIntel" && navigator.maxTouchPoints > 1) || IS_TOUCH_LIKE;
 const IPAD_ZONE_ACTIVATION_ENABLE = IS_IPAD_LIKE;
 const IPAD_ZONE_ACTIVATION_RADIUS_FT = 420.0;
 const IPAD_SKIP_TALL_GRASS = IPAD_ZONE_ACTIVATION_ENABLE;
 const IPAD_SKIP_LAKE_BUSHES = IPAD_ZONE_ACTIVATION_ENABLE;
 const IPAD_SKIP_LAKE_RIPPLES = IPAD_ZONE_ACTIVATION_ENABLE;
 const IPAD_SKIP_LAKE_MESH = IPAD_ZONE_ACTIVATION_ENABLE;
+const IPAD_SIMPLE_TERRAIN_MATERIAL = IPAD_ZONE_ACTIVATION_ENABLE;
 
 function normalizeAssetName(url){
   if(!url) return "";
@@ -9965,6 +9967,14 @@ async function applyHighZoneTextureTest(){
 
 
 function updateLakeRipples(time){
+  if(IPAD_SKIP_LAKE_MESH){
+    if(lakeMesh){
+      scene.remove(lakeMesh);
+      if(lakeMesh.geometry) lakeMesh.geometry.dispose();
+      lakeMesh = null;
+    }
+    return;
+  }
   if (!LAKE_RIPPLE_ENABLE || !lakeMesh) return;
   const geo = lakeMesh.geometry;
   const base = geo.userData.basePositions;
@@ -12761,6 +12771,16 @@ initHitSound();
 
 // ---------- GRASS (PBR) ----------
 (async function initGrass(){
+  if(IPAD_SIMPLE_TERRAIN_MATERIAL){
+    ground.material = new THREE.MeshStandardMaterial({
+      color: 0x5d7b35,
+      roughness: 1.0,
+      metalness: 0.0
+    });
+    ground.material.needsUpdate = true;
+    hudLine("📱 iPad performance mode: simple terrain material ON.");
+    return;
+  }
   const colorUrl  = TEX_DIR + GRASS_COLOR_FILE;
 
   const normalUrl = GRASS_NORMAL_EXR ? (TEX_DIR + GRASS_NORMAL_EXR) : (TEX_DIR + GRASS_NORMAL_FILE);

@@ -14904,26 +14904,30 @@ window.addEventListener("orientationchange", ()=>{
   if(gyroState.enabled) setTimeout(startGyroPreflightCalibration, 250);
 });
 if(ipadGyroBtn){
-  let lastGyroToggleMs = -10000;
-  let lastGyroPrimaryTapMs = -10000;
-  const toggleGyroFromGesture = async (ev, isFallbackClick = false)=>{
+  let lastGyroTapMs = -10000;
+  let gyroTapBusy = false;
+  const toggleGyroFromGesture = async (ev)=>{
     ev.preventDefault();
     ev.stopPropagation();
     const now = performance.now();
-    if(isFallbackClick && now - lastGyroPrimaryTapMs < 900) return;
-    if(now - lastGyroToggleMs < 300) return;
-    lastGyroToggleMs = now;
-    if(!isFallbackClick) lastGyroPrimaryTapMs = now;
-    if(gyroState.enabled){
-      startGyroPreflightCalibration();
-      hudLine("📱 Hold iPad in flying position for gyro recalibration.");
-    } else {
-      await enableGyroControls();
+    if(gyroTapBusy || now - lastGyroTapMs < 650) return;
+    lastGyroTapMs = now;
+    gyroTapBusy = true;
+    try{
+      ipadGyroBtn.textContent = gyroState.enabled ? "HOLD LEVEL" : "GYRO...";
+      if(gyroState.enabled){
+        startGyroPreflightCalibration();
+        hudLine("📱 Hold iPad in flying position for gyro recalibration.");
+      } else {
+        await enableGyroControls();
+      }
+    } finally {
+      gyroTapBusy = false;
     }
   };
-  ipadGyroBtn.addEventListener("pointerdown", (ev)=>toggleGyroFromGesture(ev), { passive:false });
-  ipadGyroBtn.addEventListener("touchstart", (ev)=>toggleGyroFromGesture(ev), { passive:false });
-  ipadGyroBtn.addEventListener("click", (ev)=>toggleGyroFromGesture(ev, true), { passive:false });
+  ipadGyroBtn.addEventListener("touchend", toggleGyroFromGesture, { passive:false });
+  ipadGyroBtn.addEventListener("pointerup", toggleGyroFromGesture, { passive:false });
+  ipadGyroBtn.addEventListener("click", toggleGyroFromGesture, { passive:false });
   updateGyroButton();
 }
 

@@ -14602,7 +14602,8 @@ const gyroState = {
   bankInput:0,
   smoothedPitchInput:0,
   smoothedBankInput:0,
-  lastDriftCorrectionMs:0
+  lastDriftCorrectionMs:0,
+  lockedScreenAngleDeg:0
 };
 let throttleSpeedMult = 1.00;
 let effectiveThrottleMult = 0.00;
@@ -14698,10 +14699,11 @@ function getScreenOrientationAngleDeg(){
   return 0;
 }
 
-function getGyroAxesFromEvent(ev){
+function getGyroAxesFromEvent(ev, lockedAngleDeg = null){
   const beta = Number(ev.beta) || 0;   // front/back tilt
   const gamma = Number(ev.gamma) || 0; // left/right tilt
-  const angle = (((getScreenOrientationAngleDeg() % 360) + 360) % 360);
+  const sourceAngle = Number.isFinite(lockedAngleDeg) ? lockedAngleDeg : getScreenOrientationAngleDeg();
+  const angle = (((sourceAngle % 360) + 360) % 360);
   if(angle === 90){
     return { pitchDeg: gamma, bankDeg: -beta };
   }
@@ -14726,6 +14728,7 @@ function updateGyroButton(){
 }
 
 function calibrateGyroNeutral(){
+  gyroState.lockedScreenAngleDeg = getScreenOrientationAngleDeg();
   gyroState.basePitchDeg = gyroState.rawPitchDeg;
   gyroState.baseBankDeg = gyroState.rawBankDeg;
   gyroState.pitchInput = 0;
@@ -14742,6 +14745,7 @@ function calibrateGyroNeutral(){
 }
 
 function startGyroPreflightCalibration(){
+  gyroState.lockedScreenAngleDeg = getScreenOrientationAngleDeg();
   gyroState.calibrated = false;
   gyroState.calibrating = true;
   gyroState.calibrationStartMs = performance.now();
@@ -14792,7 +14796,7 @@ function handleDeviceOrientation(ev){
   gyroState.available = true;
   gyroState.waitingForSensor = false;
   gyroState.lastEventMs = performance.now();
-  const axes = getGyroAxesFromEvent(ev);
+  const axes = getGyroAxesFromEvent(ev, gyroState.enabled ? gyroState.lockedScreenAngleDeg : null);
   gyroState.rawPitchDeg = axes.pitchDeg;
   gyroState.rawBankDeg = axes.bankDeg;
   if(!gyroState.enabled) return;
@@ -14897,10 +14901,10 @@ function disableGyroControls(){
 }
 
 window.addEventListener("deviceorientation", handleDeviceOrientation, true);
-window.addEventListener("deviceorientationabsolute", handleDeviceOrientation, true);
 window.addEventListener("orientationchange", ()=>{
   gyroState.calibrated = false;
   gyroState.calibrating = false;
+  gyroState.lockedScreenAngleDeg = getScreenOrientationAngleDeg();
   if(gyroState.enabled) setTimeout(startGyroPreflightCalibration, 250);
 });
 if(ipadGyroBtn){

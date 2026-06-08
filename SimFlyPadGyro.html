@@ -14831,7 +14831,9 @@ function handleDeviceOrientation(ev){
   }
   gyroState.lastDriftCorrectionMs = nowMs;
   // Older iPad gyro pitch is unreliable on this setup; allow gyro nose-down only.
-  gyroState.pitchInput = applyGyroDeadzone(THREE.MathUtils.clamp((pitchDelta / GYRO_PITCH_MAX_DEG) * GYRO_PITCH_SENSITIVITY, 0, 1));
+  // Level stays zero; any pitch tilt away from the calibrated level drives the down-pitch side.
+  const gyroDownOnlyPitch = Math.abs((pitchDelta / GYRO_PITCH_MAX_DEG) * GYRO_PITCH_SENSITIVITY);
+  gyroState.pitchInput = applyGyroDeadzone(THREE.MathUtils.clamp(gyroDownOnlyPitch, 0, 1));
   gyroState.bankInput = applyGyroDeadzone(THREE.MathUtils.clamp((bankDelta / GYRO_BANK_MAX_DEG) * GYRO_BANK_SENSITIVITY, -1, 1));
   updateGyroButton();
 }

@@ -362,6 +362,7 @@ const IPAD_ZONE_ACTIVATION_RADIUS_FT = 420.0;
 const IPAD_SKIP_TALL_GRASS = IPAD_ZONE_ACTIVATION_ENABLE;
 const IPAD_SKIP_LAKE_BUSHES = IPAD_ZONE_ACTIVATION_ENABLE;
 const IPAD_SKIP_LAKE_RIPPLES = IPAD_ZONE_ACTIVATION_ENABLE;
+const IPAD_SKIP_LAKE_MESH = IPAD_ZONE_ACTIVATION_ENABLE;
 
 function normalizeAssetName(url){
   if(!url) return "";
@@ -9992,6 +9993,15 @@ function updateLakeRipples(time){
 }
 
 function createLake(){
+  if(IPAD_SKIP_LAKE_MESH){
+    if(lakeMesh){
+      scene.remove(lakeMesh);
+      lakeMesh.geometry.dispose();
+      lakeMesh = null;
+    }
+    hudLine("📱 iPad performance mode: lake mesh OFF so terrain stays visible.");
+    return;
+  }
   if (!LAKE_ENABLE) return;
 
   // Remove old lake if re-created
@@ -13070,7 +13080,35 @@ function bindHold(btn, code){
 }
 
 // Left-side buttons
-bindHold(document.getElementById("btnFire"), "Space");
+const btnFire = document.getElementById("btnFire");
+if(btnFire){
+  const pressFire = (ev)=>{
+    if(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    if(!touchOn || !isLandscape()) return;
+    vKey("Space", true);
+    fireHeld = true;
+    tryFire();
+  };
+  const releaseFire = (ev)=>{
+    if(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    vKey("Space", false);
+    fireHeld = false;
+  };
+  btnFire.addEventListener("touchstart", pressFire, {passive:false});
+  btnFire.addEventListener("touchend", releaseFire, {passive:false});
+  btnFire.addEventListener("touchcancel", releaseFire, {passive:false});
+  btnFire.addEventListener("pointerdown", pressFire);
+  btnFire.addEventListener("pointerup", releaseFire);
+  btnFire.addEventListener("pointercancel", releaseFire);
+  btnFire.addEventListener("pointerleave", releaseFire);
+  btnFire.addEventListener("contextmenu", (e)=>e.preventDefault());
+}
 bindHold(document.getElementById("btnAuxUp"), "KeyW");
 bindHold(document.getElementById("btnAuxDown"), "KeyS");
 
@@ -13089,6 +13127,8 @@ if(btnVehicleJ){
 // Right-side thumb joystick -> Arrow keys
 const joystickState = { up:false, down:false, left:false, right:false };
 let joyActive = false;
+let joyTouchId = null;
+let joyPointerId = null;
 const JOY_CENTER = { x:110, y:110 };
 const JOY_RADIUS = 88;
 const JOY_DEAD = 0.28;
@@ -13115,6 +13155,8 @@ function setJoyKnob(nx, ny){
 
 function resetJoystick(){
   joyActive = false;
+  joyTouchId = null;
+  joyPointerId = null;
   setArrowFromJoystick({ up:false, down:false, left:false, right:false });
   setJoyKnob(0, 0);
 }
@@ -13144,20 +13186,51 @@ function updateJoystickFromClient(clientX, clientY){
 }
 
 if(joyWrap){
+  const findJoyTouch = (touchList)=>{
+    if(!touchList) return null;
+    for(const t of touchList){
+      if(t.identifier === joyTouchId) return t;
+    }
+    return null;
+  };
   const start = (ev)=>{
     if(!touchOn || !isLandscape()) return;
+    if(ev.pointerId != null && ev.pointerType && ev.pointerType !== "touch" && ev.pointerType !== "pen") return;
     joyActive = true;
-    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    if(ev.pointerId != null) joyPointerId = ev.pointerId;
+    const t = (ev.changedTouches && ev.changedTouches[0])
+      ? ev.changedTouches[0]
+      : ((ev.touches && ev.touches[0]) ? ev.touches[0] : ev);
+    if(t && t.identifier != null) joyTouchId = t.identifier;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
   const move = (ev)=>{
     if(!joyActive) return;
-    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
+    if(ev.pointerId != null && joyPointerId != null && ev.pointerId !== joyPointerId) return;
+    const t = (joyTouchId != null)
+      ? findJoyTouch(ev.touches)
+      : ((ev.touches && ev.touches[0]) ? ev.touches[0] : ev);
+    if(!t) return;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
-  const end = (ev)=>{ if(ev) ev.preventDefault(); resetJoystick(); };
+  const end = (ev)=>{
+    if(ev){
+      ev.preventDefault();
+      if(ev.pointerId != null && joyPointerId != null && ev.pointerId !== joyPointerId) return;
+      if(joyTouchId != null){
+        let endedJoyTouch = false;
+        if(ev.changedTouches){
+          for(const t of ev.changedTouches){
+            if(t.identifier === joyTouchId) endedJoyTouch = true;
+          }
+        }
+        if(!endedJoyTouch) return;
+      }
+    }
+    resetJoystick();
+  };
 
   joyWrap.addEventListener("touchstart", start, {passive:false});
   joyWrap.addEventListener("touchmove", move, {passive:false});

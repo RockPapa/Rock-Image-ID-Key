@@ -147,6 +147,19 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   pointer-events:none;
 }
 
+.touchHint{
+  position:fixed; left:18px; bottom:252px; z-index:26;
+  padding:10px 12px;
+  border-radius:12px;
+  background:rgba(20,24,32,.62);
+  color:#fff;
+  font: 13px/1.2 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 10px 22px rgba(0,0,0,.40);
+  display:none;
+}
+.touchHint.on{ display:block; }
+
 @media (orientation: portrait){
   .touchUI.on{ display:none; }
   .touchUI.landscapeOnly{ display:none; }
@@ -298,6 +311,8 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   </div>
 </div>
 
+<div class="touchHint" id="touchHint">Tip: Tap <b>📱 CONTROLS</b> to show/hide iPad controls (landscape).</div>
+
 <div class="healthWrap" id="healthWrap" aria-label="Health">
   <div class="healthTop">
     <span>HEALTH</span>
@@ -341,16 +356,6 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
 const ASSET_BASE_DIR = "truck-rescue-files/";
-const LEGACY_ASSET_NAMES = new Map([
-  ["height map small.png", "height_map_small.png"],
-  ["hight map small.png", "height_map_small.png"],
-  ["height-map-small.png", "height_map_small.png"],
-  ["portsl.mp3", "portal.mp3"],
-  ["orange_truck 2.png", "orange_truck.png"],
-  ["truck3.png", "truck2.png"],
-  ["snake.png", "alein.png"],
-  ["tank.png", "bad_guy.png"]
-]);
 
 function normalizeAssetName(url){
   if(!url) return "";
@@ -360,22 +365,14 @@ function normalizeAssetName(url){
   return decodeURIComponent(last).toLowerCase();
 }
 
-function currentAssetName(url){
-  const name = normalizeAssetName(url);
-  return LEGACY_ASSET_NAMES.get(name) || name;
-}
-
 function resolveAssetUrl(url){
   const raw = String(url || "");
   if(!raw) return raw;
   if(/^(?:https?:|data:|blob:)/i.test(raw)) return raw;
+  if(raw.startsWith(ASSET_BASE_DIR)) return raw;
   if(raw.startsWith("/") || raw.startsWith("./")) return raw;
+  const name = normalizeAssetName(raw);
   const query = raw.includes("?") ? raw.slice(raw.indexOf("?")) : "";
-  const originalName = normalizeAssetName(raw);
-  const name = currentAssetName(raw);
-  if(raw.startsWith(ASSET_BASE_DIR)){
-    return name !== originalName ? ASSET_BASE_DIR + name + query : raw;
-  }
   const isAsset = /\.(?:png|jpe?g|gif|webp|mp3|m4a|wav|ogg|exr)$/i.test(name);
   if(isAsset && (raw.indexOf("/") === -1 || raw.startsWith("../"))){
     return ASSET_BASE_DIR + name + query;
@@ -448,6 +445,8 @@ const PLAZA_TRUCK_RESTRICT_COOLDOWN_MS = 1200;
 // ----- TRUCK AVATAR (Phase 1) -----
 const TRUCK_AVATAR_ENABLE = true;
 const TRUCK_FILE = "blue_truck.png";
+const TRUCK_LEFT_FILE = TRUCK_FILE;
+const TRUCK_RIGHT_FILE = TRUCK_FILE;
 const LEGGOMAN_SPRITESHEET_FILE = "boy.jpg";
 const LEGGOMAN_SPRITESHEET_COLS = 5;
 const LEGGOMAN_SPRITESHEET_ROWS = 3;
@@ -464,17 +463,40 @@ const LEGGOMAN_FRAME_SEC = 0.09;
 const LEGGOMAN_HEIGHT_SCALE = 1.375; // +25% from 1.10 for larger sprite-sheet animation
 const LEGGOMAN_WIDTH_SCALE = 0.596288; // +25% from 0.4770304 for larger sprite-sheet animation
 const TRUCK2_FILE = "truck2.png";
+const TRUCK2_LEFT_FILE = TRUCK2_FILE;
+const TRUCK2_RIGHT_FILE = TRUCK2_FILE;
+const TRUCK3_FILE = "truck3.png";
+const CYBER_TRUCK_FILE = "cyber.png";
+const CYBER_TRUCK_LEFT_FILE = CYBER_TRUCK_FILE;
+const CYBER_TRUCK_RIGHT_FILE = CYBER_TRUCK_FILE;
 const MAZ_VEHICLE_BASE_FILE = "maz_back.png";
+const MAZ_VEHICLE_LEFT_FILE = MAZ_VEHICLE_BASE_FILE;
+const MAZ_VEHICLE_RIGHT_FILE = MAZ_VEHICLE_BASE_FILE;
 const ORANGE_TRUCK_BASE_FILE = "orange_truck.png";
+const ORANGE_TRUCK_LEFT_FILE = ORANGE_TRUCK_BASE_FILE;
+const ORANGE_TRUCK_RIGHT_FILE = ORANGE_TRUCK_BASE_FILE;
+const ORANGE_TRUCK_HALF_LEFT_FILE = ORANGE_TRUCK_BASE_FILE;
+const ORANGE_TRUCK_HALF_RIGHT_FILE = ORANGE_TRUCK_BASE_FILE;
+const ORANGE_TRUCK_LEGACY_FILE = "orange_truck 2.png";
+const WHITE_TRUCK_BASE_FILE = "white_truck.png";
+const WHITE_TRUCK_LEFT_FILE = WHITE_TRUCK_BASE_FILE;
+const WHITE_TRUCK_RIGHT_FILE = WHITE_TRUCK_BASE_FILE;
 const BIGFOOT_BASE_FILE = "bigfoot.png";
+const BIGFOOT_LEFT_FILE = BIGFOOT_BASE_FILE;
+const BIGFOOT_RIGHT_FILE = BIGFOOT_BASE_FILE;
 const BIG_TRUCK_BASE_FILE = "big_truck.png";
-const CYBER_TRUCK_FILE = BIG_TRUCK_BASE_FILE;
+const BIG_TRUCK_LEFT_FILE = BIG_TRUCK_BASE_FILE;
+const BIG_TRUCK_RIGHT_FILE = BIG_TRUCK_BASE_FILE;
 const BIG_TRUCK_SCALE_MULT = 0.95; // reduce Big Truck avatar size by 5%
-const VEHICLE_TRIPLET_SCALE_MULT = 1.656; // additional +15% (total +65.6% from baseline) for all vehicle back-view sprites
+const VEHICLE_TRIPLET_SCALE_MULT = 1.656; // additional +15% (total +65.6% from baseline) for all vehicle base/left/right triplets
 const VEHICLE_BACK_VIEW_SCALE_MULT = 0.7744; // additional -12% (total 22.56% below baseline) when showing back view via Up/W input
+const ORANGE_TURN_PREVIEW_SEC = 0.00;
+const ORANGE_TURN_PREVIEW_NUDGE = 0.0;
+const ORANGE_TURN_HALF_STAGE_AT = 0.33;
+const TRUCK3_SCALE_MULT = 1.25;
 const COPTER_ACTIVE_SCALE_MULT = 1.6; // +60% when copter vehicle is active
 const PLAZA_EXIT_VEHICLE_CHOICES_ENABLE = true;
-const PLAZA_EXIT_VEHICLE_FILES = [BIGFOOT_BASE_FILE, TRUCK_FILE, BIG_TRUCK_BASE_FILE, MAZ_VEHICLE_BASE_FILE, ORANGE_TRUCK_BASE_FILE, TRUCK2_FILE];
+const PLAZA_EXIT_VEHICLE_FILES = [ORANGE_TRUCK_BASE_FILE, "yellow_car.png", "blue_car.png", CYBER_TRUCK_FILE];
 const PLAZA_EXIT_VEHICLE_SPAWN_AHEAD_FT = 45.0; // +50% farther from plaza entrance
 const PLAZA_EXIT_VEHICLE_SIDE_SPACING_FT = 26.0; // wider spacing prevents dual-collision picks
 const PLAZA_EXIT_VEHICLE_COLLISION_RADIUS_FT = 7.0;
@@ -551,14 +573,15 @@ const PUEBLO_GUIDE_VOICE_FILE_GAIN = 15.0; // +100% from prior 7.5x setting
 const TO_BLUE_SQUARE_AUDIO_FILE = "to_blue_square.m4a";
 const TO_BLUE_SQUARE_AUDIO_VOL = 1.0; // HTMLMediaElement volume must stay in [0,1]
 const TO_BLUE_SQUARE_AUDIO_GAIN = 1.75; // +75% perceived boost via WebAudio gain
-const PORTAL_ENTRY_AUDIO_FILE = "portal.mp3";
+const PORTAL_ENTRY_AUDIO_FILE = "portsl.mp3";
+const PORTAL_ENTRY_AUDIO_FALLBACK_FILE = "portal.mp3";
 const PORTAL_ENTRY_AUDIO_VOL = 1.0;
 const PUEBLO_WARRIOR_COLLISION_RADIUS_FT = 5.0;
 const PUEBLO_WARRIOR_HIT_HEALTH_PCT = 10;
 const PUEBLO_GUIDE_GODDESS_OFFSET_FT = 9.0;
 const PUEBLO_GUIDE_GODDESS_LIFT_FT = 12.0;
 const PUEBLO_GUIDE_GODDESS_DURATION_SEC = 8.0;
-const PUEBLO_ENTRANCE_POPLARS_ENABLE = true;
+const PUEBLO_ENTRANCE_POPLARS_ENABLE = false;
 const PUEBLO_ENTRANCE_POPLAR_FILE = "poplar.png";
 const PUEBLO_ENTRANCE_POPLAR_WIDTH_FT = 12.5; // +25%
 const PUEBLO_ENTRANCE_POPLAR_HEIGHT_FT = 30.0; // +25%
@@ -720,7 +743,7 @@ const AVATAR_RENDER_ORDER = 2000; // keep controlled avatar above tree/bush bill
 // tiny sink to avoid floating
 
 // Heightmap
-const HEIGHTMAP_FILE = "height_map_small.png";
+const HEIGHTMAP_FILE = "height_map.png";
 const USE_TERRAIN = true;
 
 // Terrain
@@ -768,8 +791,8 @@ const TUNNEL_MOUTH_BOULDER_BASE_SIZE_FT = 9.0;
 const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.png";
 const TUNNEL_MOUTH_BOULDER2_COUNT = 8;
 const TUNNEL_MOUTH_TREES_ENABLE = false;
-const TUNNEL_MOUTH_TREE1_COUNT = 1;
-const TUNNEL_MOUTH_TREE3_COUNT = 1;
+const TUNNEL_MOUTH_TREE1_COUNT = 0;
+const TUNNEL_MOUTH_TREE3_COUNT = 0;
 const TUNNEL_MOUTH_SIGN_ENABLE = true;
 const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
@@ -985,6 +1008,7 @@ const alienObjectiveTitleEl = alienObjectiveWrap ? alienObjectiveWrap.querySelec
 const alienObjectiveCountsEl = alienObjectiveWrap ? alienObjectiveWrap.querySelector(".alienObjectiveCounts") : null;
 const miniCompassWrap = document.getElementById("miniCompass");
 const miniMapMetaWrap = document.querySelector(".miniMapMeta");
+const touchHintWrap = document.getElementById("touchHint");
 const touchToggleWrap = document.getElementById("touchToggle");
 const touchUIWrap = document.getElementById("touchUI");
 let playerHealthPct = 100;
@@ -1889,6 +1913,14 @@ function initPortalEntryAudio(){
     return a;
   };
   portalEntryAudio = makeAudio(PORTAL_ENTRY_AUDIO_FILE);
+  if(PORTAL_ENTRY_AUDIO_FALLBACK_FILE && PORTAL_ENTRY_AUDIO_FALLBACK_FILE !== PORTAL_ENTRY_AUDIO_FILE){
+    const fallbackFile = PORTAL_ENTRY_AUDIO_FALLBACK_FILE;
+    portalEntryAudio.addEventListener("error", ()=>{
+      try{ portalEntryAudio.pause(); }catch(e){}
+      portalEntryAudio = makeAudio(fallbackFile);
+      portalEntryAudio.preload = "auto";
+    }, { once:true });
+  }
 }
 
 function playPortalEntryAudio(){
@@ -3697,6 +3729,8 @@ function clearTunnelMouthTrees(){
 }
 
 function ensureTunnelMouthTrees(){
+  clearTunnelMouthTrees();
+  return;
   if(!TUNNEL_MOUTH_TREES_ENABLE){
     clearTunnelMouthTrees();
     return;
@@ -6197,6 +6231,9 @@ function updatePuebloCenterFountainFlow(timeSec){
 
 
 function ensurePuebloEntrancePoplars(){
+  if(puebloEntrancePoplarsGroup && puebloEntrancePoplarsGroup.parent === scene) scene.remove(puebloEntrancePoplarsGroup);
+  puebloEntrancePoplarsGroup = null;
+  return;
   if(!PUEBLO_ENTRANCE_POPLARS_ENABLE || !puebloTestCube){
     if(puebloEntrancePoplarsGroup && puebloEntrancePoplarsGroup.parent === scene) scene.remove(puebloEntrancePoplarsGroup);
     return;
@@ -6689,6 +6726,17 @@ const TARGET_MIN_DISTANCE = 18;     // keep away from immediate truck spawn bubb
 const TARGET_MIN_SEPARATION = 12;   // keep targets apart a bit
 
 const SNAKE_ROW_ENABLE = false;
+const SNAKE_ROW_FILE = "snake.png";
+const SNAKE_ROW_SPAWN_ZONE_RADIUS_FT = 50.0; // only trigger when truck is within 50ft of initial spawn zone
+const SNAKE_ROW_AHEAD_FT = 50.0;
+const SNAKE_ROW_COUNT = 10;
+const SNAKE_ROW_SPACING_FT = 8.0;
+const SNAKE_ROW_WIDTH_FT = 16.0;
+const SNAKE_ROW_HEIGHT_FT = 10.0;
+const SNAKE_ROW_ALPHA_TEST = 0.30;
+const SNAKE_ROW_KEY_COLOR = { r: 0.98, g: 0.98, b: 0.98 }; // remove near-white matte like avatar chroma-key path
+const SNAKE_ROW_KEY_TOL = 0.20;
+const SNAKE_ROW_KEY_SOFT = 0.08;
 
 const CYBER_UNLOCK_WALL_ENABLE = true;
 const CYBER_UNLOCK_WALL_RADIUS_FT = 36.0;
@@ -6833,19 +6881,140 @@ function clearSnakeAmbushRow(){
 }
 
 function ensureSnakeRowTexture(){
-  return null;
+  if(snakeRowTexture) return snakeRowTexture;
+  snakeRowTexture = new THREE.TextureLoader().load(
+    TEX_DIR + SNAKE_ROW_FILE,
+    (t)=>{
+      t.colorSpace = THREE.SRGBColorSpace;
+      applySnakeTextureChromaKeyInPlace(t);
+    },
+    undefined,
+    ()=>{
+      snakeRowTexture = null;
+      hudLine("⚠️ Missing ambush texture: <code>" + SNAKE_ROW_FILE + "</code>.");
+    }
+  );
+  return snakeRowTexture;
 }
 
 function applySnakeTextureChromaKeyInPlace(tex){
-  void tex;
+  if(!tex || !tex.image) return;
+  const img = tex.image;
+  const w = img.width | 0;
+  const h = img.height | 0;
+  if(w <= 0 || h <= 0) return;
+  try{
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d", { willReadFrequently:true });
+    if(!ctx) return;
+    ctx.drawImage(img, 0, 0, w, h);
+    const im = ctx.getImageData(0, 0, w, h);
+    const d = im.data;
+    const key = SNAKE_ROW_KEY_COLOR || { r:1, g:1, b:1 };
+    const kr = Math.max(0, Math.min(1, Number(key.r)));
+    const kg = Math.max(0, Math.min(1, Number(key.g)));
+    const kb = Math.max(0, Math.min(1, Number(key.b)));
+    const tol = Math.max(0.001, Number(SNAKE_ROW_KEY_TOL) || 0.20);
+    const soft = Math.max(0.001, Number(SNAKE_ROW_KEY_SOFT) || 0.08);
+    for(let i = 0; i < d.length; i += 4){
+      const r = d[i] / 255;
+      const g = d[i + 1] / 255;
+      const b = d[i + 2] / 255;
+      const dist = Math.hypot(r - kr, g - kg, b - kb);
+      const aMul = Math.max(0, Math.min(1, (dist - tol) / soft));
+      d[i + 3] = Math.round(d[i + 3] * aMul);
+      if(d[i + 3] < 4) d[i + 3] = 0;
+    }
+    ctx.putImageData(im, 0, 0);
+    tex.image = canvas;
+    tex.needsUpdate = true;
+  } catch(err){
+    console.warn("snake chroma-key failed:", err);
+  }
 }
 
 function spawnSnakeRowAhead(){
-  return;
+  if(!SNAKE_ROW_ENABLE || snakeRowSpawned) return;
+  if(targetsRemaining > 0 || !snakeRowArmed) return;
+
+  const tex = ensureSnakeRowTexture();
+  if(!tex) return;
+
+  const ft = WORLD_UNITS_PER_FOOT;
+  const spacing = Math.max(1.0 * ft, SNAKE_ROW_SPACING_FT * ft);
+  const w = Math.max(2.0 * ft, SNAKE_ROW_WIDTH_FT * ft);
+  const h = Math.max(2.0 * ft, SNAKE_ROW_HEIGHT_FT * ft);
+  const count = Math.max(1, Math.floor(SNAKE_ROW_COUNT));
+  const zoneR = Math.max(1.0 * ft, SNAKE_ROW_SPAWN_ZONE_RADIUS_FT * ft);
+  const safeR = Math.max(1.0 * ft, zoneR - (2.0 * ft));
+
+  const obj = controls.getObject();
+  const spawnX = AVATRUCK_SPAWN_X;
+  const spawnZ = AVATRUCK_SPAWN_Z;
+  const toTruck = obj ? new THREE.Vector3(obj.position.x - spawnX, 0, obj.position.z - spawnZ) : null;
+  const fwd = (toTruck && toTruck.lengthSq() > 0.0001)
+    ? toTruck.normalize()
+    : new THREE.Vector3(-Math.sin(truckYaw), 0, -Math.cos(truckYaw)).normalize();
+  const right = new THREE.Vector3(-fwd.z, 0, fwd.x).normalize();
+  const centerX = spawnX;
+  const centerZ = spawnZ;
+
+  // Match avatar/alien cutout behavior while preserving depth interactions.
+  const matTemplate = new THREE.SpriteMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: SNAKE_ROW_ALPHA_TEST,
+    depthWrite: true,
+    depthTest: true
+  });
+
+  snakeRowGroup = new THREE.Group();
+  snakeRowGroup.name = "snakeRowAmbush";
+  snakeRowGroup.frustumCulled = false;
+
+  const half = (count - 1) * 0.5;
+  for(let i = 0; i < count; i++){
+    const side = (i - half) * spacing;
+    let sx = centerX + (right.x * side);
+    let sz = centerZ + (right.z * side);
+    const offX = sx - spawnX;
+    const offZ = sz - spawnZ;
+    const d = Math.hypot(offX, offZ);
+    if(d > safeR){
+      const s = safeR / d;
+      sx = spawnX + (offX * s);
+      sz = spawnZ + (offZ * s);
+    }
+    const sy = heightAtWorldXZ(sx, sz) + (h * 0.5);
+
+    const spr = new THREE.Sprite(matTemplate.clone());
+    spr.scale.set(w, h, 1);
+    spr.position.set(sx, sy, sz);
+    snakeRowGroup.add(spr);
+  }
+
+  scene.add(snakeRowGroup);
+  snakeRowSpawned = true;
+  snakeRowArmed = false;
+  hudLine("🐍 Snake ambush spawned near initial truck spawn (within <code>50ft</code>)." );
 }
 
 function updateSnakeAmbushOnJourney(obj){
-  void obj;
+  if(!SNAKE_ROW_ENABLE || !obj || snakeRowSpawned) return;
+  if(targetsRemaining > 0 || !snakeRowArmed) return;
+
+  const ft = WORLD_UNITS_PER_FOOT;
+  const zoneR = Math.max(1.0 * ft, SNAKE_ROW_SPAWN_ZONE_RADIUS_FT * ft);
+  const dxSpawn = obj.position.x - AVATRUCK_SPAWN_X;
+  const dzSpawn = obj.position.z - AVATRUCK_SPAWN_Z;
+  const dSpawn = Math.hypot(dxSpawn, dzSpawn);
+
+  // Only fire ambush when player re-enters the initial spawn zone.
+  if(dSpawn <= zoneR){
+    spawnSnakeRowAhead();
+  }
 }
 
 
@@ -7125,6 +7294,7 @@ function enterPostAlienClearMode(){
 
   if(miniCompassWrap) miniCompassWrap.style.display = "none";
   if(miniMapMetaWrap) miniMapMetaWrap.style.display = "none";
+  if(touchHintWrap) touchHintWrap.style.display = "none";
   if(touchToggleWrap) touchToggleWrap.style.display = "none";
   if(touchUIWrap) touchUIWrap.style.display = "none";
   if(pickFolderBtn) pickFolderBtn.style.display = "none";
@@ -7194,9 +7364,11 @@ let badGuy = null;
 
 /* =========================================================
    🛡️ GROUND TANK CHASER
-   - Disabled legacy chaser
+   - Uses tank.png
+   - Chases active truck/avatar and fires orange balls
    ========================================================= */
 const TANK_ENABLE = false;
+const TANK_FILE = "tank.png";
 const TANK_SCALE = 5.0; // +25% size
 const TANK_MOVE_SPEED = 8.0;
 const TANK_STOP_DIST = 16.0;
@@ -8921,7 +9093,43 @@ function getTankInterceptPoint(targetPos){
 }
 
 function spawnTank(){
-  return;
+  if(!TANK_ENABLE || tank) return;
+  if(tankSpawnCount >= TANK_MAX_COUNT) return;
+
+  const tex = new THREE.TextureLoader().load(
+    TEX_DIR + TANK_FILE,
+    t => { t.colorSpace = THREE.SRGBColorSpace; },
+    undefined,
+    () => hudLine("❌ Missing <code>" + TANK_FILE + "</code>")
+  );
+
+  const mat = new THREE.MeshStandardMaterial({
+    map: tex,
+    transparent: true,
+    alphaTest: 0.45,
+    side: THREE.DoubleSide
+  });
+
+  const geo = new THREE.PlaneGeometry(TANK_SCALE, TANK_SCALE * 0.72);
+  tank = new THREE.Mesh(geo, mat);
+  tank.castShadow = true;
+  tank.receiveShadow = false;
+
+  tankApproachSideSign = Math.random() < 0.5 ? -1 : 1;
+  const targetPos = getActiveVehicleTargetPos();
+  const spawnPos = getTankInterceptPoint(targetPos);
+  // Stationary tank: spawn once at the front-diagonal point and hold position.
+  const tankSpawnXZ = resolvePuebloCubePenetrationXZ(spawnPos.x, spawnPos.z, Math.max(0.9, TANK_SCALE * 0.30));
+  tank.position.set(tankSpawnXZ.x, spawnPos.y, tankSpawnXZ.z);
+  tank.rotation.y = Math.atan2(targetPos.x - tank.position.x, targetPos.z - tank.position.z);
+
+  scene.add(tank);
+  tankShotTimer = 0.65;
+  tankAttackTimer = TANK_ATTACK_DURATION_SEC;
+  tankSpawnCount += 1;
+  tankRespawnTimer = 0.0;
+  tankHitCount = 0;
+  hudLine("🛡️ Tank chaser enabled: <code>" + TANK_FILE + "</code> (45° front approach)");
 }
 
 function fireTankOrangeBall(){
@@ -10035,7 +10243,7 @@ function clearLowZoneTrees(){
 
 async function createLowZoneTrees(){
   clearLowZoneTrees();
-  if (LOW_TREE_COUNT <= 0) return;
+  return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.low;
   if (!zone) return;
@@ -10109,7 +10317,7 @@ function clearLowZoneTree3(){
 
 async function createLowZoneTree3(){
   clearLowZoneTree3();
-  if (LOW_TREE3_COUNT <= 0) return;
+  return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.low;
   if (!zone) return;
@@ -10187,7 +10395,7 @@ function clearMidZoneTree7(){
 
 async function createMidZoneTree7(){
   clearMidZoneTree7();
-  if (MID_TREE7_COUNT <= 0) return;
+  return;
   if (!terrainReady) return;
   const zone = elevationZones && elevationZones.medium;
   if (!zone) return;
@@ -10393,7 +10601,11 @@ let leggomanGoalMesh = null;
 let leggomanGoalTex = null;
 let leggomanGoalTexFile = "";
 let currentVehicleFile = TRUCK_FILE;
-const TRUCK_SEQUENCE = [BIGFOOT_BASE_FILE, TRUCK_FILE, BIG_TRUCK_BASE_FILE, MAZ_VEHICLE_BASE_FILE, ORANGE_TRUCK_BASE_FILE, TRUCK2_FILE];
+let orangeTurnPreviewTimer = 0.0;
+let orangeTurnPreviewDir = 0;
+let orangeTurnPrevLeftHeld = false;
+let orangeTurnPrevRightHeld = false;
+const TRUCK_SEQUENCE = [ORANGE_TRUCK_BASE_FILE, TRUCK2_FILE, MAZ_VEHICLE_BASE_FILE, WHITE_TRUCK_BASE_FILE, BIGFOOT_BASE_FILE, BIG_TRUCK_BASE_FILE, CYBER_TRUCK_FILE];
 let plazaExitVehicleChoicesGroup = null;
 const plazaExitVehicleChoices = [];
 const plazaExitVehicleTextures = new Map();
@@ -10615,7 +10827,9 @@ function spawnPlazaExitVehicleChoices(actorObj){
   const baseX = actorObj.position.x + (fwdX * ahead);
   const baseZ = actorObj.position.z + (fwdZ * ahead);
 
-  const availableFiles = PLAZA_EXIT_VEHICLE_FILES;
+  const availableFiles = cyberUnlocked
+    ? PLAZA_EXIT_VEHICLE_FILES
+    : PLAZA_EXIT_VEHICLE_FILES.filter(f => f !== CYBER_TRUCK_FILE);
 
   for(let i = 0; i < availableFiles.length; i++){
     const file = availableFiles[i];
@@ -11055,6 +11269,10 @@ function getOrangeTruckDirectionalFileByInput(){
   return ORANGE_TRUCK_BASE_FILE;
 }
 
+function getWhiteTruckDirectionalFileByInput(){
+  return WHITE_TRUCK_BASE_FILE;
+}
+
 function getBigfootDirectionalFileByInput(){
   return BIGFOOT_BASE_FILE;
 }
@@ -11077,8 +11295,11 @@ function getDirectionalVehicleTextureForCurrent(){
   if(currentVehicleFile === MAZ_VEHICLE_BASE_FILE){
     return getPlazaExitChoiceTexture(getMazDirectionalFileByInput());
   }
-  if(currentVehicleFile === ORANGE_TRUCK_BASE_FILE){
+  if(currentVehicleFile === ORANGE_TRUCK_BASE_FILE || currentVehicleFile === ORANGE_TRUCK_LEGACY_FILE){
     return getPlazaExitChoiceTexture(getOrangeTruckDirectionalFileByInput());
+  }
+  if(currentVehicleFile === WHITE_TRUCK_BASE_FILE){
+    return getPlazaExitChoiceTexture(getWhiteTruckDirectionalFileByInput());
   }
   if(currentVehicleFile === BIGFOOT_BASE_FILE){
     return getPlazaExitChoiceTexture(getBigfootDirectionalFileByInput());
@@ -11378,7 +11599,10 @@ function initTruckAvatar
 function updateTruckAvatar(dt=0.016){
   if(!truckPlane) return;
 
-  const backViewScaleMult = VEHICLE_BACK_VIEW_SCALE_MULT;
+  const upHeld = keys.has("ArrowUp") || keys.has("KeyW");
+  const leftHeld = keys.has("ArrowLeft") || keys.has("KeyA");
+  const rightHeld = keys.has("ArrowRight") || keys.has("KeyD");
+  const backViewScaleMult = (upHeld && !leftHeld && !rightHeld) ? VEHICLE_BACK_VIEW_SCALE_MULT : 1.0;
 
   if(avatarMode === "leggoman"){
     ensureLeggomanIdleStandTexture();
@@ -11431,8 +11655,9 @@ function updateTruckAvatar(dt=0.016){
     const currentTex = (mat && mat.uniforms && mat.uniforms.map) ? mat.uniforms.map.value : mat.map;
     if(currentTex !== desiredTex) setTruckAvatarTexture(desiredTex);
   } else if(avatarMode === "truck2" && leggomanGoalTex){
+    const truck3Scale = (currentVehicleFile === TRUCK3_FILE) ? TRUCK3_SCALE_MULT : 1.0;
     const copterScale = (currentVehicleFile === GODDESS_COPTER_MARKER_FILE) ? COPTER_ACTIVE_SCALE_MULT : 1.0;
-    const baseScale = Math.max(1.0, copterScale);
+    const baseScale = Math.max(truck3Scale, copterScale);
     const vehicleScale = (currentVehicleFile === BIG_TRUCK_BASE_FILE) ? BIG_TRUCK_SCALE_MULT : 1.0;
     const activeScale = (baseScale * vehicleScale) * VEHICLE_TRIPLET_SCALE_MULT * backViewScaleMult;
     const copterHeightScale = (currentVehicleFile === GODDESS_COPTER_MARKER_FILE) ? 0.7744 : 1.0;
@@ -12704,6 +12929,7 @@ const keys = new Set();
    ========================= */
 const touchToggle = document.getElementById("touchToggle");
 const touchUI = document.getElementById("touchUI");
+const touchHint = document.getElementById("touchHint");
 const joyWrap = document.getElementById("joyWrap");
 const joyStick = document.getElementById("joyStick");
 
@@ -12720,6 +12946,7 @@ function refreshTouchUI(){
   const show = !!(touchOn && isLandscape());
   touchUI.classList.toggle("on", show);
   touchUI.classList.toggle("landscapeOnly", !isLandscape());
+  touchHint.classList.toggle("on", !!isTouchDevice());
 }
 
 refreshTouchUI();
@@ -12730,6 +12957,7 @@ touchToggle.addEventListener("click", (e)=>{
   e.preventDefault();
   touchOn = !touchOn;
   refreshTouchUI();
+  touchHint.classList.remove("on");
 });
 
 // Stop iOS scroll gestures while using controls
@@ -12777,7 +13005,6 @@ if(btnVehicleJ){
 // Right-side thumb joystick -> Arrow keys
 const joystickState = { up:false, down:false, left:false, right:false };
 let joyActive = false;
-let joyPointerId = null;
 const JOY_CENTER = { x:110, y:110 };
 const JOY_RADIUS = 88;
 const JOY_DEAD = 0.28;
@@ -12804,7 +13031,6 @@ function setJoyKnob(nx, ny){
 
 function resetJoystick(){
   joyActive = false;
-  joyPointerId = null;
   setArrowFromJoystick({ up:false, down:false, left:false, right:false });
   setJoyKnob(0, 0);
 }
@@ -12834,59 +13060,20 @@ function updateJoystickFromClient(clientX, clientY){
 }
 
 if(joyWrap){
-  const getTrackedTouch = (ev)=>{
-    if(!ev.changedTouches && !ev.touches) return null;
-    const touches = ev.touches || ev.changedTouches;
-    if(joyPointerId !== null){
-      for(const touch of touches){
-        if(touch.identifier === joyPointerId) return touch;
-      }
-      return null;
-    }
-    return touches[0] || null;
-  };
-  const getTrackedChangedTouch = (ev)=>{
-    const touches = ev.changedTouches || ev.touches;
-    if(!touches) return null;
-    if(joyPointerId !== null){
-      for(const touch of touches){
-        if(touch.identifier === joyPointerId) return touch;
-      }
-      return null;
-    }
-    return touches[0] || null;
-  };
   const start = (ev)=>{
     if(!touchOn || !isLandscape()) return;
-    if(joyActive) return;
     joyActive = true;
-    if(ev.pointerId !== undefined){
-      joyPointerId = ev.pointerId;
-      joyWrap.setPointerCapture?.(ev.pointerId);
-    }else{
-      const touch = getTrackedTouch(ev);
-      joyPointerId = touch ? touch.identifier : null;
-    }
-    const t = getTrackedTouch(ev) || ev;
+    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
   const move = (ev)=>{
     if(!joyActive) return;
-    if(ev.pointerId !== undefined && joyPointerId !== ev.pointerId) return;
-    const t = getTrackedTouch(ev) || ev;
+    const t = (ev.touches && ev.touches[0]) ? ev.touches[0] : ev;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
-  const end = (ev)=>{
-    if(ev && ev.pointerId !== undefined && joyPointerId !== ev.pointerId) return;
-    if(ev && (ev.changedTouches || ev.touches)){
-      const matchingTouch = getTrackedChangedTouch(ev);
-      if(!matchingTouch && joyPointerId !== null) return;
-    }
-    if(ev) ev.preventDefault();
-    resetJoystick();
-  };
+  const end = (ev)=>{ if(ev) ev.preventDefault(); resetJoystick(); };
 
   joyWrap.addEventListener("touchstart", start, {passive:false});
   joyWrap.addEventListener("touchmove", move, {passive:false});
@@ -12894,10 +13081,9 @@ if(joyWrap){
   joyWrap.addEventListener("touchcancel", end, {passive:false});
 
   joyWrap.addEventListener("pointerdown", start);
-  joyWrap.addEventListener("pointermove", move);
-  joyWrap.addEventListener("pointerup", end);
-  joyWrap.addEventListener("pointercancel", end);
-  joyWrap.addEventListener("lostpointercapture", resetJoystick);
+  window.addEventListener("pointermove", move);
+  window.addEventListener("pointerup", end);
+  window.addEventListener("pointercancel", end);
 }
 
 resetJoystick();

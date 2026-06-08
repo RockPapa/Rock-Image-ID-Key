@@ -14575,11 +14575,14 @@ const GYRO_BANK_RESPONSE_PER_SEC = 7.0;
 const GYRO_PREFLIGHT_CALIBRATION_MS = 3000;
 const GYRO_PREFLIGHT_MIN_SAMPLES = 6;
 const GYRO_PITCH_SIGN = -1;
-const GYRO_PITCH_SENSITIVITY = 0.70;
+const GYRO_PITCH_SENSITIVITY = 0.56;
 const GYRO_BANK_SENSITIVITY = 0.168;
+const GYRO_YAW_TURN_MULT = 1.30;
 const GYRO_INPUT_DEADZONE = 0.035;
 const GYRO_PITCH_DRIFT_MAX_DEG = 7.0;
+const GYRO_BANK_DRIFT_MAX_DEG = 5.0;
 const GYRO_PITCH_DRIFT_CORRECT_PER_SEC = 0.018;
+const GYRO_BANK_DRIFT_CORRECT_PER_SEC = 0.014;
 const gyroState = {
   enabled:false,
   available:false,
@@ -14797,21 +14800,24 @@ function handleDeviceOrientation(ev){
   }
   if(!gyroState.calibrated) startGyroPreflightCalibration();
   if(!gyroState.calibrated) return;
-  const pitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
-  const bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
+  let pitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
+  let bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
+  const nowMs = gyroState.lastEventMs;
+  const dtSec = gyroState.lastDriftCorrectionMs > 0
+    ? Math.min(0.1, Math.max(0, (nowMs - gyroState.lastDriftCorrectionMs) / 1000))
+    : 0;
   if(Math.abs(pitchDelta) <= GYRO_PITCH_DRIFT_MAX_DEG){
-    const nowMs = gyroState.lastEventMs;
-    const dtSec = gyroState.lastDriftCorrectionMs > 0
-      ? Math.min(0.1, Math.max(0, (nowMs - gyroState.lastDriftCorrectionMs) / 1000))
-      : 0;
     const driftAlpha = Math.min(1, GYRO_PITCH_DRIFT_CORRECT_PER_SEC * dtSec);
     gyroState.basePitchDeg += (gyroState.rawPitchDeg - gyroState.basePitchDeg) * driftAlpha;
-    gyroState.lastDriftCorrectionMs = nowMs;
-  } else {
-    gyroState.lastDriftCorrectionMs = gyroState.lastEventMs;
+    pitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
   }
-  const correctedPitchDelta = (gyroState.rawPitchDeg - gyroState.basePitchDeg) * GYRO_PITCH_SIGN;
-  gyroState.pitchInput = applyGyroDeadzone(THREE.MathUtils.clamp((correctedPitchDelta / GYRO_PITCH_MAX_DEG) * GYRO_PITCH_SENSITIVITY, -1, 1));
+  if(Math.abs(bankDelta) <= GYRO_BANK_DRIFT_MAX_DEG){
+    const driftAlpha = Math.min(1, GYRO_BANK_DRIFT_CORRECT_PER_SEC * dtSec);
+    gyroState.baseBankDeg += (gyroState.rawBankDeg - gyroState.baseBankDeg) * driftAlpha;
+    bankDelta = gyroState.rawBankDeg - gyroState.baseBankDeg;
+  }
+  gyroState.lastDriftCorrectionMs = nowMs;
+  gyroState.pitchInput = applyGyroDeadzone(THREE.MathUtils.clamp((pitchDelta / GYRO_PITCH_MAX_DEG) * GYRO_PITCH_SENSITIVITY, -1, 1));
   gyroState.bankInput = applyGyroDeadzone(THREE.MathUtils.clamp((bankDelta / GYRO_BANK_MAX_DEG) * GYRO_BANK_SENSITIVITY, -1, 1));
   updateGyroButton();
 }
@@ -16826,7 +16832,7 @@ function animate(){
         -1,
         1
       );
-      turn += bankTurnInput * ARROW_TURN_RATE_SCALE;
+      turn += bankTurnInput * ARROW_TURN_RATE_SCALE * (gyroState.enabled ? GYRO_YAW_TURN_MULT : 1);
     } else {
       if(arrowLeftHeld) turn += ARROW_TURN_RATE_SCALE;
       if(arrowRightHeld) turn -= ARROW_TURN_RATE_SCALE;

@@ -356,6 +356,12 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 import { EXRLoader } from "three/addons/loaders/EXRLoader.js";
 
 const ASSET_BASE_DIR = "truck-rescue-files/";
+const IS_IPAD_LIKE = /iPad|iPhone|iPod/i.test(navigator.userAgent || "") || ((navigator.platform || "") === "MacIntel" && navigator.maxTouchPoints > 1);
+const IPAD_ZONE_ACTIVATION_ENABLE = IS_IPAD_LIKE;
+const IPAD_ZONE_ACTIVATION_RADIUS_FT = 420.0;
+const IPAD_SKIP_TALL_GRASS = IPAD_ZONE_ACTIVATION_ENABLE;
+const IPAD_SKIP_LAKE_BUSHES = IPAD_ZONE_ACTIVATION_ENABLE;
+const IPAD_SKIP_LAKE_RIPPLES = IPAD_ZONE_ACTIVATION_ENABLE;
 
 function normalizeAssetName(url){
   if(!url) return "";
@@ -717,7 +723,7 @@ const BUFF_MARKER_OFFSETS = [
 const BUFF_MARKER_SIZE = { w: 30.0, h: 42.0 };
 const BUFF_MARKER_LIFT = 0.0;
 const LAKE_BUSH_FILE = "bush.png";
-const LAKE_BUSH_COUNT = 1500;
+const LAKE_BUSH_COUNT = IPAD_SKIP_LAKE_BUSHES ? 0 : 1500;
 const LAKE_BUSH_SIZE = { w: 6.5, h: 7.8 };
 const LAKE_BUSH_LIFT = 0.16128;
 const LOW_TREE_FILE = "tree1.png";
@@ -874,13 +880,13 @@ const GRASS_ROUGH_FILE = "rock_roughness.png";
 const GRASS_REPEAT = 90;
 
 // ===== TALL GRASS (Option B: grass cards) =====
-const TALL_GRASS_ENABLE = true;
+const TALL_GRASS_ENABLE = !IPAD_SKIP_TALL_GRASS;
 
 // Uses your existing grass color texture; for best look later, swap to a real grass-cutout PNG.
 const GRASS_CARD_COLOR_FILE = GRASS_COLOR_FILE; // reuse ground grass color
 const GRASS_CARD_HEIGHT_FILE = "height_map.png";   // existing local fallback height controller
 
-const GRASS_CARD_COUNT = 8000;   // start 3000–12000 (more = heavier)
+const GRASS_CARD_COUNT = IPAD_ZONE_ACTIVATION_ENABLE ? 0 : 8000;   // start 3000–12000 (more = heavier)
 const GRASS_CARD_AREA  = 2400;   // spread radius around start (world units)
 const GRASS_CARD_MIN_H = 0.6;    // minimum blade height
 const GRASS_CARD_MAX_H = 3.2;    // maximum blade height (taller = more dramatic)
@@ -1116,6 +1122,25 @@ const RING_LANDING_PIG_PLAYS = 10;
 const RING_LANDING_ESCAPE_PLAYS = 2;
 const GREEN_BRIDE_PIG_TRIGGER_SCALE = 1.12;
 const GREEN_BRIDE_PIG_TRIGGER_DIST_FT = 10.0;
+
+function distanceSqToPlayerXZ(x, z){
+  const obj = controls && typeof controls.getObject === "function" ? controls.getObject() : null;
+  if(!obj || !obj.position) return Infinity;
+  const dx = obj.position.x - x;
+  const dz = obj.position.z - z;
+  return (dx * dx) + (dz * dz);
+}
+
+function isIpadZoneNearXZ(x, z, extraRadiusFt = 0){
+  if(!IPAD_ZONE_ACTIVATION_ENABLE) return true;
+  const ft = WORLD_UNITS_PER_FOOT;
+  const radius = Math.max(1, (IPAD_ZONE_ACTIVATION_RADIUS_FT + extraRadiusFt) * ft);
+  return distanceSqToPlayerXZ(x, z) <= (radius * radius);
+}
+
+function isGreenZoneActiveForIpad(extraRadiusFt = 0){
+  return isIpadZoneNearXZ(GREEN_SQUARE_MARKER_X, GREEN_SQUARE_MARKER_Z, extraRadiusFt);
+}
 const TRUCK_FIRE_FEATURE_VICINITY_RADIUS_FT = 300.0;
 const TRUCK_FIRE_FEATURE_VICINITY_RADIUS = TRUCK_FIRE_FEATURE_VICINITY_RADIUS_FT * WORLD_UNITS_PER_FOOT;
 let truckFireFeatureCenter = null;
@@ -2113,15 +2138,18 @@ scene.fog = new THREE.Fog(FOG_COLOR, FOG_NEAR, FOG_FAR);
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 30000);
 camera.position.set(AVATRUCK_SPAWN_X, PLAYER_EYE_HEIGHT, AVATRUCK_SPAWN_Z);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true });
+const renderer = new THREE.WebGLRenderer({ antialias: !IPAD_ZONE_ACTIVATION_ENABLE });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
+renderer.setPixelRatio(IPAD_ZONE_ACTIVATION_ENABLE ? 1 : devicePixelRatio);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = EXPOSURE;
-renderer.shadowMap.enabled = true;
+renderer.shadowMap.enabled = !IPAD_ZONE_ACTIVATION_ENABLE;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+if(IPAD_ZONE_ACTIVATION_ENABLE){
+  hudLine("📱 iPad performance mode: zone activation ON, tall grass/bushes/shadows OFF.");
+}
 
 // Controls
 const controls = new PointerLockControls(camera, document.body);
@@ -8300,6 +8328,10 @@ function ensureGreenBrideChamber(){
     return;
   }
   if(!terrainReady) return;
+  if(!isGreenZoneActiveForIpad(120)){
+    clearGreenBrideChamber();
+    return;
+  }
   if(greenBrideChamberGroup && greenBrideChamberGroup.parent === scene) return;
 
   ensureTruckFireTextures();
@@ -8561,6 +8593,9 @@ function playGreenBridePigAudio(){
 }
 
 function updateGreenBrideChamber(){
+  if(!isGreenZoneActiveForIpad(120)){
+    return;
+  }
   const obj = controls && typeof controls.getObject === "function" ? controls.getObject() : null;
   let inRange = false;
 
@@ -8598,6 +8633,10 @@ function ensureGreenFireRing(){
     return;
   }
   if(!terrainReady) return;
+  if(!isGreenZoneActiveForIpad(GREEN_RING_NIGHT_TRIGGER_RANGE_FT)){
+    clearGreenFireRing();
+    return;
+  }
 
   if(!GREEN_COPTER_PAD_ENABLE && greenCopterPadGroup){
     if(greenCopterPadGroup.parent === scene) scene.remove(greenCopterPadGroup);
@@ -8930,6 +8969,9 @@ function ensureGreenFireRing(){
 }
 
 function updateGreenFireRing(dt){
+  if(!isGreenZoneActiveForIpad(GREEN_RING_NIGHT_TRIGGER_RANGE_FT)){
+    return;
+  }
   if(!greenFireRingGroup || !greenFireRingGroup.parent || !greenFireRingFlames.length || !truckFireTextures.length) return;
 
   greenFireRingAnimSec += Math.max(0, dt || 0);
@@ -9713,7 +9755,7 @@ const SHORELINE_ENABLE = true;
 const SHORELINE_WIDTH_UV = 0.13;   // 0.06–0.20 (smaller = thinner dark rim)
 const SHORELINE_SOFT_UV  = 0.08;   // softness of the rim falloff
 const SHORELINE_DARK     = 0.58;   // multiplier at the very edge (0.45–0.75)
-const LAKE_RIPPLE_ENABLE = true;
+const LAKE_RIPPLE_ENABLE = !IPAD_SKIP_LAKE_RIPPLES;
 const LAKE_RIPPLE_AMP = 0.35;    // ripple height in world units (keep small!)    // ripple height in world units (keep small!)
 const LAKE_RIPPLE_SPEED = 0.45;  // animation speed  // animation speed
 const LAKE_RIPPLE_SCALE = 0.020; // wave frequency (smaller = larger waves)
@@ -10210,6 +10252,10 @@ function clearLakeZoneBushes(){
 }
 
 async function createLakeZoneBushes(){
+  if(IPAD_SKIP_LAKE_BUSHES || LAKE_BUSH_COUNT <= 0){
+    clearLakeZoneBushes();
+    return;
+  }
   if (!terrainReady || !lakeMesh) return;
 
   const tex = await loadTextureSafe(TEX_DIR + LAKE_BUSH_FILE, { colorSpace: THREE.SRGBColorSpace });
@@ -14880,6 +14926,7 @@ addEventListener("resize", () => {
   camera.aspect = innerWidth/innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  renderer.setPixelRatio(IPAD_ZONE_ACTIVATION_ENABLE ? 1 : devicePixelRatio);
 });
 </script>
 

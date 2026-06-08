@@ -757,13 +757,13 @@ const USE_TERRAIN = true;
 
 // World sizes
 const GROUND_SIZE = 6000;
-const VISUAL_GROUND_SIZE = IPAD_ZONE_ACTIVATION_ENABLE ? 1500 : GROUND_SIZE;
-const VISUAL_TERRAIN_SEGMENTS = IPAD_ZONE_ACTIVATION_ENABLE ? 96 : 256;
-const IPAD_TERRAIN_PATCH_RECENTER_DIST = VISUAL_GROUND_SIZE * 0.22;
+const VISUAL_GROUND_SIZE = GROUND_SIZE;
+const VISUAL_TERRAIN_SEGMENTS = 256;
+const IPAD_TERRAIN_PATCH_RECENTER_DIST = GROUND_SIZE;
 
 // Terrain
 const TERRAIN_SEGMENTS = VISUAL_TERRAIN_SEGMENTS;
-const TERRAIN_HEIGHT   = 172.30752;
+const TERRAIN_HEIGHT   = 0.0;
 const CLAMP_OUTSIDE_TERRAIN = true;
 
 // Player
@@ -878,7 +878,7 @@ const TREE_TRUNK_RADIUS_FACTOR = 0.18;
 
 // Grass textures**********************//
 const GRASS_COLOR_FILE =
-"rock_albedo.jpg";
+"rock_albedo.png";
 
 const GRASS_NORMAL_EXR = "";
 const GRASS_NORMAL_FILE = "rock_normal.png";
@@ -9686,7 +9686,7 @@ function clamp01(t){ return Math.max(0, Math.min(1, t)); }
 
 // Bilinear height sample
 function heightAtWorldXZ(x, z){
-  if (!terrainReady || !hmData) return 0;
+  if (!hmData) return 0;
 
   let u = (x / GROUND_SIZE) + 0.5;
   let v = (-z / GROUND_SIZE) + 0.5;
@@ -9727,12 +9727,10 @@ function heightAtWorldXZ(x, z){
 
 function updateVisibleTerrainPatch(centerX = 0, centerZ = 0){
   if(!hmData || !ground || !ground.geometry) return;
-  if(IPAD_ZONE_ACTIVATION_ENABLE){
-    ground.position.x = centerX;
-    ground.position.z = centerZ;
-    ipadTerrainPatchCenterX = centerX;
-    ipadTerrainPatchCenterZ = centerZ;
-  }
+  ground.position.x = 0;
+  ground.position.z = 0;
+  ipadTerrainPatchCenterX = 0;
+  ipadTerrainPatchCenterZ = 0;
 
   const pos = ground.geometry.attributes.position;
   const uv  = ground.geometry.attributes.uv;
@@ -9741,17 +9739,13 @@ function updateVisibleTerrainPatch(centerX = 0, centerZ = 0){
 
   for (let i = 0; i < pos.count; i++){
     let yWorld;
-    if(IPAD_ZONE_ACTIVATION_ENABLE){
-      yWorld = heightAtWorldXZ(pos.getX(i) + ground.position.x, pos.getZ(i) + ground.position.z);
-    } else {
-      const u = uv.getX(i);
-      const v = uv.getY(i);
-      const x = Math.floor(u * (hmW - 1));
-      const y = Math.floor((1 - v) * (hmH - 1));
-      const idx = (y * hmW + x) * 4;
-      const r = hmData[idx];
-      yWorld = (r / 255) * TERRAIN_HEIGHT;
-    }
+    const u = uv.getX(i);
+    const v = uv.getY(i);
+    const x = Math.floor(u * (hmW - 1));
+    const y = Math.floor((1 - v) * (hmH - 1));
+    const idx = (y * hmW + x) * 4;
+    const r = hmData[idx];
+    yWorld = (r / 255) * TERRAIN_HEIGHT;
     pos.setY(i, yWorld);
     if(yWorld < observedMin) observedMin = yWorld;
     if(yWorld > observedMax) observedMax = yWorld;
@@ -9764,13 +9758,7 @@ function updateVisibleTerrainPatch(centerX = 0, centerZ = 0){
 }
 
 function updateIpadTerrainPatchForPlayer(){
-  if(!IPAD_ZONE_ACTIVATION_ENABLE || !terrainReady) return;
-  const obj = controls && typeof controls.getObject === "function" ? controls.getObject() : null;
-  if(!obj || !obj.position) return;
-  const dx = obj.position.x - ipadTerrainPatchCenterX;
-  const dz = obj.position.z - ipadTerrainPatchCenterZ;
-  if((dx * dx) + (dz * dz) < (IPAD_TERRAIN_PATCH_RECENTER_DIST * IPAD_TERRAIN_PATCH_RECENTER_DIST)) return;
-  updateVisibleTerrainPatch(obj.position.x, obj.position.z);
+  return;
 }
 
 /* =========================================================
@@ -9780,7 +9768,7 @@ const groundGeo = new THREE.PlaneGeometry(VISUAL_GROUND_SIZE, VISUAL_GROUND_SIZE
 groundGeo.rotateX(-Math.PI/2);
 
 const fallbackGrass = new THREE.MeshStandardMaterial({
-  color: 0x556b2f,
+  color: 0x777166,
   roughness: 1.0,
   metalness: 0.0
 });
@@ -12802,45 +12790,23 @@ initHitSound();
 
 // ---------- GRASS (PBR) ----------
 (async function initGrass(){
-  if(IPAD_SIMPLE_TERRAIN_MATERIAL){
-    ground.material = new THREE.MeshStandardMaterial({
-      color: 0x5d7b35,
-      roughness: 1.0,
-      metalness: 0.0
-    });
-    ground.material.needsUpdate = true;
-    hudLine("📱 iPad performance mode: simple terrain material ON.");
-    return;
-  }
   const colorUrl  = TEX_DIR + GRASS_COLOR_FILE;
-
-  const normalUrl = GRASS_NORMAL_EXR ? (TEX_DIR + GRASS_NORMAL_EXR) : (TEX_DIR + GRASS_NORMAL_FILE);
-  const roughUrl  = GRASS_ROUGH_EXR  ? (TEX_DIR + GRASS_ROUGH_EXR)  : (GRASS_ROUGH_FILE ? (TEX_DIR + GRASS_ROUGH_FILE) : "");
-
   const colorMap  = await loadTextureSafe(colorUrl, { colorSpace: THREE.SRGBColorSpace });
-  const normalMap = GRASS_NORMAL_EXR ? await loadEXRSafe(normalUrl) : await loadTextureSafe(normalUrl);
-  const roughMap  = roughUrl ? (GRASS_ROUGH_EXR ? await loadEXRSafe(roughUrl) : await loadTextureSafe(roughUrl)) : null;
 
   if (colorMap){
-    setRepeat(colorMap, GRASS_REPEAT);
-    if (normalMap) setRepeat(normalMap, GRASS_REPEAT);
-    if (roughMap)  setRepeat(roughMap,  GRASS_REPEAT);
+    setRepeat(colorMap, IPAD_ZONE_ACTIVATION_ENABLE ? 18 : GRASS_REPEAT);
 
     const mat = new THREE.MeshStandardMaterial({
       map: colorMap,
-      normalMap: normalMap || null,
-      roughnessMap: roughMap || null,
-      roughness: roughMap ? 1.0 : 0.95,
+      roughness: 0.96,
       metalness: 0.0
     });
-    if (mat.normalMap) mat.normalScale.set(1.0, 1.0);
 
     ground.material = mat;
     ground.material.needsUpdate = true;
-    hudLine("✅ Grass material applied (PBR).");
-    await applyHighZoneTextureTest();
+    hudLine(`✅ Terrain rock texture applied everywhere: <code>${GRASS_COLOR_FILE}</code>.`);
   } else {
-    hudLine(`⚠️ Grass missing: <code>${GRASS_COLOR_FILE}</code>`);
+    hudLine(`⚠️ Terrain rock texture missing: <code>${GRASS_COLOR_FILE}</code>`);
   }
 })();
 

@@ -12726,28 +12726,27 @@ function canAlienBulletsDamageTruck(){
   return false;
 }
 
+function tryStartSpawnMusic(){
+  initStartSpawnMusicAudio();
+  if(!startSpawnMusicAudio || startSpawnMusicPlaying || startSpawnMusicComplete) return;
+  startSpawnMusicAudio.play().then(()=>{
+    startSpawnMusicPlaying = true;
+    hudLine("🔊 <code>" + START_SPAWN_MUSIC_FILE + "</code> started at spawn.");
+  }).catch(()=>{});
+}
+
 function playStartSpawnMusicOnce(){
   if(startSpawnMusicTriggered) return;
   startSpawnMusicTriggered = true;
-  initStartSpawnMusicAudio();
-  if(!startSpawnMusicAudio) return;
-
-  const tryPlay = ()=>{
-    if(!startSpawnMusicAudio || startSpawnMusicPlaying) return;
-    startSpawnMusicAudio.play().then(()=>{
-      startSpawnMusicPlaying = true;
-      hudLine("🔊 <code>" + START_SPAWN_MUSIC_FILE + "</code> started at spawn.");
-    }).catch(()=>{});
-  };
-
-  tryPlay();
+  tryStartSpawnMusic();
 
   const retry = ()=>{
-    if(!startSpawnMusicPlaying) tryPlay();
+    if(!startSpawnMusicPlaying && !startSpawnMusicComplete) tryStartSpawnMusic();
   };
-  window.addEventListener("click", retry, { once:true });
-  window.addEventListener("touchstart", retry, { once:true });
-  window.addEventListener("keydown", retry, { once:true });
+  document.addEventListener("click", retry, { capture:true });
+  document.addEventListener("pointerdown", retry, { capture:true });
+  document.addEventListener("touchstart", retry, { capture:true, passive:true });
+  window.addEventListener("keydown", retry, { capture:true });
 }
 
 function initTruckAudio(){
@@ -12779,6 +12778,7 @@ function initTruckAudio(){
   // Browser safety: iOS needs this on the actual touch/pointer gesture,
   // not a later synthesized click that may be prevented by controls.
   const primeGameAudio = () => {
+    tryStartSpawnMusic();
     if(gameAudioPrimed) return;
     gameAudioPrimed = true;
     truckAudio.play().then(() => {
@@ -12868,10 +12868,10 @@ function initTruckAudio(){
   };
 
   window.primeTruckTrekAudio = primeGameAudio;
-  document.body.addEventListener("click", primeGameAudio, { once:true });
-  document.body.addEventListener("touchstart", primeGameAudio, { once:true, passive:true });
-  document.body.addEventListener("pointerdown", primeGameAudio, { once:true });
-  window.addEventListener("keydown", primeGameAudio, { once:true });
+  document.addEventListener("click", primeGameAudio, { capture:true });
+  document.addEventListener("touchstart", primeGameAudio, { capture:true, passive:true });
+  document.addEventListener("pointerdown", primeGameAudio, { capture:true });
+  window.addEventListener("keydown", primeGameAudio, { capture:true });
 }
 
 initTruckAudio();

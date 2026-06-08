@@ -81,11 +81,21 @@
     display: none !important;
   }
 
-  #scene.movie-only #aiTruck,
-  #scene.movie-only #playerTruck,
   #scene.movie-only #centerCube,
   #scene.movie-only .crash-zone {
     display: none !important;
+  }
+
+  #scene.movie-only #aiTruck,
+  #scene.movie-only #playerTruck {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    z-index: 20;
+  }
+
+  #scene.movie-only #playerTruck {
+    z-index: 21;
   }
 
   #scene.movie-only #video {
@@ -611,6 +621,7 @@
     document.body.classList.add("movie-only");
     scene.classList.add("movie-only");
     scene.classList.remove("camera-active", "prestart");
+    experienceStarted = true;
     video.controls = false;
     video.muted = true;
     video.loop = true;
@@ -624,6 +635,10 @@
     window.addEventListener("touchstart", playMovie, { once:true, passive:true });
     window.addEventListener("click", playMovie, { once:true });
     if (touchControlsHud) touchControlsHud.style.display = "flex";
+    resetPlayerTruckToStart();
+    applyAiPrestartPose();
+    keepRaceTrucksVisible();
+    requestAnimationFrame(updatePlayerTruck);
   }
 
   const truckState = {
@@ -902,9 +917,15 @@
     playerTruck.style.display = "block";
     playerTruck.style.visibility = "visible";
     playerTruck.style.opacity = "1";
+    playerTruck.style.zIndex = "21";
+    playerTruck.style.backfaceVisibility = "hidden";
+    playerTruck.style.webkitBackfaceVisibility = "hidden";
     aiTruck.style.display = "block";
     aiTruck.style.visibility = "visible";
     aiTruck.style.opacity = "1";
+    aiTruck.style.zIndex = "20";
+    aiTruck.style.backfaceVisibility = "hidden";
+    aiTruck.style.webkitBackfaceVisibility = "hidden";
   }
 
   function getRaceMovieDuration() {
@@ -939,10 +960,6 @@
   }
 
   function startExperience() {
-    if (MOVIE_ONLY_MODE) {
-      startMovieOnlyMode();
-      return;
-    }
     if (experienceStarted) return;
     vehicleChoiceLocked = true;
     experienceStarted = true;
@@ -1146,7 +1163,7 @@
     }
 
     updateTruckPerspectiveScale();
-    checkCrashZones();
+    if (!MOVIE_ONLY_MODE) checkCrashZones();
 
     playerTruck.style.left = `${truckState.x}px`;
     playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
@@ -1317,7 +1334,7 @@
     const blueVisualRect = playerTruck.getBoundingClientRect();
     const orangeVisualRect = aiTruck.getBoundingClientRect();
     updateCubeLeaderColor(blueVisualRect, orangeVisualRect);
-    checkTruckCollision(playerRect, aiRect);
+      if (!MOVIE_ONLY_MODE) checkTruckCollision(playerRect, aiRect);
     prevBlueX = truckState.x;
     prevOrangeX = aiState.x;
     lastMovieTime = movieTime;

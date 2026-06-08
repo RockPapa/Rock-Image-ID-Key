@@ -159,16 +159,17 @@
   .hud b{ font-weight:800; }
   .healthWrap{
     position:fixed; left:18px; top:18px; z-index:31;
-    width:220px; padding:10px 12px; border-radius:12px;
-    border:1px solid rgba(255,255,255,.24);
-    background:rgba(20,24,32,.78); color:#fff;
-    box-shadow:0 10px 24px rgba(0,0,0,.45);
-    font:700 12px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    width:240px; padding:10px 12px; border-radius:8px;
+    border:1px solid rgba(125,211,252,.42);
+    background:rgba(8,13,18,.80); color:#fff;
+    box-shadow:0 10px 24px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.05);
+    font:800 12px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
     user-select:none;
   }
-  .healthTop{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; letter-spacing:.03em; }
-  .healthTrack{ width:100%; height:12px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.18); }
-.healthFill{ width:100%; height:100%; background:linear-gradient(90deg, #22c55e 0%, #84cc16 100%); transition:width .18s ease; }
+  .healthTop{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; letter-spacing:.08em; }
+  .healthTop span:first-child{ color:#bae6fd; }
+  .healthTrack{ width:100%; height:14px; border-radius:4px; overflow:hidden; background:rgba(5,10,14,.86); border:1px solid rgba(148,163,184,.38); }
+.healthFill{ width:100%; height:100%; background:linear-gradient(90deg, #38bdf8 0%, #22c55e 58%, #facc15 100%); transition:width .18s ease; box-shadow:0 0 14px rgba(56,189,248,.48); }
 .alienObjective{
   display:none; /* show on spawn, hide on file-loading screen */
   animation: alienObjectivePulse 1.1s ease-in-out infinite;
@@ -690,9 +691,9 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   <button class="ipadGyroBtn" id="ipadGyroBtn" type="button" aria-label="Toggle gyro flight controls">GYRO</button>
 </div>
 
-<div class="healthWrap" id="healthWrap" aria-label="Points">
+<div class="healthWrap" id="healthWrap" aria-label="Loading">
   <div class="healthTop">
-    <span>POINTS</span>
+    <span>LOADING</span>
     <span id="healthValue">100%</span>
   </div>
   <div class="healthTrack">

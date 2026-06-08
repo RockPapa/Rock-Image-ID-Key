@@ -14699,15 +14699,27 @@ function getScreenOrientationAngleDeg(){
   return 0;
 }
 
+function getEffectiveGyroScreenAngleDeg(lockedAngleDeg = null){
+  const sourceAngle = Number.isFinite(lockedAngleDeg) ? lockedAngleDeg : getScreenOrientationAngleDeg();
+  let angle = (((sourceAngle % 360) + 360) % 360);
+  const angleLooksPortrait = angle === 0 || angle === 180;
+  const angleLooksLandscape = angle === 90 || angle === 270;
+  if(isLandscape() && !angleLooksLandscape){
+    angle = 90;
+  } else if(!isLandscape() && !angleLooksPortrait){
+    angle = 0;
+  }
+  return angle;
+}
+
 function getGyroAxesFromEvent(ev, lockedAngleDeg = null){
   const beta = Number(ev.beta) || 0;   // front/back tilt
   const gamma = Number(ev.gamma) || 0; // left/right tilt
-  const sourceAngle = Number.isFinite(lockedAngleDeg) ? lockedAngleDeg : getScreenOrientationAngleDeg();
-  const angle = (((sourceAngle % 360) + 360) % 360);
+  const angle = getEffectiveGyroScreenAngleDeg(lockedAngleDeg);
   if(angle === 90){
     return { pitchDeg: gamma, bankDeg: -beta };
   }
-  if(angle === 270 || angle === -90){
+  if(angle === 270){
     return { pitchDeg: -gamma, bankDeg: beta };
   }
   return { pitchDeg: beta, bankDeg: gamma };

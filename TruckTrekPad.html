@@ -756,7 +756,7 @@ const HEIGHTMAP_FILE = "height_map.png";
 const USE_TERRAIN = true;
 
 // Terrain
-const TERRAIN_SEGMENTS = 256;
+const TERRAIN_SEGMENTS = VISUAL_TERRAIN_SEGMENTS;
 const TERRAIN_HEIGHT   = 172.30752;
 const CLAMP_OUTSIDE_TERRAIN = true;
 
@@ -965,6 +965,9 @@ const FOG_FAR    = 14000;      // fade much farther away
 
 // World sizes
 const GROUND_SIZE = 6000;
+const VISUAL_GROUND_SIZE = IPAD_ZONE_ACTIVATION_ENABLE ? 1500 : GROUND_SIZE;
+const VISUAL_TERRAIN_SEGMENTS = IPAD_ZONE_ACTIVATION_ENABLE ? 96 : 256;
+const IPAD_TERRAIN_PATCH_RECENTER_DIST = VISUAL_GROUND_SIZE * 0.22;
 const SKY_RADIUS  = 9000;
 
 // STEP 4: Far mountain rings
@@ -9631,6 +9634,8 @@ let hmW = 0, hmH = 0;
 let hmData = null;
 let terrainMinY = 0;
 let terrainMaxY = TERRAIN_HEIGHT;
+let ipadTerrainPatchCenterX = 0;
+let ipadTerrainPatchCenterZ = 0;
 
 // ===== Tall grass height controller pixels (dg_disp.png) =====
 let dgW = 0, dgH = 0;
@@ -9719,10 +9724,58 @@ function heightAtWorldXZ(x, z){
   return h * TERRAIN_HEIGHT;
 }
 
+function updateVisibleTerrainPatch(centerX = 0, centerZ = 0){
+  if(!hmData || !ground || !ground.geometry) return;
+  if(IPAD_ZONE_ACTIVATION_ENABLE){
+    ground.position.x = centerX;
+    ground.position.z = centerZ;
+    ipadTerrainPatchCenterX = centerX;
+    ipadTerrainPatchCenterZ = centerZ;
+  }
+
+  const pos = ground.geometry.attributes.position;
+  const uv  = ground.geometry.attributes.uv;
+  let observedMin = Infinity;
+  let observedMax = -Infinity;
+
+  for (let i = 0; i < pos.count; i++){
+    let yWorld;
+    if(IPAD_ZONE_ACTIVATION_ENABLE){
+      yWorld = heightAtWorldXZ(pos.getX(i) + ground.position.x, pos.getZ(i) + ground.position.z);
+    } else {
+      const u = uv.getX(i);
+      const v = uv.getY(i);
+      const x = Math.floor(u * (hmW - 1));
+      const y = Math.floor((1 - v) * (hmH - 1));
+      const idx = (y * hmW + x) * 4;
+      const r = hmData[idx];
+      yWorld = (r / 255) * TERRAIN_HEIGHT;
+    }
+    pos.setY(i, yWorld);
+    if(yWorld < observedMin) observedMin = yWorld;
+    if(yWorld > observedMax) observedMax = yWorld;
+  }
+
+  pos.needsUpdate = true;
+  ground.geometry.computeVertexNormals();
+  terrainMinY = Number.isFinite(observedMin) ? observedMin : 0;
+  terrainMaxY = Number.isFinite(observedMax) ? observedMax : TERRAIN_HEIGHT;
+}
+
+function updateIpadTerrainPatchForPlayer(){
+  if(!IPAD_ZONE_ACTIVATION_ENABLE || !terrainReady) return;
+  const obj = controls && typeof controls.getObject === "function" ? controls.getObject() : null;
+  if(!obj || !obj.position) return;
+  const dx = obj.position.x - ipadTerrainPatchCenterX;
+  const dz = obj.position.z - ipadTerrainPatchCenterZ;
+  if((dx * dx) + (dz * dz) < (IPAD_TERRAIN_PATCH_RECENTER_DIST * IPAD_TERRAIN_PATCH_RECENTER_DIST)) return;
+  updateVisibleTerrainPatch(obj.position.x, obj.position.z);
+}
+
 /* =========================================================
    GROUND MESH (subdivided + displaced)
    ========================================================= */
-const groundGeo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+const groundGeo = new THREE.PlaneGeometry(VISUAL_GROUND_SIZE, VISUAL_GROUND_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
 groundGeo.rotateX(-Math.PI/2);
 
 const fallbackGrass = new THREE.MeshStandardMaterial({
@@ -10141,30 +10194,7 @@ async function applyHeightmapToGround(){
   ctx.drawImage(img, 0, 0);
   hmData = ctx.getImageData(0, 0, hmW, hmH).data;
 
-  const pos = ground.geometry.attributes.position;
-  const uv  = ground.geometry.attributes.uv;
-  let observedMin = Infinity;
-  let observedMax = -Infinity;
-
-  for (let i = 0; i < pos.count; i++){
-    const u = uv.getX(i);
-    const v = uv.getY(i);
-
-    const x = Math.floor(u * (hmW - 1));
-    const y = Math.floor((1 - v) * (hmH - 1));
-    const idx = (y * hmW + x) * 4;
-
-    const r = hmData[idx];
-    const yWorld = (r / 255) * TERRAIN_HEIGHT;
-    pos.setY(i, yWorld);
-    if(yWorld < observedMin) observedMin = yWorld;
-    if(yWorld > observedMax) observedMax = yWorld;
-  }
-
-  pos.needsUpdate = true;
-  ground.geometry.computeVertexNormals();
-  terrainMinY = Number.isFinite(observedMin) ? observedMin : 0;
-  terrainMaxY = Number.isFinite(observedMax) ? observedMax : TERRAIN_HEIGHT;
+  updateVisibleTerrainPatch(AVATRUCK_SPAWN_X, AVATRUCK_SPAWN_Z);
 
   terrainReady = true;
   hudLine(`✅ Terrain applied: <code>${HEIGHTMAP_FILE}</code> (${hmW}×${hmH}), segments=${TERRAIN_SEGMENTS}, height=${TERRAIN_HEIGHT}`);
@@ -14625,6 +14655,7 @@ function animate(){
   ensureGreenBrideChamber();
   ensureGreenFireRing();
   updateCaveDayNightAndHeadlight(dt);
+  updateIpadTerrainPatchForPlayer();
   updateGreenBrideChamber();
   updateGreenFireRing(dt);
 

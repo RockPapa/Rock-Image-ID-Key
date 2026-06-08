@@ -7385,7 +7385,7 @@ const TANK_MAX_COUNT = 4;
 const TANK_ATTACK_DURATION_SEC = 18.0;
 const TANK_PASSED_KILL_LENGTHS = 50.0;
 
-const FIREBALL_ENABLE = true;
+const FIREBALL_ENABLE = false;
 const FIREBALL_FILE = "fireball.png";
 const FIREBALL_SCALE = 3.4;
 const FIREBALL_MOVE_SPEED = 11.76; // +12% speed
@@ -7419,7 +7419,7 @@ let fireballSideSign = 1;
    - Billboard sprite that wanders around the player
    - Uses images/copter.png
    ========================================================= */
-const COPTER_ENABLE = true;
+const COPTER_ENABLE = false;
 const COPTER_FILE = "copter.png";
 const COPTER_SCALE = 3.848; // +30%
 const COPTER_ATTACK_ABOVE_TRUCK = 6.0; // maintain attack height above pickup/truck
@@ -8007,6 +8007,10 @@ function fireCopterShotgunFanBurst(){
 }
 
 function updateCopterShotBurst(dt){
+  if(!COPTER_ENABLE){
+    copterShotTimer = 0.0;
+    return;
+  }
   if(!copter) return;
 
   if(shouldStopPostClearCopterAttacks()){
@@ -8055,6 +8059,18 @@ function copterBallHitsTruck(prevPos, currPos){
 }
 
 function updateCopterRedBalls(dt){
+  if(!COPTER_ENABLE){
+    while(copterRedBalls.length){
+      const b = copterRedBalls.pop();
+      if(b && b.mesh){
+        if(b.mesh.parent === scene) scene.remove(b.mesh);
+        if(b.mesh.geometry) b.mesh.geometry.dispose();
+        if(b.mesh.material) b.mesh.material.dispose();
+      }
+    }
+    copterHitStreak = 0;
+    return;
+  }
   for(let i = copterRedBalls.length - 1; i >= 0; i--){
     const b = copterRedBalls[i];
     const prevPos = b.mesh.position.clone();
@@ -8957,6 +8973,7 @@ function resetCopterHeadOnApproach(){
 }
 
 function spawnCopter(){
+  return;
   if(!COPTER_ENABLE || copter) return;
 
   const tex = new THREE.TextureLoader().load(
@@ -8984,6 +9001,16 @@ function spawnCopter(){
 }
 
 function updateCopter(dt){
+  if(!COPTER_ENABLE){
+    if(copter){
+      if(copter.parent === scene) scene.remove(copter);
+      if(copter.geometry) copter.geometry.dispose();
+      if(copter.material) copter.material.dispose();
+      copter = null;
+    }
+    stopCopterPassSound();
+    return;
+  }
   if(!copter) return;
 
   if(shouldStopPostClearCopterAttacks()){
@@ -9363,7 +9390,18 @@ function destroyFireballAndScheduleNext(playerKilled){
 }
 
 function updateFireball(dt){
-  if(!FIREBALL_ENABLE) return;
+  if(!FIREBALL_ENABLE){
+    if(fireball){
+      scene.remove(fireball);
+      if(fireball.geometry) fireball.geometry.dispose();
+      if(fireball.material){
+        if(Array.isArray(fireball.material)) fireball.material.forEach((m)=>{ if(m && m.dispose) m.dispose(); });
+        else if(fireball.material.dispose) fireball.material.dispose();
+      }
+      fireball = null;
+    }
+    return;
+  }
   if(isPlayerInCombatSuppressedZone()){
     if(fireball){
       scene.remove(fireball);

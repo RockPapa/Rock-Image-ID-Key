@@ -6201,6 +6201,7 @@ function updatePuebloCenterFountainFlow(timeSec){
   ){
     speakFountainPlazaVoice();
     u.fountainVoicePlayedThisEntry = true;
+    placeFountainBecomeVehicleGoal();
   }
 
   const prevPulseBlend = Number.isFinite(u.pulseBlend) ? u.pulseBlend : 0.0;
@@ -10732,6 +10733,7 @@ let plazaExitVehicleChoicesGroup = null;
 const plazaExitVehicleChoices = [];
 const plazaExitVehicleTextures = new Map();
 let plazaExitChoicesSpawnedThisExit = false;
+let fountainBecomeVehicleSpawned = false;
 let cyberFrontVehicleMesh = null;
 let cyberFrontVehicleSpawned = false;
 let cyberUnlocked = false;
@@ -11483,6 +11485,70 @@ function placeLeggomanTruck2Goal(){
 
   leggomanGoalMesh.position.set(gx, gy, gz);
   leggomanGoalMesh.visible = true;
+}
+
+function switchToLeggomanForFountainVehicle(){
+  if(!truckPlane) return false;
+  const first = leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX] || leggomanTextures[0];
+  if(!first){
+    hudLine("⚠️ Boy frames still loading. Walk to the fountain vehicle after they finish.");
+    return false;
+  }
+
+  avatarMode = "leggoman";
+  stopVehicleAudio();
+  leggomanFrameIdx = 0;
+  leggomanFrameT = 0.0;
+  ensureLeggomanAvatarMaterial(first);
+  setTruckAvatarTexture(first);
+  truckPlane.scale.set(1.0, 1.0, 1.0);
+  return true;
+}
+
+function placeFountainBecomeVehicleGoal(){
+  if(fountainBecomeVehicleSpawned || !puebloTestCube) return;
+
+  const ft = WORLD_UNITS_PER_FOOT;
+  const centerX = puebloTestCube.position.x + (PUEBLO_PLAN_WALL_CENTER_X_FT * ft);
+  const centerZ = puebloTestCube.position.z + (PUEBLO_PLAN_WALL_CENTER_Z_FT * ft);
+  const half = PUEBLO_PLAN_WALL_HALF_SIDE_FT * ft;
+  const outsideOffset = Math.max(30.0 * ft, PLAZA_EXIT_VEHICLE_SPAWN_AHEAD_FT * 0.65 * ft);
+  const gx = centerX;
+  const gz = centerZ - half - outsideOffset;
+  const gy = heightAtWorldXZ(gx, gz) + (TRUCK_H * 0.6);
+  const goalFile = getNextTruckFile(currentVehicleFile);
+
+  if(!leggomanGoalTex || leggomanGoalTexFile !== goalFile){
+    leggomanGoalTexFile = goalFile;
+    leggomanGoalTex = new THREE.TextureLoader().load(resolveAssetUrl(TEX_DIR + goalFile + "?v=" + Date.now()));
+    leggomanGoalTex.colorSpace = THREE.SRGBColorSpace;
+    leggomanGoalTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    if(leggomanGoalMesh && leggomanGoalMesh.material){
+      leggomanGoalMesh.material.map = leggomanGoalTex;
+      leggomanGoalMesh.material.needsUpdate = true;
+    }
+  }
+
+  if(!leggomanGoalMesh){
+    const mat = new THREE.MeshBasicMaterial({
+      map: leggomanGoalTex,
+      transparent: true,
+      alphaTest: 0.5,
+      side: THREE.DoubleSide,
+      depthWrite: true
+    });
+    leggomanGoalMesh = new THREE.Mesh(new THREE.PlaneGeometry(TRUCK_W * 1.4 * LEGGOMAN_GOAL_SIZE_MULT, TRUCK_H * 1.4 * LEGGOMAN_GOAL_SIZE_MULT), mat);
+    leggomanGoalMesh.frustumCulled = false;
+    leggomanGoalMesh.renderOrder = 20;
+    scene.add(leggomanGoalMesh);
+  }
+
+  leggomanGoalMesh.position.set(gx, gy, gz);
+  leggomanGoalMesh.visible = true;
+  fountainBecomeVehicleSpawned = true;
+  plazaExitChoicesSpawnedThisExit = true;
+  switchToLeggomanForFountainVehicle();
+  hudLine("🚘 A vehicle is waiting outside the fountain plaza. Walk the boy into it to drive.");
 }
 
 function isLeggomanTouchingTruck2Goal(){
@@ -12682,9 +12748,20 @@ function initTruckAudio(){
   walkingAudio.loop = true;
   walkingAudio.volume = WALKING_SOUND_VOL;
 
-  // Browser safety: audio must start after a user gesture.
-  // We "prime" it once on first click so later play/pause works instantly.
-  document.body.addEventListener("click", () => {
+  let gameAudioPrimed = false;
+  const primeAudioElement = (audio)=>{
+    if(!audio) return;
+    audio.play().then(() => {
+      audio.pause();
+      audio.currentTime = 0;
+    }).catch(()=>{});
+  };
+
+  // Browser safety: iOS needs this on the actual touch/pointer gesture,
+  // not a later synthesized click that may be prevented by controls.
+  const primeGameAudio = () => {
+    if(gameAudioPrimed) return;
+    gameAudioPrimed = true;
     truckAudio.play().then(() => {
       truckAudio.pause();
       truckAudio.currentTime = 0;
@@ -12769,7 +12846,13 @@ function initTruckAudio(){
         tunnelReaperAudio.currentTime = 0;
       }).catch(()=>{});
     }
-  }, { once:true });
+  };
+
+  window.primeTruckTrekAudio = primeGameAudio;
+  document.body.addEventListener("click", primeGameAudio, { once:true });
+  document.body.addEventListener("touchstart", primeGameAudio, { once:true, passive:true });
+  document.body.addEventListener("pointerdown", primeGameAudio, { once:true });
+  window.addEventListener("keydown", primeGameAudio, { once:true });
 }
 
 initTruckAudio();
@@ -13077,9 +13160,13 @@ function vKey(code, down){
   else keys.delete(code);
 }
 
+function unlockGameAudioFromGesture(){
+  if(typeof window.primeTruckTrekAudio === "function") window.primeTruckTrekAudio();
+}
+
 function bindHold(btn, code){
   if (!btn) return;
-  const press = (ev)=>{ if(ev) ev.preventDefault(); if(!touchOn || !isLandscape()) return; vKey(code, true); };
+  const press = (ev)=>{ if(ev) ev.preventDefault(); unlockGameAudioFromGesture(); if(!touchOn || !isLandscape()) return; vKey(code, true); };
   const release = (ev)=>{ if(ev) ev.preventDefault(); vKey(code, false); };
 
   btn.addEventListener("touchstart", press, {passive:false});
@@ -13102,6 +13189,7 @@ if(btnFire){
       ev.preventDefault();
       ev.stopPropagation();
     }
+    unlockGameAudioFromGesture();
     if(!touchOn || !isLandscape()) return;
     vKey("Space", true);
     fireHeld = true;
@@ -13135,6 +13223,7 @@ if(btnVehicleJ){
       ev.preventDefault();
       ev.stopPropagation();
     }
+    unlockGameAudioFromGesture();
     if(!touchOn || !isLandscape()) return;
     const now = performance.now();
     if(now - lastVehicleJTapMs < 220) return;
@@ -13218,6 +13307,7 @@ if(joyWrap){
   const start = (ev)=>{
     if(!touchOn || !isLandscape()) return;
     if(ev.pointerId != null && ev.pointerType && ev.pointerType !== "touch" && ev.pointerType !== "pen") return;
+    unlockGameAudioFromGesture();
     joyActive = true;
     if(ev.pointerId != null) joyPointerId = ev.pointerId;
     const t = (ev.changedTouches && ev.changedTouches[0])
@@ -13267,6 +13357,7 @@ if(joyWrap){
 
 resetJoystick();
 addEventListener("keydown", (e)=>{
+  unlockGameAudioFromGesture();
   keys.add(e.code);
   const copterActiveVehicle = (avatarMode !== "leggoman") && (currentVehicleFile === GODDESS_COPTER_MARKER_FILE);
   if(e.code === "KeyL" && !e.repeat && !copterActiveVehicle){

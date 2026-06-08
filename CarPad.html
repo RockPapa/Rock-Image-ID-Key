@@ -31,7 +31,7 @@
     /* Player car (color chosen at start) */
     #car {
       position: absolute;
-      width: 84px;    /* starting width; slider will change it */
+      width: 55px;    /* starting width; slider will change it */
       height: auto;
       transform-origin: 50% 50%;
       z-index: 2;
@@ -44,7 +44,7 @@
     #npcCar4,
     #npcCar5 {
       position: absolute;
-      width: 84px;
+      width: 55px;
       height: auto;
       transform-origin: 50% 50%;
       z-index: 2;
@@ -197,7 +197,7 @@
   <!-- Player car (color set after selection) -->
   <img id="car" src="images/car.png" alt="car">
 
-  <!-- Five random-moving blue cars -->
+  <!-- Random-moving blue cars -->
   <img id="npcCar1" src="images/blue_car.png" alt="blue car 1">
   <img id="npcCar2" src="images/blue_car.png" alt="blue car 2">
   <img id="npcCar3" src="images/blue_car.png" alt="blue car 3">
@@ -207,10 +207,13 @@
   <!-- UI sliders + hide-buttons toggle -->
   <div id="ui">
     <div>Car Speed: <span id="speedValue"></span></div>
-    <input type="range" id="speedSlider" min="60" max="360" value="180">
+    <input type="range" id="speedSlider" min="60" max="360" value="104">
 
     <div style="margin-top:8px;">Car Size: <span id="sizeValue"></span> px</div>
-    <input type="range" id="sizeSlider" min="50" max="150" value="84">
+    <input type="range" id="sizeSlider" min="50" max="150" value="55">
+
+    <div style="margin-top:8px;">Random Rovers: <span id="roverCountValue"></span></div>
+    <input type="range" id="roverCountSlider" min="3" max="5" step="1" value="3">
 
     <button id="toggleButtons">Hide Controls</button>
   </div>
@@ -250,6 +253,8 @@
   const speedValue  = document.getElementById("speedValue");
   const sizeSlider  = document.getElementById("sizeSlider");
   const sizeValue   = document.getElementById("sizeValue");
+  const roverCountSlider = document.getElementById("roverCountSlider");
+  const roverCountValue  = document.getElementById("roverCountValue");
   const colorMenu   = document.getElementById("colorMenu");
   const toggleButtons = document.getElementById("toggleButtons");
   const touchControls = document.getElementById("touchControls");
@@ -264,7 +269,7 @@
   let carWorldX = 0;
   let carWorldY = 0;
 
-  // NPC state (5 blue cars)
+  // NPC state (3-5 blue cars)
   const npcs = [
     { img: npcCar1, x: 0, y: 0, angle:   0, speed: 120, turnTimer: 0 },
     { img: npcCar2, x: 0, y: 0, angle: 180, speed: 120, turnTimer: 0 },
@@ -272,6 +277,7 @@
     { img: npcCar4, x: 0, y: 0, angle:  40, speed: 120, turnTimer: 0 },
     { img: npcCar5, x: 0, y: 0, angle: 230, speed: 120, turnTimer: 0 }
   ];
+  let activeRoverCount = 3;
 
   // Camera
   let camX = 0;
@@ -281,14 +287,15 @@
   let carAngle = 0;
 
   const rotationSpeed = 160;
-  let driveSpeed = 180;
+  let driveSpeed = 104;
 
   // Car sizes (updated by slider)
-  let carWidth  = 84;
+  let carWidth  = 55;
   let carHeight = 36;
 
-  let npcWidth  = 84;
+  let npcWidth  = 55;
   let npcHeight = 36;
+  const COLLISION_ZONE_SCALE = 0.85;
 
   // Controls
   let leftPressed = false;
@@ -346,6 +353,18 @@
     speedValue.textContent = driveSpeed.toString();
   }
 
+  function activeNpcs() {
+    return npcs.slice(0, activeRoverCount);
+  }
+
+  function updateRoverCountFromSlider() {
+    activeRoverCount = Math.max(3, Math.min(5, parseInt(roverCountSlider.value, 10) || 3));
+    roverCountValue.textContent = activeRoverCount.toString();
+    npcs.forEach((npc, index) => {
+      npc.img.style.display = index < activeRoverCount ? "block" : "none";
+    });
+  }
+
   function updateCarSizeFromSlider() {
     // Player
     carWidth = parseInt(sizeSlider.value, 10);
@@ -369,8 +388,10 @@
 
   speedSlider.addEventListener("input", updateSpeedFromSlider);
   sizeSlider.addEventListener("input", updateCarSizeFromSlider);
+  roverCountSlider.addEventListener("input", updateRoverCountFromSlider);
 
   updateSpeedFromSlider();
+  updateRoverCountFromSlider();
   updateCarSizeFromSlider();
 
   // ---- Engine / controls ----
@@ -392,8 +413,8 @@
   // ---- Bounds helpers ----
 
   function carBounds() {
-    const halfW = carWidth / 2;
-    const halfH = carHeight / 2;
+    const halfW = (carWidth * COLLISION_ZONE_SCALE) / 2;
+    const halfH = (carHeight * COLLISION_ZONE_SCALE) / 2;
     return {
       left:   carWorldX - halfW,
       right:  carWorldX + halfW,
@@ -403,8 +424,8 @@
   }
 
   function npcBounds(npc) {
-    const halfW = npcWidth / 2;
-    const halfH = npcHeight / 2;
+    const halfW = (npcWidth * COLLISION_ZONE_SCALE) / 2;
+    const halfH = (npcHeight * COLLISION_ZONE_SCALE) / 2;
     return {
       left:   npc.x - halfW,
       right:  npc.x + halfW,
@@ -426,7 +447,7 @@
 
   function carHitsNpcCars() {
     const b = carBounds();
-    for (const npc of npcs) {
+    for (const npc of activeNpcs()) {
       const nb = npcBounds(npc);
       const noOverlap =
         b.right  < nb.left  ||
@@ -553,7 +574,7 @@
   function updateNpcs(dt) {
     const padding = 40;
 
-    for (const npc of npcs) {
+    for (const npc of activeNpcs()) {
       npc.turnTimer -= dt;
       if (npc.turnTimer <= 0) {
         const turn = (Math.random() - 0.5) * 120;
@@ -617,7 +638,7 @@
       const sy = worldH / oldH;
       carWorldX *= sx;
       carWorldY *= sy;
-      npcs.forEach(npc => {
+      activeNpcs().forEach(npc => {
         npc.x *= sx;
         npc.y *= sy;
       });
@@ -646,7 +667,7 @@
     car.style.transform = `rotate(${carAngle}deg)`;
 
     // NPCs
-    for (const npc of npcs) {
+    for (const npc of activeNpcs()) {
       const npcDrawX = npc.x - camX - npcWidth / 2;
       const npcDrawY = npc.y - camY - npcHeight / 2;
       npc.img.style.left = npcDrawX + "px";
@@ -710,7 +731,6 @@
     npcs[2].x = worldW / 2 + 100;
     npcs[2].y = worldH / 2 + 250;
 
-    // Two more roaming cars with dispersed starts
     npcs[3].x = worldW * 0.25;
     npcs[3].y = worldH * 0.28;
 

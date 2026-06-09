@@ -488,7 +488,7 @@
 </style>
 </head>
 <body>
-<div id="scene" class="movie-only">
+<div id="scene" class="prestart">
   <video
     id="video"
     src="images/road.mp4"
@@ -571,7 +571,7 @@
   const touchControlsHud = document.getElementById("touchControlsHud");
   const joystickBase = document.getElementById("joystickBase");
   const joystickThumb = document.getElementById("joystickThumb");
-  const MOVIE_ONLY_MODE = true;
+  const MOVIE_ONLY_MODE = false;
   const isTouchRaceDevice = (
     "ontouchstart" in window ||
     navigator.maxTouchPoints > 0 ||
@@ -963,6 +963,8 @@
     if (experienceStarted) return;
     vehicleChoiceLocked = true;
     experienceStarted = true;
+    document.body.classList.remove("movie-only");
+    scene.classList.remove("movie-only");
     scene.classList.remove("prestart");
     playerTruck.src = selectedBlueTruckSrc;
     aiTruck.src = "images/orange_truck.png";

@@ -72,15 +72,15 @@
 .alienObjectiveCounts{ opacity:.95; }
 .alienObjectiveCounts b{ color:#aee8ff; }
 .alienObjective.destination{
-  min-width:640px;
-  padding:20px 24px;
+  min-width:544px;
+  padding:17px 20px;
   border-color:rgba(255,40,40,.78);
   background:rgba(42,12,14,.86);
   animation: alienObjectiveRedFlash .72s steps(2, end) infinite;
 }
 .alienObjective.destination .alienObjectiveTitle{
   color:#ff2323;
-  font-size:24px;
+  font-size:20px;
   line-height:1.15;
   margin-bottom:0;
   text-shadow:0 0 12px rgba(255,0,0,.9), 0 2px 0 rgba(0,0,0,.55);
@@ -112,10 +112,10 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
   }
   .alienObjective.destination{
     min-width:0;
-    padding:18px 20px;
+    padding:15px 17px;
   }
   .alienObjective.destination .alienObjectiveTitle{
-    font-size:24px;
+    font-size:20px;
   }
 }
 
@@ -11897,10 +11897,7 @@ function initTruckAvatar
 function updateTruckAvatar(dt=0.016){
   if(!truckPlane) return;
 
-  const upHeld = keys.has("ArrowUp") || keys.has("KeyW");
-  const leftHeld = keys.has("ArrowLeft") || keys.has("KeyA");
-  const rightHeld = keys.has("ArrowRight") || keys.has("KeyD");
-  const backViewScaleMult = (upHeld && !leftHeld && !rightHeld) ? VEHICLE_BACK_VIEW_SCALE_MULT : 1.0;
+  const vehicleDirectionalScaleMult = VEHICLE_BACK_VIEW_SCALE_MULT;
 
   if(avatarMode === "leggoman"){
     if(LEGGOMAN_USE_IDLE_STAND_FILE) ensureLeggomanIdleStandTexture();
@@ -11944,7 +11941,7 @@ function updateTruckAvatar(dt=0.016){
     truckPlane.scale.set((mirrorX ? -1 : 1) * LEGGOMAN_WIDTH_SCALE, LEGGOMAN_HEIGHT_SCALE, 1.0);
   } else if(avatarMode === "pickup" && truckTex){
 
-    const pickupScale = ((currentVehicleFile === BIG_TRUCK_BASE_FILE) ? BIG_TRUCK_SCALE_MULT : 1.0) * VEHICLE_TRIPLET_SCALE_MULT * backViewScaleMult;
+    const pickupScale = ((currentVehicleFile === BIG_TRUCK_BASE_FILE) ? BIG_TRUCK_SCALE_MULT : 1.0) * VEHICLE_TRIPLET_SCALE_MULT * vehicleDirectionalScaleMult;
     truckPlane.scale.set(pickupScale, pickupScale, 1.0);
     const directionalTex = getDirectionalVehicleTextureForCurrent();
     const desiredTex = directionalTex || truckTex;
@@ -11957,7 +11954,7 @@ function updateTruckAvatar(dt=0.016){
     const copterScale = (currentVehicleFile === GODDESS_COPTER_MARKER_FILE) ? COPTER_ACTIVE_SCALE_MULT : 1.0;
     const baseScale = Math.max(truck3Scale, copterScale);
     const vehicleScale = (currentVehicleFile === BIG_TRUCK_BASE_FILE) ? BIG_TRUCK_SCALE_MULT : 1.0;
-    const activeScale = (baseScale * vehicleScale) * VEHICLE_TRIPLET_SCALE_MULT * backViewScaleMult;
+    const activeScale = (baseScale * vehicleScale) * VEHICLE_TRIPLET_SCALE_MULT * vehicleDirectionalScaleMult;
     const copterHeightScale = (currentVehicleFile === GODDESS_COPTER_MARKER_FILE) ? 0.7744 : 1.0;
     truckPlane.scale.set(activeScale, activeScale * copterHeightScale, 1.0);
     const directionalTex = getDirectionalVehicleTextureForCurrent();

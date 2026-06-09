@@ -11598,6 +11598,21 @@ function placeLeggomanTruck2Goal(){
   leggomanGoalMesh.visible = true;
 }
 
+function setLeggomanGoalVehicleFile(file){
+  if(!file) return false;
+  if(!leggomanGoalTex || leggomanGoalTexFile !== file){
+    leggomanGoalTexFile = file;
+    leggomanGoalTex = new THREE.TextureLoader().load(resolveAssetUrl(TEX_DIR + file + "?v=" + Date.now()));
+    leggomanGoalTex.colorSpace = THREE.SRGBColorSpace;
+    leggomanGoalTex.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    if(leggomanGoalMesh && leggomanGoalMesh.material){
+      leggomanGoalMesh.material.map = leggomanGoalTex;
+      leggomanGoalMesh.material.needsUpdate = true;
+    }
+  }
+  return true;
+}
+
 function switchToLeggomanForFountainVehicle(){
   if(!truckPlane) return false;
   const first = leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX] || leggomanTextures[0];
@@ -11706,6 +11721,12 @@ function switchToTruck2Avatar(){
   return true;
 }
 
+function switchLeggomanDirectlyToNextTruck(){
+  const nextFile = getNextTruckFile(currentVehicleFile);
+  if(!setLeggomanGoalVehicleFile(nextFile)) return false;
+  return switchToTruck2Avatar();
+}
+
 function detachBurningTruckAndSwitchToLeggoman(){
   if(!truckPlane) return false;
   const first = leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX] || leggomanTextures[0];
@@ -11775,8 +11796,7 @@ function toggleAvatarMode(){
   }
 
   if(avatarMode === "leggoman"){
-    if(!leggomanGoalTex) placeLeggomanTruck2Goal();
-    hudLine("🧱 Walk the boy into the truck sprite to enter it.");
+    switchLeggomanDirectlyToNextTruck();
     return;
   }
 }
@@ -13298,6 +13318,42 @@ function bindHold(btn, code){
   btn.addEventListener("contextmenu", (e)=>e.preventDefault());
 }
 
+function isActiveCopterVehicle(){
+  return avatarMode !== "leggoman" && currentVehicleFile === GODDESS_COPTER_MARKER_FILE;
+}
+
+function bindAuxVerticalButton(btn, groundCode, copterCode){
+  if (!btn) return;
+  const press = (ev)=>{
+    if(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    unlockGameAudioFromGesture();
+    if(!touchOn || !isLandscape()) return;
+    vKey(isActiveCopterVehicle() ? copterCode : groundCode, true);
+  };
+  const release = (ev)=>{
+    if(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    vKey(groundCode, false);
+    vKey(copterCode, false);
+  };
+
+  btn.addEventListener("touchstart", press, {passive:false});
+  btn.addEventListener("touchend", release, {passive:false});
+  btn.addEventListener("touchcancel", release, {passive:false});
+
+  btn.addEventListener("pointerdown", press);
+  btn.addEventListener("pointerup", release);
+  btn.addEventListener("pointercancel", release);
+  btn.addEventListener("pointerleave", release);
+
+  btn.addEventListener("contextmenu", (e)=>e.preventDefault());
+}
+
 // Left-side buttons
 const btnFire = document.getElementById("btnFire");
 if(btnFire){
@@ -13329,8 +13385,8 @@ if(btnFire){
   btnFire.addEventListener("pointerleave", releaseFire);
   btnFire.addEventListener("contextmenu", (e)=>e.preventDefault());
 }
-bindHold(document.getElementById("btnAuxUp"), "KeyW");
-bindHold(document.getElementById("btnAuxDown"), "KeyS");
+bindAuxVerticalButton(document.getElementById("btnAuxUp"), "KeyW", "KeyR");
+bindAuxVerticalButton(document.getElementById("btnAuxDown"), "KeyS", "KeyF");
 
 const btnVehicleJ = document.getElementById("btnVehicleJ");
 if(btnVehicleJ){

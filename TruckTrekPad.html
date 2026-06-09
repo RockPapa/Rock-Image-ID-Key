@@ -52,9 +52,35 @@
 }
 .alienObjectiveCounts{ opacity:.95; }
 .alienObjectiveCounts b{ color:#aee8ff; }
+.alienObjective.destination{
+  min-width:640px;
+  padding:20px 24px;
+  border-color:rgba(255,40,40,.78);
+  background:rgba(42,12,14,.86);
+  animation: alienObjectiveRedFlash .72s steps(2, end) infinite;
+}
+.alienObjective.destination .alienObjectiveTitle{
+  color:#ff2323;
+  font-size:24px;
+  line-height:1.15;
+  margin-bottom:0;
+  text-shadow:0 0 12px rgba(255,0,0,.9), 0 2px 0 rgba(0,0,0,.55);
+}
 @keyframes alienObjectivePulse{
   0%,100% { transform: scale(1); box-shadow: 0 10px 24px rgba(0,0,0,.45); }
   50% { transform: scale(1.02); box-shadow: 0 12px 30px rgba(255,237,138,.35); }
+}
+@keyframes alienObjectiveRedFlash{
+  0%,100% {
+    color:#ff2323;
+    box-shadow:0 0 0 2px rgba(255,35,35,.55), 0 12px 32px rgba(255,0,0,.45);
+    opacity:1;
+  }
+  50% {
+    color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.65), 0 14px 40px rgba(255,0,0,.8);
+    opacity:.72;
+  }
 }
 code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 @media (max-width: 900px){
@@ -64,6 +90,13 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
     min-width:0;
     width:calc(100vw - 36px);
     max-width:460px;
+  }
+  .alienObjective.destination{
+    min-width:0;
+    padding:18px 20px;
+  }
+  .alienObjective.destination .alienObjectiveTitle{
+    font-size:24px;
   }
 }
 
@@ -576,7 +609,7 @@ const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE = "voice1.m4a";
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE_VOL = 1.0;
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE_GAIN = 10.0; // +150% from prior 4.0x setting
 const PUEBLO_GUIDE_VOICE_TEXT = "Look to the minimap for your next destination. Now go, live long and prosper on your journey.";
-const PUEBLO_GUIDE_VOICE_FILE = "voice2.m4a";
+const PUEBLO_GUIDE_VOICE_FILE = "chosen_well.mp3";
 const PUEBLO_GUIDE_VOICE_FILE_VOL = 1.0;
 const PUEBLO_GUIDE_VOICE_FILE_GAIN = 15.0; // +100% from prior 7.5x setting
 const TO_BLUE_SQUARE_AUDIO_FILE = "to_blue_square.m4a";
@@ -1294,10 +1327,14 @@ function setAlienObjectiveMode(mode){
     ? "destination_blue"
     : mode;
   alienObjectiveMode = normalizedMode;
+  const isDestinationMode = normalizedMode === "destination_orange" || normalizedMode === "destination_green" || normalizedMode === "destination_blue";
+  if(alienObjectiveWrap){
+    alienObjectiveWrap.classList.toggle("destination", isDestinationMode);
+  }
 
   if(alienObjectiveTitleEl){
     alienObjectiveTitleEl.textContent = normalizedMode === "destination_orange"
-      ? "GO TO THE ORANGE SQUAR ON THE MINIMAP"
+      ? "GO TO THE ORANGE SQUARE ON THE MINIMAP"
       : normalizedMode === "destination_green"
         ? "GO TO THE GREEN SQUARE ON THE MINIMAP"
         : normalizedMode === "destination_blue"

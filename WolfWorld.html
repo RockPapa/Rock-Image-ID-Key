@@ -131,62 +131,64 @@
     cursor: pointer;
   }
 
-  #touchControls{
+  #thumbJoystick{
     position: fixed;
-    left: 0; right: 0; bottom: 0;
+    right: 22px;
+    bottom: 22px;
     z-index: 9998;
-    padding: 14px;
-    display: none;          /* controlled by toggle */
-    pointer-events: none;   /* buttons enable pointer */
+    width: 184px;
+    height: 184px;
+    display: none;
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
-
-  .tcRow{
-    display:flex;
-    justify-content:space-between;
-    align-items:flex-end;
-    gap:14px;
+  #thumbJoystick .joyBase{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    border:2px solid rgba(255,255,255,.28);
+    background:rgba(0,0,0,.42);
+    box-shadow:0 12px 28px rgba(0,0,0,.50), inset 0 0 28px rgba(255,255,255,.08);
+  }
+  #thumbJoystick .joyStick{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:74px;
+    height:74px;
+    border-radius:50%;
+    transform:translate(-50%, -50%);
+    border:1px solid rgba(255,255,255,.36);
+    background:rgba(240,248,255,.28);
+    box-shadow:0 8px 18px rgba(0,0,0,.42);
     pointer-events:none;
   }
-
-  .tcArrowCol{
-    display:flex;
-    flex-direction:column;
-    gap:12px;
-    pointer-events:none;
+  #fireButton{
+    position: fixed;
+    left: 24px;
+    bottom: 34px;
+    z-index: 9998;
+    width: 132px;
+    height: 92px;
+    display: none;
+    border: 2px solid rgba(255,255,255,.28);
+    border-radius: 18px;
+    background: rgba(120,18,12,.58);
+    color: rgba(255,255,255,.96);
+    font: 900 22px/1 system-ui, -apple-system, Segoe UI, Roboto;
+    letter-spacing: .05em;
+    box-shadow: 0 12px 28px rgba(0,0,0,.50), inset 0 0 24px rgba(255,255,255,.08);
+    touch-action: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
   }
-
-  .tcArrowCol.leftArrows{
-    align-items:flex-start;
+  #fireButton:active{
+    background: rgba(210,45,24,.72);
+    transform: translateY(1px);
   }
-
-  .tcArrowCol.rightArrows{
-    align-items:flex-end;
-  }
-
-  .tcBtn{
-    width:100%;
-    height:100%;
-    border-radius:16px;
-    border:0;
-    background:rgba(0,0,0,0.45);
-    color:rgba(255,255,255,0.95);
-    font:18px system-ui, -apple-system, Segoe UI, Roboto;
-    pointer-events:auto;
-    touch-action:none;
-    user-select:none;
-  }
-  .tcBtn:active{ background:rgba(255,255,255,0.20); }
-  .tcSmall{ font-size:14px; }
-  .tcArrowBtn{
-    width:104px;
-    height:82px;
-    font:800 34px/1 system-ui, -apple-system, Segoe UI, Roboto;
-  }
-  .tcShootBtn{
-    width:104px;
-    height:64px;
-    font:800 15px/1 system-ui, -apple-system, Segoe UI, Roboto;
-  }
+  #thumbJoystick.on{ display:block; }
+  #fireButton.on{ display:block; }
 
 </style>
 </head>
@@ -245,52 +247,47 @@ addEventListener("keydown", e=>{
 addEventListener("keyup", e=>{
   if(e.code.startsWith("Arrow")) e.preventDefault();
   if(e.code === "Space"){ e.preventDefault(); keys.delete("Space"); return; }
+  if(typeof joyKeys !== "undefined" && joyKeys[e.code]) return;
   keys.delete(e.code.startsWith("Arrow") ? e.code : e.key);
 },{passive:false});
 
 /* =========================================================
    📱 TOUCH CONTROLS + TOGGLE (iPad)
 ========================================================= */
-const TOUCH_STORE_KEY = "wolfgrove_touch_controls";
-
 const touchToggle = document.getElementById("touchToggle");
-const touchControls = document.getElementById("touchControls");
+const thumbJoystick = document.getElementById("thumbJoystick");
+const joyStick = document.getElementById("joyStick");
+const fireButton = document.getElementById("fireButton");
+const joyKeys = { ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false };
+let joyPointerId = null;
 
 function clearVirtualArrowKeys(){
   keys.delete("ArrowUp");
   keys.delete("ArrowDown");
   keys.delete("ArrowLeft");
   keys.delete("ArrowRight");
+  joyKeys.ArrowUp = false;
+  joyKeys.ArrowDown = false;
+  joyKeys.ArrowLeft = false;
+  joyKeys.ArrowRight = false;
 }
 
-function isCoarsePointer(){
-  return (window.matchMedia && matchMedia("(pointer: coarse)").matches) ||
-         ("ontouchstart" in window) ||
-         (navigator.maxTouchPoints > 0);
-}
-function loadTouchEnabled(){
-  const saved = localStorage.getItem(TOUCH_STORE_KEY);
-  if(saved === "on")  return true;
-  if(saved === "off") return false;
-  // default ON (so you can see/test on desktop too)
-  return true;
-}
-let touchEnabled = loadTouchEnabled();
+let touchEnabled = false;
 let virtualForwardHeld = false;
-const TOUCH_FORWARD_SPEED_MULT = 1.12;
+const TOUCH_FORWARD_SPEED_MULT = 0.80;
+const TOUCH_TURN_SPEED_MULT = 0.55;
 
 function applyTouchUI(){
-  if(!touchToggle || !touchControls) return;
-  touchControls.style.display = touchEnabled ? "block" : "none";
-  touchToggle.textContent = touchEnabled ? "📱 Controls: ON" : "📱 Controls: OFF";
+  if(touchToggle) touchToggle.textContent = touchEnabled ? "📱 Controls: ON" : "📱 Controls: OFF";
+  if(thumbJoystick) thumbJoystick.classList.toggle("on", touchEnabled);
+  if(fireButton) fireButton.classList.toggle("on", touchEnabled);
 }
 function setTouchEnabled(v){
   touchEnabled = !!v;
-  localStorage.setItem(TOUCH_STORE_KEY, touchEnabled ? "on" : "off");
 
   // release held virtual keys when turning off
   if(!touchEnabled){
-    clearVirtualArrowKeys();
+    resetJoystick();
     keys.delete("Space");
     virtualForwardHeld = false;
   }
@@ -302,7 +299,6 @@ if(touchToggle){
 }
 applyTouchUI();
 
-// helper: SPACE edge trigger (matches Luke3's real keyboard behavior)
 function virtualSpaceTap(){
   if(!touchEnabled) return;
   if(!keys.has("Space")) spacePressedEdge = true;
@@ -312,59 +308,82 @@ function virtualSpaceTap(){
   c.focus();
 }
 
-function virtualDispatchKey(k){
-  // triggers the existing keydown handlers
-  try{
-    window.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles:true }));
-    window.dispatchEvent(new KeyboardEvent("keyup",   { key: k, bubbles:true }));
-  }catch(e){}
+function setJoyKey(code, down){
+  if(joyKeys[code] === down) return;
+  joyKeys[code] = down;
+  if(down) keys.add(code);
+  else keys.delete(code);
+  if(code === "ArrowUp") virtualForwardHeld = down;
 }
 
-function bindHold(btn, code){
-  const down = (e) => {
+function resetJoystick(){
+  setJoyKey("ArrowUp", false);
+  setJoyKey("ArrowDown", false);
+  setJoyKey("ArrowLeft", false);
+  setJoyKey("ArrowRight", false);
+  if(joyStick) joyStick.style.transform = "translate(-50%, -50%)";
+  joyPointerId = null;
+}
+
+function updateJoystickFromPoint(clientX, clientY){
+  if(!thumbJoystick) return;
+  const rect = thumbJoystick.getBoundingClientRect();
+  const cx = rect.left + rect.width * 0.5;
+  const cy = rect.top + rect.height * 0.5;
+  const max = rect.width * 0.33;
+  let dx = clientX - cx;
+  let dy = clientY - cy;
+  const len = Math.hypot(dx, dy);
+  if(len > max){
+    dx = (dx / len) * max;
+    dy = (dy / len) * max;
+  }
+  if(joyStick) joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+  const dead = rect.width * 0.144;
+  setJoyKey("ArrowLeft", dx < -dead);
+  setJoyKey("ArrowRight", dx > dead);
+  setJoyKey("ArrowUp", dy < -dead);
+  setJoyKey("ArrowDown", dy > dead);
+}
+
+if(thumbJoystick){
+  thumbJoystick.addEventListener("pointerdown", (e)=>{
     if(!touchEnabled) return;
     e.preventDefault();
     unlockAudioOnce();
-    keys.add(code);
-    if(code === "ArrowUp") virtualForwardHeld = true;
     c.focus();
-  };
-  const up = (e) => {
+    joyPointerId = e.pointerId;
+    thumbJoystick.setPointerCapture && thumbJoystick.setPointerCapture(e.pointerId);
+    updateJoystickFromPoint(e.clientX, e.clientY);
+  }, { passive:false });
+  thumbJoystick.addEventListener("pointermove", (e)=>{
+    if(joyPointerId !== e.pointerId) return;
     e.preventDefault();
-    if(code === "ArrowUp") virtualForwardHeld = false;
-    keys.delete(code);
-  };
-  btn.addEventListener("pointerdown", down, {passive:false});
-  btn.addEventListener("pointerup", up, {passive:false});
-  btn.addEventListener("pointercancel", up, {passive:false});
-  btn.addEventListener("pointerleave", up, {passive:false});
+    updateJoystickFromPoint(e.clientX, e.clientY);
+  }, { passive:false });
+  thumbJoystick.addEventListener("pointerup", resetJoystick);
+  thumbJoystick.addEventListener("pointercancel", resetJoystick);
+  thumbJoystick.addEventListener("pointerleave", (e)=>{
+    if(joyPointerId === e.pointerId) resetJoystick();
+  });
 }
 
-function bindTap(btn, code){
-  btn.addEventListener("pointerdown", (e) => {
+if(fireButton){
+  fireButton.addEventListener("pointerdown", (e)=>{
     if(!touchEnabled) return;
     e.preventDefault();
     unlockAudioOnce();
     c.focus();
-
-    if(code === "Space") virtualSpaceTap();
-    else if(code === "KeyR") location.reload();
-    else if(code === "KeyK") virtualDispatchKey("k");
-    else if(code === "KeyP") virtualDispatchKey("p");
-  }, {passive:false});
+    virtualSpaceTap();
+  }, { passive:false });
 }
-
-document.querySelectorAll(".tcBtn").forEach(btn => {
-  const hold = btn.getAttribute("data-hold");
-  const tap  = btn.getAttribute("data-tap");
-  if(hold) bindHold(btn, hold);
-  if(tap)  bindTap(btn, tap);
-});
 
 // anti-stuck keys (same spirit as Luke2)
 function clearKeys(){
   keys.clear();
   virtualForwardHeld = false;
+  if(typeof resetJoystick === "function") resetJoystick();
 }
 addEventListener("blur", clearKeys);
 addEventListener("pagehide", clearKeys);
@@ -1567,7 +1586,7 @@ function checkHutCollision(){
 
 
 
-const TREE_COUNT = 5000, TREE_MIN_X=-100, TREE_MAX_X=100, TREE_MIN_Y=-100, TREE_MAX_Y=100;
+const TREE_COUNT = 3750, TREE_MIN_X=-100, TREE_MAX_X=100, TREE_MIN_Y=-100, TREE_MAX_Y=100;
 const TREE_SPRITE_SCALE = 2.6, TREE_TRUNK_RADIUS = 0.30;
 const TREE_DRAW_MAX_DIST = 140, TREE_DRAW_MAX_D2 = TREE_DRAW_MAX_DIST*TREE_DRAW_MAX_DIST;
 
@@ -2161,8 +2180,10 @@ function frame(now){
   }
 
   if(!gameOver){
-    if(keys.has("ArrowLeft"))  ang -= TURN_SPEED * dt;
-    if(keys.has("ArrowRight")) ang += TURN_SPEED * dt;
+    const leftTurnMult = joyKeys.ArrowLeft ? TOUCH_TURN_SPEED_MULT : 1;
+    const rightTurnMult = joyKeys.ArrowRight ? TOUCH_TURN_SPEED_MULT : 1;
+    if(keys.has("ArrowLeft"))  ang -= TURN_SPEED * leftTurnMult * dt;
+    if(keys.has("ArrowRight")) ang += TURN_SPEED * rightTurnMult * dt;
   }
 
   dirX = Math.cos(ang);
@@ -2333,20 +2354,11 @@ requestAnimationFrame(frame);
      ========================= -->
 <button id="touchToggle">📱 Controls: OFF</button>
 
-<div id="touchControls">
-  <div class="tcRow">
-    <div class="tcArrowCol leftArrows" aria-label="Left and right movement">
-      <button class="tcBtn tcArrowBtn" data-hold="ArrowLeft" aria-label="Left">←</button>
-      <button class="tcBtn tcArrowBtn" data-hold="ArrowRight" aria-label="Right">→</button>
-      <button class="tcBtn tcShootBtn" data-tap="Space" aria-label="Shoot">SHOOT</button>
-    </div>
-
-    <div class="tcArrowCol rightArrows" aria-label="Forward and back movement">
-      <button class="tcBtn tcArrowBtn" data-hold="ArrowUp" aria-label="Up">↑</button>
-      <button class="tcBtn tcArrowBtn" data-hold="ArrowDown" aria-label="Down">↓</button>
-    </div>
-  </div>
+<div id="thumbJoystick" aria-label="Movement joystick">
+  <div class="joyBase"></div>
+  <div class="joyStick" id="joyStick"></div>
 </div>
+<button id="fireButton" type="button">FIRE</button>
 
 <div class="banner" id="foodBanner">FOOD AVAILABLE</div>
 <div class="banner" id="stunBanner">STUN GUN AVAILABLE</div>

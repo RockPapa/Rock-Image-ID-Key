@@ -480,6 +480,7 @@ const CYBER_TRUCK_RIGHT_FILE = CYBER_TRUCK_FILE;
 const MAZ_VEHICLE_BASE_FILE = "maz_back.png";
 const MAZ_VEHICLE_LEFT_FILE = MAZ_VEHICLE_BASE_FILE;
 const MAZ_VEHICLE_RIGHT_FILE = MAZ_VEHICLE_BASE_FILE;
+const POST_ALIEN_TRANSPORT_FILE = MAZ_VEHICLE_BASE_FILE;
 const ORANGE_TRUCK_BASE_FILE = "orange_truck.png";
 const ORANGE_TRUCK_LEFT_FILE = ORANGE_TRUCK_BASE_FILE;
 const ORANGE_TRUCK_RIGHT_FILE = ORANGE_TRUCK_BASE_FILE;
@@ -6163,10 +6164,7 @@ function updatePuebloCenterFountainFlow(timeSec){
     u.fountainVoicePlayedThisEntry = false;
     u.pulseWindowUntil = 0.0;
     playDriveMusicAudio();
-    if(!plazaExitChoicesSpawnedThisExit && actorObj){
-      spawnPlazaExitVehicleChoices(actorObj);
-      plazaExitChoicesSpawnedThisExit = true;
-    }
+    placeFountainBecomeVehicleGoal();
   }
   u.wasInPlaza = inPlaza;
 
@@ -10866,7 +10864,7 @@ function spawnCyberFrontVehicle(actorObj){
   const groundY = heightAtWorldXZ(x, z);
   const baseGroundY = Number.isFinite(groundY) ? groundY : (actorObj.position.y - PLAYER_EYE_HEIGHT);
 
-  const tex = getPlazaExitChoiceTexture(CYBER_TRUCK_FILE);
+  const tex = getPlazaExitChoiceTexture(POST_ALIEN_TRANSPORT_FILE);
   const imgW = tex?.image?.width || 1024;
   const imgH = tex?.image?.height || 512;
   const aspect = imgW / Math.max(1, imgH);
@@ -10889,7 +10887,7 @@ function spawnCyberFrontVehicle(actorObj){
   cyberFrontVehicleMesh.rotation.y = yaw;
   cyberFrontVehicleMesh.frustumCulled = false;
   cyberFrontVehicleMesh.renderOrder = 960;
-  cyberFrontVehicleMesh.userData.vehicleFile = CYBER_TRUCK_FILE;
+  cyberFrontVehicleMesh.userData.vehicleFile = POST_ALIEN_TRANSPORT_FILE;
   cyberFrontVehicleMesh.userData.collisionRadius = radius;
   cyberFrontVehicleMesh.userData.tex = tex;
   scene.add(cyberFrontVehicleMesh);

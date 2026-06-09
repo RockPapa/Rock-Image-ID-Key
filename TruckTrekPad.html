@@ -605,6 +605,7 @@ const PUEBLO_PLAZA_STATUE_WIDTH_FT = 8.0;
 const PUEBLO_PLAZA_STATUE_HEIGHT_FT = 18.0;
 const PUEBLO_PLAZA_STATUE_INTERVAL_FT = 18.0;
 const PUEBLO_PLAZA_STATUE_INSET_FT = 4.0;
+const PUEBLO_GUIDE_WARRIOR_TINT_HEX = 0x66d9ff;
 const PUEBLO_CORNER_CRYSTALS_ENABLE = true;
 const PUEBLO_CORNER_GODDESS_FILE = "goddess.png";
 const PUEBLO_CORNER_GODDESS_WIDTH_FT = 7.0; // -50%
@@ -6562,6 +6563,9 @@ function ensurePuebloPlazaStatues(){
   puebloGuideWarriorSprite = bestGuide || null;
   if(puebloGuideWarriorSprite){
     puebloGuideWarriorSprite.userData.isGuideWarrior = true;
+    if(puebloGuideWarriorSprite.material && puebloGuideWarriorSprite.material.color){
+      puebloGuideWarriorSprite.material.color.setHex(PUEBLO_GUIDE_WARRIOR_TINT_HEX);
+    }
   }
 }
 

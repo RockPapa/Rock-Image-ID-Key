@@ -34,31 +34,37 @@
   }
 
   #aiTruck {
-    position: absolute;
+    position: fixed;
     width: min(11.170449675vw, 151.32px);
     top: 97%;
     left: 38vw;
     transform: translate3d(-50%, -138%, 0) scale(1);
-    z-index: 8;
+    z-index: 120;
     pointer-events: none;
     transform-origin: center center;
     will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    -webkit-transform: translate3d(-50%, -138%, 0) scale(1);
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   #playerTruck {
-    position: absolute;
+    position: fixed;
     width: min(14.4255065625vw, 196.2795px);
     top: 90%;
     left: 51vw;
-    z-index: 9;
+    z-index: 130;
     pointer-events: none;
     transform: translate3d(-50%, -50%, 0) scale(1);
     transform-origin: center center;
     will-change: transform;
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
+    -webkit-transform: translate3d(-50%, -50%, 0) scale(1);
+    -webkit-user-drag: none;
+    user-select: none;
   }
 
   #scene {
@@ -67,7 +73,7 @@
     overflow: hidden;
     transform-origin: center 35%;
     will-change: transform;
-    isolation: isolate;
+    isolation: auto;
     transform: translateZ(0);
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
@@ -81,7 +87,6 @@
     display: none !important;
   }
 
-  #scene.movie-only #centerCube,
   #scene.movie-only .crash-zone {
     display: none !important;
   }
@@ -91,11 +96,11 @@
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
-    z-index: 20;
+    z-index: 120;
   }
 
   #scene.movie-only #playerTruck {
-    z-index: 21;
+    z-index: 130;
   }
 
   #scene.movie-only #video {
@@ -104,10 +109,7 @@
 
   body.movie-only #startOverlay,
   body.movie-only #crashOverlay,
-  body.movie-only #startWarning,
-  body.movie-only #timeTracker,
-  body.movie-only #hitsHud,
-  body.movie-only #lapWinnersHud {
+  body.movie-only #startWarning {
     display: none !important;
   }
 
@@ -129,7 +131,7 @@
     transform: translate(-50%, -50%) rotateX(-24deg) rotateY(30deg);
     animation: cubeSpin 6s linear infinite;
     --cubeColor: rgba(230, 230, 230, 0.58);
-    z-index: 9;
+    z-index: 500;
     pointer-events: none;
   }
 
@@ -326,7 +328,7 @@
     position: fixed;
     top: 14px;
     left: 14px;
-    z-index: 12;
+    z-index: 600;
     color: #fff;
     font: 700 16px/1 Arial, sans-serif;
     letter-spacing: 0.4px;
@@ -341,7 +343,7 @@
     position: fixed;
     top: 64px;
     left: 14px;
-    z-index: 12;
+    z-index: 600;
     width: 220px;
     color: #fff;
     font: 700 14px/1 Arial, sans-serif;
@@ -357,7 +359,7 @@
     position: fixed;
     top: 124px;
     left: 14px;
-    z-index: 12;
+    z-index: 600;
     width: 220px;
     color: #fff;
     font: 700 14px/1 Arial, sans-serif;
@@ -877,6 +879,11 @@
     aiTruckWidth = aiTruck.clientWidth || 0;
   }
 
+  function setLayerTransform(el, value) {
+    el.style.transform = value;
+    el.style.webkitTransform = value;
+  }
+
   function resetPlayerTruckToStart() {
     truckState.x = viewportWidth * 0.51;
     forwardTapCount = 0;
@@ -908,7 +915,7 @@
     aiTruck.style.display = "block";
     aiTruck.style.left = `${aiState.x}px`;
     aiTruck.style.top = `${aiState.y}px`;
-    aiTruck.style.transform = `translate3d(-50%, -138%, 0) scale(${aiState.scale})`;
+    setLayerTransform(aiTruck, `translate3d(-50%, -138%, 0) scale(${aiState.scale})`);
   }
 
   function keepRaceTrucksVisible() {
@@ -917,13 +924,13 @@
     playerTruck.style.display = "block";
     playerTruck.style.visibility = "visible";
     playerTruck.style.opacity = "1";
-    playerTruck.style.zIndex = "21";
+    playerTruck.style.zIndex = "130";
     playerTruck.style.backfaceVisibility = "hidden";
     playerTruck.style.webkitBackfaceVisibility = "hidden";
     aiTruck.style.display = "block";
     aiTruck.style.visibility = "visible";
     aiTruck.style.opacity = "1";
-    aiTruck.style.zIndex = "20";
+    aiTruck.style.zIndex = "120";
     aiTruck.style.backfaceVisibility = "hidden";
     aiTruck.style.webkitBackfaceVisibility = "hidden";
   }
@@ -1005,7 +1012,7 @@
     keepRaceTrucksVisible();
     aiTruck.style.left = `${aiState.x}px`;
     aiTruck.style.top = `${aiState.y}px`;
-    aiTruck.style.transform = `translate3d(-50%, -138%, 0) scale(${aiState.scale})`;
+    setLayerTransform(aiTruck, `translate3d(-50%, -138%, 0) scale(${aiState.scale})`);
     startOverlay.style.display = "none";
     crashOverlay.style.display = "none";
     crashText.textContent = "";
@@ -1169,7 +1176,7 @@
 
     playerTruck.style.left = `${truckState.x}px`;
     playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
-    playerTruck.style.transform = `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
+    setLayerTransform(playerTruck, `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`);
     const nowMs = performance.now();
     const movieDuration = getRaceMovieDuration();
     const movieTime = getRaceMovieTime(nowMs, movieDuration);
@@ -1332,7 +1339,7 @@
     aiState.y = aiY;
     aiTruck.style.left = `${aiState.x}px`;
     aiTruck.style.top = `${aiY}px`;
-    aiTruck.style.transform = `translate3d(-50%, -138%, 0) scale(${aiState.scale})`;
+    setLayerTransform(aiTruck, `translate3d(-50%, -138%, 0) scale(${aiState.scale})`);
     const blueVisualRect = playerTruck.getBoundingClientRect();
     const orangeVisualRect = aiTruck.getBoundingClientRect();
     updateCubeLeaderColor(blueVisualRect, orangeVisualRect);
@@ -1470,7 +1477,7 @@
   updateTruckPerspectiveScale();
   playerTruck.style.left = `${truckState.x}px`;
   playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
-  playerTruck.style.transform = `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`;
+  setLayerTransform(playerTruck, `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`);
   applyAiPrestartPose();
   requestAnimationFrame(() => {
     if (!experienceStarted) applyAiPrestartPose();

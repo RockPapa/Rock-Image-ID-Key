@@ -288,9 +288,11 @@ addEventListener("keydown", startOutsideMusic, {once:true});
   const touchToggle = document.getElementById("touchToggle");
   const thumbJoystick = document.getElementById("thumbJoystick");
   const joyStick = document.getElementById("joyStick");
-  const fireButton = document.getElementById("fireButton");
-  const joyKeys = { ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false };
-  let joyPointerId = null;
+	  const fireButton = document.getElementById("fireButton");
+	  const joyKeys = { ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false };
+	  const JOYSTICK_FORWARD_SPEED_MULT = 0.80;
+	  const JOYSTICK_TURN_SPEED_MULT = 0.80;
+	  let joyPointerId = null;
   let touchControlsOn = false;
 
   function setJoyKey(code, down){
@@ -471,11 +473,12 @@ let gotTreasureUntil = 0;
 
   let nextZapAt = 0;
 
-  const PLAYER_FREEZE_MS = 1200;
-  const CAUGHT_FLASH_MS  = 900;
-  let playerFrozenUntil = 0;
-  let caughtUntil = 0;
-  let caughtActive = false;
+	  const PLAYER_FREEZE_MS = 1200;
+	  const CAUGHT_FLASH_MS  = 900;
+	  let playerHasStartedMoving = false;
+	  let playerFrozenUntil = 0;
+	  let caughtUntil = 0;
+	  let caughtActive = false;
 
   const SOUND_COOLDOWN_MS = 1400;
   const SCREAM_DELAY_MS   = 110;
@@ -551,11 +554,12 @@ let gotTreasureUntil = 0;
     }
   }
 
-  function triggerHit(nowMs){
-    if(gameOver) return;
-    if(playerIsSafe()) return;
-    if(caughtActive) return;
-    caughtActive = true;
+	  function triggerHit(nowMs){
+	    if(gameOver) return;
+	    if(!playerHasStartedMoving) return;
+	    if(playerIsSafe()) return;
+	    if(caughtActive) return;
+	    caughtActive = true;
 
     applyDamage(HIT_DAMAGE);
     caughtUntil = nowMs + CAUGHT_FLASH_MS;
@@ -1210,10 +1214,11 @@ let gotTreasureUntil = 0;
     gotTreasureUntil = 0;
     startObjectiveUntil = performance.now() + START_OBJECTIVE_MSG_MS;
 
-    nextZapAt = 0;
-    playerFrozenUntil = 0;
-    caughtUntil = 0;
-    caughtActive = false;
+	    nextZapAt = 0;
+	    playerHasStartedMoving = false;
+	    playerFrozenUntil = 0;
+	    caughtUntil = 0;
+	    caughtActive = false;
 
     posX = 3.5; posY = 3.5;
     dirX = -1; dirY = 0;
@@ -1272,13 +1277,23 @@ let gotTreasureUntil = 0;
     const dt = Math.min(0.05, (now-last)/1000);
     last = now;
 
-    const moveSpeed = dt * 3.0;
-    const rotSpeed  = dt * 2.0;
+	    const baseMoveSpeed = dt * 3.0;
+	    const baseRotSpeed  = dt * 2.0;
+	    const moveSpeed = baseMoveSpeed * ((joyKeys.ArrowUp || joyKeys.ArrowDown) ? JOYSTICK_FORWARD_SPEED_MULT : 1.0);
+	    const rotSpeed  = baseRotSpeed * ((joyKeys.ArrowLeft || joyKeys.ArrowRight) ? JOYSTICK_TURN_SPEED_MULT : 1.0);
 
-    const frozen = (now < playerFrozenUntil) || gameOver;
-    if(!frozen && caughtActive) caughtActive = false;
+	    const frozen = (now < playerFrozenUntil) || gameOver;
+	    if(!frozen && caughtActive) caughtActive = false;
+	    if(!frozen && (
+	      keys.has("ArrowUp") ||
+	      keys.has("ArrowDown") ||
+	      keys.has("ArrowLeft") ||
+	      keys.has("ArrowRight")
+	    )){
+	      playerHasStartedMoving = true;
+	    }
 
-    if(!frozen){
+	    if(!frozen){
       if(keys.has("ArrowUp")){
         const nx = posX + dirX * moveSpeed;
         const ny = posY + dirY * moveSpeed;

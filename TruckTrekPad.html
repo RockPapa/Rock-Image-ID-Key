@@ -12837,12 +12837,6 @@ function initTruckAudio(){
         toBlueSquareAudio.currentTime = 0;
       }).catch(()=>{});
     }
-    if (driveMusicAudio){
-      driveMusicAudio.play().then(() => {
-        driveMusicAudio.pause();
-        driveMusicAudio.currentTime = 0;
-      }).catch(()=>{});
-    }
     if (portalEntryAudio){
       portalEntryAudio.play().then(() => {
         portalEntryAudio.pause();
@@ -12887,6 +12881,7 @@ initFireRingAmbientAudio();
 initCopterPassAudio();
 initFountainWindAudio();
 initTunnelReaperAudio();
+playStartSpawnMusicOnce();
 initTruckAvatar();
 initHitSound();
 

@@ -21,7 +21,7 @@
   .hud.hidden{ display:none; }
   .hud .small{ font-size:14px; opacity:.9; margin-top:8px; }
   .hud b{ font-weight:800; }
-  .healthWrap{
+.healthWrap{
     position:fixed; left:18px; top:18px; z-index:31;
     width:220px; padding:10px 12px; border-radius:12px;
     border:1px solid rgba(255,255,255,.24);
@@ -33,6 +33,25 @@
   .healthTop{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; letter-spacing:.03em; }
   .healthTrack{ width:100%; height:12px; border-radius:999px; overflow:hidden; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.18); }
 .healthFill{ width:100%; height:100%; background:linear-gradient(90deg, #22c55e 0%, #84cc16 100%); transition:width .18s ease; }
+.testJumpButtons{
+  position:fixed; left:18px; top:86px; z-index:31;
+  width:244px;
+  display:flex; flex-direction:column; gap:5px;
+  user-select:none;
+}
+.testJumpButtons button{
+  width:100%;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid rgba(255,255,255,.24);
+  background:rgba(20,24,32,.78);
+  color:#fff;
+  font:800 10px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  letter-spacing:.04em;
+  box-shadow:0 6px 14px rgba(0,0,0,.35);
+  touch-action:manipulation;
+}
+.testJumpButtons button:active{ transform:translateY(1px); background:rgba(35,42,55,.88); }
 .alienObjective{
   display:none; /* show on spawn, hide on file-loading screen */
   animation: alienObjectivePulse 1.1s ease-in-out infinite;
@@ -353,6 +372,11 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
     <div class="healthFill" id="healthFill"></div>
   </div>
 </div>
+<div class="testJumpButtons" id="testJumpButtons" aria-label="Testing teleports">
+  <button type="button" id="testGoFountain">GO TO FOUNTAIN</button>
+  <button type="button" id="testGoTubeCave">GO TO TUBE CAVE</button>
+  <button type="button" id="testGoRingFire">GO TO RING OF FIRE</button>
+</div>
 <div class="alienObjective" id="alienObjective" aria-live="polite">
   <div class="alienObjectiveTitle">YOU MUST KILL ALL THE ALIENS</div>
   <div class="alienObjectiveCounts">Total: <b id="alienTotal">0</b> | Left: <b id="alienLeft">0</b></div>
@@ -474,6 +498,7 @@ const COPTER_PASS_ENABLE = true;
 const COPTER_PASS_SOUND_VOL = 0.165; // -50% from 0.33
 const COPTER_PROX_SOUND_RADIUS_FT = 100.0;
 // computed at runtime to avoid init-order issues
+const FOUNTAIN_WIND_ENABLE = false;
 const FOUNTAIN_WIND_SOUND_FILE = "india.mp3";
 const FOUNTAIN_WIND_VOL = 0.198; // reduced by 50% from 0.396
 const FOUNTAIN_WATER_SOUND_FILE = "water.mp3";
@@ -605,7 +630,7 @@ const PUEBLO_FOUNTAIN_PLAZA_VOICE_TEXT = "You have entered the plaza of the foun
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_RATE = 0.6911; // 25% slower
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_PITCH = 1.06; // slightly lower frequency
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_VOL = 1.0;
-const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE = "voice1.m4a";
+const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE = "voice1.mp3";
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE_VOL = 1.0;
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE_GAIN = 10.0; // +150% from prior 4.0x setting
 const PUEBLO_GUIDE_VOICE_TEXT = "Look to the minimap for your next destination. Now go, live long and prosper on your journey.";
@@ -1205,6 +1230,48 @@ function _setPlayerPositionToXZ(x, z, label = "checkpoint"){
   initialSpawnLockUntilMs = 0;
   if(label) hudLine("🧭 Respawned at <code>" + label + "</code>.");
 }
+
+function _testTeleportToFountain(){
+  let x = NaN;
+  let z = NaN;
+  if(puebloCenterFountainGroup && puebloCenterFountainGroup.position){
+    x = puebloCenterFountainGroup.position.x;
+    z = puebloCenterFountainGroup.position.z;
+  } else if(puebloTestCube && puebloTestCube.position){
+    const ft = WORLD_UNITS_PER_FOOT;
+    x = puebloTestCube.position.x + (PUEBLO_PLAN_WALL_CENTER_X_FT * ft);
+    z = puebloTestCube.position.z + ((PUEBLO_PLAN_WALL_CENTER_Z_FT + PUEBLO_CENTER_FOUNTAIN_BACK_OFFSET_FT) * ft);
+  } else {
+    const ft = WORLD_UNITS_PER_FOOT;
+    x = PUEBLO_TEST_CUBE_FIXED_X + (PUEBLO_PLAN_WALL_CENTER_X_FT * ft);
+    z = PUEBLO_TEST_CUBE_FIXED_Z + ((PUEBLO_PLAN_WALL_CENTER_Z_FT + PUEBLO_CENTER_FOUNTAIN_BACK_OFFSET_FT) * ft);
+  }
+  _setPlayerPositionToXZ(x, z, "fountain");
+}
+
+function _testTeleportToTubeCave(){
+  _setPlayerPositionToXZ(CAVE_ANCHOR_X, CAVE_ANCHOR_Z, "tube cave");
+}
+
+function _testTeleportToRingOfFire(){
+  _setPlayerPositionToXZ(GREEN_SQUARE_MARKER_X, GREEN_SQUARE_MARKER_Z, "ring of fire");
+}
+
+function initTestJumpButtons(){
+  const bind = (id, fn)=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.addEventListener("click", (ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      fn();
+    });
+  };
+  bind("testGoFountain", _testTeleportToFountain);
+  bind("testGoTubeCave", _testTeleportToTubeCave);
+  bind("testGoRingFire", _testTeleportToRingOfFire);
+}
+initTestJumpButtons();
 
 function getCurrentJourneyStage(){
   if(alienObjectiveMode === "destination_green" || MINI_MAP_SHOW_GREEN_SQUARE || tunnelExitGoddessEncounterDone || tunnelExitGoddessEncounterActive){
@@ -12663,7 +12730,7 @@ function updateTunnelReaperAudio(playerX, playerY, playerZ){
 }
 
 function initFountainWindAudio(){
-  if (!fountainWindAudio){
+  if (FOUNTAIN_WIND_ENABLE && !fountainWindAudio){
     const windUrl = TEX_DIR + FOUNTAIN_WIND_SOUND_FILE + "?v=" + Date.now();
     fountainWindAudio = new Audio(resolveAssetUrl(windUrl));
     fountainWindAudio.loop = true;
@@ -12702,8 +12769,8 @@ function updateFountainWindAudio(playerX, playerZ){
     return;
   }
 
-  if(!fountainWindAudio || !fountainWaterAudio) initFountainWindAudio();
-  if(!fountainWindAudio || !fountainWaterAudio) return;
+  if((FOUNTAIN_WIND_ENABLE && !fountainWindAudio) || !fountainWaterAudio) initFountainWindAudio();
+  if(!fountainWaterAudio) return;
 
   const ft = WORLD_UNITS_PER_FOOT;
   const centerX = puebloTestCube.position.x + (PUEBLO_PLAN_WALL_CENTER_X_FT * ft);
@@ -12712,7 +12779,7 @@ function updateFountainWindAudio(playerX, playerZ){
   const inRange = Math.abs(playerX - centerX) <= half && Math.abs(playerZ - centerZ) <= half;
 
   if(inRange){
-    if(fountainWindAudio.paused){
+    if(FOUNTAIN_WIND_ENABLE && fountainWindAudio && fountainWindAudio.paused){
       fountainWindAudio.play().then(()=>{ fountainWindPlaying = true; }).catch(()=>{});
     }
     if(fountainWaterAudio.paused){
@@ -12844,7 +12911,7 @@ function initTruckAudio(){
     initCopterJourneyMusicAudio();
     initFireRingAmbientAudio();
 
-    if (fountainWindAudio){
+    if (FOUNTAIN_WIND_ENABLE && fountainWindAudio){
       fountainWindAudio.play().then(() => {
         fountainWindAudio.pause();
         fountainWindAudio.currentTime = 0;

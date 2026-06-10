@@ -1126,7 +1126,6 @@ const MAX_JUMP_Z      = 50;
 
 const TREE_TOP_MIN_Z  = 7.0;
 const TREE_TOP_MAX_Z  = 9.0;
-const ROCK_TOP_Z      = 3.2;
 const LAND_EPS        = 0.05;
 
 let camZ = 0;
@@ -1452,10 +1451,9 @@ function renderSkyAndFloor(){
 }
 
 /* =========================================================
-   TREES + ROCKS + LAMB
+   TREES + LAMB
 ========================================================= */
 const treeImg = new Image(); treeImg.src = "images/tree1.png";
-const rockImg = new Image(); rockImg.src = "images/rock.png";
 const lambImg = new Image(); lambImg.src = "images/lambchop.png";
 
 // =========================================================
@@ -1611,28 +1609,11 @@ function updateVisibleTrees(){
   }
 }
 
-const ROCK_COUNT=140, ROCK_MIN_X=-95, ROCK_MAX_X=95, ROCK_MIN_Y=-95, ROCK_MAX_Y=95;
-const ROCK_SPRITE_SCALE=1.35, ROCK_RADIUS=0.55;
-let ROCKS=[];
-function regenerateRocks(){
-  ROCKS=[];
-  for(let i=0;i<ROCK_COUNT;i++){
-    const x = ROCK_MIN_X + Math.random()*(ROCK_MAX_X-ROCK_MIN_X);
-    const y = ROCK_MIN_Y + Math.random()*(ROCK_MAX_Y-ROCK_MIN_Y);
-    ROCKS.push({x,y,topZ:ROCK_TOP_Z,kind:"rock"});
-  }
-}
-regenerateRocks();
 ensureSafePlayerSpawn();
 updateVisibleTrees();
 resetLamb();
 
 function platformUnderCami(){
-  const rr2=(ROCK_RADIUS*1.05)**2;
-  for(const r of ROCKS){
-    const dx=posX-r.x, dy=posY-r.y;
-    if(dx*dx+dy*dy<=rr2) return r;
-  }
   const tr2=(TREE_TRUNK_RADIUS*1.05)**2;
   for(const t of visibleTrees){
     const dx=posX-t.x, dy=posY-t.y;
@@ -1650,13 +1631,6 @@ function hitsAnyObstacle(nx, ny){
     const dy = ny - t.y;
     if(dx*dx + dy*dy < trr2) return true;
   }
-  const rrr = (CAMI_RADIUS + ROCK_RADIUS);
-  const rrr2 = rrr*rrr;
-  for(const r of ROCKS){
-    const dx = nx - r.x;
-    const dy = ny - r.y;
-    if(dx*dx + dy*dy < rrr2) return true;
-  }
   return false;
 }
 
@@ -1667,13 +1641,6 @@ function isSpawnBlocked(nx, ny){
     const dx = nx - t.x;
     const dy = ny - t.y;
     if(dx*dx + dy*dy < trr2) return true;
-  }
-  const rrr = (CAMI_RADIUS + ROCK_RADIUS + 0.12);
-  const rrr2 = rrr*rrr;
-  for(const r of ROCKS){
-    const dx = nx - r.x;
-    const dy = ny - r.y;
-    if(dx*dx + dy*dy < rrr2) return true;
   }
   return false;
 }
@@ -2288,10 +2255,6 @@ function frame(now){
     const dx = saberX - posX, dy = saberY - posY;
     sprites.push({x:saberX, y:saberY, d2:dx*dx+dy*dy, kind:"saber"});
   }
-  for(const r of ROCKS){
-    const dx = r.x - posX, dy = r.y - posY;
-    sprites.push({x:r.x, y:r.y, d2:dx*dx+dy*dy, kind:"rock"});
-  }
   for(const t of visibleTrees) sprites.push(t);
 
   if(LAMB_ENABLED){
@@ -2317,8 +2280,6 @@ function frame(now){
       drawWolfFramesSprite(s.x, s.y, WOLF_SPRITE_SCALE, 0.35);
     }else if(s.kind === "lamb"){
       drawSprite(lambImg, s.x, s.y, LAMB_SPRITE_SCALE, "rgba(255,230,230,0.85)", 0.35);
-    }else if(s.kind === "rock"){
-      drawSprite(rockImg, s.x, s.y, ROCK_SPRITE_SCALE, null, 0.30);
     }else if(s.kind === "fire"){
       drawFireFramesSprite(s.x, s.y, FIRE_SPRITE_SCALE, FIRE_YSHIFT);
     }else if(s.kind === "food"){

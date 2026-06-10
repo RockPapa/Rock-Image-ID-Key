@@ -1304,8 +1304,13 @@
     const aiHalfWidth = (aiTruckWidth * aiState.scale) / 2;
     const aiLeftRoadInset = viewportWidth * getCrashZonePctAtY(aiY, crashZoneTopInwardExtraLeftPct);
     const aiRightRoadInset = viewportWidth * getCrashZonePctAtY(aiY, crashZoneTopInwardExtraRightPct);
-    const aiMinX = aiLeftRoadInset + aiHalfWidth;
-    const aiMaxX = viewportWidth - aiRightRoadInset - aiHalfWidth;
+    let aiMinX = aiLeftRoadInset + aiHalfWidth;
+    let aiMaxX = viewportWidth - aiRightRoadInset - aiHalfWidth;
+    if (aiMinX > aiMaxX) {
+      const roadCenterX = (aiLeftRoadInset + (viewportWidth - aiRightRoadInset)) / 2;
+      aiMinX = roadCenterX;
+      aiMaxX = roadCenterX;
+    }
     const aiLeftHoldTargetX = aiMinX + (aiHalfWidth * 1.2825) + Math.max(10, aiHalfWidth * 0.1);
 
     // On the first frame of a new lap, preserve exact lap-end X before releasing AI.

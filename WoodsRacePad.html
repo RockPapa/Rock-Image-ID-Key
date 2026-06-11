@@ -20,19 +20,28 @@
 
   #video {
     position: fixed;
+    left: -4px;
+    top: -4px;
+    width: 2px;
+    height: 2px;
+    opacity: 0;
+    z-index: -1;
+    pointer-events: none !important;
+    touch-action: none;
+    -webkit-user-drag: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  #videoCanvas {
+    position: fixed;
     inset: 0;
     width: 100vw;
     height: 100vh;
-    object-fit: cover;
-    transform: translateZ(0);
-    transform-origin: center center;
-    will-change: transform;
     z-index: 0;
     pointer-events: none !important;
     touch-action: none;
-    backface-visibility: hidden;
-    -webkit-backface-visibility: hidden;
-    -webkit-user-drag: none;
+    background: #000;
     -webkit-user-select: none;
     user-select: none;
   }
@@ -84,6 +93,7 @@
   }
 
   #scene.prestart #video,
+  #scene.prestart #videoCanvas,
   #scene.prestart #aiTruck,
   #scene.prestart #playerTruck {
     display: none !important;
@@ -105,7 +115,7 @@
     z-index: 130;
   }
 
-  #scene.movie-only #video {
+  #scene.movie-only #videoCanvas {
     display: block !important;
   }
 
@@ -440,24 +450,6 @@
     -webkit-user-select: none;
   }
 
-  #touchToggleBtn {
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    background: rgba(0, 0, 0, 0.62);
-    color: #fff;
-    font: 700 15px/1 Arial, sans-serif;
-    border-radius: 999px;
-    padding: 10px 14px;
-    letter-spacing: 0.4px;
-    touch-action: manipulation;
-    pointer-events: auto;
-    cursor: pointer;
-  }
-
-  #touchToggleBtn.on {
-    background: rgba(20, 130, 40, 0.78);
-    border-color: rgba(190, 255, 190, 0.95);
-  }
-
   #joystickBase {
     width: 152px;
     height: 152px;
@@ -468,10 +460,6 @@
     touch-action: none;
     pointer-events: auto;
     opacity: 0.96;
-  }
-
-  #joystickBase.off {
-    opacity: 0.32;
   }
 
   #joystickThumb {
@@ -505,6 +493,7 @@
     webkit-playsinline
     preload="auto"
   ></video>
+  <canvas id="videoCanvas" aria-hidden="true"></canvas>
   <img id="aiTruck" src="images/orange_truck.png" alt="AI truck vehicle" />
   <img id="playerTruck" src="images/blue_truck.png" alt="Player blue truck" />
   <div id="centerCube" aria-hidden="true">
@@ -548,7 +537,6 @@
   <div class="lap-winner-row"><span>Lap 5</span><span class="lap-winner-value">--</span></div>
 </div>
 <div id="touchControlsHud" aria-label="Touch controls">
-  <button id="touchToggleBtn" type="button" class="on" aria-pressed="true">TOUCH: ON</button>
   <div id="joystickBase" aria-hidden="true">
     <div id="joystickThumb"></div>
   </div>
@@ -556,6 +544,8 @@
 <script>
   const scene = document.getElementById("scene");
   const video = document.getElementById("video");
+  const videoCanvas = document.getElementById("videoCanvas");
+  const videoCanvasCtx = videoCanvas ? videoCanvas.getContext("2d", { alpha: false }) : null;
   const carSound = document.getElementById("carSound");
   const copterSound = document.getElementById("copterSound");
   const skidSound = document.getElementById("skidSound");
@@ -574,7 +564,6 @@
   const hitsValue = document.getElementById("hitsValue");
   const centerCube = document.getElementById("centerCube");
   const cubeFaces = Array.from(document.querySelectorAll(".cube-face"));
-  const touchToggleBtn = document.getElementById("touchToggleBtn");
   const touchControlsHud = document.getElementById("touchControlsHud");
   const joystickBase = document.getElementById("joystickBase");
   const joystickThumb = document.getElementById("joystickThumb");
@@ -607,7 +596,6 @@
   let humanLapWins = 0;
   let orangeLapWins = 0;
   let startWarningTimeoutId = null;
-  let touchControlsEnabled = true;
   let activeJoystickPointerId = null;
   const joystickControls = { up: false, down: false, left: false, right: false };
   let lastSkidAtMs = 0;
@@ -827,23 +815,6 @@
     joystickThumb.style.transform = "translate(-50%, -50%)";
   }
 
-  function setTouchToggleState(isEnabled) {
-    touchControlsEnabled = isEnabled;
-    if (!touchToggleBtn || !joystickBase) return;
-    touchToggleBtn.classList.toggle("on", touchControlsEnabled);
-    joystickBase.classList.toggle("off", !touchControlsEnabled);
-    touchToggleBtn.setAttribute("aria-pressed", touchControlsEnabled ? "true" : "false");
-    touchToggleBtn.textContent = touchControlsEnabled ? "TOUCH: ON" : "TOUCH: OFF";
-    if (!touchControlsEnabled) {
-      joystickControls.up = false;
-      joystickControls.down = false;
-      joystickControls.left = false;
-      joystickControls.right = false;
-      activeJoystickPointerId = null;
-      resetJoystickThumb();
-    }
-  }
-
   function updateJoystickFromPointer(clientX, clientY) {
     if (!joystickBase || !joystickThumb) return;
     const rect = joystickBase.getBoundingClientRect();
@@ -877,6 +848,34 @@
     crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
     const rightAngleRad = (rightCrashZoneAngleFromVerticalDeg * Math.PI) / 180;
     crashZoneTopInwardExtraRightPct = Math.tan(rightAngleRad) * (viewportHeight / viewportWidth);
+    resizeVideoCanvas();
+  }
+
+  function resizeVideoCanvas() {
+    if (!videoCanvas) return;
+    const dpr = isTouchRaceDevice ? 1 : Math.min(2, window.devicePixelRatio || 1);
+    const w = Math.max(1, Math.round(viewportWidth * dpr));
+    const h = Math.max(1, Math.round(viewportHeight * dpr));
+    if (videoCanvas.width !== w || videoCanvas.height !== h) {
+      videoCanvas.width = w;
+      videoCanvas.height = h;
+    }
+  }
+
+  function drawVideoFrameToCanvas() {
+    if (!videoCanvas || !videoCanvasCtx) return;
+    const vw = video.videoWidth || 0;
+    const vh = video.videoHeight || 0;
+    if (vw <= 0 || vh <= 0) return;
+
+    const cw = videoCanvas.width;
+    const ch = videoCanvas.height;
+    const scale = Math.max(cw / vw, ch / vh);
+    const sw = cw / scale;
+    const sh = ch / scale;
+    const sx = Math.max(0, (vw - sw) * 0.5);
+    const sy = Math.max(0, (vh - sh) * 0.5);
+    videoCanvasCtx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
   }
 
   function refreshTruckSizeCache() {
@@ -1156,6 +1155,7 @@
   }
 
   function updatePlayerTruck() {
+    drawVideoFrameToCanvas();
     keepRaceTrucksVisible();
 
     if (experienceStarted) {
@@ -1408,13 +1408,8 @@
       applyAiPrestartPose();
     }
   });
-  if (touchToggleBtn && joystickBase && joystickThumb) {
-    touchToggleBtn.addEventListener("click", () => {
-      setTouchToggleState(!touchControlsEnabled);
-    });
-
+  if (joystickBase && joystickThumb) {
     joystickBase.addEventListener("pointerdown", (e) => {
-      if (!touchControlsEnabled) return;
       e.preventDefault();
       activeJoystickPointerId = e.pointerId;
       joystickBase.setPointerCapture(e.pointerId);
@@ -1423,7 +1418,6 @@
     }, { passive: false });
 
     joystickBase.addEventListener("pointermove", (e) => {
-      if (!touchControlsEnabled) return;
       if (activeJoystickPointerId !== e.pointerId) return;
       e.preventDefault();
       updateJoystickFromPointer(e.clientX, e.clientY);
@@ -1445,7 +1439,6 @@
     joystickBase.addEventListener("pointerup", releaseJoystickPointer);
     joystickBase.addEventListener("pointercancel", releaseJoystickPointer);
     joystickBase.addEventListener("lostpointercapture", () => {});
-    setTouchToggleState(true);
   }
   refreshTruckSizeCache();
 

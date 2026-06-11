@@ -452,7 +452,7 @@ code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liber
 
 <div class="healthWrap" id="healthWrap" aria-label="Health">
   <div class="healthTop">
-    <span>HEALTH</span>
+    <span id="healthLabel">HEALTH</span>
     <span id="healthValue">100%</span>
   </div>
   <div class="healthTrack">
@@ -561,14 +561,12 @@ const CAVE_INTERIOR_TILE_WIDTH_FT = 8.0; // tile more often to prevent blur
 
 // ----- TRUCK AUDIO -----
 const TRUCK_SOUND_FILE = "car_sound.mp3"; // put this in images/car_sound.mp3
-const TRUCK_IDLE_SOUND_FILE = "idle.mp3"; // put this in images/idle.mp3
 const WALKING_SOUND_FILE = "walking_sound.mp3"; // put this in images/walking_sound.mp3
 const START_SPAWN_MUSIC_FILE = "";
 const START_SPAWN_MUSIC_VOL = 1.0;
 const DRIVE_MUSIC_FILE = "drive_music.mp3";
 const DRIVE_MUSIC_VOL = 0.088510464; // +40% from previous 0.06322176
 const TRUCK_SOUND_VOL  = 1.0;              // max HTMLMediaElement volume (requested +70% exceeds 1.0)
-const TRUCK_IDLE_SOUND_VOL = 0.21515625;   // 0.0 - 1.0 (25% lower)
 const WALKING_SOUND_VOL = 0.714; // +70%
 const COPTER_PASS_SOUND_FILE = "copter_sound.mp3"; // put this in images/copter_sound.mp3
 const COPTER_MUSIC_FILE = "copter_music.mp3";
@@ -1170,7 +1168,10 @@ const miniMapMetaWrap = document.querySelector(".miniMapMeta");
 const touchHintWrap = document.getElementById("touchHint");
 const touchToggleWrap = document.getElementById("touchToggle");
 const touchUIWrap = document.getElementById("touchUI");
+const healthLabel = document.getElementById("healthLabel");
 let playerHealthPct = 100;
+let healthBarLoadingMode = true;
+let loadingBarFinishTimer = null;
 const TRUCK_FIRE_HEALTH_THRESHOLD_PCT = 30;
 const GREEN_SQUARE_MARKER_X = -1000;
 const GREEN_SQUARE_MARKER_Z = 81;
@@ -1448,6 +1449,7 @@ function respawnPlayerToPreviousStage(){
 
 function setPlayerHealthPct(pct){
   playerHealthPct = Math.max(0, Math.min(100, Number(pct) || 0));
+  if(healthBarLoadingMode) return;
   if(healthFill) healthFill.style.width = playerHealthPct + "%";
   if(healthValue) healthValue.textContent = Math.round(playerHealthPct) + "%";
 }
@@ -1562,6 +1564,52 @@ function updateLowZoneStuckState(dt){
 
   lowZoneWasInside = inLowZone;
 }
+
+function setHealthLoadingProgress(loaded, total){
+  if(!healthBarLoadingMode) return;
+  const safeTotal = Math.max(1, Number(total) || 1);
+  const pct = Math.max(0, Math.min(100, Math.round(((Number(loaded) || 0) / safeTotal) * 100)));
+  if(healthLabel) healthLabel.textContent = "LOADING";
+  if(healthFill) healthFill.style.width = pct + "%";
+  if(healthValue) healthValue.textContent = pct + "%";
+}
+
+function finishHealthLoadingBar(){
+  if(!healthBarLoadingMode) return;
+  healthBarLoadingMode = false;
+  if(healthLabel) healthLabel.textContent = "HEALTH";
+  if(healthFill) healthFill.style.background = "";
+  setPlayerHealthPct(playerHealthPct);
+}
+
+if(healthLabel) healthLabel.textContent = "LOADING";
+if(healthFill){
+  healthFill.style.width = "0%";
+  healthFill.style.background = "linear-gradient(90deg, #38bdf8 0%, #facc15 100%)";
+}
+if(healthValue) healthValue.textContent = "0%";
+
+THREE.DefaultLoadingManager.onStart = function(_url, loaded, total){
+  if(loadingBarFinishTimer){
+    clearTimeout(loadingBarFinishTimer);
+    loadingBarFinishTimer = null;
+  }
+  setHealthLoadingProgress(loaded, total);
+};
+THREE.DefaultLoadingManager.onProgress = function(_url, loaded, total){
+  if(loadingBarFinishTimer){
+    clearTimeout(loadingBarFinishTimer);
+    loadingBarFinishTimer = null;
+  }
+  setHealthLoadingProgress(loaded, total);
+};
+THREE.DefaultLoadingManager.onLoad = function(){
+  setHealthLoadingProgress(1, 1);
+  loadingBarFinishTimer = setTimeout(finishHealthLoadingBar, 700);
+};
+THREE.DefaultLoadingManager.onError = function(){
+  if(healthBarLoadingMode && healthValue) healthValue.textContent = "LOADING";
+};
 
 setPlayerHealthPct(100);
 
@@ -10492,6 +10540,7 @@ async function applyHeightmapToGround(){
   await createMidZoneTree7();
   clearTreesFromPuebloPlaza();
 }
+initTruckAvatar();
 applyHeightmapToGround();
 
 async function placeBuffNearPickupSpawn(spawnX, spawnZ){
@@ -10903,8 +10952,6 @@ let leggomanFrameT = 0.0;
 let leggomanPreloadStarted = false;
 let leggomanIdleStandTex = null;
 let leggomanIdleStandTexRequested = false;
-let truckIdleAudio = null;
-let truckIdleSoundPlaying = false;
 let walkingAudio = null;
 let walkingSoundPlaying = false;
 let startSpawnMusicAudio = null;
@@ -12002,6 +12049,7 @@ function initTruckAvatar
 
 (){
   if(!TRUCK_AVATAR_ENABLE) return;
+  if(truckPlane || truckTex) return;
 
   const url = TEX_DIR + TRUCK_FILE + "?v=" + Date.now();
 
@@ -13051,11 +13099,6 @@ function stopVehicleAudio(){
     truckAudio.currentTime = 0;
     truckSoundPlaying = false;
   }
-  if (truckIdleAudio && truckIdleSoundPlaying){
-    truckIdleAudio.pause();
-    truckIdleAudio.currentTime = 0;
-    truckIdleSoundPlaying = false;
-  }
 }
 
 function stopWalkingAudio(){
@@ -13124,18 +13167,14 @@ function playStartSpawnMusicOnce(){
 }
 
 function initTruckAudio(){
-  if (truckAudio && truckIdleAudio && walkingAudio) return;
+  if (truckAudio && walkingAudio) return;
 
   const stamp = Date.now();
   const driveUrl = TEX_DIR + TRUCK_SOUND_FILE + "?v=" + stamp;
-  const idleUrl = TEX_DIR + TRUCK_IDLE_SOUND_FILE + "?v=" + stamp;
   const walkUrl = TEX_DIR + WALKING_SOUND_FILE + "?v=" + stamp;
   truckAudio = new Audio(resolveAssetUrl(driveUrl));
   truckAudio.loop = true;
   truckAudio.volume = TRUCK_SOUND_VOL;
-  truckIdleAudio = new Audio(resolveAssetUrl(idleUrl));
-  truckIdleAudio.loop = true;
-  truckIdleAudio.volume = TRUCK_IDLE_SOUND_VOL;
   walkingAudio = new Audio(resolveAssetUrl(walkUrl));
   walkingAudio.loop = true;
   walkingAudio.volume = WALKING_SOUND_VOL;
@@ -13158,10 +13197,6 @@ function initTruckAudio(){
     truckAudio.play().then(() => {
       truckAudio.pause();
       truckAudio.currentTime = 0;
-    }).catch(()=>{});
-    truckIdleAudio.play().then(() => {
-      truckIdleAudio.pause();
-      truckIdleAudio.currentTime = 0;
     }).catch(()=>{});
     walkingAudio.play().then(() => {
       walkingAudio.pause();
@@ -13254,7 +13289,6 @@ initCopterPassAudio();
 initFountainWindAudio();
 initTunnelReaperAudio();
 playStartSpawnMusicOnce();
-initTruckAvatar();
 initHitSound();
 
 // ---------- GRASS (PBR) ----------
@@ -15410,15 +15444,10 @@ applyPuebloPlazaTruckOnlyAccess(obj, prevPos.x, prevPos.z, TRUCK_COLLISION_RADIU
           stopWalkingAudio();
         }
       }
-    } else if (truckAudio && truckIdleAudio){
+    } else if (truckAudio){
       stopWalkingAudio();
       const truckDrivingNow = truckDriveInputActive || isMoving;
       if (truckDrivingNow){
-        if (truckIdleSoundPlaying){
-          truckIdleAudio.pause();
-          truckIdleAudio.currentTime = 0;
-          truckIdleSoundPlaying = false;
-        }
         if (!truckSoundPlaying){
           truckAudio.play().catch(()=>{});
           truckSoundPlaying = true;
@@ -15428,10 +15457,6 @@ applyPuebloPlazaTruckOnlyAccess(obj, prevPos.x, prevPos.z, TRUCK_COLLISION_RADIU
           truckAudio.pause();
           truckAudio.currentTime = 0;
           truckSoundPlaying = false;
-        }
-        if (!truckIdleSoundPlaying){
-          truckIdleAudio.play().catch(()=>{});
-          truckIdleSoundPlaying = true;
         }
       }
     }

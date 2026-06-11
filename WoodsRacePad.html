@@ -1,685 +1,182 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Jeep Driving Segment</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bigfoot Woods Drive</title>
 <style>
-  body, html {
+  html,
+  body {
     margin: 0;
-    padding: 0;
+    width: 100%;
+    height: 100%;
     overflow: hidden;
-    background: black;
+    background: #000;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
   #video {
     position: fixed;
-    top: 0; left: 0;
+    inset: 0;
     width: 100vw;
     height: 100vh;
     object-fit: cover;
-    z-index: 1;
-  }
-
-  #gameCanvas {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: 2;
-  }
-
-  #bigfootOverlay {
-    position: fixed;
-    left: 50%;
-    bottom: 24vh;
-    width: min(22vw, 190px);
-    height: auto;
-    z-index: 3;
-    display: none;
+    z-index: 0;
     pointer-events: none;
-    transform: translateX(-50%);
-    user-select: none;
+  }
+
+  #bigfoot {
+    position: fixed;
+    left: 50vw;
+    top: 54vh;
+    width: min(28vw, 220px);
+    height: auto;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
     -webkit-user-drag: none;
   }
 
-  #gameover {
+  #controls {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    z-index: 5;
-    display: none;
-    font-family: Arial, sans-serif;
-    color: white;
-    text-align: center;
-    padding-top: 30vh;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 4;
+    display: grid;
+    grid-template-columns: 64px 64px 64px;
+    grid-template-rows: 64px 64px 64px;
+    gap: 8px;
   }
 
-  /* ⭐ START SCREEN OVERLAY ⭐ */
-  #startScreen {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.75);
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: Arial, sans-serif;
-    color: white;
-  }
-
-  #startBox {
-    background: rgba(0,0,0,0.75);
-    border: 2px solid #00bfff;
+  .ctrl {
+    border: 1px solid rgba(255,255,255,0.55);
     border-radius: 14px;
-    padding: 20px 26px;
-    max-width: 500px;
-    width: 90%;
-    box-shadow: 0 0 20px rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.58);
+    color: white;
+    font: 900 28px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    touch-action: none;
   }
 
-  #startBox h1 {
-    margin-top: 0;
-    margin-bottom: 8px;
-    font-size: 28px;
+  .ctrl:active {
+    background: rgba(0,0,0,0.86);
+    transform: scale(0.96);
   }
 
-  #startBox p {
-    margin: 6px 0;
-    font-size: 15px;
-    line-height: 1.4;
-  }
+  #upBtn { grid-column: 2; grid-row: 1; }
+  #leftBtn { grid-column: 1; grid-row: 2; }
+  #rightBtn { grid-column: 3; grid-row: 2; }
+  #downBtn { grid-column: 2; grid-row: 3; }
 
-  #startBox ul {
-    text-align: left;
-    padding-left: 20px;
-    margin-top: 4px;
-    margin-bottom: 10px;
-    font-size: 14px;
-  }
-
-  #playerNameInput {
-    width: 100%;
-    padding: 6px 8px;
-    font-size: 16px;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-    margin: 4px 0 10px 0;
-  }
-
-  #startButton {
-    padding: 10px 22px;
-    font-size: 18px;
-    border-radius: 10px;
-    border: none;
-    background: #00bfff;
-    color: #000;
-    cursor: pointer;
-  }
-
-  #startButton:hover {
-    background: #33ccff;
-  }
-
-  /* ⭐ ONSCREEN IPAD CONTROLS ⭐ */
-
-  #touchControls {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 10px;
-    z-index: 4;
-    pointer-events: none; /* buttons re-enable it */
-  }
-
-  #brakeContainer,
-  #steerContainer {
-    position: absolute;
-    bottom: 10px;
-    pointer-events: auto;
-  }
-
-  /* Brake button on bottom-left */
-  #brakeContainer {
-    left: 10px;
-  }
-
-  /* Left/Right arrows stacked on bottom-right */
-  #steerContainer {
-    right: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .ctrl-btn {
-    min-width: 140px;
-    min-height: 120px;
-    padding: 10px 16px;
-    border-radius: 24px;
-    border: 1px solid rgba(255,255,255,0.7);
-    background: rgba(0,0,0,0.65);
-    color: #fff;
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 38px;
-    font-weight: 700;
-    text-align: center;
-    cursor: pointer;
-    touch-action: manipulation;
-  }
-
-  .ctrl-btn.brake-btn {
-    font-size: 30px;
-    font-weight: 700;
-    min-width: 180px;
-  }
-
-  .ctrl-btn:active {
-    background: rgba(0,0,0,0.9);
-    transform: scale(0.95);
-  }
-
-  /* Slightly smaller buttons on smaller screens */
-  @media (max-width: 900px) {
-    .ctrl-btn {
-      min-width: 120px;
-      min-height: 100px;
-      font-size: 32px;
+  @media (max-width: 700px) {
+    #bigfoot { width: min(34vw, 180px); }
+    #controls {
+      grid-template-columns: 56px 56px 56px;
+      grid-template-rows: 56px 56px 56px;
+      gap: 7px;
     }
-    .ctrl-btn.brake-btn {
-      min-width: 160px;
-      font-size: 26px;
-    }
-  }
-
-  /* ⭐ TOGGLE BUTTON FOR CONTROLS ⭐ */
-  #toggleCtrlBtn {
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 4;
-    padding: 6px 12px;
-    font-size: 14px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.8);
-    background: rgba(0,0,0,0.6);
-    color: #fff;
-    cursor: pointer;
-    font-family: system-ui, -apple-system, sans-serif;
-  }
-
-  #toggleCtrlBtn:hover {
-    background: rgba(0,0,0,0.85);
+    .ctrl { font-size: 24px; border-radius: 12px; }
   }
 </style>
 </head>
 <body>
+<video id="video" src="images/road_ipad.mp4" muted loop playsinline webkit-playsinline autoplay preload="auto"></video>
+<img id="bigfoot" src="images/bigfoot.png" alt="Bigfoot" />
 
-<!-- ⭐ START SCREEN ⭐ -->
-<div id="startScreen">
-  <div id="startBox">
-    <h1>Jeep Drive</h1>
-    <p><strong>Driver name:</strong></p>
-    <input id="playerNameInput" type="text" placeholder="Type your name (or leave as Driver)" />
-
-    <p><strong>Rules:</strong></p>
-    <ul>
-      <li>Use the <strong>Left / Right Arrow</strong> keys (or onscreen arrows) to steer.</li>
-      <li>You <strong>must hit an arrow key at least once every 3 seconds</strong> or you crash.</li>
-      <li>Use the <strong>Space Bar</strong> or the big <strong>BRAKE</strong> button to pause and resume the drive.</li>
-      <li>If you don’t steer or leave the road, you crash.</li>
-      <li>Your score climbs the longer you survive.</li>
-    </ul>
-
-    <p>Press the button below when you’re ready to drive.</p>
-    <button id="startButton" onclick="beginGame()">Start Driving</button>
-  </div>
+<div id="controls" aria-label="Bigfoot controls">
+  <button id="upBtn" class="ctrl" type="button" aria-label="Move up">▲</button>
+  <button id="leftBtn" class="ctrl" type="button" aria-label="Move left">◀</button>
+  <button id="rightBtn" class="ctrl" type="button" aria-label="Move right">▶</button>
+  <button id="downBtn" class="ctrl" type="button" aria-label="Move down">▼</button>
 </div>
-
-<video id="video"
-       src="images/road.mp4"
-       muted
-       loop
-       playsinline
-       preload="auto"
-       autoplay></video>
-
-<canvas id="gameCanvas"></canvas>
-<img id="bigfootOverlay" src="images/bigfoot.png" alt="" />
-
-<div id="gameover">
-  <h1>CRASH!</h1>
-  <p>Score: <span id="finalscore"></span></p>
-  <button onclick="restartGame()">Restart</button>
-</div>
-
-<!-- ⭐ ONSCREEN TOUCH CONTROLS ⭐ -->
-<div id="touchControls">
-  <div id="brakeContainer">
-    <button id="brakeBtn" class="ctrl-btn brake-btn">BRAKE</button>
-  </div>
-  <div id="steerContainer">
-    <button id="upBtn" class="ctrl-btn steer-btn">▲</button>
-    <button id="leftBtn" class="ctrl-btn steer-btn">◀</button>
-    <button id="rightBtn" class="ctrl-btn steer-btn">▶</button>
-    <button id="downBtn" class="ctrl-btn steer-btn">▼</button>
-  </div>
-</div>
-
-<!-- ⭐ TOGGLE BUTTON ⭐ -->
-<button id="toggleCtrlBtn">Hide Controls</button>
 
 <script>
-let video = document.getElementById("video");
-let canvas = document.getElementById("gameCanvas");
-let ctx = canvas.getContext("2d");
-let bigfootOverlay = document.getElementById("bigfootOverlay");
+  const video = document.getElementById("video");
+  const bigfoot = document.getElementById("bigfoot");
+  const keys = { up:false, down:false, left:false, right:false };
+  let x = window.innerWidth * 0.5;
+  let y = window.innerHeight * 0.54;
+  let lastT = performance.now();
 
-let w, h;
-
-function resizeCanvas() {
-  w = canvas.width = window.innerWidth;
-  h = canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
-
-// ================================
-//       START / PLAYER NAME
-// ================================
-let playerName = "Driver";
-let gameReady = false;  // only true after user leaves start screen
-
-function beginGame() {
-  const input = document.getElementById("playerNameInput");
-  let name = input.value.trim();
-  if (name === "") {
-    name = "Driver";
-  }
-  playerName = name;
-
-  const startScreen = document.getElementById("startScreen");
-  if (startScreen) {
-    startScreen.style.display = "none";
+  function moveBigfoot(dx, dy) {
+    x += dx;
+    y += dy;
+    bigfoot.style.left = x + "px";
+    bigfoot.style.top = y + "px";
   }
 
-  gameReady = true;
-
-  video.playbackRate = VIDEO_SPEED;
-  video.play().catch(()=>{});
-
-  startGame();
-}
-
-let dashImg = new Image();
-dashImg.src = "images/dash.png";
-
-// ================================
-//          SOUNDS
-// ================================
-let crashSound = new Audio("images/crash.mp3");
-crashSound.volume = 0.1;
-
-let carSound = new Audio("images/car_sound.mp3");
-carSound.loop = true;
-carSound.volume = 0.45;
-
-let skidSound = new Audio("images/skid.mp3");
-skidSound.volume = 0.45;
-
-
-// ================================
-//         GAME VARS
-// ================================
-let engineStarted = false;
-
-let dashW, dashH, dashX, dashY;
-let bigfootW, bigfootH;
-let carX, carY;
-
-let vx = 0;
-let vy = 0;
-let speed = 0.7;
-let friction = 0.92;
-
-let score = 0;
-let running = false;
-
-let touchLeft = false;
-let touchRight = false;
-let touchUp = false;
-let touchDown = false;
-let braking = false;
-
-let noSteerTimer = 0;
-let noSteerLimit = 3.0;
-
-let elapsedTime = 0;
-
-
-// ================================
-//       TUNING SECTION
-// ================================
-let VIDEO_SPEED = 0.8;
-let BIGFOOT_KEY_STEP = 22;
-
-let JEEP_RECT_WIDTH_SCALE  = 0.03;
-let JEEP_RECT_HEIGHT_SCALE = 0.06;
-
-let ROAD_LEFT_BOUND_PCT  = 0.08;
-let ROAD_RIGHT_BOUND_PCT = 0.92;
-
-
-// ================================
-//   BRAKE TOGGLE (SPACE / BUTTON)
-// ================================
-function toggleBrake() {
-  if (!gameReady) return;
-
-  braking = !braking;
-
-  if (braking) {
-    skidSound.currentTime = 0;
-    skidSound.play().catch(()=>{});
-
-    video.pause();
-    carSound.pause();
-  } else {
-    video.play().catch(()=>{});
-    carSound.play().catch(()=>{});
-  }
-}
-
-
-// ================================
-//   CONTROLS TOGGLE (BUTTON / ↑)
-// ================================
-const touchControlsDiv = document.getElementById("touchControls");
-const brakeBtn = document.getElementById("brakeBtn");
-const upBtn    = document.getElementById("upBtn");
-const leftBtn  = document.getElementById("leftBtn");
-const rightBtn = document.getElementById("rightBtn");
-const downBtn  = document.getElementById("downBtn");
-const toggleCtrlBtn = document.getElementById("toggleCtrlBtn");
-
-let controlsVisible = true;
-
-function toggleControlsVisibility() {
-  controlsVisible = !controlsVisible;
-  touchControlsDiv.style.display = controlsVisible ? "block" : "none";
-  toggleCtrlBtn.textContent = controlsVisible ? "Hide Controls" : "Show Controls";
-}
-
-toggleCtrlBtn.addEventListener("click", () => {
-  toggleControlsVisibility();
-});
-
-
-// ================================
-//          INPUT HANDLING
-// ================================
-window.addEventListener("keydown", e => {
-
-  if (!gameReady) return;
-
-  if (!engineStarted) {
-    engineStarted = true;
-    carSound.play().catch(()=>{});
+  function setHeld(dir, held) {
+    keys[dir] = held;
+    video.play().catch(() => {});
   }
 
-  if (e.key === " ") {
-    e.preventDefault();
-    toggleBrake();
-    return;
+  function bindButton(id, dir) {
+    const btn = document.getElementById(id);
+    const down = (ev) => {
+      ev.preventDefault();
+      setHeld(dir, true);
+    };
+    const up = (ev) => {
+      if (ev) ev.preventDefault();
+      setHeld(dir, false);
+    };
+    btn.addEventListener("pointerdown", down, { passive:false });
+    btn.addEventListener("pointerup", up, { passive:false });
+    btn.addEventListener("pointercancel", up, { passive:false });
+    btn.addEventListener("pointerleave", up);
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const step = 28;
+      if (dir === "up") moveBigfoot(0, -step);
+      if (dir === "down") moveBigfoot(0, step);
+      if (dir === "left") moveBigfoot(-step, 0);
+      if (dir === "right") moveBigfoot(step, 0);
+    });
   }
 
-  if (e.key === "ArrowUp")    { e.preventDefault(); touchUp = true;    noSteerTimer = 0; nudgeBigfoot(0, -BIGFOOT_KEY_STEP); }
-  if (e.key === "ArrowDown")  { e.preventDefault(); touchDown = true;  noSteerTimer = 0; nudgeBigfoot(0, BIGFOOT_KEY_STEP); }
-  if (e.key === "ArrowLeft")  { touchLeft = true;  noSteerTimer = 0; nudgeBigfoot(-BIGFOOT_KEY_STEP, 0); }
-  if (e.key === "ArrowRight") { touchRight = true; noSteerTimer = 0; nudgeBigfoot(BIGFOOT_KEY_STEP, 0); }
+  bindButton("upBtn", "up");
+  bindButton("downBtn", "down");
+  bindButton("leftBtn", "left");
+  bindButton("rightBtn", "right");
 
-  if (video.paused && !braking) tryStartVideoAndGame();
-});
+  window.addEventListener("keydown", (ev) => {
+    if (ev.key === "ArrowUp") { ev.preventDefault(); setHeld("up", true); }
+    if (ev.key === "ArrowDown") { ev.preventDefault(); setHeld("down", true); }
+    if (ev.key === "ArrowLeft") { ev.preventDefault(); setHeld("left", true); }
+    if (ev.key === "ArrowRight") { ev.preventDefault(); setHeld("right", true); }
+  }, { passive:false });
 
-window.addEventListener("keyup", e => {
-  if (e.key === "ArrowUp")    touchUp = false;
-  if (e.key === "ArrowDown")  touchDown = false;
-  if (e.key === "ArrowLeft")  touchLeft = false;
-  if (e.key === "ArrowRight") touchRight = false;
-});
-
-
-// ================================
-//      TOUCH / ONSCREEN BTNS
-// ================================
-function attachButton(btn, onDown, onUp) {
-  if (!btn) return;
-
-  btn.addEventListener("touchstart", e => {
-    e.preventDefault();
-    onDown();
-  }, {passive:false});
-
-  btn.addEventListener("touchend", e => {
-    e.preventDefault();
-    if (onUp) onUp();
+  window.addEventListener("keyup", (ev) => {
+    if (ev.key === "ArrowUp") setHeld("up", false);
+    if (ev.key === "ArrowDown") setHeld("down", false);
+    if (ev.key === "ArrowLeft") setHeld("left", false);
+    if (ev.key === "ArrowRight") setHeld("right", false);
   });
 
-  btn.addEventListener("mousedown", e => {
-    e.preventDefault();
-    onDown();
+  window.addEventListener("resize", () => {
+    x = Math.min(window.innerWidth, Math.max(0, x));
+    y = Math.min(window.innerHeight, Math.max(0, y));
+    moveBigfoot(0, 0);
   });
 
-  btn.addEventListener("mouseup", e => {
-    e.preventDefault();
-    if (onUp) onUp();
-  });
-
-  btn.addEventListener("click", e => {
-    e.preventDefault();
-    onDown();
-    if (onUp) onUp();
-  });
-
-  btn.addEventListener("mouseleave", () => {
-    if (onUp) onUp();
-  });
-}
-
-attachButton(brakeBtn, () => {
-  if (!gameReady) return;
-  toggleBrake();
-}, null);
-
-attachButton(leftBtn, () => {
-  if (!gameReady) return;
-  touchLeft = true;
-  noSteerTimer = 0;
-  nudgeBigfoot(-BIGFOOT_KEY_STEP, 0);
-}, () => {
-  touchLeft = false;
-});
-
-attachButton(rightBtn, () => {
-  if (!gameReady) return;
-  touchRight = true;
-  noSteerTimer = 0;
-  nudgeBigfoot(BIGFOOT_KEY_STEP, 0);
-}, () => {
-  touchRight = false;
-});
-
-attachButton(upBtn, () => {
-  if (!gameReady) return;
-  touchUp = true;
-  noSteerTimer = 0;
-  nudgeBigfoot(0, -BIGFOOT_KEY_STEP);
-}, () => {
-  touchUp = false;
-});
-
-attachButton(downBtn, () => {
-  if (!gameReady) return;
-  touchDown = true;
-  noSteerTimer = 0;
-  nudgeBigfoot(0, BIGFOOT_KEY_STEP);
-}, () => {
-  touchDown = false;
-});
-
-window.addEventListener("touchstart", e => {
-  if (!gameReady) return;
-
-  if (!engineStarted) {
-    engineStarted = true;
-    carSound.play().catch(()=>{});
+  function tick(now) {
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    const speed = 320;
+    let dx = 0;
+    let dy = 0;
+    if (keys.left) dx -= speed * dt;
+    if (keys.right) dx += speed * dt;
+    if (keys.up) dy -= speed * dt;
+    if (keys.down) dy += speed * dt;
+    if (dx || dy) moveBigfoot(dx, dy);
+    requestAnimationFrame(tick);
   }
 
-  if (video.paused && !braking) tryStartVideoAndGame();
-});
-
-video.addEventListener("canplay", tryStartVideoAndGame);
-
-function tryStartVideoAndGame() {
-  if (!gameReady) return;
-  video.playbackRate = VIDEO_SPEED;
-  video.play().catch(()=>{});
-  if (!running) startGame();
-}
-
-function clampBigfootPosition() {
-  const leftRoad = w * ROAD_LEFT_BOUND_PCT;
-  const rightRoad = w * ROAD_RIGHT_BOUND_PCT;
-  carX = Math.max(leftRoad + (bigfootW * 0.18), Math.min(rightRoad - (bigfootW * 0.18), carX));
-  carY = Math.max(h * 0.18, Math.min(h - (bigfootH * 0.32), carY));
-}
-
-function nudgeBigfoot(dx, dy) {
-  if (!running) return;
-  carX += dx;
-  carY += dy;
-  clampBigfootPosition();
-  updateBigfootOverlay();
-}
-
-function updateBigfootOverlay() {
-  if (!bigfootOverlay) return;
-  bigfootOverlay.style.display = running ? "block" : "none";
-  bigfootOverlay.style.width = bigfootW + "px";
-  bigfootOverlay.style.left = carX + "px";
-  bigfootOverlay.style.top = (carY - (bigfootH / 2)) + "px";
-}
-
-
-// ================================
-//           START GAME
-// ================================
-function startGame() {
-  dashW = w;
-  dashH = h * 0.30;
-  dashY = h - dashH;
-
-  carX = w/2;
-  bigfootW = Math.min(w * 0.22, h * 0.28);
-  bigfootH = bigfootW * (973 / 958);
-  carY = dashY - (bigfootH * 0.45);
-
-  vx = 0;
-  vy = 0;
-  score = 0;
-  elapsedTime = 0;
-  noSteerTimer = 0;
-
-  running = true;
-  updateBigfootOverlay();
-  requestAnimationFrame(loop);
-}
-
-
-// ================================
-//             CRASH
-// ================================
-function doCrash() {
-  crashSound.currentTime = 0;
-  crashSound.play().catch(()=>{});
-  carSound.pause();
-  running = false;
-  if (bigfootOverlay) bigfootOverlay.style.display = "none";
-
-  document.getElementById("finalscore").textContent = Math.floor(score);
-  document.getElementById("gameover").style.display = "block";
-}
-
-
-// ================================
-//             LOOP
-// ================================
-function loop() {
-  if (!running) return;
-
-  if (braking) {
-    draw();
-    return requestAnimationFrame(loop);
-  }
-
-  elapsedTime += 1/60;
-
-  let leftRoad  = w * ROAD_LEFT_BOUND_PCT;
-  let rightRoad = w * ROAD_RIGHT_BOUND_PCT;
-
-  if (!touchLeft && !touchRight && !touchUp && !touchDown) noSteerTimer += 1/60;
-  if (noSteerTimer >= noSteerLimit) return doCrash();
-
-
-  // BIGFOOT MOTION
-  if (touchLeft)  vx -= speed;
-  if (touchRight) vx += speed;
-  if (touchUp)    vy -= speed;
-  if (touchDown)  vy += speed;
-
-  vx *= friction;
-  vy *= friction;
-  carX += vx;
-  carY += vy;
-
-  score += 0.2;
-
-  clampBigfootPosition();
-
-  draw();
-  requestAnimationFrame(loop);
-}
-
-
-// ================================
-//              DRAW
-// ================================
-function draw() {
-  ctx.clearRect(0,0,w,h);
-
-  dashX = carX - dashW/2;
-  if (dashImg.complete && dashImg.naturalWidth > 0) {
-    ctx.drawImage(dashImg, dashX, dashY, dashW, dashH);
-  }
-  updateBigfootOverlay();
-
-  ctx.font = "32px Arial";
-  ctx.fillStyle = "white";
-  ctx.fillText(playerName + ": " + Math.floor(score), 20, 40);
-}
-
-
-// ================================
-//          RESTART
-// ================================
-function restartGame() {
-  document.getElementById("gameover").style.display = "none";
-  running = false;
-  engineStarted = false;
-  startGame();
-}
+  moveBigfoot(0, 0);
+  video.play().catch(() => {});
+  requestAnimationFrame(tick);
 </script>
-
 </body>
 </html>

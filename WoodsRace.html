@@ -14,6 +14,10 @@
     overflow: hidden;
   }
 
+  :root {
+    --messageHudWidth: min(80.96vw, 862.4px);
+  }
+
   #video {
     position: fixed;
     inset: 0;
@@ -270,6 +274,8 @@
   }
 
   #crashText {
+    box-sizing: border-box;
+    width: var(--messageHudWidth);
     color: #fff;
     font: 700 28px/1 Arial, sans-serif;
     letter-spacing: 0.5px;
@@ -308,7 +314,8 @@
     border-radius: 10px;
     padding: 14px 18px;
     pointer-events: none;
-    max-width: min(92vw, 980px);
+    box-sizing: border-box;
+    width: var(--messageHudWidth);
   }
 
   @keyframes winnerFlash {

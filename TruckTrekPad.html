@@ -85,13 +85,24 @@
   background:rgba(8,28,58,.88);
   animation: alienObjectiveBlueFlash .72s steps(2, end) infinite;
 }
+.alienObjective.destination_orange{
+  border-color:rgba(255,142,36,.84);
+  background:rgba(56,25,5,.88);
+  animation: alienObjectiveOrangeFlash .72s steps(2, end) infinite;
+}
 .alienObjective.guardian{
   border-color:rgba(255,210,72,.86);
   background:rgba(46,34,8,.88);
   animation: alienObjectiveGoldFlash .72s steps(2, end) infinite;
 }
+.alienObjective.pig_lady{
+  border-color:rgba(255,238,68,.9);
+  background:rgba(48,44,4,.9);
+  animation: alienObjectiveYellowFlash .72s steps(2, end) infinite;
+}
 .alienObjective.destination .alienObjectiveTitle,
-.alienObjective.guardian .alienObjectiveTitle{
+.alienObjective.guardian .alienObjectiveTitle,
+.alienObjective.pig_lady .alienObjectiveTitle{
   color:#ff2323;
   font-size:20px;
   line-height:1.15;
@@ -102,9 +113,17 @@
   color:#53b7ff;
   text-shadow:0 0 12px rgba(0,132,255,.95), 0 2px 0 rgba(0,0,0,.55);
 }
+.alienObjective.destination_orange .alienObjectiveTitle{
+  color:#ff9a28;
+  text-shadow:0 0 12px rgba(255,126,0,.95), 0 2px 0 rgba(0,0,0,.55);
+}
 .alienObjective.guardian .alienObjectiveTitle{
   color:#ffd94f;
   text-shadow:0 0 12px rgba(255,210,60,.95), 0 2px 0 rgba(0,0,0,.55);
+}
+.alienObjective.pig_lady .alienObjectiveTitle{
+  color:#fff044;
+  text-shadow:0 0 12px rgba(255,238,68,.98), 0 2px 0 rgba(0,0,0,.55);
 }
 @keyframes alienObjectivePulse{
   0%,100% { transform: scale(1); box-shadow: 0 10px 24px rgba(0,0,0,.45); }
@@ -134,6 +153,18 @@
     opacity:.72;
   }
 }
+@keyframes alienObjectiveOrangeFlash{
+  0%,100% {
+    color:#ff9a28;
+    box-shadow:0 0 0 2px rgba(255,142,36,.62), 0 12px 32px rgba(255,111,0,.48);
+    opacity:1;
+  }
+  50% {
+    color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.65), 0 14px 40px rgba(255,126,0,.84);
+    opacity:.72;
+  }
+}
 @keyframes alienObjectiveGoldFlash{
   0%,100% {
     color:#ffd94f;
@@ -143,6 +174,18 @@
   50% {
     color:#fff;
     box-shadow:0 0 0 2px rgba(255,255,255,.68), 0 14px 40px rgba(255,210,60,.8);
+    opacity:.72;
+  }
+}
+@keyframes alienObjectiveYellowFlash{
+  0%,100% {
+    color:#fff044;
+    box-shadow:0 0 0 2px rgba(255,238,68,.68), 0 12px 34px rgba(255,225,0,.52);
+    opacity:1;
+  }
+  50% {
+    color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.72), 0 14px 42px rgba(255,238,68,.88);
     opacity:.72;
   }
 }
@@ -916,9 +959,9 @@ const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
 const TUNNEL_MOUTH_SIGN_HEIGHT_FT = 8.0;
 const TUNNEL_EXIT_GODDESS_ENABLE = true;
-const TUNNEL_EXIT_GODDESS_FILE = "goddess2.png";
-const TUNNEL_EXIT_GODDESS_WIDTH_FT = 8.0;
-const TUNNEL_EXIT_GODDESS_HEIGHT_FT = 14.0;
+const TUNNEL_EXIT_GODDESS_FILE = "copter.png";
+const TUNNEL_EXIT_GODDESS_WIDTH_FT = 18.0;
+const TUNNEL_EXIT_GODDESS_HEIGHT_FT = 7.744;
 const TUNNEL_EXIT_GODDESS_DEPTH_FROM_ENTRANCE_FT = 50.0;
 const TUNNEL_EXIT_GODDESS_TRIGGER_RADIUS_FT = 12.0;
 const TUNNEL_EXIT_GODDESS_BLOCK_RADIUS_FT = 140.0; // no-bypass hold radius near tunnel exit
@@ -1445,6 +1488,7 @@ function setAlienObjectiveMode(mode){
     alienObjectiveWrap.classList.toggle("destination_orange", normalizedMode === "destination_orange");
     alienObjectiveWrap.classList.toggle("destination_green", normalizedMode === "destination_green");
     alienObjectiveWrap.classList.toggle("guardian", normalizedMode === "guardian");
+    alienObjectiveWrap.classList.toggle("pig_lady", normalizedMode === "pig_lady");
   }
 
   if(alienObjectiveTitleEl){
@@ -1456,7 +1500,9 @@ function setAlienObjectiveMode(mode){
           ? "GO TO THE BLUE SQUARE ON THE MINIMAP"
           : normalizedMode === "guardian"
             ? "FIND THE GUARDIAN WARRIOR WITH A MESSAGE"
-            : "YOU MUST KILL ALL THE ALIENS";
+            : normalizedMode === "pig_lady"
+              ? "LAND AND SMACK THE PIG LADY"
+              : "YOU MUST KILL ALL THE ALIENS";
   }
   if(alienObjectiveCountsEl){
     alienObjectiveCountsEl.style.display = normalizedMode === "combat" ? "block" : "none";
@@ -3450,6 +3496,12 @@ function ensureTunnelExitGoddess(){
   mesh.receiveShadow = false;
   mesh.frustumCulled = false;
   mesh.renderOrder = 35;
+  if(TUNNEL_EXIT_GODDESS_FILE === GODDESS_COPTER_MARKER_FILE){
+    mesh.userData.vehicleFile = GODDESS_COPTER_MARKER_FILE;
+    mesh.userData.tex = tunnelExitGoddessTex || null;
+    mesh.userData.collisionRadius = Math.max(2.0 * ft, GODDESS_COPTER_MARKER_COLLISION_RADIUS_FT * ft);
+    group.userData.isCopterPickup = true;
+  }
   group.add(mesh);
 
   scene.add(group);
@@ -3495,6 +3547,11 @@ function getTunnelExitGoddessAnchor(){
 }
 
 function ensureGoddessCopterMarker(){
+  if(TUNNEL_EXIT_GODDESS_FILE === GODDESS_COPTER_MARKER_FILE){
+    clearGoddessCopterMarker();
+    return;
+  }
+
   const anchor = getTunnelExitGoddessAnchor();
   if(!anchor){
     clearGoddessCopterMarker();
@@ -11172,6 +11229,32 @@ function updatePlazaExitVehicleChoiceCollision(obj){
   if(!obj) return;
   const avatarRadius = TRUCK_COLLISION_RADIUS;
 
+  if(tunnelExitGoddessGroup && tunnelExitGoddessGroup.parent === scene && tunnelExitGoddessGroup.userData?.isCopterPickup){
+    let pickup = null;
+    tunnelExitGoddessGroup.traverse((node)=>{
+      if(pickup || !node || !node.userData || node.userData.vehicleFile !== GODDESS_COPTER_MARKER_FILE) return;
+      pickup = node;
+    });
+    if(pickup && pickup.visible !== false){
+      const dx = obj.position.x - pickup.position.x;
+      const dz = obj.position.z - pickup.position.z;
+      const r = avatarRadius + (pickup.userData.collisionRadius || 0);
+      const wantsSwitch = (avatarMode === "leggoman") || (currentVehicleFile !== GODDESS_COPTER_MARKER_FILE);
+      if(wantsSwitch && ((dx * dx) + (dz * dz) <= (r * r))){
+        MINI_MAP_SHOW_ORANGE_SQUARE = true;
+        MINI_MAP_SHOW_GREEN_SQUARE = false;
+        setAlienObjectiveMode("destination_orange");
+        setAlienObjectiveVisible(true);
+        tunnelExitGoddessEncounterActive = false;
+        tunnelExitGoddessEncounterDone = true;
+        tunnelExitGoddessVoiceHasPlayed = true;
+        switchToChosenVehicleFile(GODDESS_COPTER_MARKER_FILE, pickup.userData.tex || tunnelExitGoddessTex || null);
+        updatePlayerCopterFlightAudio(true);
+        return;
+      }
+    }
+  }
+
   if(cyberFrontVehicleMesh && cyberFrontVehicleMesh.visible){
     const dx = obj.position.x - cyberFrontVehicleMesh.position.x;
     const dz = obj.position.z - cyberFrontVehicleMesh.position.z;
@@ -11189,6 +11272,7 @@ function updatePlazaExitVehicleChoiceCollision(obj){
     const wantsSwitch = (avatarMode === "leggoman") || (currentVehicleFile !== (goddessCopterMarker.userData.vehicleFile || GODDESS_COPTER_MARKER_FILE));
     if(wantsSwitch && ((dx * dx) + (dz * dz) <= (r * r))){
       switchToChosenVehicleFile(goddessCopterMarker.userData.vehicleFile || GODDESS_COPTER_MARKER_FILE, goddessCopterMarker.userData.tex || null);
+      updatePlayerCopterFlightAudio(true);
       return;
     }
   }
@@ -12391,6 +12475,8 @@ function startRingLandingSequence(){
 function playRingDarknessAudioOnce(){
   if(ringDarknessAudioPlayed) return;
   ringDarknessAudioPlayed = true;
+  setAlienObjectiveMode("pig_lady");
+  setAlienObjectiveVisible(true);
   updateCopterJourneyMusicAudio(false);
   if(!fireRingAmbientAudio) initFireRingAmbientAudio();
   if(!fireRingAmbientAudio) return;
@@ -12645,6 +12731,35 @@ function playTunnelExitGoddessEncounterVoice(){
 }
 
 function updateTunnelExitGoddessEncounter(){
+  if(TUNNEL_EXIT_GODDESS_FILE === GODDESS_COPTER_MARKER_FILE){
+    if(!tunnelExitGoddessGroup || tunnelExitGoddessGroup.parent !== scene) return;
+    const obj = controls.getObject();
+    if(!obj) return;
+
+    let anchor = null;
+    tunnelExitGoddessGroup.traverse((node)=>{
+      if(anchor || !node || !node.isMesh) return;
+      anchor = node.position;
+    });
+    if(!anchor) anchor = tunnelExitGoddessGroup.position;
+
+    const dx = obj.position.x - anchor.x;
+    const dz = obj.position.z - anchor.z;
+    const distXZ = Math.hypot(dx, dz);
+    const ft = WORLD_UNITS_PER_FOOT;
+    const outsideCave = !isTruckInsideCaveForLighting(obj.position.x, obj.position.y, obj.position.z);
+    const triggerR = Math.max(2.0 * ft, TUNNEL_EXIT_GODDESS_BLOCK_RADIUS_FT * ft);
+    if(outsideCave && distXZ <= triggerR && currentVehicleFile !== GODDESS_COPTER_MARKER_FILE){
+      MINI_MAP_SHOW_ORANGE_SQUARE = true;
+      MINI_MAP_SHOW_GREEN_SQUARE = false;
+      setAlienObjectiveMode("destination_orange");
+      setAlienObjectiveVisible(true);
+      tunnelExitGoddessEncounterActive = false;
+      tunnelExitGoddessEncounterDone = true;
+      tunnelExitGoddessVoiceHasPlayed = true;
+    }
+    return;
+  }
   if(tunnelExitGoddessEncounterDone || tunnelExitGoddessEncounterActive) return;
   if(!tunnelExitGoddessGroup || tunnelExitGoddessGroup.parent !== scene) return;
 

@@ -20,7 +20,17 @@
   }
   .hud.hidden{ display:none; }
   .hud .small{ font-size:14px; opacity:.9; margin-top:8px; }
+  .hud .flashGreen{
+    color:#39ff66;
+    font-weight:900;
+    text-shadow:0 0 10px rgba(57,255,102,.95), 0 0 22px rgba(57,255,102,.65);
+    animation:hudGreenFlash .58s steps(2, end) infinite;
+  }
   .hud b{ font-weight:800; }
+@keyframes hudGreenFlash{
+  0%,100% { color:#39ff66; opacity:1; }
+  50% { color:#eaffef; opacity:.62; }
+}
 .healthWrap{
     position:fixed; left:18px; top:18px; z-index:31;
     width:220px; padding:10px 12px; border-radius:12px;
@@ -961,7 +971,7 @@ const TUNNEL_MOUTH_SIGN_ENABLE = true;
 const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
 const TUNNEL_MOUTH_SIGN_HEIGHT_FT = 8.0;
-const TUNNEL_EXIT_GODDESS_ENABLE = true;
+const TUNNEL_EXIT_GODDESS_ENABLE = false;
 const TUNNEL_EXIT_GODDESS_FILE = "copter.png";
 const TUNNEL_EXIT_GODDESS_WIDTH_FT = 18.0;
 const TUNNEL_EXIT_GODDESS_HEIGHT_FT = 7.744;
@@ -1396,6 +1406,7 @@ function respawnPlayerToPreviousStage(){
     try{ tunnelExitGoddessVoiceAudio.pause(); tunnelExitGoddessVoiceAudio.currentTime = 0; }catch(e){}
   }
   tunnelExitGoddessEncounterActive = false;
+  tunnelExitGreenObjectiveArmed = false;
 
   if(prevStage === 3){
     MINI_MAP_SHOW_BLUE_SQUARE = false;
@@ -1404,10 +1415,11 @@ function respawnPlayerToPreviousStage(){
     orangeObjectiveReached = false;
     tunnelExitGoddessEncounterDone = false;
     tunnelExitGoddessVoiceHasPlayed = false;
+    tunnelExitGreenObjectiveArmed = false;
     setAlienObjectiveMode("destination_orange");
     setAlienObjectiveVisible(true);
     teleportToMinimapSquare("goddess");
-    hudLine("💀 Health depleted. Returned to <code>Level 3: Tunnel Cave</code> (goddess checkpoint).");
+    hudLine("💀 Health depleted. Returned to <code>Level 3: Tunnel Cave</code> (tube cave checkpoint).");
   } else if(prevStage === 2){
     if(stage === 3){
       MINI_MAP_SHOW_BLUE_SQUARE = false;
@@ -1416,10 +1428,11 @@ function respawnPlayerToPreviousStage(){
       orangeObjectiveReached = false;
       tunnelExitGoddessEncounterDone = false;
       tunnelExitGoddessVoiceHasPlayed = false;
+      tunnelExitGreenObjectiveArmed = false;
       setAlienObjectiveMode("destination_orange");
       setAlienObjectiveVisible(true);
       teleportToMinimapSquare("goddess");
-      hudLine("💀 Health depleted. Returned to <code>Level 3: Tunnel Cave</code> (goddess checkpoint).");
+      hudLine("💀 Health depleted. Returned to <code>Level 3: Tunnel Cave</code> (tube cave checkpoint).");
     } else {
       MINI_MAP_SHOW_BLUE_SQUARE = true;
       MINI_MAP_SHOW_ORANGE_SQUARE = false;
@@ -1427,6 +1440,7 @@ function respawnPlayerToPreviousStage(){
       orangeObjectiveReached = false;
       tunnelExitGoddessEncounterDone = false;
       tunnelExitGoddessVoiceHasPlayed = false;
+      tunnelExitGreenObjectiveArmed = false;
       setAlienObjectiveMode("destination_blue");
       setAlienObjectiveVisible(true);
       teleportToMinimapSquare("blue");
@@ -1439,6 +1453,7 @@ function respawnPlayerToPreviousStage(){
     orangeObjectiveReached = false;
     tunnelExitGoddessEncounterDone = false;
     tunnelExitGoddessVoiceHasPlayed = false;
+    tunnelExitGreenObjectiveArmed = false;
     clearTargets();
     createTargets();
     setAlienObjectiveMode("combat");
@@ -1862,9 +1877,10 @@ function updateMiniMap(dt){
   drawMiniMap(obj.position.x, obj.position.z);
 }
 
-function hudLine(html){
+function hudLine(html, className = ""){
   if (!hud) return;
-  hud.innerHTML += `<div class="small">${html}</div>`;
+  const extraClass = className ? " " + className : "";
+  hud.innerHTML += `<div class="small${extraClass}">${html}</div>`;
 }
 function showBanner(msg){ const b=document.getElementById("banner"); if(!b) return; b.innerHTML = msg; b.style.display="block"; }
 
@@ -3590,6 +3606,16 @@ function clearGoddessCopterMarker(){
 }
 
 function getTunnelExitGoddessAnchor(){
+  if((!tunnelExitGoddessGroup || tunnelExitGoddessGroup.parent !== scene) && !TUNNEL_EXIT_GODDESS_ENABLE){
+    const frame = _getPrimaryTunnelFarMouthFrame();
+    if(!frame || !frame.mouth) return null;
+    const ft = WORLD_UNITS_PER_FOOT;
+    const offset = Math.max(4.0 * ft, TUNNEL_ENTRANCE_CLEARANCE_FT * ft);
+    const x = frame.mouth.x + (frame.dir.x * offset);
+    const z = frame.mouth.z + (frame.dir.z * offset);
+    const gy = heightAtWorldXZ(x, z);
+    return new THREE.Vector3(x, Number.isFinite(gy) ? gy : frame.mouth.y, z);
+  }
   if(!tunnelExitGoddessGroup || tunnelExitGoddessGroup.parent !== scene) return null;
   let anchor = null;
   tunnelExitGoddessGroup.traverse((node)=>{
@@ -3600,7 +3626,7 @@ function getTunnelExitGoddessAnchor(){
 }
 
 function ensureGoddessCopterMarker(){
-  if(TUNNEL_EXIT_GODDESS_FILE === GODDESS_COPTER_MARKER_FILE){
+  if(TUNNEL_EXIT_GODDESS_ENABLE && TUNNEL_EXIT_GODDESS_FILE === GODDESS_COPTER_MARKER_FILE){
     clearGoddessCopterMarker();
     return;
   }
@@ -3688,7 +3714,7 @@ function ensureGoddessCopterBeacon(nowSec = 0){
 
   const copterActiveVehicle = (avatarMode !== "leggoman") && (currentVehicleFile === GODDESS_COPTER_MARKER_FILE);
   const markerVisible = !!(goddessCopterMarker && goddessCopterMarker.parent === scene && goddessCopterMarker.visible !== false);
-  const canShowBeacon = tunnelExitGoddessEncounterDone && tunnelExitGoddessVoiceHasPlayed;
+  const canShowBeacon = tunnelExitGoddessEncounterDone;
   if(!markerVisible || copterActiveVehicle || !canShowBeacon){
     clearGoddessCopterBeacon();
     return;
@@ -6876,6 +6902,7 @@ function triggerGuideWarriorBlessing(){
   tunnelExitGoddessEncounterActive = false;
   tunnelExitGoddessEncounterDone = false;
   tunnelExitGoddessVoiceHasPlayed = false;
+  tunnelExitGreenObjectiveArmed = false;
   clearFastTrackPortal();
   fastTrackPortalSpawned = false;
   fastTrackPortalUsed = false;
@@ -11031,6 +11058,7 @@ let tunnelExitGoddessVoiceTrimTimer = null;
 let tunnelExitGoddessEncounterActive = false;
 let tunnelExitGoddessEncounterDone = false;
 let tunnelExitGoddessVoiceHasPlayed = false;
+let tunnelExitGreenObjectiveArmed = false;
 let tunnelReaperFollowupTimer = null;
 let plazaTruckRestrictLastMs = -1e9;
 const buffNearPickupSprites = [];
@@ -12837,74 +12865,24 @@ function playTunnelExitGoddessEncounterVoice(){
 }
 
 function updateTunnelExitGoddessEncounter(){
-  if(TUNNEL_EXIT_GODDESS_FILE === GODDESS_COPTER_MARKER_FILE){
-    if(!tunnelExitGoddessGroup || tunnelExitGoddessGroup.parent !== scene) return;
-    const obj = controls.getObject();
-    if(!obj) return;
-
-    let anchor = null;
-    tunnelExitGoddessGroup.traverse((node)=>{
-      if(anchor || !node || !node.isMesh) return;
-      anchor = node.position;
-    });
-    if(!anchor) anchor = tunnelExitGoddessGroup.position;
-
-    const dx = obj.position.x - anchor.x;
-    const dz = obj.position.z - anchor.z;
-    const distXZ = Math.hypot(dx, dz);
-    const ft = WORLD_UNITS_PER_FOOT;
-    const outsideCave = !isTruckInsideCaveForLighting(obj.position.x, obj.position.y, obj.position.z);
-    const triggerR = Math.max(2.0 * ft, TUNNEL_EXIT_GODDESS_BLOCK_RADIUS_FT * ft);
-    if(outsideCave && distXZ <= triggerR && currentVehicleFile !== GODDESS_COPTER_MARKER_FILE){
-      MINI_MAP_SHOW_ORANGE_SQUARE = true;
-      MINI_MAP_SHOW_GREEN_SQUARE = false;
-      setAlienObjectiveMode("destination_orange");
-      setAlienObjectiveVisible(true);
-      tunnelExitGoddessEncounterActive = false;
-      tunnelExitGoddessEncounterDone = true;
-      tunnelExitGoddessVoiceHasPlayed = true;
-    }
-    return;
-  }
-  if(tunnelExitGoddessEncounterDone || tunnelExitGoddessEncounterActive) return;
-  if(!tunnelExitGoddessGroup || tunnelExitGoddessGroup.parent !== scene) return;
-
   const obj = controls.getObject();
   if(!obj) return;
-
-  let anchor = null;
-  tunnelExitGoddessGroup.traverse((node)=>{
-    if(anchor || !node || !node.isMesh) return;
-    anchor = node.position;
-  });
-  if(!anchor) anchor = tunnelExitGoddessGroup.position;
-
-  const dx = obj.position.x - anchor.x;
-  const dz = obj.position.z - anchor.z;
-  const distXZ = Math.hypot(dx, dz);
-
-  const ft = WORLD_UNITS_PER_FOOT;
-  const outsideCave = !isTruckInsideCaveForLighting(obj.position.x, obj.position.y, obj.position.z);
-  if(!outsideCave) return;
-
-  const triggerR = Math.max(2.0 * ft, TUNNEL_EXIT_GODDESS_TRIGGER_RADIUS_FT * ft);
-  const blockR = Math.max(triggerR, TUNNEL_EXIT_GODDESS_BLOCK_RADIUS_FT * ft);
-  if(distXZ > blockR) return;
-
-  const faceYaw = Math.atan2(anchor.x - obj.position.x, anchor.z - obj.position.z);
-  if(Number.isFinite(faceYaw)){
-    truckYaw = faceYaw;
-    obj.rotation.y = faceYaw;
+  if(tunnelExitGoddessEncounterDone || tunnelExitGoddessEncounterActive) return;
+  const insideCave = isTruckInsideCaveForLighting(obj.position.x, obj.position.y, obj.position.z);
+  if(insideCave){
+    tunnelExitGreenObjectiveArmed = true;
+    return;
   }
+  if(!tunnelExitGreenObjectiveArmed) return;
 
   MINI_MAP_SHOW_ORANGE_SQUARE = false;
   MINI_MAP_SHOW_GREEN_SQUARE = true;
   setAlienObjectiveMode("destination_green");
   setAlienObjectiveVisible(true);
-  hudLine("🟩 Green destination revealed on minimap.");
-  hudLine("📏 Orange→Green route: <code>~" + Math.round(ORANGE_GREEN_ROUTE_TOTAL_DIST_FT) + "ft</code>.");
-  hudLine("🗣️ Goddess encounter: movement paused while voice plays.");
-  playTunnelExitGoddessEncounterVoice();
+  tunnelExitGoddessEncounterActive = false;
+  tunnelExitGoddessEncounterDone = true;
+  tunnelExitGoddessVoiceHasPlayed = false;
+  hudLine("GO TO THE GREEN SQUARE ON THE MINIMAP", "flashGreen");
 }
 
 function initTunnelReaperAudio(){
@@ -13867,17 +13845,17 @@ function teleportToMinimapSquare(which){
     z = GREEN_SQUARE_MARKER_Z;
     label = "green";
   } else if(which === "goddess"){
-    if(!tunnelExitGoddessGroup || tunnelExitGoddessGroup.parent !== scene){
-      ensureTunnelExitGoddess();
+    const frame = _getPrimaryTunnelFarMouthFrame();
+    if(frame && frame.mouth){
+      const ft = WORLD_UNITS_PER_FOOT;
+      const offset = Math.max(4.0 * ft, TUNNEL_ENTRANCE_CLEARANCE_FT * ft);
+      x = frame.mouth.x + (frame.dir.x * offset);
+      z = frame.mouth.z + (frame.dir.z * offset);
+    } else {
+      x = CAVE_ANCHOR_X;
+      z = CAVE_ANCHOR_Z;
     }
-    const anchor = getTunnelExitGoddessAnchor();
-    if(!anchor){
-      hudLine("⚠️ Goddess location not ready yet.");
-      return;
-    }
-    x = anchor.x;
-    z = anchor.z;
-    label = "goddess";
+    label = "tube cave";
   } else {
     return;
   }

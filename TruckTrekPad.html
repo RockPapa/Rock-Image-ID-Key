@@ -57,7 +57,7 @@
   animation: alienObjectiveRedFlash .72s steps(2, end) infinite;
   position:fixed; left:266px; top:18px; z-index:31;
   box-sizing:border-box;
-  width:598px; min-height:96px; padding:18px 20px; border-radius:12px;
+  width:478.4px; min-height:96px; padding:18px 20px; border-radius:12px;
   border:1px solid rgba(255,255,255,.24);
   background:rgba(20,24,32,.78); color:#fff;
   box-shadow:0 10px 24px rgba(0,0,0,.45);
@@ -1275,6 +1275,8 @@ const RING_LANDING_PIG_PLAYS = 10;
 const RING_LANDING_ESCAPE_PLAYS = 2;
 const GREEN_BRIDE_PIG_TRIGGER_SCALE = 1.12;
 const GREEN_BRIDE_PIG_TRIGGER_DIST_FT = 10.0;
+const GREEN_BRIDE_HITS_TO_KILL = 10;
+const GREEN_BRIDE_HIT_DAMAGE = 1;
 
 function distanceSqToPlayerXZ(x, z){
   const obj = controls && typeof controls.getObject === "function" ? controls.getObject() : null;
@@ -2369,10 +2371,8 @@ controls.getObject().position.set(AVATRUCK_SPAWN_X, PLAYER_EYE_HEIGHT, AVATRUCK_
 camera.rotation.x = -0.10;
 let truckYaw = controls.getObject().rotation.y;
 const INITIAL_SPAWN_LOCK_MS = 2500;
-const ALIEN_START_DAMAGE_GRACE_MS = 5000;
 let initialSpawnLockUntilMs = performance.now() + INITIAL_SPAWN_LOCK_MS;
 let initialSpawnLockReleased = false;
-let alienStartDamageGraceUntilMs = performance.now() + ALIEN_START_DAMAGE_GRACE_MS;
 
 function enforceInitialSpawnLock(){
   if(initialSpawnLockReleased) return;
@@ -8826,6 +8826,53 @@ function playGreenBridePigAudio(){
   if(p && typeof p.catch === "function") p.catch(()=>{});
 }
 
+function activateGreenBrideCombat(){
+  if(!greenBrideSprite || greenBrideDefeated) return;
+  greenBrideCombatActive = true;
+  greenBrideShotCooldown = Math.min(
+    Number.isFinite(greenBrideShotCooldown) && greenBrideShotCooldown > 0 ? greenBrideShotCooldown : Infinity,
+    randRange(ALIEN_SHOT_INTERVAL_MIN, ALIEN_SHOT_INTERVAL_MAX)
+  );
+}
+
+function fireGreenBrideAlienBall(){
+  if(!greenBrideSprite || greenBrideDefeated) return;
+  fireAlienGreenBall({ mesh: greenBrideSprite });
+}
+
+function registerGreenBrideHit(hitPos){
+  if(!greenBrideSprite || greenBrideDefeated) return;
+  greenBrideHitCount += GREEN_BRIDE_HIT_DAMAGE;
+  spawnHitBurst(hitPos || greenBrideSprite.position, 0xff66aa);
+  playHitSound();
+  if(greenBrideSprite.material && greenBrideSprite.material.color){
+    greenBrideSprite.material.color.setHex(0xff88cc);
+    setTimeout(()=>{
+      if(greenBrideSprite && greenBrideSprite.material && greenBrideSprite.material.color && !greenBrideDefeated){
+        greenBrideSprite.material.color.setHex(0xffffff);
+      }
+    }, 90);
+  }
+  if(greenBrideHitCount >= GREEN_BRIDE_HITS_TO_KILL){
+    greenBrideDefeated = true;
+    greenBrideCombatActive = false;
+    if(greenBrideSprite) greenBrideSprite.visible = false;
+    ringLandingSequenceInProgress = false;
+    ringLandingSequenceDone = true;
+    hudLine("✅ Pig lady defeated.");
+  }
+}
+
+function updateGreenBrideCombat(dt){
+  if(!greenBrideCombatActive || greenBrideDefeated || !greenBrideSprite || !greenBrideSprite.visible) return;
+  if(!ALIEN_SHOTS_ENABLE) return;
+  greenBrideShotCooldown -= dt;
+  if(greenBrideShotCooldown <= 0){
+    fireGreenBrideAlienBall();
+    greenBrideShotCooldown = randRange(ALIEN_SHOT_INTERVAL_MIN, ALIEN_SHOT_INTERVAL_MAX);
+  }
+}
+
 function updateGreenBrideChamber(){
   if(!isGreenZoneActiveForIpad(120)){
     return;
@@ -8842,6 +8889,7 @@ function updateGreenBrideChamber(){
 
   if(!greenBrideSprite || !greenBrideChamberGroup || greenBrideChamberGroup.parent !== scene) return;
   greenBrideSprite.lookAt(camera.position.x, greenBrideSprite.position.y, camera.position.z);
+  updateGreenBrideCombat(0.016);
 
   if(greenBrideAccentFlames.length && truckFireTextures.length){
     greenBrideAccentAnimSec += 0.016;
@@ -10997,6 +11045,10 @@ let greenBrideLight = null;
 let greenBridePigAudio = null;
 let greenBrideWasInside = false;
 let greenBridePigWasInRange = false;
+let greenBrideCombatActive = false;
+let greenBrideHitCount = 0;
+let greenBrideShotCooldown = 0;
+let greenBrideDefeated = false;
 const greenBrideAccentFlames = [];
 let greenBrideAccentAnimSec = 0.0;
 let blueOrangeRouteFigureGroup = null;
@@ -12462,6 +12514,7 @@ function startRingLandingSequence(){
   if(ringLandingSequenceStarted || ringLandingSequenceDone || ringLandingSequenceInProgress) return;
   ringLandingSequenceStarted = true;
   ringLandingSequenceInProgress = true;
+  activateGreenBrideCombat();
 
   initRingLandingSequenceAudio();
   ringLandingPigRemaining = Math.max(0, RING_LANDING_PIG_PLAYS | 0);
@@ -13029,8 +13082,15 @@ function initStartSpawnMusicAudio(){
   });
 }
 
+function isTruckSpriteOnScreen(){
+  if(!truckPlane || truckPlane.parent !== scene || truckPlane.visible === false) return false;
+  const mat = truckPlane.material;
+  if(!mat || mat.visible === false || mat.opacity === 0) return false;
+  return true;
+}
+
 function canAlienBulletsDamageTruck(){
-  if(performance.now() < alienStartDamageGraceUntilMs) return false;
+  if(!isTruckSpriteOnScreen()) return false;
   if(startSpawnMusicComplete) return true;
   if(startSpawnMusicAudio && startSpawnMusicAudio.ended){
     startSpawnMusicComplete = true;
@@ -14765,7 +14825,7 @@ window.addEventListener("keyup", (e)=>{
 function canPlayerUseCopterRedBalls(){
   const copterActiveVehicle = (avatarMode !== "leggoman") && (currentVehicleFile === GODDESS_COPTER_MARKER_FILE);
   if(!copterActiveVehicle) return false;
-  if(alienObjectiveMode !== "destination_green") return false;
+  if(alienObjectiveMode !== "destination_green" && alienObjectiveMode !== "pig_lady") return false;
   if(!tunnelExitGoddessEncounterDone) return false;
   return true;
 }
@@ -14902,6 +14962,19 @@ function updateBlueBalls(dt){
         b.mesh.geometry.dispose();
         b.mesh.material.dispose();
         blueBalls.splice(i, 1);
+        continue;
+      }
+    }
+
+    // PIG_LADY_HITTEST: during ring landing, blue balls damage pig lady.
+    if(greenBrideCombatActive && greenBrideSprite && greenBrideSprite.visible && !greenBrideDefeated){
+      const p = b.mesh.position;
+      if(ballSweepHitsMesh(greenBrideSprite, prevPos, p, FIRE_RADIUS)){
+        scene.remove(b.mesh);
+        b.mesh.geometry.dispose();
+        b.mesh.material.dispose();
+        blueBalls.splice(i, 1);
+        registerGreenBrideHit(p);
         continue;
       }
     }

@@ -595,8 +595,13 @@ const PLAZA_TRUCK_RESTRICT_COOLDOWN_MS = 1200;
 // ----- TRUCK AVATAR (Phase 1) -----
 const TRUCK_AVATAR_ENABLE = true;
 const TRUCK_FILE = "blue_truck.png";
+const TRUCK_AVATAR_CACHE_BUST = Date.now();
 const TRUCK_LEFT_FILE = TRUCK_FILE;
 const TRUCK_RIGHT_FILE = TRUCK_FILE;
+const priorityTruckPreloadImage = new Image();
+priorityTruckPreloadImage.decoding = "async";
+priorityTruckPreloadImage.fetchPriority = "high";
+priorityTruckPreloadImage.src = resolveAssetUrl(TEX_DIR + TRUCK_FILE + "?v=" + TRUCK_AVATAR_CACHE_BUST);
 const LEGGOMAN_SPRITESHEET_FILE = "boy.jpg";
 const LEGGOMAN_SPRITESHEET_COLS = 5;
 const LEGGOMAN_SPRITESHEET_ROWS = 3;
@@ -10540,9 +10545,6 @@ async function applyHeightmapToGround(){
   await createMidZoneTree7();
   clearTreesFromPuebloPlaza();
 }
-initTruckAvatar();
-applyHeightmapToGround();
-
 async function placeBuffNearPickupSpawn(spawnX, spawnZ){
   if (!BUFF_MARKER_ENABLE){
     while (buffNearPickupSprites.length){
@@ -10968,6 +10970,7 @@ let fireRingAmbientAudio = null;
 let fireRingAmbientPlaying = false;
 let ringDarknessAudioPlayed = false;
 let ringLandingSequenceStarted = false;
+
 let ringLandingSequenceInProgress = false;
 let ringLandingSequenceDone = false;
 let ringLandingBrideAudio = null;
@@ -11103,6 +11106,8 @@ const blueOrangeRouteFigureSprites = [];
 const blueOrangeRouteFigureTextureCache = new Map();
 let blueOrangeRouteFiguresBuilt = false;
 
+initTruckAvatar();
+applyHeightmapToGround();
 
 function ensureLeggomanAvatarMaterial(initialTex = null){
   if(!truckPlane) return;
@@ -12051,7 +12056,7 @@ function initTruckAvatar
   if(!TRUCK_AVATAR_ENABLE) return;
   if(truckPlane || truckTex) return;
 
-  const url = TEX_DIR + TRUCK_FILE + "?v=" + Date.now();
+  const url = TEX_DIR + TRUCK_FILE + "?v=" + TRUCK_AVATAR_CACHE_BUST;
 
   truckTex = new THREE.TextureLoader().load(
     url,

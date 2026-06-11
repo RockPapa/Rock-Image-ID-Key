@@ -54,15 +54,18 @@
 .testJumpButtons button:active{ transform:translateY(1px); background:rgba(35,42,55,.88); }
 .alienObjective{
   display:none; /* show on spawn, hide on file-loading screen */
-  animation: alienObjectivePulse 1.1s ease-in-out infinite;
+  animation: alienObjectiveRedFlash .72s steps(2, end) infinite;
   position:fixed; left:266px; top:18px; z-index:31;
-  min-width:320px; padding:10px 12px; border-radius:12px;
+  box-sizing:border-box;
+  width:598px; min-height:96px; padding:18px 20px; border-radius:12px;
   border:1px solid rgba(255,255,255,.24);
   background:rgba(20,24,32,.78); color:#fff;
   box-shadow:0 10px 24px rgba(0,0,0,.45);
   font:700 12px/1.25 system-ui, -apple-system, Segoe UI, Roboto, Arial;
   user-select:none;
   letter-spacing:.02em;
+  flex-direction:column;
+  justify-content:center;
 }
 .alienObjectiveTitle{
   color:#ffed8a;
@@ -71,19 +74,37 @@
 }
 .alienObjectiveCounts{ opacity:.95; }
 .alienObjectiveCounts b{ color:#aee8ff; }
-.alienObjective.destination{
-  min-width:544px;
-  padding:17px 20px;
+.alienObjective.destination,
+.alienObjective.guardian{
   border-color:rgba(255,40,40,.78);
   background:rgba(42,12,14,.86);
   animation: alienObjectiveRedFlash .72s steps(2, end) infinite;
 }
-.alienObjective.destination .alienObjectiveTitle{
+.alienObjective.destination_blue{
+  border-color:rgba(47,153,255,.82);
+  background:rgba(8,28,58,.88);
+  animation: alienObjectiveBlueFlash .72s steps(2, end) infinite;
+}
+.alienObjective.guardian{
+  border-color:rgba(255,210,72,.86);
+  background:rgba(46,34,8,.88);
+  animation: alienObjectiveGoldFlash .72s steps(2, end) infinite;
+}
+.alienObjective.destination .alienObjectiveTitle,
+.alienObjective.guardian .alienObjectiveTitle{
   color:#ff2323;
   font-size:20px;
   line-height:1.15;
   margin-bottom:0;
   text-shadow:0 0 12px rgba(255,0,0,.9), 0 2px 0 rgba(0,0,0,.55);
+}
+.alienObjective.destination_blue .alienObjectiveTitle{
+  color:#53b7ff;
+  text-shadow:0 0 12px rgba(0,132,255,.95), 0 2px 0 rgba(0,0,0,.55);
+}
+.alienObjective.guardian .alienObjectiveTitle{
+  color:#ffd94f;
+  text-shadow:0 0 12px rgba(255,210,60,.95), 0 2px 0 rgba(0,0,0,.55);
 }
 @keyframes alienObjectivePulse{
   0%,100% { transform: scale(1); box-shadow: 0 10px 24px rgba(0,0,0,.45); }
@@ -101,17 +122,40 @@
     opacity:.72;
   }
 }
+@keyframes alienObjectiveBlueFlash{
+  0%,100% {
+    color:#53b7ff;
+    box-shadow:0 0 0 2px rgba(47,153,255,.62), 0 12px 32px rgba(0,119,255,.48);
+    opacity:1;
+  }
+  50% {
+    color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.65), 0 14px 40px rgba(0,119,255,.82);
+    opacity:.72;
+  }
+}
+@keyframes alienObjectiveGoldFlash{
+  0%,100% {
+    color:#ffd94f;
+    box-shadow:0 0 0 2px rgba(255,217,79,.62), 0 12px 32px rgba(255,190,0,.45);
+    opacity:1;
+  }
+  50% {
+    color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.68), 0 14px 40px rgba(255,210,60,.8);
+    opacity:.72;
+  }
+}
 code{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
 @media (max-width: 900px){
   .alienObjective{
     left:18px;
     top:88px;
-    min-width:0;
     width:calc(100vw - 36px);
     max-width:460px;
+    min-height:96px;
   }
   .alienObjective.destination{
-    min-width:0;
     padding:15px 17px;
   }
   .alienObjective.destination .alienObjectiveTitle{
@@ -481,7 +525,7 @@ const START_SPAWN_MUSIC_VOL = 1.0;
 const DRIVE_MUSIC_FILE = "drive_music.mp3";
 const DRIVE_MUSIC_VOL = 0.088510464; // +40% from previous 0.06322176
 const TRUCK_SOUND_VOL  = 1.0;              // max HTMLMediaElement volume (requested +70% exceeds 1.0)
-const TRUCK_IDLE_SOUND_VOL = 0.286875;     // 0.0 – 1.0 (additional 15% lower)
+const TRUCK_IDLE_SOUND_VOL = 0.21515625;   // 0.0 - 1.0 (25% lower)
 const WALKING_SOUND_VOL = 0.714; // +70%
 const COPTER_PASS_SOUND_FILE = "copter_sound.mp3"; // put this in images/copter_sound.mp3
 const COPTER_MUSIC_FILE = "copter_music.mp3";
@@ -1386,7 +1430,7 @@ function adjustPlayerHealthPct(delta){
 
 function setAlienObjectiveVisible(visible){
   if(!alienObjectiveWrap) return;
-  alienObjectiveWrap.style.display = visible ? "block" : "none";
+  alienObjectiveWrap.style.display = visible ? "flex" : "none";
 }
 
 function setAlienObjectiveMode(mode){
@@ -1397,6 +1441,10 @@ function setAlienObjectiveMode(mode){
   const isDestinationMode = normalizedMode === "destination_orange" || normalizedMode === "destination_green" || normalizedMode === "destination_blue";
   if(alienObjectiveWrap){
     alienObjectiveWrap.classList.toggle("destination", isDestinationMode);
+    alienObjectiveWrap.classList.toggle("destination_blue", normalizedMode === "destination_blue");
+    alienObjectiveWrap.classList.toggle("destination_orange", normalizedMode === "destination_orange");
+    alienObjectiveWrap.classList.toggle("destination_green", normalizedMode === "destination_green");
+    alienObjectiveWrap.classList.toggle("guardian", normalizedMode === "guardian");
   }
 
   if(alienObjectiveTitleEl){
@@ -1406,7 +1454,9 @@ function setAlienObjectiveMode(mode){
         ? "GO TO THE GREEN SQUARE ON THE MINIMAP"
         : normalizedMode === "destination_blue"
           ? "GO TO THE BLUE SQUARE ON THE MINIMAP"
-          : "YOU MUST KILL ALL THE ALIENS";
+          : normalizedMode === "guardian"
+            ? "FIND THE GUARDIAN WARRIOR WITH A MESSAGE"
+            : "YOU MUST KILL ALL THE ALIENS";
   }
   if(alienObjectiveCountsEl){
     alienObjectiveCountsEl.style.display = normalizedMode === "combat" ? "block" : "none";
@@ -2273,8 +2323,10 @@ controls.getObject().position.set(AVATRUCK_SPAWN_X, PLAYER_EYE_HEIGHT, AVATRUCK_
 camera.rotation.x = -0.10;
 let truckYaw = controls.getObject().rotation.y;
 const INITIAL_SPAWN_LOCK_MS = 2500;
+const ALIEN_START_DAMAGE_GRACE_MS = 5000;
 let initialSpawnLockUntilMs = performance.now() + INITIAL_SPAWN_LOCK_MS;
 let initialSpawnLockReleased = false;
+let alienStartDamageGraceUntilMs = performance.now() + ALIEN_START_DAMAGE_GRACE_MS;
 
 function enforceInitialSpawnLock(){
   if(initialSpawnLockReleased) return;
@@ -6260,7 +6312,8 @@ function updatePuebloCenterFountainFlow(timeSec){
     plazaExitChoicesSpawnedThisExit = false;
     clearPlazaExitVehicleChoices();
     if(alienObjectiveMode === "destination_blue"){
-      setAlienObjectiveVisible(false);
+      setAlienObjectiveMode("guardian");
+      setAlienObjectiveVisible(true);
       const b = document.getElementById("banner");
       if(b && typeof b.textContent === "string" && b.textContent.toUpperCase().includes("GO TO THE BLUE")){
         hideBanner();
@@ -6288,6 +6341,10 @@ function updatePuebloCenterFountainFlow(timeSec){
   if(inPulseRange && !wasInPulseRange){
     setPlayerHealthPct(100);
     u.pulseWindowUntil = timeSec + PUEBLO_FOUNTAIN_PULSE_DURATION_SEC;
+    if(alienObjectiveMode === "destination_blue"){
+      setAlienObjectiveMode("guardian");
+      setAlienObjectiveVisible(true);
+    }
   }
   u.wasInPulseRange = inPulseRange;
 
@@ -12858,6 +12915,7 @@ function initStartSpawnMusicAudio(){
 }
 
 function canAlienBulletsDamageTruck(){
+  if(performance.now() < alienStartDamageGraceUntilMs) return false;
   if(startSpawnMusicComplete) return true;
   if(startSpawnMusicAudio && startSpawnMusicAudio.ended){
     startSpawnMusicComplete = true;

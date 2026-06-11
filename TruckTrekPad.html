@@ -476,7 +476,7 @@ const CAVE_INTERIOR_TILE_WIDTH_FT = 8.0; // tile more often to prevent blur
 const TRUCK_SOUND_FILE = "car_sound.mp3"; // put this in images/car_sound.mp3
 const TRUCK_IDLE_SOUND_FILE = "idle.mp3"; // put this in images/idle.mp3
 const WALKING_SOUND_FILE = "walking_sound.mp3"; // put this in images/walking_sound.mp3
-const START_SPAWN_MUSIC_FILE = "kill_aliens.mp3";
+const START_SPAWN_MUSIC_FILE = "";
 const START_SPAWN_MUSIC_VOL = 1.0;
 const DRIVE_MUSIC_FILE = "drive_music.mp3";
 const DRIVE_MUSIC_VOL = 0.088510464; // +40% from previous 0.06322176
@@ -487,10 +487,10 @@ const COPTER_PASS_SOUND_FILE = "copter_sound.mp3"; // put this in images/copter_
 const COPTER_MUSIC_FILE = "copter_music.mp3";
 const COPTER_MUSIC_ENABLE = true;
 const COPTER_MUSIC_VOL = 0.196; // -30%
-const FIRE_RING_AMBIENT_FILE = "ring_of_fire.mp3";
-const FIRE_RING_AMBIENT_FALLBACK_FILE = "ring_of_fire.m4a";
+const FIRE_RING_AMBIENT_FILE = "";
+const FIRE_RING_AMBIENT_FALLBACK_FILE = "";
 const FIRE_RING_AMBIENT_FALLBACK_FILE_2 = "fire.mp3";
-const FIRE_RING_AMBIENT_ENABLE = true;
+const FIRE_RING_AMBIENT_ENABLE = false;
 const FIRE_RING_AMBIENT_VOL = 0.62;
 const FIRE_RING_AMBIENT_TRIGGER_RANGE_FT = 50.0; // start audio within 50 horizontal feet of the ring
 const FIRE_RING_AMBIENT_MAX_PLAYS_PER_ENTRY = 2;
@@ -630,11 +630,11 @@ const PUEBLO_FOUNTAIN_PLAZA_VOICE_TEXT = "You have entered the plaza of the foun
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_RATE = 0.6911; // 25% slower
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_PITCH = 1.06; // slightly lower frequency
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_VOL = 1.0;
-const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE = "voice1.mp3";
+const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE = "";
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE_VOL = 1.0;
 const PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE_GAIN = 10.0; // +150% from prior 4.0x setting
 const PUEBLO_GUIDE_VOICE_TEXT = "Look to the minimap for your next destination. Now go, live long and prosper on your journey.";
-const PUEBLO_GUIDE_VOICE_FILE = "chosen_well.mp3";
+const PUEBLO_GUIDE_VOICE_FILE = "";
 const PUEBLO_GUIDE_VOICE_FILE_VOL = 1.0;
 const PUEBLO_GUIDE_VOICE_FILE_GAIN = 15.0; // +100% from prior 7.5x setting
 const TO_BLUE_SQUARE_AUDIO_FILE = "to_blue_square.m4a";
@@ -878,7 +878,7 @@ const TUNNEL_EXIT_GODDESS_HEIGHT_FT = 14.0;
 const TUNNEL_EXIT_GODDESS_DEPTH_FROM_ENTRANCE_FT = 50.0;
 const TUNNEL_EXIT_GODDESS_TRIGGER_RADIUS_FT = 12.0;
 const TUNNEL_EXIT_GODDESS_BLOCK_RADIUS_FT = 140.0; // no-bypass hold radius near tunnel exit
-const TUNNEL_EXIT_GODDESS_VOICE_FILE = "green_voice.mp3";
+const TUNNEL_EXIT_GODDESS_VOICE_FILE = "";
 const TUNNEL_EXIT_GODDESS_VOICE_VOL = 1.0;
 const TUNNEL_EXIT_GODDESS_VOICE_GAIN = 2.0; // +100% boost via WebAudio gain stage
 const TUNNEL_EXIT_GODDESS_VOICE_TAIL_TRIM_SEC = 2.5; // trim trailing silence
@@ -1170,16 +1170,16 @@ const GREEN_BRIDE_FILE = "pig_bride.png";
 const GREEN_BRIDE_FALLBACK_FILE = "goddess2.png";
 const GREEN_BRIDE_WIDTH_FT = 14.0;
 const GREEN_BRIDE_HEIGHT_FT = 20.0;
-const GREEN_BRIDE_ENTRY_PIG_FILE = "pig.mp3";
+const GREEN_BRIDE_ENTRY_PIG_FILE = "";
 const GREEN_BRIDE_ENTRY_PIG_VOL = 1.0;
 const COPTER_LANDING_GROUND_EPS = 0.06;
-const RING_LANDING_BRIDE_FILE = "bride.mp3";
+const RING_LANDING_BRIDE_FILE = "";
 const RING_LANDING_BRIDE_VOL = 1.0;
-const RING_LANDING_PIG_FILE = "pig.mp3";
+const RING_LANDING_PIG_FILE = "";
 const RING_LANDING_PIG_VOL = 1.0;
-const RING_LANDING_ESCAPE_FILE = "escape.mp3";
+const RING_LANDING_ESCAPE_FILE = "";
 const RING_LANDING_ESCAPE_VOL = 1.0;
-const RING_SUCCESS_FILE = "success.mp3";
+const RING_SUCCESS_FILE = "";
 const RING_SUCCESS_VOL = 1.0;
 const RING_SUCCESS_ECHO_DELAY_SEC = 0.18;
 const RING_SUCCESS_ECHO_FEEDBACK = 0.20;
@@ -1779,6 +1779,7 @@ function speakFemaleNarration(text, rate = PUEBLO_FOUNTAIN_PLAZA_VOICE_RATE, pit
 }
 
 function initFountainPlazaVoiceAudio(){
+  if(!PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE) return;
   if(fountainPlazaVoiceAudio) return;
   const url = TEX_DIR + PUEBLO_FOUNTAIN_PLAZA_VOICE_FILE + "?v=" + Date.now();
   fountainPlazaVoiceAudio = new Audio(resolveAssetUrl(url));
@@ -1855,6 +1856,7 @@ function speakFountainPlazaVoice(){
 }
 
 function initGuideWarriorVoiceAudio(){
+  if(!PUEBLO_GUIDE_VOICE_FILE) return;
   if(guideWarriorVoiceAudio) return;
   const url = TEX_DIR + PUEBLO_GUIDE_VOICE_FILE + "?v=" + Date.now();
   guideWarriorVoiceAudio = new Audio(resolveAssetUrl(url));
@@ -8687,6 +8689,7 @@ function isPlayerInsideGreenBrideChamber(){
 }
 
 function initGreenBridePigAudio(){
+  if(!GREEN_BRIDE_ENTRY_PIG_FILE) return;
   if(greenBridePigAudio) return;
   const url = TEX_DIR + GREEN_BRIDE_ENTRY_PIG_FILE;
   greenBridePigAudio = new Audio(resolveAssetUrl(url));
@@ -12213,10 +12216,12 @@ function updateCopterJourneyMusicAudio(shouldPlay){
 
 function initFireRingAmbientAudio(){
   if(!FIRE_RING_AMBIENT_ENABLE) return;
+  if(!FIRE_RING_AMBIENT_FILE) return;
   if(fireRingAmbientAudio) return;
   const cacheBust = "?v=" + Date.now();
 
   const buildAudio = (file)=>{
+    if(!file) return null;
     const url = TEX_DIR + file + cacheBust;
     const a = new Audio(resolveAssetUrl(url));
     a.loop = false;
@@ -12226,8 +12231,10 @@ function initFireRingAmbientAudio(){
   };
 
   fireRingAmbientAudio = buildAudio(FIRE_RING_AMBIENT_FILE);
+  if(!fireRingAmbientAudio) return;
   fireRingAmbientAudio.addEventListener("error", ()=>{
     fireRingAmbientAudio = buildAudio(FIRE_RING_AMBIENT_FALLBACK_FILE);
+    if(!fireRingAmbientAudio) return;
     fireRingAmbientAudio.addEventListener("error", ()=>{
       fireRingAmbientAudio = buildAudio(FIRE_RING_AMBIENT_FALLBACK_FILE_2);
     }, { once:true });
@@ -12237,6 +12244,7 @@ function initFireRingAmbientAudio(){
 function initRingLandingSequenceAudio(){
   const cacheBust = "?v=" + Date.now();
   const buildAudio = (file, vol)=>{
+    if(!file) return null;
     const url = TEX_DIR + file + cacheBust;
     const a = new Audio(resolveAssetUrl(url));
     a.loop = false;
@@ -12341,6 +12349,7 @@ function playRingDarknessAudioOnce(){
 }
 
 function initRingSuccessAudio(){
+  if(!RING_SUCCESS_FILE) return;
   if(ringSuccessAudio) return;
   const url = TEX_DIR + RING_SUCCESS_FILE + "?v=" + Date.now();
   ringSuccessAudio = new Audio(resolveAssetUrl(url));
@@ -12396,7 +12405,7 @@ function playRingSuccessAudioWithEcho(){
 
   const p = ringSuccessAudio.play();
   if(p && typeof p.catch === "function") p.catch(()=>{});
-  hudLine("✅ Escape complete. <code>success.mp3</code> played.");
+  hudLine("✅ Escape complete.");
 }
 
 function updateRingOfFireSequenceAudio(isCopterVehicle, x, z, groundedNow){
@@ -12514,6 +12523,7 @@ function scheduleTunnelExitGoddessVoiceTrim(){
 }
 
 function initTunnelExitGoddessVoiceAudio(){
+  if(!TUNNEL_EXIT_GODDESS_VOICE_FILE) return;
   if(tunnelExitGoddessVoiceAudio) return;
   const url = TEX_DIR + TUNNEL_EXIT_GODDESS_VOICE_FILE + "?v=" + Date.now();
   tunnelExitGoddessVoiceAudio = new Audio(resolveAssetUrl(url));
@@ -12546,7 +12556,10 @@ function setupTunnelExitGoddessVoiceGain(){
 
 function playTunnelExitGoddessEncounterVoice(){
   initTunnelExitGoddessVoiceAudio();
-  if(!tunnelExitGoddessVoiceAudio) return false;
+  if(!tunnelExitGoddessVoiceAudio){
+    finishTunnelExitGoddessEncounter();
+    return false;
+  }
 
   tunnelExitGoddessEncounterActive = true;
   try{
@@ -12828,6 +12841,11 @@ function stopWalkingAudio(){
   }
 }
 function initStartSpawnMusicAudio(){
+  if(!START_SPAWN_MUSIC_FILE){
+    startSpawnMusicComplete = true;
+    startSpawnMusicPlaying = false;
+    return;
+  }
   if(startSpawnMusicAudio) return;
   const url = TEX_DIR + START_SPAWN_MUSIC_FILE + "?v=" + Date.now();
   startSpawnMusicAudio = new Audio(resolveAssetUrl(url));

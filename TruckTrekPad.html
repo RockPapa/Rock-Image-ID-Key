@@ -1290,6 +1290,7 @@ const GREEN_BRIDE_HEIGHT_FT = 20.0;
 const GREEN_BRIDE_ENTRY_PIG_FILE = "";
 const GREEN_BRIDE_ENTRY_PIG_VOL = 1.0;
 const COPTER_LANDING_GROUND_EPS = 0.06;
+const COPTER_RING_LANDING_GROUND_EPS = 3.0;
 const RING_LANDING_BRIDE_FILE = "";
 const RING_LANDING_BRIDE_VOL = 1.0;
 const RING_LANDING_PIG_FILE = "";
@@ -9074,6 +9075,9 @@ function updateGreenBrideChamber(){
 
   if(!greenBrideSprite || !greenBrideChamberGroup || greenBrideChamberGroup.parent !== scene) return;
   greenBrideSprite.lookAt(camera.position.x, greenBrideSprite.position.y, camera.position.z);
+  if(alienObjectiveMode === "pig_lady" && !greenBrideDefeated){
+    activateGreenBrideCombat();
+  }
   updateGreenBrideCombat(0.016);
 
   if(greenBrideAccentFlames.length && truckFireTextures.length){
@@ -12800,7 +12804,12 @@ function updateRingOfFireSequenceAudio(isCopterVehicle, x, z, groundedNow){
       playRingDarknessAudioOnce();
     }
 
-    const landedInsideRing = groundedNow && insideRing;
+    let nearRingGround = groundedNow;
+    if(!nearRingGround && insideRing){
+      const groundY = heightAtWorldXZ(x, z);
+      nearRingGround = Number.isFinite(groundY) && Math.abs(controls.getObject().position.y - groundY) <= (COPTER_RING_LANDING_GROUND_EPS * WORLD_UNITS_PER_FOOT);
+    }
+    const landedInsideRing = nearRingGround && insideRing;
     if(landedInsideRing){
       startRingLandingSequence();
     }

@@ -182,19 +182,7 @@
   }
 
   function buildSoundUrls(file){
-    const projectRoot = getProjectRootPath();
-    const urls = window.location.protocol === "file:"
-      ? [
-        "images/" + file,
-        "../images/" + file
-      ]
-      : [
-        "images/" + file,
-        projectRoot + "images/" + file,
-        "../images/" + file,
-        "/images/" + file
-      ];
-    return Array.from(new Set(urls));
+    return ["images/" + file];
   }
 
   function absoluteUrl(url){
@@ -232,7 +220,22 @@
     return item;
   }
 
+  function primeAudioElement(audio){
+    if(!audio) return Promise.resolve();
+    const wasMuted = audio.muted;
+    audio.muted = true;
+    audio.volume = 1;
+    return audio.play().then(()=>{
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = wasMuted;
+    }).catch(()=>{
+      audio.muted = wasMuted;
+    });
+  }
+
   async function unlockAudio(){
+    if(unlocked) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if(AC){
       if(!audioCtx) audioCtx = new AC();
@@ -249,6 +252,9 @@
         gain.connect(audioCtx.destination);
         source.start(0);
       }catch(e){}
+    }
+    for(const item of audioPool.values()){
+      await primeAudioElement(item.audio);
     }
     unlocked = true;
   }

@@ -30,26 +30,50 @@
   #bigfoot {
     position: fixed;
     left: 50vw;
-    top: 86vh;
+    top: 82vh;
     width: min(31.36vw, 246.4px);
     height: auto;
-    z-index: 2;
+    z-index: 3;
     transform: translate(-50%, -50%);
     pointer-events: none;
     -webkit-user-drag: none;
   }
 
-  #alien {
+  #smallCubeWrap {
+    --cube-size: min(1.3125vw, 10.3125px);
     position: fixed;
     left: 50vw;
     top: 58vh;
-    width: min(4.75vw, 36.96px);
-    height: auto;
+    width: var(--cube-size);
+    height: var(--cube-size);
     z-index: 2;
-    transform: translate(-50%, -50%);
+    perspective: 700px;
     pointer-events: none;
-    -webkit-user-drag: none;
+    transform: translate(-50%, -50%);
   }
+
+  #smallCube {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: rotateX(-18deg) rotateY(34deg);
+  }
+
+  .cube-face {
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(255,255,255,0.34);
+    background: rgba(220,0,0,0.82);
+    box-shadow: inset 0 0 28px rgba(0,0,0,0.28);
+  }
+
+  .cube-front { transform: translateZ(calc(var(--cube-size) / 2)); }
+  .cube-back { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+  .cube-right { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(175,0,0,0.82); }
+  .cube-left { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(245,20,20,0.82); }
+  .cube-top { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(255,58,58,0.82); }
+  .cube-bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(125,0,0,0.82); }
 
   .crash-zone {
     position: fixed;
@@ -87,8 +111,8 @@
     bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 5;
     display: grid;
-    grid-template-columns: 64px 64px 64px;
-    grid-template-rows: 64px 64px 64px;
+    grid-template-columns: 64px 64px;
+    grid-template-rows: 64px;
     gap: 8px;
   }
 
@@ -106,17 +130,15 @@
     transform: scale(0.96);
   }
 
-  #upBtn { grid-column: 2; grid-row: 1; }
-  #leftBtn { grid-column: 1; grid-row: 2; }
-  #rightBtn { grid-column: 3; grid-row: 2; }
-  #downBtn { grid-column: 2; grid-row: 3; }
+  #leftBtn { grid-column: 1; grid-row: 1; }
+  #rightBtn { grid-column: 2; grid-row: 1; }
 
   @media (max-width: 700px) {
     #bigfoot { width: min(38.08vw, 201.6px); }
-    #alien { width: min(6.34vw, 31.68px); }
+    #smallCubeWrap { --cube-size: min(1.5625vw, 8.4375px); }
     #controls {
-      grid-template-columns: 56px 56px 56px;
-      grid-template-rows: 56px 56px 56px;
+      grid-template-columns: 56px 56px;
+      grid-template-rows: 56px;
       gap: 7px;
     }
     .ctrl { font-size: 24px; border-radius: 12px; }
@@ -128,24 +150,38 @@
 <audio id="carSound" src="images/car_sound.mp3" loop preload="auto"></audio>
 <div id="leftCrashZone" class="crash-zone"></div>
 <div id="rightCrashZone" class="crash-zone"></div>
-<img id="alien" src="images/alein.png" alt="Alien" />
+<div id="smallCubeWrap" aria-hidden="true">
+  <div id="smallCube">
+    <div class="cube-face cube-front"></div>
+    <div class="cube-face cube-back"></div>
+    <div class="cube-face cube-right"></div>
+    <div class="cube-face cube-left"></div>
+    <div class="cube-face cube-top"></div>
+    <div class="cube-face cube-bottom"></div>
+  </div>
+</div>
 <img id="bigfoot" src="images/bigfoot.png" alt="Bigfoot" />
 
 <div id="controls" aria-label="Bigfoot controls">
-  <button id="upBtn" class="ctrl" type="button" aria-label="Move up">▲</button>
   <button id="leftBtn" class="ctrl" type="button" aria-label="Move left">◀</button>
   <button id="rightBtn" class="ctrl" type="button" aria-label="Move right">▶</button>
-  <button id="downBtn" class="ctrl" type="button" aria-label="Move down">▼</button>
 </div>
 
 <script>
   const video = document.getElementById("video");
   const carSound = document.getElementById("carSound");
-  const alien = document.getElementById("alien");
+  const smallCubeWrap = document.getElementById("smallCubeWrap");
   const bigfoot = document.getElementById("bigfoot");
   const leftCrashZone = document.getElementById("leftCrashZone");
   const rightCrashZone = document.getElementById("rightCrashZone");
-  const keys = { up:false, down:false, left:false, right:false };
+  const keys = { left:false, right:false };
+  const bigfootStartYFactor = 0.82;
+  const cubeStartYFactor = 0.58;
+  const cubeTargetYFactor = 0.82;
+  const cubeDesktopStart = { vw: 1.3125, max: 10.3125 };
+  const cubeDesktopTarget = { vw: 15.75, max: 123.75 };
+  const cubeMobileStart = { vw: 1.5625, max: 8.4375 };
+  const cubeMobileTarget = { vw: 18.75, max: 101.25 };
   const crashZoneBasePct = 0.18113004;
   const crashZoneWidenByDepthPct = 0.567;
   const crashZoneTopInwardExtraLeftPct = 0.16;
@@ -153,7 +189,7 @@
   const crashZonePerspectiveStartYFactor = 0.92;
   const crashZonePerspectiveEndYFactor = 0.2;
   let x = window.innerWidth * 0.5;
-  let y = window.innerHeight * 0.86;
+  let y = window.innerHeight * bigfootStartYFactor;
   let lastT = performance.now();
   let viewportWidth = window.innerWidth;
   let viewportHeight = window.innerHeight;
@@ -164,8 +200,6 @@
   let lastCrashZoneBottomVw = -1;
   let lastLeftCrashZoneTopVw = -1;
   let lastRightCrashZoneTopVw = -1;
-  let alienCycleTimer = null;
-
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
@@ -226,76 +260,66 @@
     bigfoot.style.top = y + "px";
   }
 
-  function moveBigfoot(dx, dy, collide = true) {
+  function moveBigfoot(dx, collide = true) {
     const prevX = x;
-    const prevY = y;
     x += dx;
-    y += dy;
     updateCrashZones();
     placeBigfoot();
     if (collide && isBigfootInCrashZone()) {
       x = prevX;
-      y = prevY;
       updateCrashZones();
       placeBigfoot();
     }
   }
 
-  function animateAlienToBigfoot() {
-    const duration = 2200;
-    const pauseDuration = 0;
-    const contactScale = 2.128896;
+  function getCubeMetrics() {
+    const mobile = window.matchMedia("(max-width: 700px)").matches;
+    const start = mobile ? cubeMobileStart : cubeDesktopStart;
+    const target = mobile ? cubeMobileTarget : cubeDesktopTarget;
+    const sizeFrom = (config) => Math.min(viewportWidth * (config.vw / 100), config.max);
 
-    alien.style.display = "block";
-    alien.style.top = "";
-    alien.style.transform = "translate(-50%, -50%)";
+    return {
+      startX: viewportWidth * 0.5,
+      startY: viewportHeight * cubeStartYFactor,
+      endX: viewportWidth * 0.5,
+      endY: viewportHeight * cubeTargetYFactor,
+      startSize: sizeFrom(start),
+      endSize: sizeFrom(target)
+    };
+  }
 
-    const startRect = alien.getBoundingClientRect();
-    const bigfootRect = bigfoot.getBoundingClientRect();
-    if (!startRect.height || !bigfootRect.height) return;
-
-    const startY = startRect.top + (startRect.height / 2);
-    const contactHeight = startRect.height * contactScale;
-    const contactY = bigfootRect.top - (contactHeight * 0.18);
-    const distanceToContact = contactY - startY;
-    const disappearY = bigfootRect.top + (bigfootRect.height / 2);
-    const exitY = window.innerHeight + (contactHeight / 2);
-    const exitProgress = (exitY - startY) / distanceToContact;
-    const exitScale = 1 + ((contactScale - 1) * exitProgress);
-    const startTime = performance.now() + pauseDuration;
+  function animateSmallCubeToBigCube() {
+    const duration = 2000;
+    const metrics = getCubeMetrics();
+    smallCubeWrap.style.display = "block";
+    smallCubeWrap.style.left = metrics.startX + "px";
+    smallCubeWrap.style.top = metrics.startY + "px";
+    smallCubeWrap.style.width = metrics.startSize + "px";
+    smallCubeWrap.style.height = metrics.startSize + "px";
+    smallCubeWrap.style.setProperty("--cube-size", metrics.startSize + "px");
+    const startTime = performance.now();
 
     function step(now) {
       const t = clamp((now - startTime) / duration, 0, 1);
-      const eased = t;
-      const nextY = startY + ((exitY - startY) * eased);
-      const nextScale = 1 + ((exitScale - 1) * eased);
+      const nextX = metrics.startX + ((metrics.endX - metrics.startX) * t);
+      const nextY = metrics.startY + ((metrics.endY - metrics.startY) * t);
+      const nextSize = metrics.startSize + ((metrics.endSize - metrics.startSize) * t);
 
-      alien.style.top = nextY + "px";
-      alien.style.transform = `translate(-50%, -50%) scale(${nextScale})`;
+      smallCubeWrap.style.left = nextX + "px";
+      smallCubeWrap.style.top = nextY + "px";
+      smallCubeWrap.style.width = nextSize + "px";
+      smallCubeWrap.style.height = nextSize + "px";
+      smallCubeWrap.style.setProperty("--cube-size", nextSize + "px");
 
-      if (nextY >= disappearY || t >= 1) {
-        alien.style.display = "none";
-        return;
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        smallCubeWrap.style.display = "none";
+        requestAnimationFrame(animateSmallCubeToBigCube);
       }
-      requestAnimationFrame(step);
     }
 
     requestAnimationFrame(step);
-  }
-
-  function startAlienAnimationWhenReady() {
-    const startAlienCycle = () => {
-      animateAlienToBigfoot();
-      if (!alienCycleTimer) {
-        alienCycleTimer = window.setInterval(animateAlienToBigfoot, 7000);
-      }
-    };
-
-    if (alien.complete && bigfoot.complete) {
-      startAlienCycle();
-      return;
-    }
-    window.addEventListener("load", startAlienCycle, { once:true });
   }
 
   function setHeld(dir, held) {
@@ -321,28 +345,20 @@
     btn.addEventListener("click", (ev) => {
       ev.preventDefault();
       const step = 28;
-      if (dir === "up") moveBigfoot(0, -step);
-      if (dir === "down") moveBigfoot(0, step);
-      if (dir === "left") moveBigfoot(-step, 0);
-      if (dir === "right") moveBigfoot(step, 0);
+      if (dir === "left") moveBigfoot(-step);
+      if (dir === "right") moveBigfoot(step);
     });
   }
 
-  bindButton("upBtn", "up");
-  bindButton("downBtn", "down");
   bindButton("leftBtn", "left");
   bindButton("rightBtn", "right");
 
   window.addEventListener("keydown", (ev) => {
-    if (ev.key === "ArrowUp") { ev.preventDefault(); setHeld("up", true); }
-    if (ev.key === "ArrowDown") { ev.preventDefault(); setHeld("down", true); }
     if (ev.key === "ArrowLeft") { ev.preventDefault(); setHeld("left", true); }
     if (ev.key === "ArrowRight") { ev.preventDefault(); setHeld("right", true); }
   }, { passive:false });
 
   window.addEventListener("keyup", (ev) => {
-    if (ev.key === "ArrowUp") setHeld("up", false);
-    if (ev.key === "ArrowDown") setHeld("down", false);
     if (ev.key === "ArrowLeft") setHeld("left", false);
     if (ev.key === "ArrowRight") setHeld("right", false);
   });
@@ -350,8 +366,8 @@
   window.addEventListener("resize", () => {
     refreshViewportCache();
     x = Math.min(window.innerWidth, Math.max(0, x));
-    y = Math.min(window.innerHeight, Math.max(0, y));
-    moveBigfoot(0, 0, false);
+    y = window.innerHeight * bigfootStartYFactor;
+    moveBigfoot(0, false);
   });
 
   function tick(now) {
@@ -359,21 +375,18 @@
     lastT = now;
     const speed = 320;
     let dx = 0;
-    let dy = 0;
     if (keys.left) dx -= speed * dt;
     if (keys.right) dx += speed * dt;
-    if (keys.up) dy -= speed * dt;
-    if (keys.down) dy += speed * dt;
-    if (dx || dy) moveBigfoot(dx, dy);
+    if (dx) moveBigfoot(dx);
     requestAnimationFrame(tick);
   }
 
   refreshViewportCache();
-  moveBigfoot(0, 0, false);
+  moveBigfoot(0, false);
   video.play().catch(() => {});
   window.addEventListener("pointerdown", () => carSound.play().catch(() => {}), { once:true });
   window.addEventListener("keydown", () => carSound.play().catch(() => {}), { once:true });
-  startAlienAnimationWhenReady();
+  requestAnimationFrame(animateSmallCubeToBigCube);
   requestAnimationFrame(tick);
 </script>
 </body>

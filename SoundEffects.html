@@ -220,6 +220,21 @@
     return item;
   }
 
+  function getVolumeBoost(file){
+    return file === "elk.mp3" ? 2 : 1;
+  }
+
+  function applyVolumeBoost(item, file){
+    if(!audioCtx || !item || !item.audio) return;
+    if(!item.gain){
+      item.source = audioCtx.createMediaElementSource(item.audio);
+      item.gain = audioCtx.createGain();
+      item.source.connect(item.gain);
+      item.gain.connect(audioCtx.destination);
+    }
+    item.gain.gain.value = getVolumeBoost(file);
+  }
+
   function primeAudioElement(audio){
     if(!audio) return Promise.resolve();
     const wasMuted = audio.muted;
@@ -260,6 +275,7 @@
     unlockAudio();
     const item = getAudio(file);
     const audio = item.audio;
+    applyVolumeBoost(item, file);
     if(Number.isInteger(workingUrlIndex)){
       item.index = workingUrlIndex;
     }

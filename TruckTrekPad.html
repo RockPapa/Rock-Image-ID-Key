@@ -26,10 +26,21 @@
     text-shadow:0 0 10px rgba(57,255,102,.95), 0 0 22px rgba(57,255,102,.65);
     animation:hudGreenFlash .58s steps(2, end) infinite;
   }
+  .hud .flashVictory{
+    color:#39ff66;
+    font-weight:900;
+    text-shadow:0 0 10px rgba(57,255,102,.95), 0 0 22px rgba(57,255,102,.65);
+    animation:hudVictoryFlash .9s steps(1, end) infinite;
+  }
   .hud b{ font-weight:800; }
 @keyframes hudGreenFlash{
   0%,100% { color:#39ff66; opacity:1; }
   50% { color:#eaffef; opacity:.62; }
+}
+@keyframes hudVictoryFlash{
+  0%,33% { color:#39ff66; text-shadow:0 0 10px rgba(57,255,102,.95), 0 0 22px rgba(57,255,102,.65); }
+  34%,66% { color:#ffe84a; text-shadow:0 0 10px rgba(255,232,74,.95), 0 0 22px rgba(255,232,74,.65); }
+  67%,100% { color:#ff4545; text-shadow:0 0 10px rgba(255,69,69,.95), 0 0 22px rgba(255,69,69,.65); }
 }
 .healthWrap{
     position:fixed; left:18px; top:18px; z-index:31;
@@ -764,7 +775,7 @@ const PUEBLO_PLAZA_STATUE_WIDTH_FT = 8.0;
 const PUEBLO_PLAZA_STATUE_HEIGHT_FT = 18.0;
 const PUEBLO_PLAZA_STATUE_INTERVAL_FT = 18.0;
 const PUEBLO_PLAZA_STATUE_INSET_FT = 4.0;
-const PUEBLO_GUIDE_WARRIOR_TINT_HEX = 0x66d9ff;
+const PUEBLO_GUIDE_WARRIOR_TINT_HEX = 0xffffff;
 const PUEBLO_CORNER_CRYSTALS_ENABLE = true;
 const PUEBLO_CORNER_GODDESS_FILE = "goddess.png";
 const PUEBLO_CORNER_GODDESS_WIDTH_FT = 7.0; // -50%
@@ -1198,6 +1209,7 @@ const GREEN_RING_NIGHT_TRIGGER_RANGE_FT = 300.0; // start night mode 300 horizon
 const COPTER_SUNSET_TRANSITION_SEC = 20.0;
 const COPTER_SUNSET_DELAY_SEC = 30.0;
 const GREEN_FIRE_RING_ENABLE = true;
+const GREEN_FIRE_RING_FEATURE_COLLISION_ENABLE = false;
 const GREEN_FIRE_RING_COUNT = 33;
 const GREEN_FIRE_RING_DIAMETER_FT = 200.0;
 const GREEN_FIRE_RING_FLAME_WIDTH_FT = 16.0;
@@ -9032,7 +9044,7 @@ function registerGreenBrideHit(hitPos){
     if(greenBrideSprite) greenBrideSprite.visible = false;
     ringLandingSequenceInProgress = false;
     ringLandingSequenceDone = true;
-    hudLine("✅ Pig lady defeated.");
+    hudLine("YOU WON; THE WORLD IS A BETTER PLACE.", "flashVictory");
   }
 }
 
@@ -14703,6 +14715,7 @@ function isWithinGreenFireRingTriggerRange(x, z, extraRangeFt = FIRE_RING_AMBIEN
 
 function applyGreenFireRingFeatureCollision(obj, prevX, prevZ, radius = TRUCK_COLLISION_RADIUS){
   if(!obj || !GREEN_FIRE_RING_ENABLE) return false;
+  if(!GREEN_FIRE_RING_FEATURE_COLLISION_ENABLE) return false;
   const r = Math.max(0.2, radius || TRUCK_COLLISION_RADIUS);
 
   const hitsAt = (x, z)=>{

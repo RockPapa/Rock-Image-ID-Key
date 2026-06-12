@@ -87,6 +87,18 @@
     color: rgba(255,255,255,.82);
   }
 
+  .diag {
+    max-height: 150px;
+    overflow: auto;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(0,0,0,.32);
+    color: #d1fae5;
+    font: 14px/1.3 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    white-space: pre-wrap;
+    -webkit-overflow-scrolling: touch;
+  }
+
   @media (max-width: 760px) {
     .hud {
       width: calc(100vw - 20px);
@@ -131,6 +143,7 @@
       </div>
     </section>
     <div class="status" id="status">Tap a button to unlock and play sound.</div>
+    <div class="diag" id="diag">Diagnostics loading...</div>
   </main>
   <script src="sound-effects.js"></script>
 </body>

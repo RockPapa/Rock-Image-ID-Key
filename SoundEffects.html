@@ -234,13 +234,13 @@
     });
   }
 
-  async function unlockAudio(){
+  function unlockAudio(){
     if(unlocked) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if(AC){
       if(!audioCtx) audioCtx = new AC();
       if(audioCtx.state === "suspended"){
-        try{ await audioCtx.resume(); }catch(e){}
+        try{ audioCtx.resume().catch(()=>{}); }catch(e){}
       }
       try{
         const buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
@@ -253,15 +253,11 @@
         source.start(0);
       }catch(e){}
     }
-    for(const item of audioPool.values()){
-      await primeAudioElement(item.audio);
-    }
     unlocked = true;
   }
 
-  async function playSound(file, button){
-    await unlockAudio();
-
+  function playSound(file, button){
+    unlockAudio();
     const item = getAudio(file);
     const audio = item.audio;
     if(Number.isInteger(workingUrlIndex)){
@@ -282,10 +278,16 @@
       try{
         audio.pause();
         audio.currentTime = 0;
+        audio.muted = false;
         audio.volume = 1;
         const playPromise = audio.play();
         if(playPromise && typeof playPromise.then === "function"){
-          await playPromise;
+          playPromise.then(()=>{
+            setStatus("Playing: " + file);
+          }).catch((e)=>{
+            appendDiag("play failed async: " + (e && e.name ? e.name : "error"));
+            setStatus("Tap again: " + file);
+          });
         }
         setStatus("Playing: " + file);
         button.classList.add("playing");

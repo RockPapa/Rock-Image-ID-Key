@@ -64,16 +64,77 @@
     position: absolute;
     inset: 0;
     border: 2px solid rgba(255,255,255,0.34);
-    background: rgba(220,0,0,0.82);
+    background: var(--cube-front, rgba(220,0,0,0.82));
     box-shadow: inset 0 0 28px rgba(0,0,0,0.28);
   }
 
   .cube-front { transform: translateZ(calc(var(--cube-size) / 2)); }
   .cube-back { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
-  .cube-right { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(175,0,0,0.82); }
-  .cube-left { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(245,20,20,0.82); }
-  .cube-top { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(255,58,58,0.82); }
-  .cube-bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); background: rgba(125,0,0,0.82); }
+  .cube-right { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-right, rgba(175,0,0,0.82)); }
+  .cube-left { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-left, rgba(245,20,20,0.82)); }
+  .cube-top { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-top, rgba(255,58,58,0.82)); }
+  .cube-bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-bottom, rgba(125,0,0,0.82)); }
+
+  .shot {
+    --shot-width: min(1.4vw, 13px);
+    --shot-height: min(4.2vw, 38px);
+    position: fixed;
+    width: var(--shot-width);
+    height: var(--shot-height);
+    z-index: 2;
+    border-radius: 999px;
+    background: #ff1e1e;
+    box-shadow: 0 0 16px rgba(255,0,0,0.95), 0 0 34px rgba(255,40,20,0.65);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  #healthHud {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    z-index: 5;
+    width: min(28vw, 260px);
+    min-width: 150px;
+    color: white;
+    font: 800 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    pointer-events: none;
+  }
+
+  #healthTrack {
+    width: 100%;
+    height: 14px;
+    margin-top: 5px;
+    border: 1px solid rgba(255,255,255,0.68);
+    background: rgba(0,0,0,0.58);
+  }
+
+  #healthFill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #18d45b, #b8ff38);
+  }
+
+  #gameOver {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    place-items: center;
+    background: rgba(0,0,0,0.68);
+    color: white;
+    text-align: center;
+    font: 900 clamp(28px, 6vw, 76px)/1.08 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    text-shadow: 0 3px 14px rgba(0,0,0,0.95);
+  }
+
+  #gameOver span {
+    display: block;
+    margin-top: 14px;
+    font-size: clamp(15px, 2.1vw, 25px);
+    letter-spacing: 0;
+  }
 
   .crash-zone {
     position: fixed;
@@ -116,6 +177,27 @@
     gap: 8px;
   }
 
+  #fireBtn {
+    position: fixed;
+    left: max(18px, env(safe-area-inset-left));
+    bottom: max(24px, env(safe-area-inset-bottom));
+    z-index: 5;
+    width: 76px;
+    height: 76px;
+    border: 1px solid rgba(255,255,255,0.62);
+    border-radius: 50%;
+    background: rgba(150,0,0,0.68);
+    color: white;
+    font: 900 30px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    box-shadow: 0 0 18px rgba(255,0,0,0.35);
+    touch-action: none;
+  }
+
+  #fireBtn:active {
+    background: rgba(220,0,0,0.86);
+    transform: scale(0.96);
+  }
+
   .ctrl {
     border: 1px solid rgba(255,255,255,0.55);
     border-radius: 14px;
@@ -142,12 +224,24 @@
       gap: 7px;
     }
     .ctrl { font-size: 24px; border-radius: 12px; }
+    #fireBtn {
+      width: 68px;
+      height: 68px;
+      font-size: 27px;
+    }
   }
 </style>
 </head>
 <body>
 <video id="video" src="images/road_ipad.mp4" muted loop playsinline webkit-playsinline autoplay preload="auto"></video>
 <audio id="carSound" src="images/car_sound.mp3" loop preload="auto"></audio>
+<audio id="skidSound" src="images/skid.mp3" preload="auto"></audio>
+<audio id="missleSound" src="images/missle.mp3" preload="auto"></audio>
+<div id="healthHud" aria-label="Health">
+  <div id="healthText">Health 100%</div>
+  <div id="healthTrack"><div id="healthFill"></div></div>
+</div>
+<div id="gameOver">GAME OVER<span>RELOAD TO TRY AGAIN</span></div>
 <div id="leftCrashZone" class="crash-zone"></div>
 <div id="rightCrashZone" class="crash-zone"></div>
 <div id="smallCubeWrap" aria-hidden="true">
@@ -166,22 +260,172 @@
   <button id="leftBtn" class="ctrl" type="button" aria-label="Move left">◀</button>
   <button id="rightBtn" class="ctrl" type="button" aria-label="Move right">▶</button>
 </div>
+<button id="fireBtn" type="button" aria-label="Fire">●</button>
 
 <script>
   const video = document.getElementById("video");
   const carSound = document.getElementById("carSound");
+  const skidSound = document.getElementById("skidSound");
+  const missleSound = document.getElementById("missleSound");
+  const healthText = document.getElementById("healthText");
+  const healthFill = document.getElementById("healthFill");
+  const gameOver = document.getElementById("gameOver");
   const smallCubeWrap = document.getElementById("smallCubeWrap");
   const bigfoot = document.getElementById("bigfoot");
+  const fireBtn = document.getElementById("fireBtn");
   const leftCrashZone = document.getElementById("leftCrashZone");
   const rightCrashZone = document.getElementById("rightCrashZone");
   const keys = { left:false, right:false };
   const bigfootStartYFactor = 0.82;
+  const shotCooldownMs = 220;
+  const shotDurationMs = 720;
+  const shotTargetYFactor = 0.58;
+  const shotEndScale = 0.18;
+  const damageAmount = 10;
+  const damageCooldownMs = 650;
   const cubeStartYFactor = 0.58;
   const cubeTargetYFactor = 0.82;
   const cubeDesktopStart = { vw: 1.3125, max: 10.3125 };
   const cubeDesktopTarget = { vw: 15.75, max: 123.75 };
   const cubeMobileStart = { vw: 1.5625, max: 8.4375 };
   const cubeMobileTarget = { vw: 18.75, max: 101.25 };
+  const cubeTargetSizeMultiplier = 1.625;
+  const cubeEdgeToBigfootPull = 0.18;
+  const cubeCenterPull = 0.1;
+  const cubeBaseHitboxInset = 0.22;
+  const cubeRoundHitboxTighten = 0.05;
+  const cubeSchedule = [
+    { endMs: 60000, duration: 3000 },
+    { endMs: 120000, duration: 2500 },
+    { endMs: 180000, duration: 1500 },
+    { endMs: 240000, duration: 1000 },
+    { endMs: 300000, duration: null }
+  ];
+  const cubePhases = [
+    {
+      startXFactor: 0.5,
+      endXFactor: 0.5,
+      widthMultiplier: 10,
+      shotDestroyable: true,
+      colors: {
+        front: "rgba(220,0,0,0.84)",
+        right: "rgba(175,0,0,0.84)",
+        left: "rgba(245,20,20,0.84)",
+        top: "rgba(255,58,58,0.84)",
+        bottom: "rgba(125,0,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.55,
+      endXFactor: 0.55,
+      colors: {
+        front: "rgba(238,214,0,0.84)",
+        right: "rgba(198,166,0,0.84)",
+        left: "rgba(255,235,41,0.84)",
+        top: "rgba(255,248,92,0.84)",
+        bottom: "rgba(145,118,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.5375,
+      endXFactor: 0.5375,
+      colors: {
+        front: "rgba(128,0,44,0.84)",
+        right: "rgba(96,0,34,0.84)",
+        left: "rgba(168,18,68,0.84)",
+        top: "rgba(202,44,92,0.84)",
+        bottom: "rgba(66,0,24,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.53125,
+      endXFactor: 0.53125,
+      colors: {
+        front: "rgba(255,148,196,0.84)",
+        right: "rgba(214,92,146,0.84)",
+        left: "rgba(255,180,216,0.84)",
+        top: "rgba(255,206,230,0.84)",
+        bottom: "rgba(154,48,98,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.525,
+      endXFactor: 0.525,
+      colors: {
+        front: "rgba(238,104,0,0.84)",
+        right: "rgba(190,72,0,0.84)",
+        left: "rgba(255,135,24,0.84)",
+        top: "rgba(255,170,68,0.84)",
+        bottom: "rgba(135,48,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.5125,
+      endXFactor: 0.5125,
+      colors: {
+        front: "rgba(255,255,255,0.86)",
+        right: "rgba(204,214,224,0.86)",
+        left: "rgba(240,248,255,0.86)",
+        top: "rgba(255,255,255,0.9)",
+        bottom: "rgba(132,146,160,0.86)"
+      }
+    },
+    {
+      startXFactor: 0.4875,
+      endXFactor: 0.4875,
+      colors: {
+        front: "rgba(0,218,210,0.84)",
+        right: "rgba(0,164,160,0.84)",
+        left: "rgba(40,244,236,0.84)",
+        top: "rgba(96,255,248,0.84)",
+        bottom: "rgba(0,106,104,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.475,
+      endXFactor: 0.475,
+      colors: {
+        front: "rgba(0,112,238,0.84)",
+        right: "rgba(0,78,190,0.84)",
+        left: "rgba(32,145,255,0.84)",
+        top: "rgba(84,178,255,0.84)",
+        bottom: "rgba(0,48,135,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.46875,
+      endXFactor: 0.46875,
+      colors: {
+        front: "rgba(112,245,0,0.84)",
+        right: "rgba(78,184,0,0.84)",
+        left: "rgba(150,255,44,0.84)",
+        top: "rgba(184,255,88,0.84)",
+        bottom: "rgba(48,120,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.4625,
+      endXFactor: 0.4625,
+      colors: {
+        front: "rgba(128,0,220,0.84)",
+        right: "rgba(92,0,176,0.84)",
+        left: "rgba(164,40,248,0.84)",
+        top: "rgba(194,82,255,0.84)",
+        bottom: "rgba(62,0,124,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.45,
+      endXFactor: 0.45,
+      colors: {
+        front: "rgba(0,190,55,0.84)",
+        right: "rgba(0,142,43,0.84)",
+        left: "rgba(24,225,84,0.84)",
+        top: "rgba(80,255,126,0.84)",
+        bottom: "rgba(0,94,32,0.84)"
+      }
+    }
+  ];
   const crashZoneBasePct = 0.18113004;
   const crashZoneWidenByDepthPct = 0.567;
   const crashZoneTopInwardExtraLeftPct = 0.16;
@@ -200,6 +444,13 @@
   let lastCrashZoneBottomVw = -1;
   let lastLeftCrashZoneTopVw = -1;
   let lastRightCrashZoneTopVw = -1;
+  let cubePhaseIndex = 0;
+  let gameStartTime = performance.now();
+  let lastShotTime = -Infinity;
+  let lastDamageTime = -Infinity;
+  let health = 100;
+  let gameActive = true;
+  const shots = [];
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
   }
@@ -269,60 +520,267 @@
       x = prevX;
       updateCrashZones();
       placeBigfoot();
+      applyDamage();
     }
   }
 
-  function getCubeMetrics() {
+  function rectsOverlap(a, b) {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  }
+
+  function insetRect(rect, xPct, yPct) {
+    const xInset = rect.width * xPct;
+    const yInset = rect.height * yPct;
+    return {
+      left: rect.left + xInset,
+      right: rect.right - xInset,
+      top: rect.top + yInset,
+      bottom: rect.bottom - yInset
+    };
+  }
+
+  function getCubeScheduleStage(now = performance.now()) {
+    const cycleMs = cubeSchedule[cubeSchedule.length - 1].endMs;
+    const elapsed = (now - gameStartTime) % cycleMs;
+    return cubeSchedule.findIndex((item) => elapsed < item.endMs);
+  }
+
+  function getCubeHitboxInset() {
+    const stageIndex = getCubeScheduleStage();
+    const tightenSteps = Math.max(0, stageIndex - 1);
+    return cubeBaseHitboxInset + (tightenSteps * cubeRoundHitboxTighten);
+  }
+
+  function isCubeHittingBigfoot() {
+    if (smallCubeWrap.style.display === "none") return false;
+    const cubeRect = smallCubeWrap.getBoundingClientRect();
+    const bigfootRect = bigfoot.getBoundingClientRect();
+    if (!cubeRect.width || !bigfootRect.width) return false;
+    const cubeInset = getCubeHitboxInset();
+    return rectsOverlap(
+      insetRect(cubeRect, cubeInset, cubeInset),
+      insetRect(bigfootRect, 0.18, 0.2)
+    );
+  }
+
+  function playSkidSound() {
+    skidSound.currentTime = 0;
+    skidSound.play().catch(() => {});
+  }
+
+  function updateHealthHud() {
+    const displayHealth = Math.round(health);
+    healthText.textContent = `Health ${displayHealth}%`;
+    healthFill.style.width = displayHealth + "%";
+  }
+
+  function applyDamage() {
+    if (!gameActive) return false;
+    const now = performance.now();
+    if (now - lastDamageTime < damageCooldownMs) return false;
+    lastDamageTime = now;
+    health = clamp(health - damageAmount, 0, 100);
+    updateHealthHud();
+    if (health <= 0) endGame();
+    return true;
+  }
+
+  function endGame() {
+    gameActive = false;
+    keys.left = false;
+    keys.right = false;
+    smallCubeWrap.style.display = "none";
+    shots.splice(0).forEach((shot) => shot.el.remove());
+    carSound.pause();
+    gameOver.style.display = "grid";
+  }
+
+  function playMissleSound() {
+    missleSound.currentTime = 0;
+    missleSound.play().catch(() => {});
+  }
+
+  function getShotRect(shot) {
+    return shot.el.getBoundingClientRect();
+  }
+
+  function destroyShot(index) {
+    shots[index].el.remove();
+    shots.splice(index, 1);
+  }
+
+  function destroyCubeWithShot() {
+    const cubeRect = smallCubeWrap.getBoundingClientRect();
+    if (!cubeRect.width) return false;
+    const cubeHitbox = insetRect(cubeRect, 0.12, 0.18);
+
+    for (let i = shots.length - 1; i >= 0; i--) {
+      if (rectsOverlap(getShotRect(shots[i]), cubeHitbox)) {
+        destroyShot(i);
+        smallCubeWrap.style.display = "none";
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function fireShot() {
+    if (!gameActive) return;
+    const now = performance.now();
+    if (now - lastShotTime < shotCooldownMs) return;
+    lastShotTime = now;
+    playMissleSound();
+
+    const bigfootRect = bigfoot.getBoundingClientRect();
+    const shot = document.createElement("div");
+    const startX = x;
+    const startY = bigfootRect.top + (bigfootRect.height * 0.18);
+    const endX = viewportWidth * 0.5;
+    const endY = viewportHeight * shotTargetYFactor;
+    const startWidth = Math.min(viewportWidth * 0.014, 13);
+    const startHeight = Math.min(viewportWidth * 0.042, 38);
+    shot.className = "shot";
+    shot.style.left = startX + "px";
+    shot.style.top = startY + "px";
+    shot.style.setProperty("--shot-width", startWidth + "px");
+    shot.style.setProperty("--shot-height", startHeight + "px");
+    document.body.appendChild(shot);
+    shots.push({ el: shot, startX, startY, endX, endY, startWidth, startHeight, startTime: now });
+  }
+
+  function updateShots(now) {
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const shot = shots[i];
+      const t = clamp((now - shot.startTime) / shotDurationMs, 0, 1);
+      const nextX = shot.startX + ((shot.endX - shot.startX) * t);
+      const nextY = shot.startY + ((shot.endY - shot.startY) * t);
+      const nextWidth = shot.startWidth * (1 - ((1 - shotEndScale) * t));
+      const nextHeight = shot.startHeight * (1 - ((1 - shotEndScale) * t));
+
+      if (t >= 1) {
+        shot.el.remove();
+        shots.splice(i, 1);
+        continue;
+      }
+      shot.el.style.left = nextX + "px";
+      shot.el.style.top = nextY + "px";
+      shot.el.style.setProperty("--shot-width", nextWidth + "px");
+      shot.el.style.setProperty("--shot-height", nextHeight + "px");
+    }
+  }
+
+  function getCubeMetrics(phase) {
     const mobile = window.matchMedia("(max-width: 700px)").matches;
     const start = mobile ? cubeMobileStart : cubeDesktopStart;
     const target = mobile ? cubeMobileTarget : cubeDesktopTarget;
     const sizeFrom = (config) => Math.min(viewportWidth * (config.vw / 100), config.max);
+    const startX = viewportWidth * phase.startXFactor;
+    const endY = viewportHeight * cubeTargetYFactor;
+    let endX = viewportWidth * phase.endXFactor;
+
+    if (phase.startXFactor > 0.5) {
+      endX = viewportWidth * getCrashZonePctAtY(endY, crashZoneTopInwardExtraLeftPct);
+    } else if (phase.startXFactor < 0.5) {
+      endX = viewportWidth - (viewportWidth * getCrashZonePctAtY(endY, crashZoneTopInwardExtraRightPct));
+    }
+    if (phase.startXFactor !== 0.5) {
+      endX += ((viewportWidth * 0.5) - endX) * cubeEdgeToBigfootPull;
+    }
+    endX += ((viewportWidth * 0.5) - endX) * cubeCenterPull;
 
     return {
-      startX: viewportWidth * 0.5,
+      startX,
       startY: viewportHeight * cubeStartYFactor,
-      endX: viewportWidth * 0.5,
-      endY: viewportHeight * cubeTargetYFactor,
+      endX,
+      endY,
       startSize: sizeFrom(start),
-      endSize: sizeFrom(target)
+      endSize: sizeFrom(target) * cubeTargetSizeMultiplier,
+      widthMultiplier: phase.widthMultiplier || 1
     };
   }
 
+  function getCubeAttackDuration(now) {
+    const stageIndex = getCubeScheduleStage(now);
+    const stage = cubeSchedule[stageIndex];
+    return stage ? stage.duration : cubeSchedule[0].duration;
+  }
+
   function animateSmallCubeToBigCube() {
-    const duration = 2000;
-    const metrics = getCubeMetrics();
+    if (!gameActive) return;
+    const now = performance.now();
+    const duration = getCubeAttackDuration(now);
+    if (duration === null) {
+      smallCubeWrap.style.display = "none";
+      window.setTimeout(() => {
+        if (gameActive) requestAnimationFrame(animateSmallCubeToBigCube);
+      }, 1000);
+      return;
+    }
+
+    const phase = cubePhases[cubePhaseIndex];
+    const metrics = getCubeMetrics(phase);
+    smallCubeWrap.style.setProperty("--cube-front", phase.colors.front);
+    smallCubeWrap.style.setProperty("--cube-right", phase.colors.right);
+    smallCubeWrap.style.setProperty("--cube-left", phase.colors.left);
+    smallCubeWrap.style.setProperty("--cube-top", phase.colors.top);
+    smallCubeWrap.style.setProperty("--cube-bottom", phase.colors.bottom);
     smallCubeWrap.style.display = "block";
     smallCubeWrap.style.left = metrics.startX + "px";
     smallCubeWrap.style.top = metrics.startY + "px";
-    smallCubeWrap.style.width = metrics.startSize + "px";
+    smallCubeWrap.style.width = (metrics.startSize * metrics.widthMultiplier) + "px";
     smallCubeWrap.style.height = metrics.startSize + "px";
     smallCubeWrap.style.setProperty("--cube-size", metrics.startSize + "px");
-    const startTime = performance.now();
+    const startTime = now;
+    let collisionTriggered = false;
 
     function step(now) {
       const t = clamp((now - startTime) / duration, 0, 1);
       const nextX = metrics.startX + ((metrics.endX - metrics.startX) * t);
       const nextY = metrics.startY + ((metrics.endY - metrics.startY) * t);
       const nextSize = metrics.startSize + ((metrics.endSize - metrics.startSize) * t);
+      const nextWidth = nextSize * metrics.widthMultiplier;
 
       smallCubeWrap.style.left = nextX + "px";
       smallCubeWrap.style.top = nextY + "px";
-      smallCubeWrap.style.width = nextSize + "px";
+      smallCubeWrap.style.width = nextWidth + "px";
       smallCubeWrap.style.height = nextSize + "px";
       smallCubeWrap.style.setProperty("--cube-size", nextSize + "px");
+
+      if (phase.shotDestroyable && destroyCubeWithShot()) {
+        cubePhaseIndex = getNextCubePhaseIndex(cubePhaseIndex);
+        if (gameActive) requestAnimationFrame(animateSmallCubeToBigCube);
+        return;
+      }
+
+      if (!collisionTriggered && isCubeHittingBigfoot()) {
+        collisionTriggered = true;
+        applyDamage();
+        playSkidSound();
+      }
 
       if (t < 1) {
         requestAnimationFrame(step);
       } else {
         smallCubeWrap.style.display = "none";
-        requestAnimationFrame(animateSmallCubeToBigCube);
+        cubePhaseIndex = getNextCubePhaseIndex(cubePhaseIndex);
+        if (gameActive) requestAnimationFrame(animateSmallCubeToBigCube);
       }
     }
 
     requestAnimationFrame(step);
   }
 
+  function getNextCubePhaseIndex(previousIndex) {
+    if (cubePhases.length < 2) return 0;
+    let nextIndex = previousIndex;
+    while (nextIndex === previousIndex) {
+      nextIndex = Math.floor(Math.random() * cubePhases.length);
+    }
+    return nextIndex;
+  }
+
   function setHeld(dir, held) {
+    if (!gameActive && held) return;
     keys[dir] = held;
     video.play().catch(() => {});
     carSound.play().catch(() => {});
@@ -353,9 +811,16 @@
   bindButton("leftBtn", "left");
   bindButton("rightBtn", "right");
 
+  fireBtn.addEventListener("pointerdown", (ev) => {
+    ev.preventDefault();
+    fireShot();
+  }, { passive:false });
+  fireBtn.addEventListener("click", (ev) => ev.preventDefault());
+
   window.addEventListener("keydown", (ev) => {
     if (ev.key === "ArrowLeft") { ev.preventDefault(); setHeld("left", true); }
     if (ev.key === "ArrowRight") { ev.preventDefault(); setHeld("right", true); }
+    if (ev.code === "Space") { ev.preventDefault(); fireShot(); }
   }, { passive:false });
 
   window.addEventListener("keyup", (ev) => {
@@ -371,18 +836,21 @@
   });
 
   function tick(now) {
+    if (!gameActive) return;
     const dt = Math.min(0.05, (now - lastT) / 1000);
     lastT = now;
-    const speed = 320;
+    const speed = 405;
     let dx = 0;
     if (keys.left) dx -= speed * dt;
     if (keys.right) dx += speed * dt;
     if (dx) moveBigfoot(dx);
+    updateShots(now);
     requestAnimationFrame(tick);
   }
 
   refreshViewportCache();
   moveBigfoot(0, false);
+  updateHealthHud();
   video.play().catch(() => {});
   window.addEventListener("pointerdown", () => carSound.play().catch(() => {}), { once:true });
   window.addEventListener("keydown", () => carSound.play().catch(() => {}), { once:true });

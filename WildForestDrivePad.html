@@ -231,10 +231,12 @@
     right: max(12px, env(safe-area-inset-right));
     bottom: max(12px, env(safe-area-inset-bottom));
     z-index: 5;
-    display: grid;
-    grid-template-columns: 64px 64px;
-    grid-template-rows: 64px;
-    gap: 8px;
+    width: 184px;
+    height: 76px;
+    border: 1px solid rgba(255,255,255,0.55);
+    border-radius: 38px;
+    background: rgba(0,0,0,0.58);
+    touch-action: none;
   }
 
   #fireBtn {
@@ -258,32 +260,55 @@
     transform: scale(0.96);
   }
 
-  .ctrl {
-    border: 1px solid rgba(255,255,255,0.55);
-    border-radius: 14px;
-    background: rgba(0,0,0,0.58);
+  #sliderTrack {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    top: 50%;
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.38);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  #sliderThumb {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 58px;
+    height: 58px;
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 50%;
+    background: rgba(0,0,0,0.72);
     color: white;
-    font: 900 28px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    font: 900 24px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    transform: translate(-50%, -50%);
     touch-action: none;
+    display: grid;
+    place-items: center;
   }
 
-  .ctrl:active {
+  #sliderThumb::before {
+    content: "↔";
+  }
+
+  #controls:active #sliderThumb {
     background: rgba(0,0,0,0.86);
-    transform: scale(0.96);
   }
-
-  #leftBtn { grid-column: 1; grid-row: 1; }
-  #rightBtn { grid-column: 2; grid-row: 1; }
 
   @media (max-width: 700px) {
     #bigfoot { width: min(38.08vw, 201.6px); }
     #smallCubeWrap { --cube-size: min(1.5625vw, 8.4375px); }
     #controls {
-      grid-template-columns: 56px 56px;
-      grid-template-rows: 56px;
-      gap: 7px;
+      width: 164px;
+      height: 68px;
     }
-    .ctrl { font-size: 24px; border-radius: 12px; }
+    #sliderThumb {
+      width: 52px;
+      height: 52px;
+      font-size: 22px;
+    }
     #fireBtn {
       width: 68px;
       height: 68px;
@@ -323,9 +348,9 @@
 </div>
 <img id="bigfoot" src="images/bigfoot.png" alt="Bigfoot" />
 
-<div id="controls" aria-label="Bigfoot controls">
-  <button id="leftBtn" class="ctrl" type="button" aria-label="Move left">◀</button>
-  <button id="rightBtn" class="ctrl" type="button" aria-label="Move right">▶</button>
+<div id="controls" aria-label="Bigfoot steering slider">
+  <div id="sliderTrack"></div>
+  <div id="sliderThumb"></div>
 </div>
 <button id="fireBtn" type="button" aria-label="Fire">SHOOT</button>
 
@@ -341,6 +366,8 @@
   const smallCubeWrap = document.getElementById("smallCubeWrap");
   const bigfoot = document.getElementById("bigfoot");
   const fireBtn = document.getElementById("fireBtn");
+  const controls = document.getElementById("controls");
+  const sliderThumb = document.getElementById("sliderThumb");
   const leftCrashZone = document.getElementById("leftCrashZone");
   const rightCrashZone = document.getElementById("rightCrashZone");
   const keys = { left:false, right:false };
@@ -529,6 +556,8 @@
   let gameStarted = false;
   let selectedVehicleChoice = vehicleChoices[0];
   let gameAudioContext = null;
+  let sliderValue = 0;
+  let sliderPointerId = null;
   const shots = [];
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -671,6 +700,7 @@
     gameActive = false;
     keys.left = false;
     keys.right = false;
+    setSliderValue(0);
     smallCubeWrap.style.display = "none";
     shots.splice(0).forEach((shot) => shot.el.remove());
     carSound.pause();
@@ -983,30 +1013,50 @@
     carSound.play().catch(() => {});
   }
 
-  function bindButton(id, dir) {
-    const btn = document.getElementById(id);
-    const down = (ev) => {
-      ev.preventDefault();
-      setHeld(dir, true);
-    };
-    const up = (ev) => {
-      if (ev) ev.preventDefault();
-      setHeld(dir, false);
-    };
-    btn.addEventListener("pointerdown", down, { passive:false });
-    btn.addEventListener("pointerup", up, { passive:false });
-    btn.addEventListener("pointercancel", up, { passive:false });
-    btn.addEventListener("pointerleave", up);
-    btn.addEventListener("click", (ev) => {
-      ev.preventDefault();
-      const step = 28;
-      if (dir === "left") moveBigfoot(-step);
-      if (dir === "right") moveBigfoot(step);
-    });
+  function setSliderValue(value) {
+    sliderValue = clamp(value, -1, 1);
+    const maxOffset = (controls.clientWidth - sliderThumb.clientWidth - 18) / 2;
+    sliderThumb.style.left = `calc(50% + ${sliderValue * maxOffset}px)`;
   }
 
-  bindButton("leftBtn", "left");
-  bindButton("rightBtn", "right");
+  function updateSliderFromPointer(ev) {
+    const rect = controls.getBoundingClientRect();
+    const centerX = rect.left + (rect.width / 2);
+    const usableHalfWidth = (rect.width - sliderThumb.clientWidth - 18) / 2;
+    setSliderValue((ev.clientX - centerX) / usableHalfWidth);
+    video.play().catch(() => {});
+    carSound.play().catch(() => {});
+  }
+
+  controls.addEventListener("pointerdown", (ev) => {
+    ev.preventDefault();
+    if (!gameActive) return;
+    sliderPointerId = ev.pointerId;
+    controls.setPointerCapture(sliderPointerId);
+    updateSliderFromPointer(ev);
+  }, { passive:false });
+
+  controls.addEventListener("pointermove", (ev) => {
+    if (ev.pointerId !== sliderPointerId) return;
+    ev.preventDefault();
+    updateSliderFromPointer(ev);
+  }, { passive:false });
+
+  function releaseSlider(ev) {
+    if (ev && ev.pointerId !== sliderPointerId) return;
+    if (sliderPointerId !== null && controls.hasPointerCapture(sliderPointerId)) {
+      controls.releasePointerCapture(sliderPointerId);
+    }
+    sliderPointerId = null;
+    setSliderValue(0);
+  }
+
+  controls.addEventListener("pointerup", releaseSlider);
+  controls.addEventListener("pointercancel", releaseSlider);
+  controls.addEventListener("lostpointercapture", () => {
+    sliderPointerId = null;
+    setSliderValue(0);
+  });
 
   renderPicksHotspots();
   startBtn.addEventListener("pointerdown", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev), { passive:false });
@@ -1046,6 +1096,7 @@
     let dx = 0;
     if (keys.left) dx -= speed * dt;
     if (keys.right) dx += speed * dt;
+    dx += sliderValue * speed * dt;
     if (dx) moveBigfoot(dx);
     updateShots(now);
     requestAnimationFrame(tick);

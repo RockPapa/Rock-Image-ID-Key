@@ -983,6 +983,7 @@ const TUNNEL_EXIT_GODDESS_VOICE_VOL = 1.0;
 const TUNNEL_EXIT_GODDESS_VOICE_GAIN = 2.0; // +100% boost via WebAudio gain stage
 const TUNNEL_EXIT_GODDESS_VOICE_TAIL_TRIM_SEC = 2.5; // trim trailing silence
 const GODDESS_TO_COPTER_MARKER_DIST_FT = 0.0;
+const TUNNEL_EXIT_COPTER_MARKER_OUTSIDE_FT = 28.0;
 const GODDESS_COPTER_MARKER_FILE = "copter.png";
 const GODDESS_COPTER_MARKER_WIDTH_FT = 18.0;
 const GODDESS_COPTER_MARKER_HEIGHT_FT = 7.744;
@@ -1012,6 +1013,7 @@ const TUNNEL_REAPER_MAD_AUDIO_VOL = 0.85;
 const CAVE_WALL_SKID_AUDIO_FILE = "skid.mp3";
 const CAVE_WALL_SKID_AUDIO_VOL = 0.85;
 const TUNNEL_REAPER_BOSS_FILE = "reaper2.png";
+const TUNNEL_REAPER_BOSS_2_ENABLE = false;
 const TUNNEL_REAPER_BOSS_2_FILE = "reaper3.png";
 const TUNNEL_REAPER_BOSS_3_FILE = "reaper4.png";
 const TUNNEL_REAPER_BOSS_4_FILE = "reaper5.png";
@@ -3690,7 +3692,11 @@ function getTunnelExitGoddessAnchor(){
     const frame = _getPrimaryTunnelFarMouthFrame();
     if(!frame || !frame.mouth) return null;
     const ft = WORLD_UNITS_PER_FOOT;
-    const offset = Math.max(4.0 * ft, TUNNEL_ENTRANCE_CLEARANCE_FT * ft);
+    const offset = Math.max(
+      4.0 * ft,
+      TUNNEL_ENTRANCE_CLEARANCE_FT * ft,
+      TUNNEL_EXIT_COPTER_MARKER_OUTSIDE_FT * ft
+    );
     const x = frame.mouth.x + (frame.dir.x * offset);
     const z = frame.mouth.z + (frame.dir.z * offset);
     const gy = heightAtWorldXZ(x, z);
@@ -4690,12 +4696,18 @@ function applyTunnelReaperBossContactPenalty(obj, radius = TRUCK_COLLISION_RADIU
   };
 
   checkBoss(tunnelReaperBoss, "r2");
-  checkBoss(tunnelReaperBoss2, "r3");
+  if(TUNNEL_REAPER_BOSS_2_ENABLE) checkBoss(tunnelReaperBoss2, "r3");
   checkBoss(tunnelReaperBoss3, "r4");
   checkBoss(tunnelReaperBoss4, "r5");
 }
 
 function spawnTunnelReaperBoss2(){
+  if(!TUNNEL_REAPER_BOSS_2_ENABLE){
+    clearTunnelReaperBoss2();
+    tunnelReaperBoss2Triggered = true;
+    return;
+  }
+
   const ft = WORLD_UNITS_PER_FOOT;
 
   if(!tunnelReaperBoss2Tex){
@@ -4814,6 +4826,7 @@ function updateTunnelReaperBoss2(dt = 0, shouldApproach = false){
 }
 
 function updateTunnelReaperBossChain(dt = 0){
+  if(!TUNNEL_REAPER_BOSS_2_ENABLE) return;
   if(tunnelReaperBoss2Triggered) return;
   if(!tunnelReaperBoss2TriggerPoint) return;
 
@@ -11482,7 +11495,8 @@ function updatePlazaExitVehicleChoiceCollision(obj){
     const dz = obj.position.z - goddessCopterMarker.position.z;
     const r = avatarRadius + (goddessCopterMarker.userData.collisionRadius || 0);
     const wantsSwitch = (avatarMode === "leggoman") || (currentVehicleFile !== (goddessCopterMarker.userData.vehicleFile || GODDESS_COPTER_MARKER_FILE));
-    if(wantsSwitch && ((dx * dx) + (dz * dz) <= (r * r))){
+    const insideCave = isTruckInsideCaveForLighting(obj.position.x, obj.position.y, obj.position.z);
+    if(!insideCave && wantsSwitch && ((dx * dx) + (dz * dz) <= (r * r))){
       switchToChosenVehicleFile(goddessCopterMarker.userData.vehicleFile || GODDESS_COPTER_MARKER_FILE, goddessCopterMarker.userData.tex || null);
       updatePlayerCopterFlightAudio(true);
       return;
@@ -15149,8 +15163,8 @@ function updateBlueBalls(dt){
       }
     }
 
-    // REAPER3_HITTEST: Blue balls damage reaper3; 4 hits destroy it.
-    if (tunnelReaperBoss2 && tunnelReaperBoss2.visible){
+    // REAPER3_HITTEST: disabled when reaper3 is removed from the tunnel.
+    if (TUNNEL_REAPER_BOSS_2_ENABLE && tunnelReaperBoss2 && tunnelReaperBoss2.visible){
       const p = b.mesh.position;
       if (ballSweepHitsMesh(tunnelReaperBoss2, prevPos, p, FIRE_RADIUS)){
         scene.remove(b.mesh);

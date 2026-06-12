@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shoot Sound Test</title>
+<style>
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: #101014;
+    color: white;
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  body {
+    padding: 18px;
+  }
+
+  h1 {
+    margin: 0 0 8px;
+    font-size: 24px;
+  }
+
+  p {
+    margin: 0 0 18px;
+    color: rgba(255,255,255,0.72);
+    font-size: 15px;
+  }
+
+  #status {
+    margin-bottom: 14px;
+    color: #ffe36f;
+    font-weight: 800;
+  }
+
+  #buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+
+  button {
+    min-height: 86px;
+    border: 1px solid rgba(255,255,255,0.35);
+    border-radius: 12px;
+    background: #242432;
+    color: white;
+    font: 900 17px/1.1 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    touch-action: manipulation;
+  }
+
+  button:active {
+    background: #3a3a52;
+    transform: scale(0.98);
+  }
+</style>
+</head>
+<body>
+<h1>Shoot Sound Test</h1>
+<p>Tap each button on the iPad. Pick the label that sounds best and loudest in Safari.</p>
+<div id="status">Audio locked until first tap</div>
+<div id="buttons"></div>
+
+<script>
+  let audioCtx = null;
+
+  function getCtx() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      document.getElementById("status").textContent = "Web Audio not supported";
+      return null;
+    }
+    if (!audioCtx) audioCtx = new AudioContextClass();
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+    document.getElementById("status").textContent = `Audio: ${audioCtx.state}`;
+    return audioCtx;
+  }
+
+  function ramp(gain, now, peak, attack, release) {
+    gain.gain.cancelScheduledValues(now);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(peak, now + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + release);
+  }
+
+  function makeNoise(ctx, seconds) {
+    const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = (Math.random() * 2 - 1) * (1 - (i / data.length));
+    }
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    return source;
+  }
+
+  function playBlast() {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(260, now);
+    osc.frequency.exponentialRampToValueAtTime(72, now + 0.14);
+    ramp(gain, now, 1.0, 0.008, 0.18);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.2);
+  }
+
+  function playCrack() {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(1800, now);
+    osc.frequency.exponentialRampToValueAtTime(260, now + 0.08);
+    ramp(gain, now, 1.0, 0.003, 0.09);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  }
+
+  function playNoisePop() {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const noise = makeNoise(ctx, 0.11);
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(2200, now);
+    filter.Q.setValueAtTime(2.4, now);
+    ramp(gain, now, 1.0, 0.003, 0.1);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    noise.start(now);
+    noise.stop(now + 0.12);
+  }
+
+  function playLaser() {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(980, now);
+    osc.frequency.exponentialRampToValueAtTime(110, now + 0.22);
+    ramp(gain, now, 0.9, 0.01, 0.24);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  }
+
+  function playCannon() {
+    const ctx = getCtx();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const noise = makeNoise(ctx, 0.18);
+    const low = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    const noiseGain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(38, now + 0.32);
+    low.type = "lowpass";
+    low.frequency.setValueAtTime(520, now);
+    ramp(gain, now, 1.0, 0.012, 0.36);
+    ramp(noiseGain, now, 0.8, 0.006, 0.18);
+    osc.connect(gain);
+    noise.connect(low);
+    low.connect(noiseGain);
+    gain.connect(ctx.destination);
+    noiseGain.connect(ctx.destination);
+    osc.start(now);
+    noise.start(now);
+    osc.stop(now + 0.38);
+    noise.stop(now + 0.19);
+  }
+
+  function playHybridA() {
+    playBlast();
+    playCrack();
+    playNoisePop();
+  }
+
+  function playHybridB() {
+    playLaser();
+    window.setTimeout(playCrack, 35);
+  }
+
+  function playHybridC() {
+    playCannon();
+    window.setTimeout(playNoisePop, 24);
+  }
+
+  const tests = [
+    ["1 Blast", playBlast],
+    ["2 Crack", playCrack],
+    ["3 Noise Pop", playNoisePop],
+    ["4 Laser", playLaser],
+    ["5 Cannon", playCannon],
+    ["6 Blast+Crack+Noise", playHybridA],
+    ["7 Laser+Crack", playHybridB],
+    ["8 Cannon+Noise", playHybridC]
+  ];
+
+  const buttons = document.getElementById("buttons");
+  tests.forEach(([label, fn]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("pointerdown", (ev) => {
+      ev.preventDefault();
+      fn();
+    }, { passive:false });
+    button.addEventListener("click", (ev) => ev.preventDefault());
+    buttons.appendChild(button);
+  });
+</script>
+</body>
+</html>

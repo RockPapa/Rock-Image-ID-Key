@@ -941,7 +941,7 @@ const PUEBLO_TOP_EXIT_GRACE_SEC = 0.8; // prevent re-mantle lock when stepping o
 const GRAVITY    = 30;
 const TREE_COLLISION_ENABLE = false;
 const TRUCK_COLLISION_RADIUS = 1.05;
-const TUNNEL_WALL_COLLISION_RADIUS_SCALE = 0.80; // <1 widens interior drive zone before wall block
+const TUNNEL_WALL_COLLISION_RADIUS_SCALE = 1.0;
 const TUNNEL_ENTRANCE_CLEARANCE_FT = 6.0; // keep tunnel mouths collision-open for cleaner entry/exit
 const TUNNEL_INTERIOR_SIDE_BLOCKS_ENABLE = true;
 const TUNNEL_INTERIOR_SIDE_BLOCK_WIDTH_FT = 10.0; // requested 10ft wide red side blocks
@@ -982,12 +982,12 @@ const TUNNEL_EXIT_GODDESS_VOICE_FILE = "";
 const TUNNEL_EXIT_GODDESS_VOICE_VOL = 1.0;
 const TUNNEL_EXIT_GODDESS_VOICE_GAIN = 2.0; // +100% boost via WebAudio gain stage
 const TUNNEL_EXIT_GODDESS_VOICE_TAIL_TRIM_SEC = 2.5; // trim trailing silence
-const GODDESS_TO_COPTER_MARKER_DIST_FT = 500.0;
+const GODDESS_TO_COPTER_MARKER_DIST_FT = 0.0;
 const GODDESS_COPTER_MARKER_FILE = "copter.png";
 const GODDESS_COPTER_MARKER_WIDTH_FT = 18.0;
 const GODDESS_COPTER_MARKER_HEIGHT_FT = 7.744;
 const GODDESS_COPTER_MARKER_COLLISION_RADIUS_FT = 12.0;
-const GODDESS_COPTER_MARKER_RIGHT_SHIFT_FT = 2.0; // keep mostly in line with truck path while still clearing clutter
+const GODDESS_COPTER_MARKER_RIGHT_SHIFT_FT = 0.0;
 const GODDESS_COPTER_BEACON_ENABLE = true;
 const GODDESS_COPTER_BEACON_HEIGHT_FT = 95.0;
 const GODDESS_COPTER_BEACON_SHAFT_HEIGHT_FT = 40.0;
@@ -3717,7 +3717,7 @@ function ensureGoddessCopterMarker(){
   }
 
   const ft = WORLD_UNITS_PER_FOOT;
-  const dist = Math.max(1.0 * ft, GODDESS_TO_COPTER_MARKER_DIST_FT * ft);
+  const dist = Math.max(0, GODDESS_TO_COPTER_MARKER_DIST_FT * ft);
   const ux = dx / len;
   const uz = dz / len;
   const side = GODDESS_COPTER_MARKER_RIGHT_SHIFT_FT * ft;
@@ -14541,6 +14541,13 @@ function applyFullTunnelPolylineWallBlock(obj, prevX, prevZ, points, innerRadius
     const prevState = probe(prevPt.x, prevPt.z);
     const nowState = probe(nowPt.x, nowPt.z);
     if(!prevState || !nowState) continue;
+
+    // Treat the tube side walls as solid even if a previous frame already slipped outside.
+    if(!nowState.insideSide && !nowState.throughMouthApproach){
+      obj.position.x = prevState.insideSide ? prevX : (nowState.centerlinePoint.x + (nowState.sideDir.x * nowState.innerLimit));
+      obj.position.z = prevState.insideSide ? prevZ : (nowState.centerlinePoint.z + (nowState.sideDir.z * nowState.innerLimit));
+      return true;
+    }
 
     // Inside -> outside is only allowed when leaving through a tunnel mouth.
     if(prevState.insideSide && !nowState.insideSide){

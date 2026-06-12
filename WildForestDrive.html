@@ -27,6 +27,66 @@
     pointer-events: none;
   }
 
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.58);
+  }
+
+  #startPanel {
+    width: min(93.1vw, 1496px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  #picksWrap {
+    position: relative;
+    width: min(93.1vw, 1496px, calc((100vh - 112px) * 1791 / 1220));
+    aspect-ratio: 1791 / 1220;
+  }
+
+  #picksBanner {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  #picksButtons {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+  }
+
+  .pick-hotspot {
+    position: absolute;
+    z-index: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #startBtn {
+    border: 1px solid #fff;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 12px 20px;
+    font: 700 18px/1 Arial, sans-serif;
+    cursor: pointer;
+  }
+
   #bigfoot {
     position: fixed;
     left: 50vw;
@@ -188,7 +248,7 @@
     border-radius: 50%;
     background: rgba(150,0,0,0.68);
     color: white;
-    font: 900 30px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    font: 900 15px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
     box-shadow: 0 0 18px rgba(255,0,0,0.35);
     touch-action: none;
   }
@@ -227,7 +287,7 @@
     #fireBtn {
       width: 68px;
       height: 68px;
-      font-size: 27px;
+      font-size: 14px;
     }
   }
 </style>
@@ -237,6 +297,15 @@
 <audio id="carSound" src="images/car_sound.mp3" loop preload="auto"></audio>
 <audio id="skidSound" src="images/skid.mp3" preload="auto"></audio>
 <audio id="missleSound" src="images/missle.mp3" preload="auto"></audio>
+<div id="startOverlay">
+  <div id="startPanel">
+    <div id="picksWrap">
+      <img id="picksBanner" src="images/picks.png" alt="Picks banner" />
+      <div id="picksButtons" role="group" aria-label="Choose vehicle"></div>
+    </div>
+    <button id="startBtn" type="button">Start Drive</button>
+  </div>
+</div>
 <div id="healthHud" aria-label="Health">
   <div id="healthText">Health 100%</div>
   <div id="healthTrack"><div id="healthFill"></div></div>
@@ -260,7 +329,7 @@
   <button id="leftBtn" class="ctrl" type="button" aria-label="Move left">◀</button>
   <button id="rightBtn" class="ctrl" type="button" aria-label="Move right">▶</button>
 </div>
-<button id="fireBtn" type="button" aria-label="Fire">●</button>
+<button id="fireBtn" type="button" aria-label="Fire">SHOOT</button>
 
 <script>
   const video = document.getElementById("video");
@@ -270,6 +339,9 @@
   const healthText = document.getElementById("healthText");
   const healthFill = document.getElementById("healthFill");
   const gameOver = document.getElementById("gameOver");
+  const startOverlay = document.getElementById("startOverlay");
+  const picksButtons = document.getElementById("picksButtons");
+  const startBtn = document.getElementById("startBtn");
   const smallCubeWrap = document.getElementById("smallCubeWrap");
   const bigfoot = document.getElementById("bigfoot");
   const fireBtn = document.getElementById("fireBtn");
@@ -281,8 +353,16 @@
   const shotDurationMs = 720;
   const shotTargetYFactor = 0.58;
   const shotEndScale = 0.18;
-  const damageAmount = 10;
+  const damageAmount = 7;
   const damageCooldownMs = 650;
+  const vehicleChoices = [
+    { id: 1, src: "images/bigfoot.png", left: 12.5, top: 16.5, width: 20, height: 31 },
+    { id: 2, src: "images/blue_truck.png", left: 38.5, top: 16.5, width: 20, height: 31 },
+    { id: 3, src: "images/maz_back.png", left: 64.5, top: 16.5, width: 20, height: 31 },
+    { id: 4, src: "images/orange_truck.png", left: 12.5, top: 58.5, width: 20, height: 31 },
+    { id: 5, src: "images/truck2.png", left: 38.5, top: 58.5, width: 20, height: 31 },
+    { id: 6, src: "images/big_truck.png", left: 64.5, top: 58.5, width: 20, height: 31 }
+  ];
   const cubeStartYFactor = 0.58;
   const cubeTargetYFactor = 0.82;
   const cubeDesktopStart = { vw: 1.3125, max: 10.3125 };
@@ -449,7 +529,9 @@
   let lastShotTime = -Infinity;
   let lastDamageTime = -Infinity;
   let health = 100;
-  let gameActive = true;
+  let gameActive = false;
+  let gameStarted = false;
+  let selectedVehicleChoice = vehicleChoices[0];
   const shots = [];
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -593,6 +675,55 @@
     shots.splice(0).forEach((shot) => shot.el.remove());
     carSound.pause();
     gameOver.style.display = "grid";
+  }
+
+  function selectAndStartVehicle(choice, ev) {
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    if (gameStarted || !choice) return;
+    selectedVehicleChoice = choice;
+    bigfoot.src = selectedVehicleChoice.src;
+    startGame();
+  }
+
+  function getSelectedVehicleChoice() {
+    return selectedVehicleChoice || vehicleChoices[0];
+  }
+
+  function renderPicksHotspots() {
+    picksButtons.innerHTML = "";
+    vehicleChoices.forEach((choice) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pick-hotspot";
+      btn.style.left = `${choice.left}%`;
+      btn.style.top = `${choice.top}%`;
+      btn.style.width = `${choice.width}%`;
+      btn.style.height = `${choice.height}%`;
+      btn.setAttribute("aria-label", `Choose vehicle ${choice.id}`);
+      const chooseVehicle = (ev) => selectAndStartVehicle(choice, ev);
+      btn.addEventListener("pointerdown", chooseVehicle, { passive:false });
+      btn.addEventListener("touchstart", chooseVehicle, { passive:false });
+      btn.addEventListener("mousedown", chooseVehicle);
+      btn.addEventListener("click", chooseVehicle);
+      picksButtons.appendChild(btn);
+    });
+  }
+
+  function startGame() {
+    gameStarted = true;
+    gameActive = true;
+    startOverlay.style.display = "none";
+    gameStartTime = performance.now();
+    lastT = gameStartTime;
+    refreshViewportCache();
+    moveBigfoot(0, false);
+    updateHealthHud();
+    video.play().catch(() => {});
+    requestAnimationFrame(animateSmallCubeToBigCube);
+    requestAnimationFrame(tick);
   }
 
   function playMissleSound() {
@@ -811,6 +942,12 @@
   bindButton("leftBtn", "left");
   bindButton("rightBtn", "right");
 
+  renderPicksHotspots();
+  startBtn.addEventListener("pointerdown", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev), { passive:false });
+  startBtn.addEventListener("touchstart", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev), { passive:false });
+  startBtn.addEventListener("mousedown", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev));
+  startBtn.addEventListener("click", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev));
+
   fireBtn.addEventListener("pointerdown", (ev) => {
     ev.preventDefault();
     fireShot();
@@ -854,8 +991,6 @@
   video.play().catch(() => {});
   window.addEventListener("pointerdown", () => carSound.play().catch(() => {}), { once:true });
   window.addEventListener("keydown", () => carSound.play().catch(() => {}), { once:true });
-  requestAnimationFrame(animateSmallCubeToBigCube);
-  requestAnimationFrame(tick);
 </script>
 </body>
 </html>

@@ -378,6 +378,7 @@
   const shotEndScale = 0.18;
   const damageAmount = 7;
   const damageCooldownMs = 650;
+  const sliderSpeedMultiplier = 1.4;
   const vehicleChoices = [
     { id: 1, src: "images/bigfoot.png", left: 12.5, top: 16.5, width: 20, height: 31 },
     { id: 2, src: "images/blue_truck.png", left: 38.5, top: 16.5, width: 20, height: 31 },
@@ -558,6 +559,7 @@
   let gameAudioContext = null;
   let sliderValue = 0;
   let sliderPointerId = null;
+  let assetsReady = false;
   const shots = [];
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -677,6 +679,70 @@
     healthFill.style.width = displayHealth + "%";
   }
 
+  function updateLoadingHud(loaded, total) {
+    const pct = total ? Math.round((loaded / total) * 100) : 100;
+    healthText.textContent = `Loading ${pct}%`;
+    healthFill.style.width = pct + "%";
+    startBtn.textContent = `Loading ${pct}%`;
+  }
+
+  function trackImageLoad(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = resolve;
+      img.onerror = resolve;
+      img.src = src;
+    });
+  }
+
+  function trackMediaLoad(media) {
+    return new Promise((resolve) => {
+      if (!media) {
+        resolve();
+        return;
+      }
+      if (media.readyState >= 2) {
+        resolve();
+        return;
+      }
+      const done = () => {
+        media.removeEventListener("canplaythrough", done);
+        media.removeEventListener("loadeddata", done);
+        media.removeEventListener("error", done);
+        resolve();
+      };
+      media.addEventListener("canplaythrough", done, { once:true });
+      media.addEventListener("loadeddata", done, { once:true });
+      media.addEventListener("error", done, { once:true });
+      media.load();
+    });
+  }
+
+  function beginAssetLoading() {
+    const imageSources = [
+      "images/picks.png",
+      ...vehicleChoices.map((choice) => choice.src)
+    ];
+    const loadTasks = [
+      trackMediaLoad(video),
+      trackMediaLoad(carSound),
+      ...imageSources.map(trackImageLoad)
+    ];
+    let loaded = 0;
+    updateLoadingHud(loaded, loadTasks.length);
+    loadTasks.forEach((task) => {
+      task.then(() => {
+        loaded += 1;
+        updateLoadingHud(loaded, loadTasks.length);
+        if (loaded === loadTasks.length) {
+          assetsReady = true;
+          updateHealthHud();
+          startBtn.textContent = "Start Drive";
+        }
+      });
+    });
+  }
+
   function getGameAudioContext() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return null;
@@ -713,6 +779,7 @@
       ev.stopPropagation();
     }
     if (gameStarted || !choice) return;
+    if (!assetsReady) return;
     selectedVehicleChoice = choice;
     bigfoot.src = selectedVehicleChoice.src;
     startGame();
@@ -761,24 +828,49 @@
     if (!ctx) return;
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+    const crack = ctx.createOscillator();
+    const noiseBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.09), ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * (1 - (i / noiseData.length));
+    const noise = ctx.createBufferSource();
     const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    const crackGain = ctx.createGain();
+    const noiseGain = ctx.createGain();
 
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(720, now);
-    osc.frequency.exponentialRampToValueAtTime(120, now + 0.16);
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(2200, now);
-    filter.frequency.exponentialRampToValueAtTime(520, now + 0.16);
+    osc.type = "square";
+    osc.frequency.setValueAtTime(260, now);
+    osc.frequency.exponentialRampToValueAtTime(72, now + 0.14);
+    crack.type = "sawtooth";
+    crack.frequency.setValueAtTime(1320, now);
+    crack.frequency.exponentialRampToValueAtTime(360, now + 0.075);
+    noise.buffer = noiseBuffer;
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(1800, now);
+    filter.Q.setValueAtTime(1.8, now);
     gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.619, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(1.0, now + 0.008);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    crackGain.gain.setValueAtTime(0.0001, now);
+    crackGain.gain.exponentialRampToValueAtTime(0.72, now + 0.004);
+    crackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.95, now + 0.003);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
 
-    osc.connect(filter);
-    filter.connect(gain);
+    osc.connect(gain);
+    crack.connect(crackGain);
+    noise.connect(filter);
+    filter.connect(noiseGain);
     gain.connect(ctx.destination);
+    crackGain.connect(ctx.destination);
+    noiseGain.connect(ctx.destination);
     osc.start(now);
+    crack.start(now);
+    noise.start(now);
     osc.stop(now + 0.19);
+    crack.stop(now + 0.09);
+    noise.stop(now + 0.1);
   }
 
   function playSkidSound() {
@@ -1096,7 +1188,7 @@
     let dx = 0;
     if (keys.left) dx -= speed * dt;
     if (keys.right) dx += speed * dt;
-    dx += sliderValue * speed * dt;
+    dx += sliderValue * speed * sliderSpeedMultiplier * dt;
     if (dx) moveBigfoot(dx);
     updateShots(now);
     requestAnimationFrame(tick);
@@ -1104,7 +1196,7 @@
 
   refreshViewportCache();
   moveBigfoot(0, false);
-  updateHealthHud();
+  beginAssetLoading();
   video.play().catch(() => {});
   window.addEventListener("pointerdown", () => carSound.play().catch(() => {}), { once:true });
   window.addEventListener("keydown", () => carSound.play().catch(() => {}), { once:true });

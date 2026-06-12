@@ -34,7 +34,7 @@
     width: min(31.36vw, 246.4px);
     height: auto;
     z-index: 2;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%) scaleY(-1);
     pointer-events: none;
     -webkit-user-drag: none;
   }
@@ -248,7 +248,7 @@
 
     alien.style.display = "block";
     alien.style.top = "";
-    alien.style.transform = "translate(-50%, -50%)";
+    alien.style.transform = "translate(-50%, -50%) scaleY(-1)";
 
     const startRect = alien.getBoundingClientRect();
     const bigfootRect = bigfoot.getBoundingClientRect();
@@ -271,7 +271,7 @@
       const nextScale = 1 + ((exitScale - 1) * eased);
 
       alien.style.top = nextY + "px";
-      alien.style.transform = `translate(-50%, -50%) scale(${nextScale})`;
+      alien.style.transform = `translate(-50%, -50%) scale(${nextScale}, ${-nextScale})`;
 
       if (nextY >= disappearY || t >= 1) {
         alien.style.display = "none";

@@ -68,16 +68,34 @@
 <script>
   let audioCtx = null;
 
-  function getCtx() {
+  async function unlockAudio() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) {
       document.getElementById("status").textContent = "Web Audio not supported";
       return null;
     }
     if (!audioCtx) audioCtx = new AudioContextClass();
-    if (audioCtx.state === "suspended") audioCtx.resume().catch(() => {});
+    if (audioCtx.state === "suspended") {
+      try {
+        await audioCtx.resume();
+      } catch (err) {}
+    }
+
+    const unlockBuffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+    const unlockSource = audioCtx.createBufferSource();
+    const unlockGain = audioCtx.createGain();
+    unlockGain.gain.value = 0.0001;
+    unlockSource.buffer = unlockBuffer;
+    unlockSource.connect(unlockGain);
+    unlockGain.connect(audioCtx.destination);
+    unlockSource.start(0);
+
     document.getElementById("status").textContent = `Audio: ${audioCtx.state}`;
-    return audioCtx;
+    return audioCtx.state === "running" ? audioCtx : null;
+  }
+
+  function getCtx() {
+    return audioCtx && audioCtx.state === "running" ? audioCtx : null;
   }
 
   function ramp(gain, now, peak, attack, release) {
@@ -223,10 +241,17 @@
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = label;
-    button.addEventListener("pointerdown", (ev) => {
+    const playFromTap = async (ev) => {
       ev.preventDefault();
+      const ctx = await unlockAudio();
+      if (!ctx) {
+        document.getElementById("status").textContent = "Audio still suspended. Try Safari, not preview mode.";
+        return;
+      }
       fn();
-    }, { passive:false });
+    };
+    button.addEventListener("pointerdown", playFromTap, { passive:false });
+    button.addEventListener("touchend", playFromTap, { passive:false });
     button.addEventListener("click", (ev) => ev.preventDefault());
     buttons.appendChild(button);
   });

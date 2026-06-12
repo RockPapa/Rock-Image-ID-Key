@@ -2250,6 +2250,7 @@ const TARGET_HIT_SOUND_FILE = "missle.mp3";
 const ALIEN_DEATH_SOUND_FILE = "growl.mp3";
 
 let hitAudioCtx = null;
+let lastDirectGestureHitSoundTime = -Infinity;
 async function unlockHitAudio(){
   const AC = window.AudioContext || window.webkitAudioContext;
   if(!AC) return null;
@@ -2361,6 +2362,7 @@ function spawnHitBurst(worldPos, colorHex=0xffffff){
 
 function playHitSound(){
   try{
+    if(performance.now() - lastDirectGestureHitSoundTime < 120) return;
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
     if(!hitAudioCtx) hitAudioCtx = new AC();
@@ -2370,7 +2372,14 @@ function playHitSound(){
     }
     if(hitAudioCtx.state !== "running") return;
 
-    const ctx = hitAudioCtx;
+    playGeneratedHitSound(hitAudioCtx);
+  }catch(e){}
+}
+
+function playGeneratedHitSound(ctx){
+  if(!ctx || ctx.state !== "running") return;
+
+  try{
     const now = ctx.currentTime;
     const osc = ctx.createOscillator();
     const crack = ctx.createOscillator();
@@ -13708,6 +13717,11 @@ if(btnFire){
     }
     unlockGameAudioFromGesture();
     if(!touchOn || !isLandscape()) return;
+    const directSoundAt = performance.now();
+    if(directSoundAt - lastDirectGestureHitSoundTime >= 120){
+      lastDirectGestureHitSoundTime = directSoundAt;
+      unlockHitAudio().then((ctx)=>{ if(ctx) playGeneratedHitSound(ctx); });
+    }
     vKey("Space", true);
     fireHeld = true;
     tryFireAfterAudioUnlock();

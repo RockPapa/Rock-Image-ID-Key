@@ -13642,7 +13642,7 @@ function unlockGameAudioFromGesture(){
 }
 
 function tryFireAfterAudioUnlock(){
-  unlockHitAudio().then((ctx)=>{ if(ctx) tryFire(); });
+  unlockHitAudio().then(()=> tryFire());
 }
 
 function bindHold(btn, code){
@@ -13701,18 +13701,16 @@ function bindAuxVerticalButton(btn, groundCode, copterCode){
 // Left-side buttons
 const btnFire = document.getElementById("btnFire");
 if(btnFire){
-  const pressFire = async (ev)=>{
+  const pressFire = (ev)=>{
     if(ev){
       ev.preventDefault();
       ev.stopPropagation();
     }
+    unlockGameAudioFromGesture();
     if(!touchOn || !isLandscape()) return;
-    if(typeof window.primeTruckTrekAudio === "function") window.primeTruckTrekAudio();
-    const ctx = await unlockHitAudio();
-    if(!ctx) return;
     vKey("Space", true);
     fireHeld = true;
-    tryFire();
+    tryFireAfterAudioUnlock();
   };
   const releaseFire = (ev)=>{
     if(ev){
@@ -14907,13 +14905,11 @@ const __tmpV3c = new THREE.Vector3();
 const __tmpV3d = new THREE.Vector3();
 const __tmpRay = new THREE.Ray();
 
-window.addEventListener("keydown", async (e)=>{
+window.addEventListener("keydown", (e)=>{
   if (e.code === "Space") {
-    e.preventDefault();
-    const ctx = await unlockHitAudio();
-    if(!ctx) return;
     fireHeld = true;
-    tryFire();
+    tryFireAfterAudioUnlock();
+    e.preventDefault();
   }
   if (e.code === "KeyE") {
     firePitchDeg = Math.min(FIRE_PITCH_MAX_DEG, firePitchDeg + FIRE_PITCH_STEP_DEG);

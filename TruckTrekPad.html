@@ -2250,19 +2250,38 @@ const TARGET_HIT_SOUND_FILE = "missle.mp3";
 const ALIEN_DEATH_SOUND_FILE = "growl.mp3";
 
 let hitAudioCtx = null;
+async function unlockHitAudio(){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  if(!hitAudioCtx) hitAudioCtx = new AC();
+  if(hitAudioCtx.state === "suspended"){
+    try{ await hitAudioCtx.resume(); }catch(e){}
+  }
+
+  try{
+    const unlockBuffer = hitAudioCtx.createBuffer(1, 1, hitAudioCtx.sampleRate);
+    const unlockSource = hitAudioCtx.createBufferSource();
+    const unlockGain = hitAudioCtx.createGain();
+    unlockGain.gain.value = 0.0001;
+    unlockSource.buffer = unlockBuffer;
+    unlockSource.connect(unlockGain);
+    unlockGain.connect(hitAudioCtx.destination);
+    unlockSource.start(0);
+  }catch(e){}
+
+  return hitAudioCtx.state === "running" ? hitAudioCtx : null;
+}
+
 function initHitSound(){
   const AC = window.AudioContext || window.webkitAudioContext;
   if(!AC) return;
   if(!hitAudioCtx) hitAudioCtx = new AC();
 
-  const primeHitAudio = () => {
-    if(hitAudioCtx && hitAudioCtx.state === "suspended"){
-      hitAudioCtx.resume().catch(()=>{});
-    }
-  };
+  const primeHitAudio = () => { unlockHitAudio(); };
   document.body.addEventListener("click", primeHitAudio, { once:true });
   document.body.addEventListener("touchstart", primeHitAudio, { once:true, passive:true });
   document.body.addEventListener("pointerdown", primeHitAudio, { once:true });
+  document.body.addEventListener("touchend", primeHitAudio, { once:true, passive:true });
 }
 
 
@@ -2345,7 +2364,11 @@ function playHitSound(){
     const AC = window.AudioContext || window.webkitAudioContext;
     if(!AC) return;
     if(!hitAudioCtx) hitAudioCtx = new AC();
-    if(hitAudioCtx.state === "suspended") hitAudioCtx.resume().catch(()=>{});
+    if(hitAudioCtx.state === "suspended"){
+      unlockHitAudio().then((ctx)=>{ if(ctx) setTimeout(playHitSound, 0); });
+      return;
+    }
+    if(hitAudioCtx.state !== "running") return;
 
     const ctx = hitAudioCtx;
     const now = ctx.currentTime;
@@ -13614,6 +13637,7 @@ function vKey(code, down){
 }
 
 function unlockGameAudioFromGesture(){
+  unlockHitAudio();
   if(typeof window.primeTruckTrekAudio === "function") window.primeTruckTrekAudio();
 }
 

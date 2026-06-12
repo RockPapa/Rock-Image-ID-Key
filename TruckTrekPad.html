@@ -13641,6 +13641,10 @@ function unlockGameAudioFromGesture(){
   if(typeof window.primeTruckTrekAudio === "function") window.primeTruckTrekAudio();
 }
 
+function tryFireAfterAudioUnlock(){
+  unlockHitAudio().then((ctx)=>{ if(ctx) tryFire(); });
+}
+
 function bindHold(btn, code){
   if (!btn) return;
   const press = (ev)=>{ if(ev) ev.preventDefault(); unlockGameAudioFromGesture(); if(!touchOn || !isLandscape()) return; vKey(code, true); };
@@ -13697,13 +13701,15 @@ function bindAuxVerticalButton(btn, groundCode, copterCode){
 // Left-side buttons
 const btnFire = document.getElementById("btnFire");
 if(btnFire){
-  const pressFire = (ev)=>{
+  const pressFire = async (ev)=>{
     if(ev){
       ev.preventDefault();
       ev.stopPropagation();
     }
-    unlockGameAudioFromGesture();
     if(!touchOn || !isLandscape()) return;
+    if(typeof window.primeTruckTrekAudio === "function") window.primeTruckTrekAudio();
+    const ctx = await unlockHitAudio();
+    if(!ctx) return;
     vKey("Space", true);
     fireHeld = true;
     tryFire();
@@ -14901,11 +14907,13 @@ const __tmpV3c = new THREE.Vector3();
 const __tmpV3d = new THREE.Vector3();
 const __tmpRay = new THREE.Ray();
 
-window.addEventListener("keydown", (e)=>{
+window.addEventListener("keydown", async (e)=>{
   if (e.code === "Space") {
+    e.preventDefault();
+    const ctx = await unlockHitAudio();
+    if(!ctx) return;
     fireHeld = true;
     tryFire();
-    e.preventDefault();
   }
   if (e.code === "KeyE") {
     firePitchDeg = Math.min(FIRE_PITCH_MAX_DEG, firePitchDeg + FIRE_PITCH_STEP_DEG);

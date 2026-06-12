@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bigfoot Woods Drive</title>
+<style>
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #video {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #bigfoot {
+    position: fixed;
+    left: 50vw;
+    top: 86vh;
+    width: min(31.36vw, 246.4px);
+    height: auto;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  #alien {
+    position: fixed;
+    left: 50vw;
+    top: 58vh;
+    width: min(4.75vw, 36.96px);
+    height: auto;
+    z-index: 2;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  .crash-zone {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    z-index: 4;
+    pointer-events: none;
+    border: 0;
+    background: transparent;
+  }
+
+  #leftCrashZone {
+    clip-path: polygon(
+      0 0,
+      var(--leftCrashTopX, 30vw) 0,
+      var(--leftCrashBottomX, 21.84vw) 100%,
+      0 100%
+    );
+  }
+
+  #rightCrashZone {
+    clip-path: polygon(
+      calc(100% - var(--rightCrashTopX, 30vw)) 0,
+      100% 0,
+      100% 100%,
+      calc(100% - var(--rightCrashBottomX, 21.84vw)) 100%
+    );
+  }
+
+  #controls {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 64px 64px 64px;
+    grid-template-rows: 64px 64px 64px;
+    gap: 8px;
+  }
+
+  .ctrl {
+    border: 1px solid rgba(255,255,255,0.55);
+    border-radius: 14px;
+    background: rgba(0,0,0,0.58);
+    color: white;
+    font: 900 28px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    touch-action: none;
+  }
+
+  .ctrl:active {
+    background: rgba(0,0,0,0.86);
+    transform: scale(0.96);
+  }
+
+  #upBtn { grid-column: 2; grid-row: 1; }
+  #leftBtn { grid-column: 1; grid-row: 2; }
+  #rightBtn { grid-column: 3; grid-row: 2; }
+  #downBtn { grid-column: 2; grid-row: 3; }
+
+  @media (max-width: 700px) {
+    #bigfoot { width: min(38.08vw, 201.6px); }
+    #alien { width: min(6.34vw, 31.68px); }
+    #controls {
+      grid-template-columns: 56px 56px 56px;
+      grid-template-rows: 56px 56px 56px;
+      gap: 7px;
+    }
+    .ctrl { font-size: 24px; border-radius: 12px; }
+  }
+</style>
+</head>
+<body>
+<video id="video" src="images/road_ipad.mp4" muted loop playsinline webkit-playsinline autoplay preload="auto"></video>
+<audio id="carSound" src="images/car_sound.mp3" loop preload="auto"></audio>
+<div id="leftCrashZone" class="crash-zone"></div>
+<div id="rightCrashZone" class="crash-zone"></div>
+<img id="alien" src="images/alein.png" alt="Alien" />
+<img id="bigfoot" src="images/bigfoot.png" alt="Bigfoot" />
+
+<div id="controls" aria-label="Bigfoot controls">
+  <button id="upBtn" class="ctrl" type="button" aria-label="Move up">▲</button>
+  <button id="leftBtn" class="ctrl" type="button" aria-label="Move left">◀</button>
+  <button id="rightBtn" class="ctrl" type="button" aria-label="Move right">▶</button>
+  <button id="downBtn" class="ctrl" type="button" aria-label="Move down">▼</button>
+</div>
+
+<script>
+  const video = document.getElementById("video");
+  const carSound = document.getElementById("carSound");
+  const alien = document.getElementById("alien");
+  const bigfoot = document.getElementById("bigfoot");
+  const leftCrashZone = document.getElementById("leftCrashZone");
+  const rightCrashZone = document.getElementById("rightCrashZone");
+  const keys = { up:false, down:false, left:false, right:false };
+  const crashZoneBasePct = 0.18113004;
+  const crashZoneWidenByDepthPct = 0.567;
+  const crashZoneTopInwardExtraLeftPct = 0.16;
+  const rightCrashZoneAngleFromVerticalDeg = 20;
+  const crashZonePerspectiveStartYFactor = 0.92;
+  const crashZonePerspectiveEndYFactor = 0.2;
+  let x = window.innerWidth * 0.5;
+  let y = window.innerHeight * 0.86;
+  let lastT = performance.now();
+  let viewportWidth = window.innerWidth;
+  let viewportHeight = window.innerHeight;
+  let currentCrashZonePct = crashZoneBasePct;
+  let crashZoneTopInwardExtraRightPct = crashZoneTopInwardExtraLeftPct * 1.03;
+  let crashBottomY = viewportHeight * crashZonePerspectiveStartYFactor;
+  let crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
+  let lastCrashZoneBottomVw = -1;
+  let lastLeftCrashZoneTopVw = -1;
+  let lastRightCrashZoneTopVw = -1;
+  let alienCycleTimer = null;
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function refreshViewportCache() {
+    viewportWidth = window.innerWidth;
+    viewportHeight = window.innerHeight;
+    crashBottomY = viewportHeight * crashZonePerspectiveStartYFactor;
+    crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
+    const rightAngleRad = (rightCrashZoneAngleFromVerticalDeg * Math.PI) / 180;
+    crashZoneTopInwardExtraRightPct = Math.tan(rightAngleRad) * (viewportHeight / viewportWidth);
+  }
+
+  function updateCrashZones() {
+    const horizonY = viewportHeight * crashZonePerspectiveEndYFactor;
+    const nearY = viewportHeight * crashZonePerspectiveStartYFactor;
+    const forwardProgress = clamp((nearY - y) / (nearY - horizonY), 0, 1);
+    currentCrashZonePct = crashZoneBasePct * (1 + forwardProgress * crashZoneWidenByDepthPct);
+
+    const crashZoneBottomVw = currentCrashZonePct * 100;
+    const leftCrashZoneTopVw = (currentCrashZonePct + crashZoneTopInwardExtraLeftPct) * 100;
+    const rightCrashZoneTopVw = (currentCrashZonePct + crashZoneTopInwardExtraRightPct) * 100;
+
+    if (Math.abs(crashZoneBottomVw - lastCrashZoneBottomVw) > 0.001) {
+      leftCrashZone.style.setProperty("--leftCrashBottomX", `${crashZoneBottomVw}vw`);
+      rightCrashZone.style.setProperty("--rightCrashBottomX", `${crashZoneBottomVw}vw`);
+      lastCrashZoneBottomVw = crashZoneBottomVw;
+    }
+    if (Math.abs(leftCrashZoneTopVw - lastLeftCrashZoneTopVw) > 0.001) {
+      leftCrashZone.style.setProperty("--leftCrashTopX", `${leftCrashZoneTopVw}vw`);
+      lastLeftCrashZoneTopVw = leftCrashZoneTopVw;
+    }
+    if (Math.abs(rightCrashZoneTopVw - lastRightCrashZoneTopVw) > 0.001) {
+      rightCrashZone.style.setProperty("--rightCrashTopX", `${rightCrashZoneTopVw}vw`);
+      lastRightCrashZoneTopVw = rightCrashZoneTopVw;
+    }
+  }
+
+  function getCrashZonePctAtY(yPx, topInwardExtraPct) {
+    const yNorm = clamp((crashBottomY - yPx) / (crashBottomY - crashTopY), 0, 1);
+    const topPct = currentCrashZonePct + topInwardExtraPct;
+    return currentCrashZonePct + (topPct - currentCrashZonePct) * yNorm;
+  }
+
+  function isBigfootInCrashZone() {
+    const rect = bigfoot.getBoundingClientRect();
+    if (!rect.width) return false;
+    const halfBigfootWidth = rect.width / 2;
+    const leftEdge = x - halfBigfootWidth;
+    const rightEdge = x + halfBigfootWidth;
+    const leftRoadEdge = viewportWidth * getCrashZonePctAtY(y, crashZoneTopInwardExtraLeftPct);
+    const rightRoadEdge = viewportWidth - (viewportWidth * getCrashZonePctAtY(y, crashZoneTopInwardExtraRightPct));
+    return leftEdge <= leftRoadEdge || rightEdge >= rightRoadEdge;
+  }
+
+  function placeBigfoot() {
+    bigfoot.style.left = x + "px";
+    bigfoot.style.top = y + "px";
+  }
+
+  function moveBigfoot(dx, dy, collide = true) {
+    const prevX = x;
+    const prevY = y;
+    x += dx;
+    y += dy;
+    updateCrashZones();
+    placeBigfoot();
+    if (collide && isBigfootInCrashZone()) {
+      x = prevX;
+      y = prevY;
+      updateCrashZones();
+      placeBigfoot();
+    }
+  }
+
+  function animateAlienToBigfoot() {
+    const duration = 2200;
+    const pauseDuration = 0;
+    const contactScale = 2.128896;
+
+    alien.style.display = "block";
+    alien.style.top = "";
+    alien.style.transform = "translate(-50%, -50%)";
+
+    const startRect = alien.getBoundingClientRect();
+    const bigfootRect = bigfoot.getBoundingClientRect();
+    if (!startRect.height || !bigfootRect.height) return;
+
+    const startY = startRect.top + (startRect.height / 2);
+    const contactHeight = startRect.height * contactScale;
+    const contactY = bigfootRect.top - (contactHeight * 0.18);
+    const distanceToContact = contactY - startY;
+    const disappearY = bigfootRect.top + (bigfootRect.height / 2);
+    const exitY = window.innerHeight + (contactHeight / 2);
+    const exitProgress = (exitY - startY) / distanceToContact;
+    const exitScale = 1 + ((contactScale - 1) * exitProgress);
+    const startTime = performance.now() + pauseDuration;
+
+    function step(now) {
+      const t = clamp((now - startTime) / duration, 0, 1);
+      const eased = t;
+      const nextY = startY + ((exitY - startY) * eased);
+      const nextScale = 1 + ((exitScale - 1) * eased);
+
+      alien.style.top = nextY + "px";
+      alien.style.transform = `translate(-50%, -50%) scale(${nextScale})`;
+
+      if (nextY >= disappearY || t >= 1) {
+        alien.style.display = "none";
+        return;
+      }
+      requestAnimationFrame(step);
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function startAlienAnimationWhenReady() {
+    const startAlienCycle = () => {
+      animateAlienToBigfoot();
+      if (!alienCycleTimer) {
+        alienCycleTimer = window.setInterval(animateAlienToBigfoot, 7000);
+      }
+    };
+
+    if (alien.complete && bigfoot.complete) {
+      startAlienCycle();
+      return;
+    }
+    window.addEventListener("load", startAlienCycle, { once:true });
+  }
+
+  function setHeld(dir, held) {
+    keys[dir] = held;
+    video.play().catch(() => {});
+    carSound.play().catch(() => {});
+  }
+
+  function bindButton(id, dir) {
+    const btn = document.getElementById(id);
+    const down = (ev) => {
+      ev.preventDefault();
+      setHeld(dir, true);
+    };
+    const up = (ev) => {
+      if (ev) ev.preventDefault();
+      setHeld(dir, false);
+    };
+    btn.addEventListener("pointerdown", down, { passive:false });
+    btn.addEventListener("pointerup", up, { passive:false });
+    btn.addEventListener("pointercancel", up, { passive:false });
+    btn.addEventListener("pointerleave", up);
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const step = 28;
+      if (dir === "up") moveBigfoot(0, -step);
+      if (dir === "down") moveBigfoot(0, step);
+      if (dir === "left") moveBigfoot(-step, 0);
+      if (dir === "right") moveBigfoot(step, 0);
+    });
+  }
+
+  bindButton("upBtn", "up");
+  bindButton("downBtn", "down");
+  bindButton("leftBtn", "left");
+  bindButton("rightBtn", "right");
+
+  window.addEventListener("keydown", (ev) => {
+    if (ev.key === "ArrowUp") { ev.preventDefault(); setHeld("up", true); }
+    if (ev.key === "ArrowDown") { ev.preventDefault(); setHeld("down", true); }
+    if (ev.key === "ArrowLeft") { ev.preventDefault(); setHeld("left", true); }
+    if (ev.key === "ArrowRight") { ev.preventDefault(); setHeld("right", true); }
+  }, { passive:false });
+
+  window.addEventListener("keyup", (ev) => {
+    if (ev.key === "ArrowUp") setHeld("up", false);
+    if (ev.key === "ArrowDown") setHeld("down", false);
+    if (ev.key === "ArrowLeft") setHeld("left", false);
+    if (ev.key === "ArrowRight") setHeld("right", false);
+  });
+
+  window.addEventListener("resize", () => {
+    refreshViewportCache();
+    x = Math.min(window.innerWidth, Math.max(0, x));
+    y = Math.min(window.innerHeight, Math.max(0, y));
+    moveBigfoot(0, 0, false);
+  });
+
+  function tick(now) {
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    const speed = 320;
+    let dx = 0;
+    let dy = 0;
+    if (keys.left) dx -= speed * dt;
+    if (keys.right) dx += speed * dt;
+    if (keys.up) dy -= speed * dt;
+    if (keys.down) dy += speed * dt;
+    if (dx || dy) moveBigfoot(dx, dy);
+    requestAnimationFrame(tick);
+  }
+
+  refreshViewportCache();
+  moveBigfoot(0, 0, false);
+  video.play().catch(() => {});
+  window.addEventListener("pointerdown", () => carSound.play().catch(() => {}), { once:true });
+  window.addEventListener("keydown", () => carSound.play().catch(() => {}), { once:true });
+  startAlienAnimationWhenReady();
+  requestAnimationFrame(tick);
+</script>
+</body>
+</html>

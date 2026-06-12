@@ -2245,25 +2245,24 @@ function hideBanner(){ const b=document.getElementById("banner"); if(!b) return;
    🔊 HIT SOUND (SAFE)
    - Tiny click/zap on hit (target cube + bad guy)
    ========================================================= */
-const HIT_SOUND_FILE = "gun.mp3"; // uses images/gun.mp3 // put in images/hit.wav
-const HIT_SOUND_VOL = 1.0; // MAX volume // MAX volume
+const HIT_SOUND_VOL = 1.0;
 const TARGET_HIT_SOUND_FILE = "missle.mp3";
 const ALIEN_DEATH_SOUND_FILE = "growl.mp3";
 
-let hitAudio = null;
+let hitAudioCtx = null;
 function initHitSound(){
-  if (hitAudio) return;
-  const url = HIT_SOUND_FILE + "?v=" + Date.now();
-  hitAudio = new Audio(resolveAssetUrl(url));
-  hitAudio.volume = HIT_SOUND_VOL;
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return;
+  if(!hitAudioCtx) hitAudioCtx = new AC();
 
-  // prime on first user gesture
-  document.body.addEventListener("click", () => {
-    hitAudio.play().then(() => {
-      hitAudio.pause();
-      hitAudio.currentTime = 0;
-    }).catch(()=>{});
-  }, { once:true });
+  const primeHitAudio = () => {
+    if(hitAudioCtx && hitAudioCtx.state === "suspended"){
+      hitAudioCtx.resume().catch(()=>{});
+    }
+  };
+  document.body.addEventListener("click", primeHitAudio, { once:true });
+  document.body.addEventListener("touchstart", primeHitAudio, { once:true, passive:true });
+  document.body.addEventListener("pointerdown", primeHitAudio, { once:true });
 }
 
 
@@ -2343,9 +2342,58 @@ function spawnHitBurst(worldPos, colorHex=0xffffff){
 
 function playHitSound(){
   try{
-    const a = new Audio(resolveAssetUrl(HIT_SOUND_FILE + "?v=" + Date.now()));
-    a.volume = 1.0;
-    a.play();
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return;
+    if(!hitAudioCtx) hitAudioCtx = new AC();
+    if(hitAudioCtx.state === "suspended") hitAudioCtx.resume().catch(()=>{});
+
+    const ctx = hitAudioCtx;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const crack = ctx.createOscillator();
+    const noiseBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.09), ctx.sampleRate);
+    const noiseData = noiseBuffer.getChannelData(0);
+    for(let i = 0; i < noiseData.length; i++) noiseData[i] = (Math.random() * 2 - 1) * (1 - (i / noiseData.length));
+    const noise = ctx.createBufferSource();
+    const filter = ctx.createBiquadFilter();
+    const gain = ctx.createGain();
+    const crackGain = ctx.createGain();
+    const noiseGain = ctx.createGain();
+
+    osc.type = "square";
+    osc.frequency.setValueAtTime(260, now);
+    osc.frequency.exponentialRampToValueAtTime(72, now + 0.14);
+    crack.type = "sawtooth";
+    crack.frequency.setValueAtTime(1320, now);
+    crack.frequency.exponentialRampToValueAtTime(360, now + 0.075);
+    noise.buffer = noiseBuffer;
+    filter.type = "bandpass";
+    filter.frequency.setValueAtTime(1800, now);
+    filter.Q.setValueAtTime(1.8, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(HIT_SOUND_VOL, now + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    crackGain.gain.setValueAtTime(0.0001, now);
+    crackGain.gain.exponentialRampToValueAtTime(0.72, now + 0.004);
+    crackGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.95, now + 0.003);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.09);
+
+    osc.connect(gain);
+    crack.connect(crackGain);
+    noise.connect(filter);
+    filter.connect(noiseGain);
+    gain.connect(ctx.destination);
+    crackGain.connect(ctx.destination);
+    noiseGain.connect(ctx.destination);
+    osc.start(now);
+    crack.start(now);
+    noise.start(now);
+    osc.stop(now + 0.19);
+    crack.stop(now + 0.09);
+    noise.stop(now + 0.1);
   }catch(e){}
 }
 

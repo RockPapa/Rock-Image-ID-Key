@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bigfoot Woods Drive</title>
+<style>
+  html,
+  body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  #video {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    object-fit: cover;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  #startOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.58);
+  }
+
+  #startPanel {
+    width: min(93.1vw, 1496px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+
+  #picksWrap {
+    position: relative;
+    width: min(93.1vw, 1496px, calc((100vh - 112px) * 1791 / 1220));
+    aspect-ratio: 1791 / 1220;
+  }
+
+  #picksBanner {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+  }
+
+  #picksButtons {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+  }
+
+  .pick-hotspot {
+    position: absolute;
+    z-index: 1;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #startBtn {
+    border: 1px solid #fff;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.75);
+    color: #fff;
+    padding: 12px 20px;
+    font: 700 18px/1 Arial, sans-serif;
+    cursor: pointer;
+  }
+
+  #bigfoot {
+    position: fixed;
+    left: 50vw;
+    top: 82vh;
+    width: min(31.36vw, 246.4px);
+    height: auto;
+    z-index: 3;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    -webkit-user-drag: none;
+  }
+
+  #smallCubeWrap {
+    --cube-size: min(1.3125vw, 10.3125px);
+    position: fixed;
+    left: 50vw;
+    top: 58vh;
+    width: var(--cube-size);
+    height: var(--cube-size);
+    z-index: 2;
+    perspective: 700px;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  #smallCube {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transform: rotateX(-18deg) rotateY(34deg);
+  }
+
+  .cube-face {
+    position: absolute;
+    inset: 0;
+    border: 2px solid rgba(255,255,255,0.34);
+    background: var(--cube-front, rgba(220,0,0,0.82));
+    box-shadow: inset 0 0 28px rgba(0,0,0,0.28);
+  }
+
+  .cube-front { transform: translateZ(calc(var(--cube-size) / 2)); }
+  .cube-back { transform: rotateY(180deg) translateZ(calc(var(--cube-size) / 2)); }
+  .cube-right { transform: rotateY(90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-right, rgba(175,0,0,0.82)); }
+  .cube-left { transform: rotateY(-90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-left, rgba(245,20,20,0.82)); }
+  .cube-top { transform: rotateX(90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-top, rgba(255,58,58,0.82)); }
+  .cube-bottom { transform: rotateX(-90deg) translateZ(calc(var(--cube-size) / 2)); background: var(--cube-bottom, rgba(125,0,0,0.82)); }
+
+  .shot {
+    --shot-width: min(1.4vw, 13px);
+    --shot-height: min(4.2vw, 38px);
+    position: fixed;
+    width: var(--shot-width);
+    height: var(--shot-height);
+    z-index: 2;
+    border-radius: 999px;
+    background: #ff1e1e;
+    box-shadow: 0 0 16px rgba(255,0,0,0.95), 0 0 34px rgba(255,40,20,0.65);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+  }
+
+  #healthHud {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    left: max(12px, env(safe-area-inset-left));
+    z-index: 5;
+    width: min(28vw, 260px);
+    min-width: 150px;
+    color: white;
+    font: 800 14px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    pointer-events: none;
+  }
+
+  #healthTrack {
+    width: 100%;
+    height: 14px;
+    margin-top: 5px;
+    border: 1px solid rgba(255,255,255,0.68);
+    background: rgba(0,0,0,0.58);
+  }
+
+  #healthFill {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, #18d45b, #b8ff38);
+  }
+
+  #gameOver {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: none;
+    place-items: center;
+    background: rgba(0,0,0,0.68);
+    color: white;
+    text-align: center;
+    font: 900 clamp(28px, 6vw, 76px)/1.08 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    text-shadow: 0 3px 14px rgba(0,0,0,0.95);
+  }
+
+  #gameOver span {
+    display: block;
+    margin-top: 14px;
+    font-size: clamp(15px, 2.1vw, 25px);
+    letter-spacing: 0;
+  }
+
+  .crash-zone {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    z-index: 4;
+    pointer-events: none;
+    border: 0;
+    background: transparent;
+  }
+
+  #leftCrashZone {
+    clip-path: polygon(
+      0 0,
+      var(--leftCrashTopX, 30vw) 0,
+      var(--leftCrashBottomX, 21.84vw) 100%,
+      0 100%
+    );
+  }
+
+  #rightCrashZone {
+    clip-path: polygon(
+      calc(100% - var(--rightCrashTopX, 30vw)) 0,
+      100% 0,
+      100% 100%,
+      calc(100% - var(--rightCrashBottomX, 21.84vw)) 100%
+    );
+  }
+
+  #controls {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 5;
+    display: grid;
+    grid-template-columns: 64px 64px;
+    grid-template-rows: 64px;
+    gap: 8px;
+  }
+
+  #fireBtn {
+    position: fixed;
+    left: max(18px, env(safe-area-inset-left));
+    bottom: max(24px, env(safe-area-inset-bottom));
+    z-index: 5;
+    width: 76px;
+    height: 76px;
+    border: 1px solid rgba(255,255,255,0.62);
+    border-radius: 50%;
+    background: rgba(150,0,0,0.68);
+    color: white;
+    font: 900 15px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    box-shadow: 0 0 18px rgba(255,0,0,0.35);
+    touch-action: none;
+  }
+
+  #fireBtn:active {
+    background: rgba(220,0,0,0.86);
+    transform: scale(0.96);
+  }
+
+  .ctrl {
+    border: 1px solid rgba(255,255,255,0.55);
+    border-radius: 14px;
+    background: rgba(0,0,0,0.58);
+    color: white;
+    font: 900 28px/1 system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    touch-action: none;
+  }
+
+  .ctrl:active {
+    background: rgba(0,0,0,0.86);
+    transform: scale(0.96);
+  }
+
+  #leftBtn { grid-column: 1; grid-row: 1; }
+  #rightBtn { grid-column: 2; grid-row: 1; }
+
+  @media (max-width: 700px) {
+    #bigfoot { width: min(38.08vw, 201.6px); }
+    #smallCubeWrap { --cube-size: min(1.5625vw, 8.4375px); }
+    #controls {
+      grid-template-columns: 56px 56px;
+      grid-template-rows: 56px;
+      gap: 7px;
+    }
+    .ctrl { font-size: 24px; border-radius: 12px; }
+    #fireBtn {
+      width: 68px;
+      height: 68px;
+      font-size: 14px;
+    }
+  }
+</style>
+</head>
+<body>
+<video id="video" src="images/road_ipad.mp4" muted loop playsinline webkit-playsinline autoplay preload="auto"></video>
+<audio id="carSound" src="images/car_sound.mp3" loop preload="auto"></audio>
+<div id="startOverlay">
+  <div id="startPanel">
+    <div id="picksWrap">
+      <img id="picksBanner" src="images/picks.png" alt="Picks banner" />
+      <div id="picksButtons" role="group" aria-label="Choose vehicle"></div>
+    </div>
+    <button id="startBtn" type="button">Start Drive</button>
+  </div>
+</div>
+<div id="healthHud" aria-label="Health">
+  <div id="healthText">Health 100%</div>
+  <div id="healthTrack"><div id="healthFill"></div></div>
+</div>
+<div id="gameOver">GAME OVER<span>RELOAD TO TRY AGAIN</span></div>
+<div id="leftCrashZone" class="crash-zone"></div>
+<div id="rightCrashZone" class="crash-zone"></div>
+<div id="smallCubeWrap" aria-hidden="true">
+  <div id="smallCube">
+    <div class="cube-face cube-front"></div>
+    <div class="cube-face cube-back"></div>
+    <div class="cube-face cube-right"></div>
+    <div class="cube-face cube-left"></div>
+    <div class="cube-face cube-top"></div>
+    <div class="cube-face cube-bottom"></div>
+  </div>
+</div>
+<img id="bigfoot" src="images/bigfoot.png" alt="Bigfoot" />
+
+<div id="controls" aria-label="Bigfoot controls">
+  <button id="leftBtn" class="ctrl" type="button" aria-label="Move left">◀</button>
+  <button id="rightBtn" class="ctrl" type="button" aria-label="Move right">▶</button>
+</div>
+<button id="fireBtn" type="button" aria-label="Fire">SHOOT</button>
+
+<script>
+  const video = document.getElementById("video");
+  const carSound = document.getElementById("carSound");
+  const healthText = document.getElementById("healthText");
+  const healthFill = document.getElementById("healthFill");
+  const gameOver = document.getElementById("gameOver");
+  const startOverlay = document.getElementById("startOverlay");
+  const picksButtons = document.getElementById("picksButtons");
+  const startBtn = document.getElementById("startBtn");
+  const smallCubeWrap = document.getElementById("smallCubeWrap");
+  const bigfoot = document.getElementById("bigfoot");
+  const fireBtn = document.getElementById("fireBtn");
+  const leftCrashZone = document.getElementById("leftCrashZone");
+  const rightCrashZone = document.getElementById("rightCrashZone");
+  const keys = { left:false, right:false };
+  const bigfootStartYFactor = 0.82;
+  const shotCooldownMs = 220;
+  const shotDurationMs = 720;
+  const shotTargetYFactor = 0.58;
+  const shotEndScale = 0.18;
+  const damageAmount = 7;
+  const damageCooldownMs = 650;
+  const vehicleChoices = [
+    { id: 1, src: "images/bigfoot.png", left: 12.5, top: 16.5, width: 20, height: 31 },
+    { id: 2, src: "images/blue_truck.png", left: 38.5, top: 16.5, width: 20, height: 31 },
+    { id: 3, src: "images/maz_back.png", left: 64.5, top: 16.5, width: 20, height: 31 },
+    { id: 4, src: "images/orange_truck.png", left: 12.5, top: 58.5, width: 20, height: 31 },
+    { id: 5, src: "images/truck2.png", left: 38.5, top: 58.5, width: 20, height: 31 },
+    { id: 6, src: "images/big_truck.png", left: 64.5, top: 58.5, width: 20, height: 31 }
+  ];
+  const cubeStartYFactor = 0.58;
+  const cubeTargetYFactor = 0.82;
+  const cubeDesktopStart = { vw: 1.3125, max: 10.3125 };
+  const cubeDesktopTarget = { vw: 15.75, max: 123.75 };
+  const cubeMobileStart = { vw: 1.5625, max: 8.4375 };
+  const cubeMobileTarget = { vw: 18.75, max: 101.25 };
+  const cubeTargetSizeMultiplier = 1.625;
+  const cubeEdgeToBigfootPull = 0.18;
+  const cubeCenterPull = 0.1;
+  const cubeBaseHitboxInset = 0.22;
+  const cubeRoundHitboxTighten = 0.05;
+  const cubeSchedule = [
+    { endMs: 60000, duration: 3000 },
+    { endMs: 120000, duration: 2500 },
+    { endMs: 180000, duration: 1500 },
+    { endMs: 240000, duration: 1000 },
+    { endMs: 300000, duration: null }
+  ];
+  const cubePhases = [
+    {
+      startXFactor: 0.5,
+      endXFactor: 0.5,
+      widthMultiplier: 10,
+      shotDestroyable: true,
+      colors: {
+        front: "rgba(220,0,0,0.84)",
+        right: "rgba(175,0,0,0.84)",
+        left: "rgba(245,20,20,0.84)",
+        top: "rgba(255,58,58,0.84)",
+        bottom: "rgba(125,0,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.55,
+      endXFactor: 0.55,
+      colors: {
+        front: "rgba(238,214,0,0.84)",
+        right: "rgba(198,166,0,0.84)",
+        left: "rgba(255,235,41,0.84)",
+        top: "rgba(255,248,92,0.84)",
+        bottom: "rgba(145,118,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.5375,
+      endXFactor: 0.5375,
+      colors: {
+        front: "rgba(128,0,44,0.84)",
+        right: "rgba(96,0,34,0.84)",
+        left: "rgba(168,18,68,0.84)",
+        top: "rgba(202,44,92,0.84)",
+        bottom: "rgba(66,0,24,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.53125,
+      endXFactor: 0.53125,
+      colors: {
+        front: "rgba(255,148,196,0.84)",
+        right: "rgba(214,92,146,0.84)",
+        left: "rgba(255,180,216,0.84)",
+        top: "rgba(255,206,230,0.84)",
+        bottom: "rgba(154,48,98,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.525,
+      endXFactor: 0.525,
+      colors: {
+        front: "rgba(238,104,0,0.84)",
+        right: "rgba(190,72,0,0.84)",
+        left: "rgba(255,135,24,0.84)",
+        top: "rgba(255,170,68,0.84)",
+        bottom: "rgba(135,48,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.5125,
+      endXFactor: 0.5125,
+      colors: {
+        front: "rgba(255,255,255,0.86)",
+        right: "rgba(204,214,224,0.86)",
+        left: "rgba(240,248,255,0.86)",
+        top: "rgba(255,255,255,0.9)",
+        bottom: "rgba(132,146,160,0.86)"
+      }
+    },
+    {
+      startXFactor: 0.4875,
+      endXFactor: 0.4875,
+      colors: {
+        front: "rgba(0,218,210,0.84)",
+        right: "rgba(0,164,160,0.84)",
+        left: "rgba(40,244,236,0.84)",
+        top: "rgba(96,255,248,0.84)",
+        bottom: "rgba(0,106,104,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.475,
+      endXFactor: 0.475,
+      colors: {
+        front: "rgba(0,112,238,0.84)",
+        right: "rgba(0,78,190,0.84)",
+        left: "rgba(32,145,255,0.84)",
+        top: "rgba(84,178,255,0.84)",
+        bottom: "rgba(0,48,135,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.46875,
+      endXFactor: 0.46875,
+      colors: {
+        front: "rgba(112,245,0,0.84)",
+        right: "rgba(78,184,0,0.84)",
+        left: "rgba(150,255,44,0.84)",
+        top: "rgba(184,255,88,0.84)",
+        bottom: "rgba(48,120,0,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.4625,
+      endXFactor: 0.4625,
+      colors: {
+        front: "rgba(128,0,220,0.84)",
+        right: "rgba(92,0,176,0.84)",
+        left: "rgba(164,40,248,0.84)",
+        top: "rgba(194,82,255,0.84)",
+        bottom: "rgba(62,0,124,0.84)"
+      }
+    },
+    {
+      startXFactor: 0.45,
+      endXFactor: 0.45,
+      colors: {
+        front: "rgba(0,190,55,0.84)",
+        right: "rgba(0,142,43,0.84)",
+        left: "rgba(24,225,84,0.84)",
+        top: "rgba(80,255,126,0.84)",
+        bottom: "rgba(0,94,32,0.84)"
+      }
+    }
+  ];
+  const crashZoneBasePct = 0.18113004;
+  const crashZoneWidenByDepthPct = 0.567;
+  const crashZoneTopInwardExtraLeftPct = 0.16;
+  const rightCrashZoneAngleFromVerticalDeg = 20;
+  const crashZonePerspectiveStartYFactor = 0.92;
+  const crashZonePerspectiveEndYFactor = 0.2;
+  let x = window.innerWidth * 0.5;
+  let y = window.innerHeight * bigfootStartYFactor;
+  let lastT = performance.now();
+  let viewportWidth = window.innerWidth;
+  let viewportHeight = window.innerHeight;
+  let currentCrashZonePct = crashZoneBasePct;
+  let crashZoneTopInwardExtraRightPct = crashZoneTopInwardExtraLeftPct * 1.03;
+  let crashBottomY = viewportHeight * crashZonePerspectiveStartYFactor;
+  let crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
+  let lastCrashZoneBottomVw = -1;
+  let lastLeftCrashZoneTopVw = -1;
+  let lastRightCrashZoneTopVw = -1;
+  let cubePhaseIndex = 0;
+  let gameStartTime = performance.now();
+  let lastShotTime = -Infinity;
+  let lastDamageTime = -Infinity;
+  let health = 100;
+  let gameActive = false;
+  let gameStarted = false;
+  let selectedVehicleChoice = vehicleChoices[0];
+  let gameAudioContext = null;
+  const shots = [];
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function refreshViewportCache() {
+    viewportWidth = window.innerWidth;
+    viewportHeight = window.innerHeight;
+    crashBottomY = viewportHeight * crashZonePerspectiveStartYFactor;
+    crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
+    const rightAngleRad = (rightCrashZoneAngleFromVerticalDeg * Math.PI) / 180;
+    crashZoneTopInwardExtraRightPct = Math.tan(rightAngleRad) * (viewportHeight / viewportWidth);
+  }
+
+  function updateCrashZones() {
+    const horizonY = viewportHeight * crashZonePerspectiveEndYFactor;
+    const nearY = viewportHeight * crashZonePerspectiveStartYFactor;
+    const forwardProgress = clamp((nearY - y) / (nearY - horizonY), 0, 1);
+    currentCrashZonePct = crashZoneBasePct * (1 + forwardProgress * crashZoneWidenByDepthPct);
+
+    const crashZoneBottomVw = currentCrashZonePct * 100;
+    const leftCrashZoneTopVw = (currentCrashZonePct + crashZoneTopInwardExtraLeftPct) * 100;
+    const rightCrashZoneTopVw = (currentCrashZonePct + crashZoneTopInwardExtraRightPct) * 100;
+
+    if (Math.abs(crashZoneBottomVw - lastCrashZoneBottomVw) > 0.001) {
+      leftCrashZone.style.setProperty("--leftCrashBottomX", `${crashZoneBottomVw}vw`);
+      rightCrashZone.style.setProperty("--rightCrashBottomX", `${crashZoneBottomVw}vw`);
+      lastCrashZoneBottomVw = crashZoneBottomVw;
+    }
+    if (Math.abs(leftCrashZoneTopVw - lastLeftCrashZoneTopVw) > 0.001) {
+      leftCrashZone.style.setProperty("--leftCrashTopX", `${leftCrashZoneTopVw}vw`);
+      lastLeftCrashZoneTopVw = leftCrashZoneTopVw;
+    }
+    if (Math.abs(rightCrashZoneTopVw - lastRightCrashZoneTopVw) > 0.001) {
+      rightCrashZone.style.setProperty("--rightCrashTopX", `${rightCrashZoneTopVw}vw`);
+      lastRightCrashZoneTopVw = rightCrashZoneTopVw;
+    }
+  }
+
+  function getCrashZonePctAtY(yPx, topInwardExtraPct) {
+    const yNorm = clamp((crashBottomY - yPx) / (crashBottomY - crashTopY), 0, 1);
+    const topPct = currentCrashZonePct + topInwardExtraPct;
+    return currentCrashZonePct + (topPct - currentCrashZonePct) * yNorm;
+  }
+
+  function isBigfootInCrashZone() {
+    const rect = bigfoot.getBoundingClientRect();
+    if (!rect.width) return false;
+    const halfBigfootWidth = rect.width / 2;
+    const leftEdge = x - halfBigfootWidth;
+    const rightEdge = x + halfBigfootWidth;
+    const leftRoadEdge = viewportWidth * getCrashZonePctAtY(y, crashZoneTopInwardExtraLeftPct);
+    const rightRoadEdge = viewportWidth - (viewportWidth * getCrashZonePctAtY(y, crashZoneTopInwardExtraRightPct));
+    return leftEdge <= leftRoadEdge || rightEdge >= rightRoadEdge;
+  }
+
+  function placeBigfoot() {
+    bigfoot.style.left = x + "px";
+    bigfoot.style.top = y + "px";
+  }
+
+  function moveBigfoot(dx, collide = true) {
+    const prevX = x;
+    x += dx;
+    updateCrashZones();
+    placeBigfoot();
+    if (collide && isBigfootInCrashZone()) {
+      x = prevX;
+      updateCrashZones();
+      placeBigfoot();
+      applyDamage();
+    }
+  }
+
+  function rectsOverlap(a, b) {
+    return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+  }
+
+  function insetRect(rect, xPct, yPct) {
+    const xInset = rect.width * xPct;
+    const yInset = rect.height * yPct;
+    return {
+      left: rect.left + xInset,
+      right: rect.right - xInset,
+      top: rect.top + yInset,
+      bottom: rect.bottom - yInset
+    };
+  }
+
+  function getCubeScheduleStage(now = performance.now()) {
+    const cycleMs = cubeSchedule[cubeSchedule.length - 1].endMs;
+    const elapsed = (now - gameStartTime) % cycleMs;
+    return cubeSchedule.findIndex((item) => elapsed < item.endMs);
+  }
+
+  function getCubeHitboxInset() {
+    const stageIndex = getCubeScheduleStage();
+    const tightenSteps = Math.max(0, stageIndex - 1);
+    return cubeBaseHitboxInset + (tightenSteps * cubeRoundHitboxTighten);
+  }
+
+  function isCubeHittingBigfoot() {
+    if (smallCubeWrap.style.display === "none") return false;
+    const cubeRect = smallCubeWrap.getBoundingClientRect();
+    const bigfootRect = bigfoot.getBoundingClientRect();
+    if (!cubeRect.width || !bigfootRect.width) return false;
+    const cubeInset = getCubeHitboxInset();
+    return rectsOverlap(
+      insetRect(cubeRect, cubeInset, cubeInset),
+      insetRect(bigfootRect, 0.18, 0.2)
+    );
+  }
+
+  function updateHealthHud() {
+    const displayHealth = Math.round(health);
+    healthText.textContent = `Health ${displayHealth}%`;
+    healthFill.style.width = displayHealth + "%";
+  }
+
+  function getGameAudioContext() {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return null;
+    if (!gameAudioContext) gameAudioContext = new AudioContextClass();
+    if (gameAudioContext.state === "suspended") gameAudioContext.resume().catch(() => {});
+    return gameAudioContext;
+  }
+
+  function applyDamage() {
+    if (!gameActive) return false;
+    const now = performance.now();
+    if (now - lastDamageTime < damageCooldownMs) return false;
+    lastDamageTime = now;
+    health = clamp(health - damageAmount, 0, 100);
+    updateHealthHud();
+    if (health <= 0) endGame();
+    return true;
+  }
+
+  function endGame() {
+    gameActive = false;
+    keys.left = false;
+    keys.right = false;
+    smallCubeWrap.style.display = "none";
+    shots.splice(0).forEach((shot) => shot.el.remove());
+    carSound.pause();
+    gameOver.style.display = "grid";
+  }
+
+  function selectAndStartVehicle(choice, ev) {
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    if (gameStarted || !choice) return;
+    selectedVehicleChoice = choice;
+    bigfoot.src = selectedVehicleChoice.src;
+    startGame();
+  }
+
+  function getSelectedVehicleChoice() {
+    return selectedVehicleChoice || vehicleChoices[0];
+  }
+
+  function renderPicksHotspots() {
+    picksButtons.innerHTML = "";
+    vehicleChoices.forEach((choice) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "pick-hotspot";
+      btn.style.left = `${choice.left}%`;
+      btn.style.top = `${choice.top}%`;
+      btn.style.width = `${choice.width}%`;
+      btn.style.height = `${choice.height}%`;
+      btn.setAttribute("aria-label", `Choose vehicle ${choice.id}`);
+      const chooseVehicle = (ev) => selectAndStartVehicle(choice, ev);
+      btn.addEventListener("pointerdown", chooseVehicle, { passive:false });
+      btn.addEventListener("touchstart", chooseVehicle, { passive:false });
+      btn.addEventListener("mousedown", chooseVehicle);
+      btn.addEventListener("click", chooseVehicle);
+      picksButtons.appendChild(btn);
+    });
+  }
+
+  function startGame() {
+    gameStarted = true;
+    gameActive = true;
+    startOverlay.style.display = "none";
+    gameStartTime = performance.now();
+    lastT = gameStartTime;
+    refreshViewportCache();
+    moveBigfoot(0, false);
+    updateHealthHud();
+    video.play().catch(() => {});
+    requestAnimationFrame(animateSmallCubeToBigCube);
+    requestAnimationFrame(tick);
+  }
+
+  function playMissleSound() {
+    const ctx = getGameAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(720, now);
+    osc.frequency.exponentialRampToValueAtTime(120, now + 0.16);
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(2200, now);
+    filter.frequency.exponentialRampToValueAtTime(520, now + 0.16);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(0.619, now + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+    osc.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.19);
+  }
+
+  function playSkidSound() {
+    const ctx = getGameAudioContext();
+    if (!ctx) return;
+    const now = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const bite = ctx.createOscillator();
+    const wobble = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const biteGain = ctx.createGain();
+    const filter = ctx.createBiquadFilter();
+    const wobbleGain = ctx.createGain();
+
+    osc.type = "square";
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(58, now + 0.34);
+    bite.type = "sawtooth";
+    bite.frequency.setValueAtTime(1180, now);
+    bite.frequency.exponentialRampToValueAtTime(260, now + 0.18);
+    biteGain.gain.setValueAtTime(0.0001, now);
+    biteGain.gain.exponentialRampToValueAtTime(0.306, now + 0.01);
+    biteGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+    wobble.type = "sawtooth";
+    wobble.frequency.setValueAtTime(42, now);
+    wobbleGain.gain.setValueAtTime(22, now);
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(1450, now);
+    filter.frequency.exponentialRampToValueAtTime(240, now + 0.34);
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(1.0, now + 0.018);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.36);
+
+    wobble.connect(wobbleGain);
+    wobbleGain.connect(osc.frequency);
+    osc.connect(filter);
+    bite.connect(biteGain);
+    biteGain.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    bite.start(now);
+    wobble.start(now);
+    osc.stop(now + 0.38);
+    bite.stop(now + 0.18);
+    wobble.stop(now + 0.38);
+  }
+
+  function getShotRect(shot) {
+    return shot.el.getBoundingClientRect();
+  }
+
+  function destroyShot(index) {
+    shots[index].el.remove();
+    shots.splice(index, 1);
+  }
+
+  function destroyCubeWithShot() {
+    const cubeRect = smallCubeWrap.getBoundingClientRect();
+    if (!cubeRect.width) return false;
+    const cubeHitbox = insetRect(cubeRect, 0.12, 0.18);
+
+    for (let i = shots.length - 1; i >= 0; i--) {
+      if (rectsOverlap(getShotRect(shots[i]), cubeHitbox)) {
+        destroyShot(i);
+        smallCubeWrap.style.display = "none";
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function fireShot() {
+    if (!gameActive) return;
+    const now = performance.now();
+    if (now - lastShotTime < shotCooldownMs) return;
+    lastShotTime = now;
+    playMissleSound();
+
+    const bigfootRect = bigfoot.getBoundingClientRect();
+    const shot = document.createElement("div");
+    const startX = x;
+    const startY = bigfootRect.top + (bigfootRect.height * 0.18);
+    const endX = viewportWidth * 0.5;
+    const endY = viewportHeight * shotTargetYFactor;
+    const startWidth = Math.min(viewportWidth * 0.014, 13);
+    const startHeight = Math.min(viewportWidth * 0.042, 38);
+    shot.className = "shot";
+    shot.style.left = startX + "px";
+    shot.style.top = startY + "px";
+    shot.style.setProperty("--shot-width", startWidth + "px");
+    shot.style.setProperty("--shot-height", startHeight + "px");
+    document.body.appendChild(shot);
+    shots.push({ el: shot, startX, startY, endX, endY, startWidth, startHeight, startTime: now });
+  }
+
+  function updateShots(now) {
+    for (let i = shots.length - 1; i >= 0; i--) {
+      const shot = shots[i];
+      const t = clamp((now - shot.startTime) / shotDurationMs, 0, 1);
+      const nextX = shot.startX + ((shot.endX - shot.startX) * t);
+      const nextY = shot.startY + ((shot.endY - shot.startY) * t);
+      const nextWidth = shot.startWidth * (1 - ((1 - shotEndScale) * t));
+      const nextHeight = shot.startHeight * (1 - ((1 - shotEndScale) * t));
+
+      if (t >= 1) {
+        shot.el.remove();
+        shots.splice(i, 1);
+        continue;
+      }
+      shot.el.style.left = nextX + "px";
+      shot.el.style.top = nextY + "px";
+      shot.el.style.setProperty("--shot-width", nextWidth + "px");
+      shot.el.style.setProperty("--shot-height", nextHeight + "px");
+    }
+  }
+
+  function getCubeMetrics(phase) {
+    const mobile = window.matchMedia("(max-width: 700px)").matches;
+    const start = mobile ? cubeMobileStart : cubeDesktopStart;
+    const target = mobile ? cubeMobileTarget : cubeDesktopTarget;
+    const sizeFrom = (config) => Math.min(viewportWidth * (config.vw / 100), config.max);
+    const startX = viewportWidth * phase.startXFactor;
+    const endY = viewportHeight * cubeTargetYFactor;
+    let endX = viewportWidth * phase.endXFactor;
+
+    if (phase.startXFactor > 0.5) {
+      endX = viewportWidth * getCrashZonePctAtY(endY, crashZoneTopInwardExtraLeftPct);
+    } else if (phase.startXFactor < 0.5) {
+      endX = viewportWidth - (viewportWidth * getCrashZonePctAtY(endY, crashZoneTopInwardExtraRightPct));
+    }
+    if (phase.startXFactor !== 0.5) {
+      endX += ((viewportWidth * 0.5) - endX) * cubeEdgeToBigfootPull;
+    }
+    endX += ((viewportWidth * 0.5) - endX) * cubeCenterPull;
+
+    return {
+      startX,
+      startY: viewportHeight * cubeStartYFactor,
+      endX,
+      endY,
+      startSize: sizeFrom(start),
+      endSize: sizeFrom(target) * cubeTargetSizeMultiplier,
+      widthMultiplier: phase.widthMultiplier || 1
+    };
+  }
+
+  function getCubeAttackDuration(now) {
+    const stageIndex = getCubeScheduleStage(now);
+    const stage = cubeSchedule[stageIndex];
+    return stage ? stage.duration : cubeSchedule[0].duration;
+  }
+
+  function animateSmallCubeToBigCube() {
+    if (!gameActive) return;
+    const now = performance.now();
+    const duration = getCubeAttackDuration(now);
+    if (duration === null) {
+      smallCubeWrap.style.display = "none";
+      window.setTimeout(() => {
+        if (gameActive) requestAnimationFrame(animateSmallCubeToBigCube);
+      }, 1000);
+      return;
+    }
+
+    const phase = cubePhases[cubePhaseIndex];
+    const metrics = getCubeMetrics(phase);
+    smallCubeWrap.style.setProperty("--cube-front", phase.colors.front);
+    smallCubeWrap.style.setProperty("--cube-right", phase.colors.right);
+    smallCubeWrap.style.setProperty("--cube-left", phase.colors.left);
+    smallCubeWrap.style.setProperty("--cube-top", phase.colors.top);
+    smallCubeWrap.style.setProperty("--cube-bottom", phase.colors.bottom);
+    smallCubeWrap.style.display = "block";
+    smallCubeWrap.style.left = metrics.startX + "px";
+    smallCubeWrap.style.top = metrics.startY + "px";
+    smallCubeWrap.style.width = (metrics.startSize * metrics.widthMultiplier) + "px";
+    smallCubeWrap.style.height = metrics.startSize + "px";
+    smallCubeWrap.style.setProperty("--cube-size", metrics.startSize + "px");
+    const startTime = now;
+    let collisionTriggered = false;
+
+    function step(now) {
+      const t = clamp((now - startTime) / duration, 0, 1);
+      const nextX = metrics.startX + ((metrics.endX - metrics.startX) * t);
+      const nextY = metrics.startY + ((metrics.endY - metrics.startY) * t);
+      const nextSize = metrics.startSize + ((metrics.endSize - metrics.startSize) * t);
+      const nextWidth = nextSize * metrics.widthMultiplier;
+
+      smallCubeWrap.style.left = nextX + "px";
+      smallCubeWrap.style.top = nextY + "px";
+      smallCubeWrap.style.width = nextWidth + "px";
+      smallCubeWrap.style.height = nextSize + "px";
+      smallCubeWrap.style.setProperty("--cube-size", nextSize + "px");
+
+      if (phase.shotDestroyable && destroyCubeWithShot()) {
+        cubePhaseIndex = getNextCubePhaseIndex(cubePhaseIndex);
+        if (gameActive) requestAnimationFrame(animateSmallCubeToBigCube);
+        return;
+      }
+
+      if (!collisionTriggered && isCubeHittingBigfoot()) {
+        collisionTriggered = true;
+        applyDamage();
+        playSkidSound();
+      }
+
+      if (t < 1) {
+        requestAnimationFrame(step);
+      } else {
+        smallCubeWrap.style.display = "none";
+        cubePhaseIndex = getNextCubePhaseIndex(cubePhaseIndex);
+        if (gameActive) requestAnimationFrame(animateSmallCubeToBigCube);
+      }
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  function getNextCubePhaseIndex(previousIndex) {
+    if (cubePhases.length < 2) return 0;
+    let nextIndex = previousIndex;
+    while (nextIndex === previousIndex) {
+      nextIndex = Math.floor(Math.random() * cubePhases.length);
+    }
+    return nextIndex;
+  }
+
+  function setHeld(dir, held) {
+    if (!gameActive && held) return;
+    keys[dir] = held;
+    video.play().catch(() => {});
+    carSound.play().catch(() => {});
+  }
+
+  function bindButton(id, dir) {
+    const btn = document.getElementById(id);
+    const down = (ev) => {
+      ev.preventDefault();
+      setHeld(dir, true);
+    };
+    const up = (ev) => {
+      if (ev) ev.preventDefault();
+      setHeld(dir, false);
+    };
+    btn.addEventListener("pointerdown", down, { passive:false });
+    btn.addEventListener("pointerup", up, { passive:false });
+    btn.addEventListener("pointercancel", up, { passive:false });
+    btn.addEventListener("pointerleave", up);
+    btn.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const step = 28;
+      if (dir === "left") moveBigfoot(-step);
+      if (dir === "right") moveBigfoot(step);
+    });
+  }
+
+  bindButton("leftBtn", "left");
+  bindButton("rightBtn", "right");
+
+  renderPicksHotspots();
+  startBtn.addEventListener("pointerdown", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev), { passive:false });
+  startBtn.addEventListener("touchstart", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev), { passive:false });
+  startBtn.addEventListener("mousedown", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev));
+  startBtn.addEventListener("click", (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev));
+
+  fireBtn.addEventListener("pointerdown", (ev) => {
+    ev.preventDefault();
+    fireShot();
+  }, { passive:false });
+  fireBtn.addEventListener("click", (ev) => ev.preventDefault());
+
+  window.addEventListener("keydown", (ev) => {
+    if (ev.key === "ArrowLeft") { ev.preventDefault(); setHeld("left", true); }
+    if (ev.key === "ArrowRight") { ev.preventDefault(); setHeld("right", true); }
+    if (ev.code === "Space") { ev.preventDefault(); fireShot(); }
+  }, { passive:false });
+
+  window.addEventListener("keyup", (ev) => {
+    if (ev.key === "ArrowLeft") setHeld("left", false);
+    if (ev.key === "ArrowRight") setHeld("right", false);
+  });
+
+  window.addEventListener("resize", () => {
+    refreshViewportCache();
+    x = Math.min(window.innerWidth, Math.max(0, x));
+    y = window.innerHeight * bigfootStartYFactor;
+    moveBigfoot(0, false);
+  });
+
+  function tick(now) {
+    if (!gameActive) return;
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    const speed = 405;
+    let dx = 0;
+    if (keys.left) dx -= speed * dt;
+    if (keys.right) dx += speed * dt;
+    if (dx) moveBigfoot(dx);
+    updateShots(now);
+    requestAnimationFrame(tick);
+  }
+
+  refreshViewportCache();
+  moveBigfoot(0, false);
+  updateHealthHud();
+  video.play().catch(() => {});
+  window.addEventListener("pointerdown", () => carSound.play().catch(() => {}), { once:true });
+  window.addEventListener("keydown", () => carSound.play().catch(() => {}), { once:true });
+</script>
+</body>
+</html>

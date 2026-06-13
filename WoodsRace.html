@@ -156,11 +156,31 @@
     transform-style: flat;
     -webkit-transform-style: flat;
     will-change: transform;
+    visibility: hidden;
+  }
+
+  #vehicleCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 129;
+    display: none;
+    pointer-events: none;
+    touch-action: none;
+  }
+
+  body.ipad-stable-layers #vehicleCanvas {
+    display: block;
   }
 
   #scene.prestart #video,
   #scene.prestart #aiTruck,
   #scene.prestart #playerTruck {
+    display: none !important;
+  }
+
+  #scene.prestart #vehicleCanvas {
     display: none !important;
   }
 
@@ -594,6 +614,7 @@
     <div class="truck-wheel back"></div>
     <div class="truck-wheel front"></div>
   </div>
+  <canvas id="vehicleCanvas" aria-hidden="true"></canvas>
   <div id="centerCube" aria-hidden="true">
     <div class="cube-face cube-front"></div>
     <div class="cube-face cube-back"></div>
@@ -648,6 +669,8 @@
   const skidSound = document.getElementById("skidSound");
   const aiTruck = document.getElementById("aiTruck");
   const playerTruck = document.getElementById("playerTruck");
+  const vehicleCanvas = document.getElementById("vehicleCanvas");
+  const vehicleCtx = vehicleCanvas ? vehicleCanvas.getContext("2d") : null;
   const leftCrashZone = document.getElementById("leftCrashZone");
   const rightCrashZone = document.getElementById("rightCrashZone");
   const startOverlay = document.getElementById("startOverlay");
@@ -673,7 +696,8 @@
   );
   const isIpadStableLayerDevice = (
     /iPad|iPhone|iPod/i.test(navigator.userAgent || "") ||
-    ((navigator.platform || "") === "MacIntel" && navigator.maxTouchPoints > 1)
+    ((navigator.platform || "") === "MacIntel" && navigator.maxTouchPoints > 1) ||
+    new URLSearchParams(window.location.search).has("canvasVehicles")
   );
   if (isIpadStableLayerDevice) {
     document.body.classList.add("ipad-stable-layers");
@@ -801,6 +825,10 @@
   let viewportHeight = window.innerHeight;
   let playerTruckWidth = 0;
   let aiTruckWidth = 0;
+  let playerTruckHeight = 0;
+  let aiTruckHeight = 0;
+  let playerPoseRect = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
+  let aiPoseRect = { left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 };
   let lastCrashZoneBottomVw = -1;
   let lastLeftCrashZoneTopVw = -1;
   let lastRightCrashZoneTopVw = -1;
@@ -971,11 +999,14 @@
     crashTopY = viewportHeight * crashZonePerspectiveEndYFactor;
     const rightAngleRad = (rightCrashZoneAngleFromVerticalDeg * Math.PI) / 180;
     crashZoneTopInwardExtraRightPct = Math.tan(rightAngleRad) * (viewportHeight / viewportWidth);
+    resizeVehicleCanvas();
   }
 
   function refreshTruckSizeCache() {
     playerTruckWidth = playerTruck.clientWidth || 0;
     aiTruckWidth = aiTruck.clientWidth || 0;
+    playerTruckHeight = playerTruck.clientHeight || (playerTruckWidth * 0.62);
+    aiTruckHeight = aiTruck.clientHeight || (aiTruckWidth * 0.65);
   }
 
   function setLayerTransform(el, value) {
@@ -983,7 +1014,127 @@
     el.style.webkitTransform = value;
   }
 
+  function resizeVehicleCanvas() {
+    if (!vehicleCanvas || !vehicleCtx) return;
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const nextW = Math.max(1, Math.round(viewportWidth * dpr));
+    const nextH = Math.max(1, Math.round(viewportHeight * dpr));
+    if (vehicleCanvas.width !== nextW || vehicleCanvas.height !== nextH) {
+      vehicleCanvas.width = nextW;
+      vehicleCanvas.height = nextH;
+      vehicleCanvas.style.width = viewportWidth + "px";
+      vehicleCanvas.style.height = viewportHeight + "px";
+      vehicleCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+  }
+
+  function makePoseRect(baseWidth, baseHeight, x, y, anchorYPct, scaleX, scaleY = scaleX) {
+    const width = Math.max(1, baseWidth * scaleX);
+    const height = Math.max(1, baseHeight * scaleY);
+    return {
+      left: x - (width * 0.5),
+      top: y + ((anchorYPct / 100) * height),
+      right: x + (width * 0.5),
+      bottom: y + ((anchorYPct / 100) * height) + height,
+      width,
+      height
+    };
+  }
+
+  function roundedRect(ctx, x, y, w, h, r) {
+    const rr = Math.max(0, Math.min(r, w * 0.5, h * 0.5));
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.lineTo(x + w - rr, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+    ctx.lineTo(x + w, y + h - rr);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+    ctx.lineTo(x + rr, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+    ctx.lineTo(x, y + rr);
+    ctx.quadraticCurveTo(x, y, x + rr, y);
+    ctx.closePath();
+  }
+
+  function drawCanvasTruck(rect, colors) {
+    if (!vehicleCtx || !rect || rect.width <= 0 || rect.height <= 0) return;
+    const ctx = vehicleCtx;
+    const x = rect.left;
+    const y = rect.top;
+    const w = rect.width;
+    const h = rect.height;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.45)";
+    ctx.shadowBlur = Math.max(4, w * 0.05);
+    ctx.shadowOffsetY = Math.max(3, h * 0.08);
+
+    const bodyX = x + w * 0.04;
+    const bodyY = y + h * 0.28;
+    const bodyW = w * 0.92;
+    const bodyH = h * 0.54;
+    const bodyGrad = ctx.createLinearGradient(bodyX, bodyY, bodyX, bodyY + bodyH);
+    bodyGrad.addColorStop(0, colors.light);
+    bodyGrad.addColorStop(0.45, colors.main);
+    bodyGrad.addColorStop(1, colors.dark);
+    roundedRect(ctx, bodyX, bodyY, bodyW, bodyH, Math.max(4, w * 0.06));
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+    ctx.lineWidth = Math.max(1.5, w * 0.014);
+    ctx.strokeStyle = "rgba(255,255,255,0.72)";
+    ctx.stroke();
+
+    const cabX = x + w * 0.54;
+    const cabY = y + h * 0.10;
+    const cabW = w * 0.38;
+    const cabH = h * 0.38;
+    const cabGrad = ctx.createLinearGradient(cabX, cabY, cabX, cabY + cabH);
+    cabGrad.addColorStop(0, colors.light);
+    cabGrad.addColorStop(1, colors.main);
+    roundedRect(ctx, cabX, cabY, cabW, cabH, Math.max(4, w * 0.05));
+    ctx.fillStyle = cabGrad;
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.shadowBlur = 0;
+    const wheelR = Math.max(4, w * 0.12);
+    for (const cx of [x + w * 0.25, x + w * 0.78]) {
+      const cy = y + h * 0.84;
+      ctx.beginPath();
+      ctx.arc(cx, cy, wheelR, 0, Math.PI * 2);
+      ctx.fillStyle = "#050505";
+      ctx.fill();
+      ctx.lineWidth = Math.max(2, w * 0.02);
+      ctx.strokeStyle = "rgba(255,255,255,0.45)";
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, wheelR * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = "#555";
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function renderVehicleCanvas() {
+    if (!isIpadStableLayerDevice || !vehicleCanvas || !vehicleCtx) return;
+    resizeVehicleCanvas();
+    vehicleCtx.clearRect(0, 0, viewportWidth, viewportHeight);
+    if (!experienceStarted) return;
+    drawCanvasTruck(aiPoseRect, { main: "#ff8b20", dark: "#a94700", light: "#ffc15e" });
+    drawCanvasTruck(playerPoseRect, { main: "#2f7dff", dark: "#1646b8", light: "#82c7ff" });
+  }
+
+  function clearVehicleCanvas() {
+    if (!vehicleCtx) return;
+    resizeVehicleCanvas();
+    vehicleCtx.clearRect(0, 0, viewportWidth, viewportHeight);
+  }
+
   function setTruckPose(el, x, y, anchorYPct, scaleX, scaleY = scaleX) {
+    if (el === playerTruck) {
+      playerPoseRect = makePoseRect(playerTruckWidth, playerTruckHeight, x, y, anchorYPct, scaleX, scaleY);
+    } else if (el === aiTruck) {
+      aiPoseRect = makePoseRect(aiTruckWidth, aiTruckHeight, x, y, anchorYPct, scaleX, scaleY);
+    }
     if (isIpadStableLayerDevice) {
       el.style.left = "0px";
       el.style.top = "0px";
@@ -1053,13 +1204,13 @@
     if (!experienceStarted) return;
     scene.classList.remove("prestart");
     playerTruck.style.display = "block";
-    playerTruck.style.visibility = "visible";
+    playerTruck.style.visibility = isIpadStableLayerDevice ? "hidden" : "visible";
     playerTruck.style.opacity = "1";
     playerTruck.style.zIndex = "130";
     playerTruck.style.backfaceVisibility = "hidden";
     playerTruck.style.webkitBackfaceVisibility = "hidden";
     aiTruck.style.display = "block";
-    aiTruck.style.visibility = "visible";
+    aiTruck.style.visibility = isIpadStableLayerDevice ? "hidden" : "visible";
     aiTruck.style.opacity = "1";
     aiTruck.style.zIndex = "120";
     aiTruck.style.backfaceVisibility = "hidden";
@@ -1140,6 +1291,7 @@
     playerTruck.style.display = "block";
     keepRaceTrucksVisible();
     setTruckPose(aiTruck, aiState.x, aiState.y, -138, aiState.scale);
+    renderVehicleCanvas();
     startOverlay.style.display = "none";
     crashOverlay.style.display = "none";
     crashText.textContent = "";
@@ -1350,6 +1502,7 @@
         copterSound.pause();
         copterSound.currentTime = 0;
         applyAiPrestartPose();
+        clearVehicleCanvas();
         showRaceWinnerBanner();
       } else {
         lapCount = completedLap + 1;
@@ -1412,8 +1565,8 @@
     aiState.scale = minTruckScale + aiScaleDepth * (maxTruckScale - minTruckScale);
 
     // If blue accelerates to pass, orange gradually blocks by moving toward blue's lane.
-    const playerRect = playerTruck.getBoundingClientRect();
-    const aiRect = aiTruck.getBoundingClientRect();
+    const playerRect = isIpadStableLayerDevice ? playerPoseRect : playerTruck.getBoundingClientRect();
+    const aiRect = isIpadStableLayerDevice ? aiPoseRect : aiTruck.getBoundingClientRect();
     const isBlueAccelerating = isControlPressed("up") || forwardTapCount > 0;
     const overlapWidth = Math.max(0, Math.min(playerRect.right, aiRect.right) - Math.max(playerRect.left, aiRect.left));
     const minBlueBesideWidth = playerRect.width * aiPassDetectBesidePct;
@@ -1468,10 +1621,11 @@
     aiState.x = clamp(aiState.x, aiMinX, aiMaxX);
     aiState.y = aiY;
     setTruckPose(aiTruck, aiState.x, aiY, -138, aiState.scale);
-    const blueVisualRect = playerTruck.getBoundingClientRect();
-    const orangeVisualRect = aiTruck.getBoundingClientRect();
+    const blueVisualRect = isIpadStableLayerDevice ? playerPoseRect : playerTruck.getBoundingClientRect();
+    const orangeVisualRect = isIpadStableLayerDevice ? aiPoseRect : aiTruck.getBoundingClientRect();
     updateCubeLeaderColor(blueVisualRect, orangeVisualRect);
       if (!MOVIE_ONLY_MODE) checkTruckCollision(playerRect, aiRect);
+    renderVehicleCanvas();
     prevBlueX = truckState.x;
     prevOrangeX = aiState.x;
     lastMovieTime = movieTime;
@@ -1618,6 +1772,7 @@
   updateTruckPerspectiveScale();
   setTruckPose(playerTruck, truckState.x, truckState.y + truckState.dropOffset, -50, truckState.scale, truckState.scale * blueHeightFactor);
   applyAiPrestartPose();
+  clearVehicleCanvas();
   requestAnimationFrame(() => {
     if (!experienceStarted) applyAiPrestartPose();
   });

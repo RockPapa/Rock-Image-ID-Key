@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Code Breaker</title>
+<style>
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: #add8e6;
+    color: #ffffff;
+    font-family: Arial, sans-serif;
+  }
+
+  body {
+    overflow: auto;
+  }
+
+  #game {
+    min-height: 100vh;
+    padding: 10px;
+    box-sizing: border-box;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.36), rgba(255,255,255,0)),
+      #add8e6;
+  }
+
+  .screen {
+    min-height: calc(100vh - 20px);
+    display: grid;
+    place-items: start center;
+  }
+
+  .screen.hidden {
+    display: none;
+  }
+
+  .hud {
+    width: min(94vw, 1100px);
+    margin-top: 24px;
+    padding: 22px 28px;
+    box-sizing: border-box;
+    border: 3px solid #ffffff;
+    border-radius: 8px;
+    background: #1e66d0;
+    box-shadow: 0 16px 40px rgba(58,45,20,0.24);
+    text-align: center;
+  }
+
+  .hud-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(34px, 7vw, 84px);
+    line-height: 0.95;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
+
+  .go-button {
+    margin-top: 28px;
+    min-width: 180px;
+    min-height: 72px;
+    border: 3px solid #ffffff;
+    border-radius: 8px;
+    background: #0b3f91;
+    color: #ffffff;
+    font: 900 42px/1 Arial, sans-serif;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(58,45,20,0.22);
+  }
+
+  .go-button:active {
+    transform: translateY(2px);
+  }
+
+  .challenge-screen {
+    align-content: start;
+    gap: 10px;
+  }
+
+  .challenge-hud {
+    width: min(94vw, 980px);
+    margin-top: 10px;
+    padding: 10px 14px;
+    box-sizing: border-box;
+    border: 3px solid #ffffff;
+    border-radius: 8px;
+    background: #1e66d0;
+    box-shadow: 0 12px 28px rgba(58,45,20,0.22);
+    text-align: center;
+  }
+
+  .round-hud {
+    width: min(68vw, 360px);
+    margin-top: 8px;
+    padding: 7px 12px;
+    box-sizing: border-box;
+    border: 3px solid #ffffff;
+    border-radius: 8px;
+    background: #0b3f91;
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(58,45,20,0.2);
+    text-align: center;
+    font: 900 clamp(18px, 3.4vw, 30px)/1 Arial, sans-serif;
+    letter-spacing: 0;
+  }
+
+  .round-hud + .challenge-hud {
+    margin-top: 0;
+  }
+
+  .round-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    width: min(94vw, 540px);
+  }
+
+  .round-button {
+    min-width: 96px;
+    min-height: 34px;
+    border: 2px solid #ffffff;
+    border-radius: 8px;
+    background: #1e66d0;
+    color: #ffffff;
+    font: 900 15px/1 Arial, sans-serif;
+    cursor: pointer;
+    box-shadow: 0 7px 15px rgba(58,45,20,0.18);
+  }
+
+  .round-button:active {
+    transform: translateY(2px);
+  }
+
+  .challenge-title {
+    margin: 0;
+    color: #ffffff;
+    font-size: clamp(16px, 2.7vw, 28px);
+    line-height: 1.12;
+    font-weight: 900;
+    letter-spacing: 0;
+  }
+
+  .answer-box {
+    width: min(88vw, 760px);
+    min-height: 44px;
+    padding: 7px 12px;
+    box-sizing: border-box;
+    border: 3px solid #1e66d0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #ff0000;
+    font: 700 21px/1.2 Arial, sans-serif;
+    text-align: center;
+  }
+
+  .answer-box.revealed-answer {
+    color: #008000;
+  }
+
+  .answer-row {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 12px;
+    width: min(92vw, 820px);
+  }
+
+  .answer-row .answer-box {
+    flex: 1;
+    width: auto;
+  }
+
+  .submit-button {
+    min-width: 120px;
+    padding: 7px 14px;
+    border: 2px solid #ffffff;
+    border-radius: 8px;
+    background: #0b3f91;
+    color: #ffffff;
+    font: 900 21px/1 Arial, sans-serif;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(58,45,20,0.2);
+  }
+
+  .submit-button:active {
+    transform: translateY(2px);
+  }
+
+  @media (max-width: 620px) {
+    .answer-row {
+      flex-direction: column;
+    }
+
+    .submit-button {
+      min-height: 58px;
+    }
+  }
+
+  .code-display {
+    margin: 0;
+    color: #0b3f91;
+    font: 900 clamp(34px, 6.4vw, 68px)/1 Arial, sans-serif;
+    letter-spacing: 0;
+    text-align: center;
+  }
+
+  .result-message {
+    min-height: 58px;
+    margin: 0;
+    color: #0b3f91;
+    font: 900 clamp(24px, 4.5vw, 44px)/1 Arial, sans-serif;
+    letter-spacing: 0;
+    text-align: center;
+  }
+
+  .next-code {
+    display: block;
+    margin-top: 6px;
+    border: 0;
+    background: transparent;
+    color: #0b3f91;
+    font: inherit;
+    font-size: clamp(18px, 3vw, 28px);
+    font-weight: 900;
+    cursor: pointer;
+    letter-spacing: 0;
+  }
+
+  .next-code:active {
+    transform: translateY(2px);
+  }
+
+  .challenge-screen.round-nine {
+    gap: 8px;
+  }
+
+  .challenge-screen.round-nine .code-display {
+    max-width: 96vw;
+    font-size: clamp(24px, 4.5vw, 46px);
+    line-height: 1.05;
+    overflow-wrap: anywhere;
+  }
+
+  @media (max-width: 800px) and (max-height: 1050px) {
+    #game {
+      padding: 8px;
+    }
+
+    .screen {
+      min-height: calc(100vh - 16px);
+    }
+
+    .hud {
+      width: min(94vw, 700px);
+      margin-top: 18px;
+      padding: 18px 20px;
+    }
+
+    .hud-title {
+      font-size: clamp(32px, 6.4vw, 58px);
+      line-height: 1;
+    }
+
+    .go-button {
+      margin-top: 22px;
+      min-width: 150px;
+      min-height: 58px;
+      font-size: 34px;
+    }
+
+    .challenge-screen {
+      gap: 7px;
+    }
+
+    .round-hud {
+      width: min(64vw, 310px);
+      margin-top: 4px;
+      padding: 6px 10px;
+      font-size: clamp(17px, 3vw, 25px);
+    }
+
+    .round-buttons {
+      gap: 5px;
+      width: min(96vw, 440px);
+    }
+
+    .round-button {
+      min-width: 78px;
+      min-height: 30px;
+      border-radius: 7px;
+      font-size: 13px;
+    }
+
+    .challenge-hud {
+      margin-top: 0;
+      padding: 8px 12px;
+      border-width: 2px;
+    }
+
+    .challenge-title {
+      font-size: clamp(15px, 2.3vw, 22px);
+      line-height: 1.08;
+    }
+
+    .code-display {
+      font-size: clamp(30px, 5.4vw, 50px);
+      line-height: 1;
+      max-width: 96vw;
+      overflow-wrap: anywhere;
+    }
+
+    .answer-row {
+      gap: 8px;
+      width: min(94vw, 680px);
+    }
+
+    .answer-box {
+      min-height: 40px;
+      padding: 6px 10px;
+      border-width: 2px;
+      font-size: 19px;
+    }
+
+    .submit-button {
+      min-width: 104px;
+      padding: 6px 10px;
+      font-size: 19px;
+    }
+
+    .result-message {
+      min-height: 48px;
+      font-size: clamp(22px, 3.8vw, 34px);
+      line-height: 1;
+    }
+
+    .next-code {
+      margin-top: 4px;
+      font-size: clamp(17px, 2.6vw, 24px);
+    }
+
+    .challenge-screen.round-nine {
+      gap: 6px;
+    }
+
+    .challenge-screen.round-nine .code-display {
+      font-size: clamp(22px, 3.8vw, 34px);
+      line-height: 1.02;
+    }
+  }
+</style>
+</head>
+<body>
+  <main id="game"></main>
+  <script>
+    const game = document.getElementById("game");
+    const roundOneWords = [
+      "cat",
+      "dog",
+      "sun",
+      "moon",
+      "star",
+      "fish",
+      "bird",
+      "tree",
+      "rock",
+      "rain",
+      "snow",
+      "fire",
+      "book",
+      "ship",
+      "king",
+      "queen",
+      "drum",
+      "bell",
+      "cake",
+      "train"
+    ];
+    const roundTwoWords = [
+      "gold",
+      "frog",
+      "horse",
+      "apple",
+      "river",
+      "cloud",
+      "magic",
+      "happy",
+      "water",
+      "green",
+      "chair",
+      "table",
+      "garden",
+      "window",
+      "pencil",
+      "school",
+      "cookie",
+      "flower",
+      "rabbit",
+      "shadow",
+      "basket",
+      "summer"
+    ];
+    const roundThreeWords = roundOneWords;
+    const roundFourWords = [
+      "gold",
+      "tiger",
+      "planet",
+      "rocket",
+      "river",
+      "castle",
+      "magic",
+      "dragon",
+      "forest",
+      "hammer",
+      "puzzle",
+      "garden",
+      "button",
+      "window",
+      "silver",
+      "thunder",
+      "shadow",
+      "marble",
+      "candle",
+      "basket"
+    ];
+    const roundFiveWords = roundFourWords;
+    const roundSixWords = [
+      "gold river",
+      "tiger shadow",
+      "planet garden",
+      "rocket thunder",
+      "magic forest",
+      "dragon castle",
+      "silver candle",
+      "marble button",
+      "basket puzzle",
+      "window garden",
+      "hammer rocket",
+      "river shadow",
+      "forest castle",
+      "magic basket",
+      "gold planet",
+      "thunder dragon",
+      "candle window",
+      "silver marble",
+      "button puzzle",
+      "tiger forest"
+    ];
+    const roundSevenWords = roundSixWords;
+    const roundEightWords = roundSevenWords;
+    const roundNineWords = [
+      { prompt: "one plus one =", answers: ["2", "two"] },
+      { prompt: "two plus one =", answers: ["3", "three"] },
+      { prompt: "two plus two =", answers: ["4", "four"] },
+      { prompt: "three plus one =", answers: ["4", "four"] },
+      { prompt: "three plus two =", answers: ["5", "five"] },
+      { prompt: "four plus one =", answers: ["5", "five"] },
+      { prompt: "four plus two =", answers: ["6", "six"] },
+      { prompt: "five plus one =", answers: ["6", "six"] },
+      { prompt: "five plus two =", answers: ["7", "seven"] },
+      { prompt: "six plus one =", answers: ["7", "seven"] },
+      { prompt: "six plus two =", answers: ["8", "eight"] },
+      { prompt: "seven plus one =", answers: ["8", "eight"] },
+      { prompt: "seven plus two =", answers: ["9", "nine"] },
+      { prompt: "eight plus one =", answers: ["9", "nine"] },
+      { prompt: "eight plus two =", answers: ["10", "ten"] },
+      { prompt: "nine plus one =", answers: ["10", "ten"] },
+      { prompt: "ten minus one =", answers: ["9", "nine"] },
+      { prompt: "nine minus two =", answers: ["7", "seven"] },
+      { prompt: "eight minus three =", answers: ["5", "five"] },
+      { prompt: "six minus four =", answers: ["2", "two"] }
+    ];
+    const roundTenWords = [
+      "the dog ran fast",
+      "the cat sat down",
+      "the sun came out",
+      "the bird can sing",
+      "the fish swam fast",
+      "the king found gold",
+      "the queen wore silver",
+      "the tiger ran away",
+      "the rocket went up",
+      "the dragon found treasure",
+      "the garden had flowers",
+      "the window was open",
+      "the shadow moved slowly",
+      "the candle gave light",
+      "the basket held apples",
+      "the river ran cold",
+      "the castle stood tall",
+      "the magic door opened",
+      "the hammer hit wood",
+      "the puzzle was hard"
+    ];
+    let codeWords = roundOneWords;
+    let remainingWords = [...roundOneWords];
+    let currentWord = "cat";
+    let currentAnswers = ["cat"];
+    let currentRound = 1;
+    let correctThisRound = 0;
+    const correctToAdvanceRound = 5;
+
+    function getRoundLabel() {
+      if (currentRound === 1) return "ROUND ONE";
+      if (currentRound === 2) return "ROUND TWO";
+      if (currentRound === 3) return "ROUND THREE";
+      if (currentRound === 4) return "ROUND FOUR";
+      if (currentRound === 5) return "ROUND FIVE";
+      if (currentRound === 6) return "ROUND SIX";
+      if (currentRound === 7) return "ROUND SEVEN";
+      if (currentRound === 8) return "ROUND EIGHT";
+      if (currentRound === 9) return "ROUND NINE";
+      return "ROUND TEN";
+    }
+
+    function buildIntroScreen() {
+      const screen = document.createElement("section");
+      screen.className = "screen";
+      screen.id = "introScreen";
+
+      const hud = document.createElement("section");
+      hud.className = "hud";
+
+      const title = document.createElement("h1");
+      title.className = "hud-title";
+      title.textContent = "CAN YOU BREAK THE SECRET CODES?";
+
+      hud.appendChild(title);
+      screen.appendChild(hud);
+
+      const goButton = document.createElement("button");
+      goButton.className = "go-button";
+      goButton.type = "button";
+      goButton.textContent = "GO!";
+      goButton.addEventListener("click", showChallengeOne);
+      screen.appendChild(goButton);
+
+      game.appendChild(screen);
+    }
+
+    function buildChallengeOneScreen() {
+      const screen = document.createElement("section");
+      screen.className = "screen challenge-screen hidden";
+      screen.id = "challengeOneScreen";
+      screen.classList.toggle("round-nine", currentRound === 9 || currentRound === 10);
+
+      const roundHud = document.createElement("div");
+      roundHud.className = "round-hud";
+      roundHud.textContent = getRoundLabel();
+
+      const roundButtons = document.createElement("div");
+      roundButtons.className = "round-buttons";
+
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].forEach((roundNumber) => {
+        const button = document.createElement("button");
+        button.className = "round-button";
+        button.type = "button";
+        button.textContent = `ROUND ${roundNumber}`;
+        button.addEventListener("click", () => jumpToRound(roundNumber));
+        roundButtons.appendChild(button);
+      });
+
+      const hud = document.createElement("section");
+      hud.className = "challenge-hud";
+
+      const title = document.createElement("h2");
+      title.className = "challenge-title";
+      title.textContent = "CHALLENGE ONE: TYPE The meaning of this code in the text box below.";
+
+      const answerBox = document.createElement("input");
+      answerBox.className = "answer-box";
+      answerBox.type = "text";
+      answerBox.autocomplete = "off";
+      answerBox.spellcheck = false;
+      answerBox.setAttribute("aria-label", "Type the meaning of this code");
+
+      const codeDisplay = document.createElement("p");
+      codeDisplay.className = "code-display";
+
+      const answerRow = document.createElement("div");
+      answerRow.className = "answer-row";
+
+      const submitButton = document.createElement("button");
+      submitButton.className = "submit-button";
+      submitButton.type = "button";
+      submitButton.textContent = "SUBMIT";
+
+      const resultMessage = document.createElement("p");
+      resultMessage.className = "result-message";
+      resultMessage.setAttribute("aria-live", "polite");
+      let missCount = 0;
+      let roundTimerId = 0;
+      let audioContext = null;
+
+      function normalizeAnswer(value) {
+        return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+      }
+
+      function scrambleWord(word) {
+        const letters = word.toUpperCase().split("");
+        for (let i = letters.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [letters[i], letters[j]] = [letters[j], letters[i]];
+        }
+        const scrambled = letters.join("");
+        if (scrambled.toLowerCase() === word && word.length > 1) {
+          return letters.slice(1).concat(letters[0]).join("");
+        }
+        return scrambled;
+      }
+
+      function numberVowelCode(word) {
+        return word
+          .toUpperCase()
+          .replace(/A/g, "8")
+          .replace(/I/g, "5")
+          .replace(/E/g, "3")
+          .replace(/U/g, "2")
+          .replace(/O/g, "4");
+      }
+
+      function wakeAudio() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return null;
+        if (!window.codeBreakerAudioContext) {
+          window.codeBreakerAudioContext = new AudioContextClass();
+        }
+        audioContext = window.codeBreakerAudioContext;
+        if (audioContext.state === "suspended") audioContext.resume();
+        return audioContext;
+      }
+
+      function playBuzzer() {
+        const context = wakeAudio();
+        if (!context) return;
+
+        const oscillator = context.createOscillator();
+        const gain = context.createGain();
+        const now = context.currentTime;
+
+        oscillator.type = "sawtooth";
+        oscillator.frequency.setValueAtTime(150, now);
+        oscillator.frequency.linearRampToValueAtTime(90, now + 0.28);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.8, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
+
+        oscillator.connect(gain);
+        gain.connect(context.destination);
+        oscillator.start(now);
+        oscillator.stop(now + 0.45);
+      }
+
+      function stopRoundTimer() {
+        if (roundTimerId) {
+          window.clearTimeout(roundTimerId);
+          roundTimerId = 0;
+        }
+      }
+
+      function startRoundTimer() {
+        stopRoundTimer();
+        if (currentRound !== 10) return;
+        roundTimerId = window.setTimeout(() => {
+          playBuzzer();
+          resultMessage.textContent = "TIME IS UP, TRY AGAIN";
+          startRoundTimer();
+        }, 10000);
+      }
+
+      function makeCode(word) {
+        if (currentRound === 9 || currentRound === 10) {
+          return numberVowelCode(word);
+        }
+        if (currentRound === 3) {
+          if (!/[aeiu]/i.test(word)) return scrambleWord(word);
+          return word
+            .toUpperCase()
+            .replace(/A/g, "8")
+            .replace(/I/g, "5")
+            .replace(/E/g, "3")
+            .replace(/U/g, "2");
+        }
+        if (currentRound === 4 || currentRound === 6 || currentRound === 7) {
+          const coded = numberVowelCode(word);
+          return currentRound === 7 ? coded.replace(/\s+/g, "") : coded;
+        }
+        if (currentRound === 5) {
+          return word.toUpperCase().replace(/[AEIOU]/g, "");
+        }
+        if (currentRound === 8) {
+          return word.toUpperCase().replace(/[AEIOU]/g, "X");
+        }
+        return scrambleWord(word);
+      }
+
+      function pickNextWord() {
+        if (remainingWords.length === 0) {
+          if (currentRound === 1) {
+            switchToRound(2);
+          } else if (currentRound === 2) {
+            switchToRound(3);
+          } else if (currentRound === 3) {
+            switchToRound(4);
+          } else if (currentRound === 4) {
+            switchToRound(5);
+          } else if (currentRound === 5) {
+            switchToRound(6);
+          } else if (currentRound === 6) {
+            switchToRound(7);
+          } else if (currentRound === 7) {
+            switchToRound(8);
+          } else if (currentRound === 8) {
+            switchToRound(9);
+          } else if (currentRound === 9) {
+            switchToRound(10);
+          } else {
+            remainingWords = [...codeWords];
+          }
+        }
+        return remainingWords[Math.floor(Math.random() * remainingWords.length)];
+      }
+
+      function jumpToRound(roundNumber) {
+        switchToRound(roundNumber);
+        setCodeWord(pickNextWord());
+      }
+
+      function switchToRound(roundNumber) {
+        currentRound = roundNumber;
+        if (currentRound === 1) {
+          codeWords = roundOneWords;
+        } else if (currentRound === 2) {
+          codeWords = roundTwoWords;
+        } else if (currentRound === 3) {
+          codeWords = roundThreeWords;
+        } else if (currentRound === 4) {
+          codeWords = roundFourWords;
+        } else if (currentRound === 5) {
+          codeWords = roundFiveWords;
+        } else if (currentRound === 6) {
+          codeWords = roundSixWords;
+        } else if (currentRound === 7) {
+          codeWords = roundSevenWords;
+        } else if (currentRound === 8) {
+          codeWords = roundEightWords;
+        } else if (currentRound === 9) {
+          codeWords = roundNineWords;
+        } else {
+          codeWords = roundTenWords;
+        }
+        remainingWords = [...codeWords];
+        correctThisRound = 0;
+        roundHud.textContent = getRoundLabel();
+        screen.classList.toggle("round-nine", currentRound === 9 || currentRound === 10);
+      }
+
+      function setCodeWord(item) {
+        stopRoundTimer();
+        currentWord = typeof item === "string" ? item : item.prompt;
+        currentAnswers = typeof item === "string" ? [item] : item.answers;
+        codeDisplay.textContent = makeCode(currentWord);
+        answerBox.value = "";
+        answerBox.classList.remove("revealed-answer");
+        missCount = 0;
+        resultMessage.textContent = "";
+        answerBox.focus();
+        startRoundTimer();
+      }
+
+      function markCurrentWordSolved() {
+        remainingWords = remainingWords.filter((item) => item !== currentWord && item.prompt !== currentWord);
+      }
+
+      function advanceToNextCode() {
+        setCodeWord(pickNextWord());
+      }
+
+      function showRightMessage() {
+        resultMessage.textContent = "";
+
+        const rightLine = document.createElement("span");
+        rightLine.textContent = "RIGHT!";
+
+        const nextButton = document.createElement("button");
+        nextButton.className = "next-code";
+        nextButton.type = "button";
+        nextButton.textContent = "NEXT CODE";
+        nextButton.addEventListener("click", advanceToNextCode);
+
+        resultMessage.appendChild(rightLine);
+        resultMessage.appendChild(nextButton);
+      }
+
+      function showRoundCompleteMessage(nextRound) {
+        stopRoundTimer();
+        resultMessage.textContent = `YOU GOT ${correctToAdvanceRound} RIGHT OUT OF ${correctToAdvanceRound}`;
+        answerBox.disabled = true;
+        submitButton.disabled = true;
+        window.setTimeout(() => {
+          switchToRound(nextRound);
+          setCodeWord(pickNextWord());
+          answerBox.disabled = false;
+          submitButton.disabled = false;
+        }, 1600);
+      }
+
+      function checkAnswer() {
+        wakeAudio();
+        const normalizedPlayerAnswer = normalizeAnswer(answerBox.value);
+        const isCorrect = currentAnswers.some((answer) => normalizedPlayerAnswer === normalizeAnswer(answer));
+        if (isCorrect) {
+          stopRoundTimer();
+          markCurrentWordSolved();
+          correctThisRound += 1;
+          if (correctThisRound >= correctToAdvanceRound && currentRound < 10) {
+            showRoundCompleteMessage(currentRound + 1);
+            return;
+          }
+          showRightMessage();
+          return;
+        }
+        missCount += 1;
+        if (missCount >= 2) {
+          answerBox.value = currentAnswers[0].toUpperCase();
+          answerBox.classList.add("revealed-answer");
+        }
+        resultMessage.textContent = "SORRY TRY AGAIN";
+      }
+
+      submitButton.addEventListener("click", checkAnswer);
+      answerBox.addEventListener("keydown", (ev) => {
+        if (ev.key === "Enter") checkAnswer();
+      });
+
+      answerRow.appendChild(answerBox);
+      answerRow.appendChild(submitButton);
+
+      hud.appendChild(title);
+      screen.appendChild(roundHud);
+      screen.appendChild(roundButtons);
+      screen.appendChild(hud);
+      screen.appendChild(codeDisplay);
+      screen.appendChild(answerRow);
+      screen.appendChild(resultMessage);
+      game.appendChild(screen);
+
+      setCodeWord(currentWord);
+    }
+
+    function showChallengeOne() {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass && !window.codeBreakerAudioContext) {
+        window.codeBreakerAudioContext = new AudioContextClass();
+      }
+      if (window.codeBreakerAudioContext && window.codeBreakerAudioContext.state === "suspended") {
+        window.codeBreakerAudioContext.resume();
+      }
+      document.getElementById("introScreen").classList.add("hidden");
+      document.getElementById("challengeOneScreen").classList.remove("hidden");
+      document.querySelector(".answer-box").focus();
+    }
+
+    buildIntroScreen();
+    buildChallengeOneScreen();
+  </script>
+</body>
+</html>

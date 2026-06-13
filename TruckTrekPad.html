@@ -583,6 +583,9 @@ const CAVE_INTERIOR_TILE_WIDTH_FT = 8.0; // tile more often to prevent blur
 // ----- TRUCK AUDIO -----
 const TRUCK_SOUND_FILE = "car_sound.mp3"; // put this in images/car_sound.mp3
 const WALKING_SOUND_FILE = "walking_sound.mp3"; // put this in images/walking_sound.mp3
+const HUD_DING_DONG_FILE = "game_alert.mp3";
+const HUD_DING_DONG_VOL = 1.0;
+const HUD_DING_DONG_MIN_GAP_MS = 450;
 const START_SPAWN_MUSIC_FILE = "";
 const START_SPAWN_MUSIC_VOL = 1.0;
 const DRIVE_MUSIC_FILE = "drive_music.mp3";
@@ -1892,10 +1895,32 @@ function updateMiniMap(dt){
   drawMiniMap(obj.position.x, obj.position.z);
 }
 
+let hudDingDongAudio = null;
+let hudDingDongLastPlayMs = 0;
+
+function playHudDingDong(){
+  const now = performance.now ? performance.now() : Date.now();
+  if((now - hudDingDongLastPlayMs) < HUD_DING_DONG_MIN_GAP_MS) return;
+  hudDingDongLastPlayMs = now;
+
+  try{
+    if(!hudDingDongAudio){
+      hudDingDongAudio = new Audio(resolveAssetUrl(HUD_DING_DONG_FILE));
+      hudDingDongAudio.preload = "auto";
+      hudDingDongAudio.volume = Math.max(0, Math.min(1, HUD_DING_DONG_VOL));
+    }
+    hudDingDongAudio.pause();
+    hudDingDongAudio.currentTime = 0;
+    const p = hudDingDongAudio.play();
+    if(p && typeof p.catch === "function") p.catch(()=>{});
+  }catch(e){}
+}
+
 function hudLine(html, className = ""){
   if (!hud) return;
   const extraClass = className ? " " + className : "";
   hud.innerHTML += `<div class="small${extraClass}">${html}</div>`;
+  playHudDingDong();
 }
 function showBanner(msg){ const b=document.getElementById("banner"); if(!b) return; b.innerHTML = msg; b.style.display="block"; }
 
@@ -9045,7 +9070,7 @@ function registerGreenBrideHit(hitPos){
     if(greenBrideSprite) greenBrideSprite.visible = false;
     ringLandingSequenceInProgress = false;
     ringLandingSequenceDone = true;
-    hudLine("YOU WON; THE WORLD IS A BETTER PLACE.", "flashVictory");
+    hudLine("YOU HAVE SAVED THE WORLD. HOP IN YOUR TRUCK AND GO IN PEACE.", "flashVictory");
   }
 }
 

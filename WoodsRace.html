@@ -85,6 +85,26 @@
     pointer-events: none;
   }
 
+  body.ipad-stable-layers #video {
+    transform: none;
+    -webkit-transform: none;
+    will-change: auto;
+  }
+
+  body.ipad-stable-layers #scene {
+    isolation: isolate;
+  }
+
+  body.ipad-stable-layers #aiTruck,
+  body.ipad-stable-layers #playerTruck {
+    left: 0;
+    top: 0;
+    contain: layout paint style;
+    transform-style: flat;
+    -webkit-transform-style: flat;
+    will-change: transform;
+  }
+
   #scene.prestart #video,
   #scene.prestart #aiTruck,
   #scene.prestart #playerTruck {
@@ -182,12 +202,14 @@
 
   #picksWrap {
     position: relative;
-    width: min(93.1vw, 1496px);
+    width: min(93.1vw, 1496px, calc((100vh - 112px) * 1791 / 1220));
+    aspect-ratio: 1791 / 1220;
   }
 
   #picksBanner {
     display: block;
     width: 100%;
+    height: 100%;
     max-height: none;
     object-fit: contain;
     pointer-events: none;
@@ -586,6 +608,13 @@
     navigator.maxTouchPoints > 0 ||
     (window.matchMedia && window.matchMedia("(pointer: coarse)").matches)
   );
+  const isIpadStableLayerDevice = (
+    /iPad|iPhone|iPod/i.test(navigator.userAgent || "") ||
+    ((navigator.platform || "") === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
+  if (isIpadStableLayerDevice) {
+    document.body.classList.add("ipad-stable-layers");
+  }
   const fallbackMovieDurationSeconds = 46.3;
   const maxLaps = 5;
   const earlyLapHitPenaltyPct = 0.115;
@@ -891,6 +920,18 @@
     el.style.webkitTransform = value;
   }
 
+  function setTruckPose(el, x, y, anchorYPct, scaleX, scaleY = scaleX) {
+    if (isIpadStableLayerDevice) {
+      el.style.left = "0px";
+      el.style.top = "0px";
+      setLayerTransform(el, `translate3d(${x}px, ${y}px, 0) translate(-50%, ${anchorYPct}%) scale(${scaleX}, ${scaleY})`);
+      return;
+    }
+    el.style.left = `${x}px`;
+    el.style.top = `${y}px`;
+    setLayerTransform(el, `translate3d(-50%, ${anchorYPct}%, 0) scale(${scaleX}, ${scaleY})`);
+  }
+
   function resetPlayerTruckToStart() {
     truckState.x = viewportWidth * 0.51;
     forwardTapCount = 0;
@@ -920,9 +961,7 @@
     aiState.y = aiY;
     aiState.scale = minTruckScale + aiScaleDepth * (maxTruckScale - minTruckScale);
     aiTruck.style.display = "block";
-    aiTruck.style.left = `${aiState.x}px`;
-    aiTruck.style.top = `${aiState.y}px`;
-    setLayerTransform(aiTruck, `translate3d(-50%, -138%, 0) scale(${aiState.scale})`);
+    setTruckPose(aiTruck, aiState.x, aiState.y, -138, aiState.scale);
   }
 
   function keepRaceTrucksVisible() {
@@ -1017,9 +1056,7 @@
     aiTruck.style.display = "block";
     playerTruck.style.display = "block";
     keepRaceTrucksVisible();
-    aiTruck.style.left = `${aiState.x}px`;
-    aiTruck.style.top = `${aiState.y}px`;
-    setLayerTransform(aiTruck, `translate3d(-50%, -138%, 0) scale(${aiState.scale})`);
+    setTruckPose(aiTruck, aiState.x, aiState.y, -138, aiState.scale);
     startOverlay.style.display = "none";
     crashOverlay.style.display = "none";
     crashText.textContent = "";
@@ -1181,9 +1218,7 @@
     updateTruckPerspectiveScale();
     if (!MOVIE_ONLY_MODE) checkCrashZones();
 
-    playerTruck.style.left = `${truckState.x}px`;
-    playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
-    setLayerTransform(playerTruck, `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`);
+    setTruckPose(playerTruck, truckState.x, truckState.y + truckState.dropOffset, -50, truckState.scale, truckState.scale * blueHeightFactor);
     const nowMs = performance.now();
     const movieDuration = getRaceMovieDuration();
     const movieTime = getRaceMovieTime(nowMs, movieDuration);
@@ -1349,9 +1384,7 @@
 
     aiState.x = clamp(aiState.x, aiMinX, aiMaxX);
     aiState.y = aiY;
-    aiTruck.style.left = `${aiState.x}px`;
-    aiTruck.style.top = `${aiY}px`;
-    setLayerTransform(aiTruck, `translate3d(-50%, -138%, 0) scale(${aiState.scale})`);
+    setTruckPose(aiTruck, aiState.x, aiY, -138, aiState.scale);
     const blueVisualRect = playerTruck.getBoundingClientRect();
     const orangeVisualRect = aiTruck.getBoundingClientRect();
     updateCubeLeaderColor(blueVisualRect, orangeVisualRect);
@@ -1448,9 +1481,29 @@
   }
   refreshTruckSizeCache();
 
+  function selectAndStartVehicle(choice, ev) {
+    if (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+    }
+    if (vehicleChoiceLocked || experienceStarted || !choice) return;
+    vehicleChoiceLocked = true;
+    selectedTruckChoiceId = choice.id;
+    selectedBlueTruckSrc = choice.src;
+    playerTruck.src = selectedBlueTruckSrc;
+    applyPlayerTruckSelectionSize();
+    refreshTruckSizeCache();
+    startExperience();
+  }
+
+  function getSelectedVehicleChoice() {
+    return numberedTruckChoices.find((choice) => choice.id === selectedTruckChoiceId) || numberedTruckChoices[1] || numberedTruckChoices[0];
+  }
+
   function renderPicksHotspots() {
     if (!picksButtons) return;
     picksButtons.innerHTML = "";
+
     numberedTruckChoices.forEach((choice) => {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -1461,40 +1514,32 @@
       btn.style.width = `${choice.width}%`;
       btn.style.height = `${choice.height}%`;
       btn.setAttribute("aria-label", `Choose vehicle ${choice.id}`);
-      const chooseVehicle = (ev) => {
-        if (ev) {
-          ev.preventDefault();
-          ev.stopPropagation();
-        }
-        if (vehicleChoiceLocked || experienceStarted) return;
-        vehicleChoiceLocked = true;
-        selectedTruckChoiceId = choice.id;
-        selectedBlueTruckSrc = choice.src;
-        playerTruck.src = selectedBlueTruckSrc;
-        applyPlayerTruckSelectionSize();
-        refreshTruckSizeCache();
-        startExperience();
-      };
+      const chooseVehicle = (ev) => selectAndStartVehicle(choice, ev);
       btn.addEventListener("pointerdown", chooseVehicle, { passive:false });
-      btn.addEventListener("click", (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-      }, { passive:false });
+      btn.addEventListener("touchstart", chooseVehicle, { passive:false });
+      btn.addEventListener("mousedown", chooseVehicle);
+      btn.addEventListener("click", chooseVehicle);
       picksButtons.appendChild(btn);
     });
+  }
+
+  if (startBtn) {
+    const startSelectedVehicle = (ev) => selectAndStartVehicle(getSelectedVehicleChoice(), ev);
+    startBtn.addEventListener("pointerdown", startSelectedVehicle, { passive:false });
+    startBtn.addEventListener("touchstart", startSelectedVehicle, { passive:false });
+    startBtn.addEventListener("mousedown", startSelectedVehicle);
+    startBtn.addEventListener("click", startSelectedVehicle);
   }
 
   renderPicksHotspots();
   applyForwardTapPosition();
   updateTruckPerspectiveScale();
-  playerTruck.style.left = `${truckState.x}px`;
-  playerTruck.style.top = `${truckState.y + truckState.dropOffset}px`;
-  setLayerTransform(playerTruck, `translate3d(-50%, -50%, 0) scale(${truckState.scale}, ${truckState.scale * blueHeightFactor})`);
+  setTruckPose(playerTruck, truckState.x, truckState.y + truckState.dropOffset, -50, truckState.scale, truckState.scale * blueHeightFactor);
   applyAiPrestartPose();
   requestAnimationFrame(() => {
     if (!experienceStarted) applyAiPrestartPose();
   });
-  startBtn.style.display = "none";
+  startBtn.style.display = "inline-flex";
   if (MOVIE_ONLY_MODE) startMovieOnlyMode();
 </script>
 </body>

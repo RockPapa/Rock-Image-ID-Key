@@ -881,7 +881,7 @@
   const aiInitialUpShrinkBoostFactor = 1.23;
   const aiLeftLaneAdvanceFactor = 0.0525;
   const orangeMaxUpUnits = 1.6;
-  const aiPrestartTravelProgress = 0.28;
+  const aiPrestartTravelProgress = 0.75;
   const aiBlockMovePerFrame = 2.6;
   const aiScriptedMovePerFrame = 1.1;
   const aiPassDetectBesidePct = 0.06;
@@ -926,7 +926,8 @@
   const mazBackPlayerSrc = "images/maz_back.png";
   const bigTruckPlayerSrc = "images/big_truck.png";
   const playerTruckBaseWidthCss = "min(14.4255065625vw, 196.2795px)";
-  const bigfootSizeBoostFactor = 1.15;
+  const playerTruckBaseHeightCss = "min(8.9vw, 121px)";
+  const bigfootSizeBoostFactor = 1.52;
   const mazBackSizeBoostFactor = 1.24;
   const bigTruckSizeBoostFactor = 1.24;
   const numberedTruckChoices = [
@@ -1212,31 +1213,37 @@
     applyPlayerTruckSprite();
     if (selectedBlueTruckSrc === bigfootPlayerSrc) {
       playerTruck.style.width = `calc(${playerTruckBaseWidthCss} * ${bigfootSizeBoostFactor})`;
+      playerTruck.style.height = `calc(${playerTruckBaseHeightCss} * ${bigfootSizeBoostFactor})`;
       playerTruck.style.setProperty("--truckColor", "#7a5a37");
       playerTruck.style.setProperty("--truckDark", "#3e2b16");
       playerTruck.style.setProperty("--truckLight", "#c69a64");
     } else if (selectedBlueTruckSrc === mazBackPlayerSrc) {
       playerTruck.style.width = `calc(${playerTruckBaseWidthCss} * ${mazBackSizeBoostFactor})`;
+      playerTruck.style.height = playerTruckBaseHeightCss;
       playerTruck.style.setProperty("--truckColor", "#ffd13b");
       playerTruck.style.setProperty("--truckDark", "#b07a00");
       playerTruck.style.setProperty("--truckLight", "#fff08a");
     } else if (selectedBlueTruckSrc === bigTruckPlayerSrc) {
       playerTruck.style.width = `calc(${playerTruckBaseWidthCss} * ${bigTruckSizeBoostFactor})`;
+      playerTruck.style.height = playerTruckBaseHeightCss;
       playerTruck.style.setProperty("--truckColor", "#3fd36b");
       playerTruck.style.setProperty("--truckDark", "#137735");
       playerTruck.style.setProperty("--truckLight", "#9cffb8");
     } else if (selectedBlueTruckSrc.includes("orange_truck")) {
       playerTruck.style.width = playerTruckBaseWidthCss;
+      playerTruck.style.height = playerTruckBaseHeightCss;
       playerTruck.style.setProperty("--truckColor", "#ff8b20");
       playerTruck.style.setProperty("--truckDark", "#a94700");
       playerTruck.style.setProperty("--truckLight", "#ffc15e");
     } else if (selectedBlueTruckSrc.includes("truck2")) {
       playerTruck.style.width = playerTruckBaseWidthCss;
+      playerTruck.style.height = playerTruckBaseHeightCss;
       playerTruck.style.setProperty("--truckColor", "#d82131");
       playerTruck.style.setProperty("--truckDark", "#7d0712");
       playerTruck.style.setProperty("--truckLight", "#ff7d86");
     } else {
       playerTruck.style.width = playerTruckBaseWidthCss;
+      playerTruck.style.height = playerTruckBaseHeightCss;
       playerTruck.style.setProperty("--truckColor", "#2f7dff");
       playerTruck.style.setProperty("--truckDark", "#1646b8");
       playerTruck.style.setProperty("--truckLight", "#82c7ff");
@@ -1376,13 +1383,14 @@
     copterSound.volume = 0.088;
     copterSound.play().catch(() => {});
     resetPlayerTruckToStart();
-    aiState.x = viewportWidth * 0.5;
-    aiState.y = startY;
-    aiState.scale = minTruckScale;
+    aiLapCarryTravelOffset = aiPrestartTravelProgress;
+    aiLapStartCarryX = null;
+    aiLapStartHoldFrames = 0;
+    aiLapScriptedReleaseFrames = 0;
     aiTruck.style.display = "block";
     playerTruck.style.display = "block";
     keepRaceTrucksVisible();
-    setTruckPose(aiTruck, aiState.x, aiState.y, -138, aiState.scale);
+    applyAiPrestartPose();
     renderVehicleCanvas();
     startOverlay.style.display = "none";
     crashOverlay.style.display = "none";
@@ -1613,8 +1621,8 @@
         // For laps 2-5, restart both vehicles in the same formation as lap 1.
         // Player starts back; orange AI starts ahead using the prestart pose.
         resetPlayerTruckToStart();
+        aiLapCarryTravelOffset = aiPrestartTravelProgress;
         applyAiPrestartPose();
-        aiLapCarryTravelOffset = 0;
         aiLapStartCarryX = null;
         aiLapStartHoldFrames = 0;
         aiLapScriptedReleaseFrames = 0;

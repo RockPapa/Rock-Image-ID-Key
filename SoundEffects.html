@@ -127,7 +127,7 @@
         <button data-sound="wind.mp3">WIND</button>
       </div>
       <div class="row">
-        <button data-sound="wolf_howl.mp3">WOLF</button>
+        <button data-sound="wolf.mp3">WOLF</button>
         <button data-sound="baloon.mp3">BALOON</button>
         <button data-sound="mad_cat.mp3">MAD CAT</button>
         <button data-sound="jungle_birds.mp3">BIRDS</button>
@@ -152,195 +152,87 @@
   const diag = document.getElementById("diag");
   const buttons = Array.from(document.querySelectorAll("[data-sound]"));
   const audioPool = new Map();
-  let audioCtx = null;
-  let unlocked = false;
+  let activeButton = null;
+  let activeFile = "";
   let lastTapAt = 0;
   let lastTapFile = "";
-  let workingUrlIndex = null;
 
   function setStatus(text){
     if(status) status.textContent = text;
   }
 
-  function writeDiag(lines){
-    if(!diag) return;
-    diag.textContent = Array.isArray(lines) ? lines.join("\n") : String(lines || "");
-  }
-
-  function appendDiag(line){
-    if(!diag) return;
-    diag.textContent += "\n" + line;
-    diag.scrollTop = diag.scrollHeight;
-  }
-
-  function getProjectRootPath(){
-    const parts = window.location.pathname.split("/").filter(Boolean);
-    if(!parts.length) return "/";
-    const last = parts[parts.length - 1] || "";
-    if(!last.includes(".")) return "/" + parts[0] + "/";
-    return parts.length > 1 ? "/" + parts[0] + "/" : "/";
-  }
-
-  function buildSoundUrls(file){
-    return ["images/" + file];
-  }
-
-  function absoluteUrl(url){
-    try{
-      return new URL(url, window.location.href).href;
-    }catch(e){
-      return url;
-    }
-  }
-
-  async function checkUrl(url){
-    const abs = absoluteUrl(url);
-    try{
-      const res = await fetch(abs, { method: "GET", cache: "no-store" });
-      return res.ok ? "OK " + res.status : "BAD " + res.status;
-    }catch(e){
-      return "FETCH ERR " + (e && e.name ? e.name : "error");
-    }
-  }
-
   function getAudio(file){
     let item = audioPool.get(file);
     if(!item){
-      const urls = buildSoundUrls(file);
-      const startIndex = Number.isInteger(workingUrlIndex) ? workingUrlIndex : 0;
-      const audio = new Audio(urls[startIndex] || urls[0]);
+      const audio = new Audio("images/" + file);
       audio.preload = "auto";
       audio.playsInline = true;
-      item = { audio, urls, index: startIndex };
+      item = { audio };
       audioPool.set(file, item);
-    }
-    if(Number.isInteger(workingUrlIndex)){
-      item.index = workingUrlIndex;
     }
     return item;
   }
 
-  function getVolumeBoost(file){
-    return file === "elk.mp3" ? 2 : 1;
-  }
-
-  function applyVolumeBoost(item, file){
-    if(!audioCtx || !item || !item.audio) return;
-    if(!item.gain){
-      item.source = audioCtx.createMediaElementSource(item.audio);
-      item.gain = audioCtx.createGain();
-      item.source.connect(item.gain);
-      item.gain.connect(audioCtx.destination);
+  function stopSound(item, file, button){
+    if(!item || !item.audio) return;
+    try{
+      item.audio.pause();
+      item.audio.currentTime = 0;
+    }catch(e){}
+    if(button) button.classList.remove("playing");
+    if(activeFile === file){
+      activeFile = "";
+      activeButton = null;
     }
-    item.gain.gain.value = getVolumeBoost(file);
-  }
-
-  function primeAudioElement(audio){
-    if(!audio) return Promise.resolve();
-    const wasMuted = audio.muted;
-    audio.muted = true;
-    audio.volume = 1;
-    return audio.play().then(()=>{
-      audio.pause();
-      audio.currentTime = 0;
-      audio.muted = wasMuted;
-    }).catch(()=>{
-      audio.muted = wasMuted;
-    });
-  }
-
-  function unlockAudio(){
-    if(unlocked) return;
-    const AC = window.AudioContext || window.webkitAudioContext;
-    if(AC){
-      if(!audioCtx) audioCtx = new AC();
-      if(audioCtx.state === "suspended"){
-        try{ audioCtx.resume().catch(()=>{}); }catch(e){}
-      }
-      try{
-        const buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-        const source = audioCtx.createBufferSource();
-        const gain = audioCtx.createGain();
-        gain.gain.value = 0.0001;
-        source.buffer = buffer;
-        source.connect(gain);
-        gain.connect(audioCtx.destination);
-        source.start(0);
-      }catch(e){}
-    }
-    unlocked = true;
+    setStatus("Stopped: " + file);
   }
 
   function playSound(file, button){
-    unlockAudio();
     const item = getAudio(file);
     const audio = item.audio;
-    applyVolumeBoost(item, file);
-    if(Number.isInteger(workingUrlIndex)){
-      item.index = workingUrlIndex;
-    }
-    writeDiag([
-      "page: " + window.location.href,
-      "sound: " + file,
-      "audioContext: " + (audioCtx ? audioCtx.state : "none"),
-      "working index: " + (Number.isInteger(workingUrlIndex) ? String(workingUrlIndex + 1) : "unknown"),
-      "candidates:"
-    ].concat(item.urls.map((u, i)=> `${i + 1}. ${absoluteUrl(u)}`)));
-
-    for(let attempt = 0; attempt < item.urls.length; attempt++){
-      audio.src = item.urls[item.index];
-      appendDiag("try: " + absoluteUrl(audio.src));
-
-      try{
-        audio.pause();
-        audio.currentTime = 0;
-        audio.muted = false;
-        audio.volume = 1;
-        const playPromise = audio.play();
-        if(playPromise && typeof playPromise.then === "function"){
-          playPromise.then(()=>{
-            setStatus("Playing: " + file);
-          }).catch((e)=>{
-            appendDiag("play failed async: " + (e && e.name ? e.name : "error"));
-            setStatus("Tap again: " + file);
-          });
-        }
-        setStatus("Playing: " + file);
-        button.classList.add("playing");
-        window.setTimeout(()=> button.classList.remove("playing"), 180);
-        return;
-      }catch(e){
-        appendDiag("play failed: " + (e && e.name ? e.name : "error"));
-        item.index = (item.index + 1) % item.urls.length;
-      }
-    }
-
-    setStatus("Could not find: " + file);
-  }
-
-  async function runStartupDiagnostics(){
-    const first = buttons[0] ? buttons[0].getAttribute("data-sound") : "";
-    if(!first){
-      writeDiag("No sound buttons found.");
+    if(activeFile === file && !audio.paused){
+      stopSound(item, file, button);
       return;
     }
-    const urls = buildSoundUrls(first);
-    writeDiag([
-      "page: " + window.location.href,
-      "protocol: " + window.location.protocol,
-      "test file: " + first,
-      "checking URLs..."
-    ]);
-    for(let i = 0; i < urls.length; i++){
-      const result = await checkUrl(urls[i]);
-      appendDiag(absoluteUrl(urls[i]) + " -> " + result);
-      if(workingUrlIndex === null && result.startsWith("OK ")){
-        workingUrlIndex = i;
-        appendDiag("using candidate " + (i + 1) + " for playback");
-        for(const item of audioPool.values()){
-          item.index = workingUrlIndex;
-        }
+    if(activeFile && activeFile !== file){
+      stopSound(getAudio(activeFile), activeFile, activeButton);
+    }
+    audio.onended = ()=>{
+      button.classList.remove("playing");
+      if(activeFile === file){
+        activeFile = "";
+        activeButton = null;
       }
+      setStatus("Finished: " + file);
+    };
+
+    try{
+      audio.pause();
+      audio.currentTime = 0;
+      audio.muted = false;
+      audio.volume = 1;
+      const playPromise = audio.play();
+      if(playPromise && typeof playPromise.then === "function"){
+        playPromise.then(()=>{
+          activeFile = file;
+          activeButton = button;
+          button.classList.add("playing");
+          setStatus("Playing: " + file);
+        }).catch((e)=>{
+          const name = e && e.name ? e.name : "error";
+          setStatus("Tap again: " + file);
+          if(diag) diag.textContent = "Could not play " + file + ": " + name + "\n" + audio.src;
+        });
+      }else{
+        activeFile = file;
+        activeButton = button;
+        button.classList.add("playing");
+        setStatus("Playing: " + file);
+      }
+    }catch(e){
+      const name = e && e.name ? e.name : "error";
+      setStatus("Could not play: " + file);
+      if(diag) diag.textContent = "Could not play " + file + ": " + name + "\n" + audio.src;
     }
   }
 
@@ -359,6 +251,7 @@
 
     button.addEventListener("pointerdown", press);
     button.addEventListener("touchstart", press, { passive:false });
+    button.addEventListener("mousedown", press);
 
     button.addEventListener("click", (ev)=>{
       ev.preventDefault();
@@ -366,7 +259,9 @@
   }
 
   document.addEventListener("touchmove", (ev)=> ev.preventDefault(), { passive:false });
-  runStartupDiagnostics();
+  if(diag){
+    diag.textContent = "Ready. Opened from: " + window.location.href;
+  }
 })();
 
   </script>

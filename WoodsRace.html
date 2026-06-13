@@ -881,7 +881,7 @@
   const aiInitialUpShrinkBoostFactor = 1.23;
   const aiLeftLaneAdvanceFactor = 0.0525;
   const orangeMaxUpUnits = 1.6;
-  const aiPrestartTravelProgress = 0.75;
+  const aiPrestartTravelProgress = 1.6;
   const aiBlockMovePerFrame = 2.6;
   const aiScriptedMovePerFrame = 1.1;
   const aiPassDetectBesidePct = 0.06;
@@ -928,6 +928,7 @@
   const playerTruckBaseWidthCss = "min(14.4255065625vw, 196.2795px)";
   const playerTruckBaseHeightCss = "min(8.9vw, 121px)";
   const bigfootSizeBoostFactor = 1.52;
+  const bigfootStartBackPct = 0.055;
   const mazBackSizeBoostFactor = 1.24;
   const bigTruckSizeBoostFactor = 1.24;
   const numberedTruckChoices = [
@@ -1206,6 +1207,9 @@
     truckState.x = viewportWidth * 0.51;
     forwardTapCount = 0;
     applyForwardTapPosition();
+    if (selectedBlueTruckSrc === bigfootPlayerSrc) {
+      truckState.y += viewportHeight * bigfootStartBackPct;
+    }
     prevBlueX = truckState.x;
   }
 

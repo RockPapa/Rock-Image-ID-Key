@@ -90,6 +90,76 @@ canvas{display:block;width:100vw;height:100vh}
   opacity:.92;
   line-height:1.25;
 }
+.touchToggle{
+  position:fixed;left:18px;bottom:18px;z-index:22;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(20,24,32,.85);
+  color:#fff;
+  border-radius:8px;
+  padding:7px 11px;
+  font:13px system-ui;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.touchControls{
+  position:fixed;inset:auto 0 0 0;z-index:21;
+  display:grid;
+  grid-template-columns:140px 1fr 140px;
+  align-items:end;
+  gap:14px;
+  padding:18px;
+  pointer-events:none;
+}
+.touchControls.hidden{display:none;}
+.touchPad,.touchColumn{
+  pointer-events:auto;
+  display:grid;
+  gap:8px;
+}
+.touchPad{
+  grid-template-columns:repeat(3,44px);
+  grid-template-rows:repeat(3,44px);
+}
+.touchColumn{
+  justify-self:end;
+  grid-template-columns:repeat(2,58px);
+}
+.touchBtn{
+  border:1px solid rgba(255,255,255,.32);
+  background:rgba(20,24,32,.72);
+  color:#fff;
+  border-radius:8px;
+  min-width:44px;
+  min-height:44px;
+  font:700 17px system-ui;
+  box-shadow:0 8px 20px rgba(0,0,0,.35);
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:none;
+}
+.touchBtn:active,.touchBtn.active{
+  background:rgba(255,255,255,.25);
+  transform:translateY(1px);
+}
+.touchBtn.forward{grid-column:2;grid-row:1;}
+.touchBtn.left{grid-column:1;grid-row:2;}
+.touchBtn.back{grid-column:2;grid-row:3;}
+.touchBtn.right{grid-column:3;grid-row:2;}
+@media (pointer:fine){
+  .touchToggle,.touchControls{display:none;}
+}
+@media (max-width:720px){
+  .hud{left:10px;top:10px;max-width:calc(100vw - 44px);font-size:13px;}
+  .hudToggleFloat{left:10px;top:10px;}
+  .compass{right:10px;top:10px;width:74px;height:74px;}
+  .minimapWrap{right:10px;bottom:74px;width:132px;padding:8px;}
+  #minimap{width:116px;height:116px;}
+  .touchToggle{left:10px;bottom:10px;}
+  .touchControls{grid-template-columns:136px 1fr 128px;padding:10px 10px 58px;gap:8px;}
+  .touchPad{grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,42px);}
+  .touchColumn{grid-template-columns:repeat(2,58px);gap:7px;}
+  .touchBtn{min-width:42px;min-height:42px;font-size:15px;}
+}
 
 </style>
 
@@ -106,6 +176,7 @@ canvas{display:block;width:100vw;height:100vh}
 <body>
 
 <button id="controlsToggle" class="hudToggleFloat" type="button" aria-expanded="true">Hide HUD</button>
+<button id="touchToggle" class="touchToggle" type="button" aria-expanded="true">Hide Touch Controls</button>
 
 <div class="hud" id="hud">
   <b>HeightMap Viewer</b><br>
@@ -114,16 +185,24 @@ canvas{display:block;width:100vw;height:100vh}
   <div class="small" id="status">Loading…</div>
   <div id="controlsPanel" class="ctrlPanel">
     <div class="hmRow">
-      <label for="terrainHeightSlider">Terrain height: <span id="terrainHeightReadout">2000</span></label>
-      <input id="terrainHeightSlider" type="range" min="200" max="5000" step="10" value="2000">
+      <label for="terrainHeightSlider">Terrain height: <span id="terrainHeightReadout">85</span></label>
+      <input id="terrainHeightSlider" type="range" min="20" max="5000" step="5" value="85">
     </div>
     <div class="hmRow">
-      <label for="terrainSizeSlider">Terrain size: <span id="terrainSizeReadout">4000</span></label>
+      <label for="terrainSizeSlider">Terrain width: <span id="terrainSizeReadout">4000</span></label>
       <input id="terrainSizeSlider" type="range" min="1000" max="12000" step="50" value="4000">
     </div>
     <div class="hmRow">
       <label for="heightmapPicker">Load local heightmap image</label>
       <input id="heightmapPicker" type="file" accept="image/*">
+    </div>
+    <div class="hmRow">
+      <label for="minimapPicker">Load local minimap image</label>
+      <input id="minimapPicker" type="file" accept="image/*">
+    </div>
+    <div class="hmRow">
+      <label for="roadOverlayPicker">Load local road overlay image</label>
+      <input id="roadOverlayPicker" type="file" accept="image/*">
     </div>
     <div class="hmRow">
       <label for="texturePicker">Load local texture image</label>
@@ -138,6 +217,22 @@ canvas{display:block;width:100vw;height:100vh}
   <span class="s">S</span>
   <span class="e">E</span>
   <span class="w">W</span>
+</div>
+
+<div id="touchControls" class="touchControls" aria-label="Onscreen movement controls">
+  <div class="touchPad" aria-label="Move and turn">
+    <button class="touchBtn forward" type="button" data-key="ArrowUp" aria-label="Move forward">▲</button>
+    <button class="touchBtn left" type="button" data-key="ArrowLeft" aria-label="Turn left">◀</button>
+    <button class="touchBtn right" type="button" data-key="ArrowRight" aria-label="Turn right">▶</button>
+    <button class="touchBtn back" type="button" data-key="ArrowDown" aria-label="Move backward">▼</button>
+  </div>
+  <div></div>
+  <div class="touchColumn" aria-label="Tilt and height">
+    <button class="touchBtn" type="button" data-key="KeyD" aria-label="Tilt up">Tilt Up</button>
+    <button class="touchBtn" type="button" data-key="KeyE" aria-label="Tilt down">Tilt Down</button>
+    <button class="touchBtn" type="button" data-key="KeyR" aria-label="Move up">Up</button>
+    <button class="touchBtn" type="button" data-key="KeyF" aria-label="Move down">Down</button>
+  </div>
 </div>
 
 
@@ -169,13 +264,19 @@ const TILT_MIN   = -1.20;   // look UP limit
 const TILT_MAX   =  1.05;   // look DOWN limit
 // vertical R/F speed
 
-const TEX_DIR = "images/";
+const TEX_DIR = "";
 
 // Heightmap
-const HEIGHTMAP_FILE = "muir.png";
-const DEFAULT_TERRAIN_HEIGHT = 2000;
+const HEIGHTMAP_FILE = "GreatSmokyMountains/great_smoky_mountains_heightmap_1024.png";
+const MINIMAP_FILE = "GreatSmokyMountains/great_smoky_mountains_heightmap_major_roads_towns_1024.png";
+const ROAD_OVERLAY_FILE = "GreatSmokyMountains/great_smoky_mountains_major_roads_towns_overlay_1024.png";
+// GSMNP metadata bbox: west/east span ~= 91.0 km, south/north span ~= 55.5 km.
+// The viewer uses a scaled model, but starts with the same real-world proportions.
+const DEFAULT_GROUND_WIDTH = 4000;
+const DEFAULT_GROUND_DEPTH = 2439;
+const DEFAULT_TERRAIN_HEIGHT = 85;
 const TERRAIN_SEGMENTS = 456;
-const DEFAULT_GROUND_SIZE = 4000;
+const DEFAULT_GROUND_SIZE = DEFAULT_GROUND_WIDTH;
 let terrainHeight = DEFAULT_TERRAIN_HEIGHT;
 let terrainSize = DEFAULT_GROUND_SIZE;
 
@@ -183,7 +284,7 @@ let terrainSize = DEFAULT_GROUND_SIZE;
 // Minimap zoom: >1 makes the marker move more (shows a smaller area)
 const MINI_ZOOM = 2;
 // PBR textures (put these in images/). Any can be blank "" to disable.
-const COLOR_FILE  = "valley_drape.jpg";   // draped NAIP (must match heightmap pixels)   // diffuse / albedo
+const COLOR_FILE  = "";   // diffuse / albedo
 const NORMAL_FILE = ""; // optional (leave blank for NAIP drape)    // optional
 const ROUGH_FILE  = ""; // optional                          // optional
 const TEX_REPEAT  = 1;   // for NAIP drape: 1 (no tiling)                          // tiling density
@@ -247,6 +348,8 @@ const hudEl = document.getElementById("hud");
 const statusEl = document.getElementById("status");
 const controlsToggleEl = document.getElementById("controlsToggle");
 const controlsPanelEl = document.getElementById("controlsPanel");
+const touchToggleEl = document.getElementById("touchToggle");
+const touchControlsEl = document.getElementById("touchControls");
 const terrainHeightSliderEl = document.getElementById("terrainHeightSlider");
 const terrainSizeSliderEl = document.getElementById("terrainSizeSlider");
 const terrainHeightReadoutEl = document.getElementById("terrainHeightReadout");
@@ -258,6 +361,12 @@ controlsToggleEl.addEventListener("click", ()=>{
   const isHidden = hudEl.classList.toggle("hidden");
   controlsToggleEl.textContent = isHidden ? "Show HUD" : "Hide HUD";
   controlsToggleEl.setAttribute("aria-expanded", String(!isHidden));
+});
+
+touchToggleEl.addEventListener("click", ()=>{
+  const isHidden = touchControlsEl.classList.toggle("hidden");
+  touchToggleEl.textContent = isHidden ? "Show Touch Controls" : "Hide Touch Controls";
+  touchToggleEl.setAttribute("aria-expanded", String(!isHidden));
 });
 
 /* =========================
@@ -302,6 +411,8 @@ async function loadTextureFromObjectURL(url){
    Load heightmap
    ========================= */
 const heightmapPickerEl = document.getElementById("heightmapPicker");
+const minimapPickerEl = document.getElementById("minimapPicker");
+const roadOverlayPickerEl = document.getElementById("roadOverlayPicker");
 const texturePickerEl = document.getElementById("texturePicker");
 const c = document.createElement("canvas");
 const ctx = c.getContext("2d");
@@ -362,16 +473,33 @@ const miniBase = document.createElement("canvas");
 miniBase.width = MINI_SIZE;
 miniBase.height = MINI_SIZE;
 const bctx = miniBase.getContext("2d");
-bctx.imageSmoothingEnabled = true;
-bctx.drawImage(c, 0, 0, MINI_SIZE, MINI_SIZE);
 
-// Optional: faint grid (helps eyeballing landmarks)
-bctx.strokeStyle = "rgba(255,255,255,0.10)";
-bctx.lineWidth = 1;
-for (let i=1;i<=3;i++){
-  const t = (i/4)*MINI_SIZE;
-  bctx.beginPath(); bctx.moveTo(t,0); bctx.lineTo(t,MINI_SIZE); bctx.stroke();
-  bctx.beginPath(); bctx.moveTo(0,t); bctx.lineTo(MINI_SIZE,t); bctx.stroke();
+function rebuildMiniBaseFromImage(source){
+  bctx.clearRect(0,0,MINI_SIZE,MINI_SIZE);
+  bctx.imageSmoothingEnabled = true;
+  bctx.drawImage(source, 0, 0, MINI_SIZE, MINI_SIZE);
+
+  // Optional: faint grid (helps eyeballing landmarks)
+  bctx.strokeStyle = "rgba(255,255,255,0.10)";
+  bctx.lineWidth = 1;
+  for (let i=1;i<=3;i++){
+    const t = (i/4)*MINI_SIZE;
+    bctx.beginPath(); bctx.moveTo(t,0); bctx.lineTo(t,MINI_SIZE); bctx.stroke();
+    bctx.beginPath(); bctx.moveTo(0,t); bctx.lineTo(MINI_SIZE,t); bctx.stroke();
+  }
+}
+
+let miniMapWarning = "";
+let customMiniMapLoaded = false;
+const miniTex = MINIMAP_FILE ? await loadTextureSafe(TEX_DIR + MINIMAP_FILE) : null;
+if (miniTex && miniTex.image){
+  rebuildMiniBaseFromImage(miniTex.image);
+  customMiniMapLoaded = true;
+} else {
+  rebuildMiniBaseFromImage(c);
+  miniMapWarning = MINIMAP_FILE
+    ? `⚠ Missing minimap image: <code>${MINIMAP_FILE}</code>. Showing heightmap only.`
+    : "";
 }
 
 function drawMiniMarker(u,v,yaw){
@@ -420,7 +548,7 @@ function drawMiniMarker(u,v,yaw){
 /* =========================
    Terrain geometry
    ========================= */
-const geo = new THREE.PlaneGeometry(DEFAULT_GROUND_SIZE, DEFAULT_GROUND_SIZE, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+const geo = new THREE.PlaneGeometry(DEFAULT_GROUND_WIDTH, DEFAULT_GROUND_DEPTH, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
 geo.rotateX(-Math.PI/2);
 
 const pos = geo.attributes.position;
@@ -494,9 +622,46 @@ const ground = new THREE.Mesh(geo, groundMat);
 ground.receiveShadow = true;
 scene.add(ground);
 
+let roadOverlay = null;
+function setRoadOverlayTexture(roadMap){
+  roadMap.colorSpace = THREE.SRGBColorSpace;
+  prep(roadMap, 1, true);
+  roadMap.flipY = false;
+  if (roadOverlay){
+    roadOverlay.material.map.dispose();
+    roadOverlay.material.map = roadMap;
+    roadOverlay.material.needsUpdate = true;
+  } else {
+    const roadMat = new THREE.MeshBasicMaterial({
+      map: roadMap,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2
+    });
+    roadOverlay = new THREE.Mesh(geo, roadMat);
+    roadOverlay.renderOrder = 2;
+    roadOverlay.position.y = 1.5;
+    scene.add(roadOverlay);
+    applyTerrainSize();
+  }
+}
+
+if (ROAD_OVERLAY_FILE){
+  const roadMap = await loadTextureSafe(TEX_DIR + ROAD_OVERLAY_FILE);
+  if (roadMap){
+    setRoadOverlayTexture(roadMap);
+    addStatus(`✅ Road overlay: <code>${ROAD_OVERLAY_FILE}</code>`);
+  } else {
+    addStatus(`⚠ Missing road overlay: <code>${ROAD_OVERLAY_FILE}</code>`);
+  }
+}
+
 function applyTerrainSize(){
   const scale = terrainSize / DEFAULT_GROUND_SIZE;
   ground.scale.set(scale, 1, scale);
+  if (roadOverlay) roadOverlay.scale.set(scale, 1, scale);
 }
 
 function updateTerrainControlReadouts(){
@@ -528,20 +693,12 @@ if (startupWarning){
 } else {
   setStatus(`✅ Loaded heightmap <code>${HEIGHTMAP_FILE}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
 }
+if (miniMapWarning) addStatus(miniMapWarning);
 
 let tiltReadout = document.getElementById("tiltReadout");
 
 function rebuildMiniFromCurrentHeightmap(){
-  bctx.clearRect(0,0,MINI_SIZE,MINI_SIZE);
-  bctx.imageSmoothingEnabled = true;
-  bctx.drawImage(c, 0, 0, MINI_SIZE, MINI_SIZE);
-  bctx.strokeStyle = "rgba(255,255,255,0.10)";
-  bctx.lineWidth = 1;
-  for (let i=1;i<=3;i++){
-    const t = (i/4)*MINI_SIZE;
-    bctx.beginPath(); bctx.moveTo(t,0); bctx.lineTo(t,MINI_SIZE); bctx.stroke();
-    bctx.beginPath(); bctx.moveTo(0,t); bctx.lineTo(MINI_SIZE,t); bctx.stroke();
-  }
+  rebuildMiniBaseFromImage(c);
 }
 
 heightmapPickerEl.addEventListener("change", async (e)=>{
@@ -552,13 +709,52 @@ heightmapPickerEl.addEventListener("change", async (e)=>{
     const img = await loadImageFromObjectURL(url);
     setHeightmapFromImage(img);
     rebuildTerrainFromHeightmap();
-    rebuildMiniFromCurrentHeightmap();
+    if (!customMiniMapLoaded) rebuildMiniFromCurrentHeightmap();
     const obj = controls.getObject();
     obj.position.y = Math.max(obj.position.y, heightAt(obj.position.x, obj.position.z) + 2);
     setStatus(`✅ Loaded local heightmap <code>${file.name}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
     tiltReadout = document.getElementById("tiltReadout");
   } catch (err) {
     addStatus(`❌ Could not read local heightmap: <code>${file.name}</code>`);
+    console.error(err);
+  } finally {
+    URL.revokeObjectURL(url);
+    e.target.value = "";
+  }
+});
+
+minimapPickerEl.addEventListener("change", async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await loadImageFromObjectURL(url);
+    rebuildMiniBaseFromImage(img);
+    customMiniMapLoaded = true;
+    addStatus(`✅ Loaded local minimap: <code>${file.name}</code>`);
+  } catch (err) {
+    addStatus(`❌ Could not read local minimap: <code>${file.name}</code>`);
+    console.error(err);
+  } finally {
+    URL.revokeObjectURL(url);
+    e.target.value = "";
+  }
+});
+
+roadOverlayPickerEl.addEventListener("change", async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  try {
+    const roadMap = await loadTextureFromObjectURL(url);
+    if (!roadMap){
+      addStatus(`❌ Could not read local road overlay: <code>${file.name}</code>`);
+      return;
+    }
+    setRoadOverlayTexture(roadMap);
+    addStatus(`✅ Loaded local road overlay: <code>${file.name}</code>`);
+  } catch (err) {
+    addStatus(`❌ Could not read local road overlay: <code>${file.name}</code>`);
     console.error(err);
   } finally {
     URL.revokeObjectURL(url);
@@ -613,6 +809,7 @@ const keys = new Set();
 const CONTROL_KEYS = new Set([
   "ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyE","KeyD","KeyR","KeyF","Escape"
 ]);
+const touchPointers = new Map();
 
 function maybeBlurRangeControl(){
   const ae = document.activeElement;
@@ -638,9 +835,35 @@ addEventListener("keyup", (e)=>{
   });
 });
 
+function releaseTouchKey(pointerId){
+  const active = touchPointers.get(pointerId);
+  if (!active) return;
+  keys.delete(active.key);
+  active.button.classList.remove("active");
+  touchPointers.delete(pointerId);
+}
+
+document.querySelectorAll(".touchBtn[data-key]").forEach((button)=>{
+  button.addEventListener("pointerdown", (e)=>{
+    e.preventDefault();
+    const key = button.dataset.key;
+    keys.add(key);
+    button.classList.add("active");
+    touchPointers.set(e.pointerId, { key, button });
+    button.setPointerCapture(e.pointerId);
+  });
+  button.addEventListener("pointerup", (e)=>{
+    e.preventDefault();
+    releaseTouchKey(e.pointerId);
+  });
+  button.addEventListener("pointercancel", (e)=>releaseTouchKey(e.pointerId));
+  button.addEventListener("lostpointercapture", (e)=>releaseTouchKey(e.pointerId));
+});
+
 function heightAt(x,z){
+  const terrainDepth = terrainSize * (DEFAULT_GROUND_DEPTH / DEFAULT_GROUND_WIDTH);
   const u = (x/terrainSize)+0.5;
-  const v = (-z/terrainSize)+0.5;
+  const v = (-z/terrainDepth)+0.5;
   const ix = Math.floor(u*(c.width-1));
   const iz = Math.floor((1-v)*(c.height-1));
   if (ix<0||iz<0||ix>=c.width||iz>=c.height) return 0;
@@ -679,9 +902,9 @@ if (tiltReadout) tiltReadout.textContent = THREE.MathUtils.radToDeg(camera.rotat
   if (obj.position.y < floor) obj.position.y = floor;
 
   // Mini‑map update (convert world x/z -> heightmap UV)
-  const denom = (terrainSize / MINI_ZOOM);
-  const u = (obj.position.x / denom) + 0.5;
-  const v = (-obj.position.z / denom) + 0.5;
+  const terrainDepth = terrainSize * (DEFAULT_GROUND_DEPTH / DEFAULT_GROUND_WIDTH);
+  const u = (obj.position.x / (terrainSize / MINI_ZOOM)) + 0.5;
+  const v = (-obj.position.z / (terrainDepth / MINI_ZOOM)) + 0.5;
   drawMiniMarker(u, v, obj.rotation.y);
 
 

@@ -20,6 +20,7 @@ canvas{display:block;width:100vw;height:100vh}
 }
 .hmRow{margin-top:4px}
 .hmRow label{display:block;font-size:11px;opacity:.9;margin-bottom:2px}
+.hmRow label[for^="github"]{color:#ff5a5a;opacity:1;font-weight:700}
 .hmRow input[type="file"]{
   width:100%;
   font:11px system-ui;
@@ -332,6 +333,7 @@ const COLOR_FILE  = "";   // diffuse / albedo
 const NORMAL_FILE = ""; // optional (leave blank for NAIP drape)    // optional
 const ROUGH_FILE  = ""; // optional                          // optional
 const TEX_REPEAT  = 1;   // for NAIP drape: 1 (no tiling)                          // tiling density
+const FALLBACK_GROUND_COLOR = 0xb8b8b8;
 
 /* =========================
    Scene / Camera / Renderer
@@ -677,7 +679,7 @@ const groundMat = new THREE.MeshStandardMaterial({
   roughnessMap: roughMap || null,
   roughness: roughMap ? 1.0 : 0.95,
   metalness: 0.0,
-  color: colorMap ? 0xffffff : 0x556b2f
+  color: colorMap ? 0xffffff : FALLBACK_GROUND_COLOR
 });
 if (groundMat.normalMap) groundMat.normalScale.set(1.0, 1.0);
 

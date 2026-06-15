@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Space Raiders</title>
+<style>
+  :root{
+    color-scheme:dark;
+    --ink:#f7fbff;
+    --muted:#9eb1bd;
+    --panel:rgba(5,13,20,.76);
+    --line:rgba(255,255,255,.16);
+    --red:#ff5573;
+    --gold:#ffd166;
+    --cyan:#56e6ff;
+    --green:#7cff9a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#05080d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body{touch-action:none;user-select:none}
+  #game{position:fixed;inset:0;width:100%;height:100%;display:block;background:#05080d}
+  .hud{
+    position:fixed;left:14px;right:14px;top:12px;z-index:2;
+    display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start;
+    pointer-events:none;
+  }
+  .stats,.center,.rightPanel{
+    background:var(--panel);border:1px solid var(--line);backdrop-filter:blur(8px);
+    box-shadow:0 14px 40px rgba(0,0,0,.34);
+  }
+  .stats{border-radius:8px;padding:9px 11px;display:flex;gap:14px;align-items:center;min-width:0}
+  .stat{min-width:54px}
+  .label{display:block;color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase;line-height:1.1}
+  .value{display:block;font-weight:850;font-size:20px;line-height:1.15;font-variant-numeric:tabular-nums}
+  .center{
+    border-radius:8px;padding:8px 12px;text-align:center;min-width:230px;
+  }
+  .title{font-weight:900;letter-spacing:.08em;text-transform:uppercase;font-size:16px;line-height:1.1}
+  .sub{margin-top:3px;color:var(--muted);font-size:12px;line-height:1.2}
+  .rightPanel{
+    justify-self:end;border-radius:8px;padding:8px;display:flex;gap:8px;align-items:center;pointer-events:auto;
+  }
+  button{
+    height:38px;min-width:38px;border:1px solid var(--line);border-radius:8px;
+    background:rgba(255,255,255,.08);color:var(--ink);font-weight:800;cursor:pointer;
+  }
+  button:hover{background:rgba(255,255,255,.15)}
+  .overlay{
+    position:fixed;inset:0;z-index:3;display:grid;place-items:center;padding:24px;
+    background:radial-gradient(circle at 50% 38%, rgba(26,55,72,.38), rgba(5,8,13,.82) 68%);
+  }
+  .card{
+    width:min(520px,100%);border:1px solid rgba(255,255,255,.2);border-radius:8px;
+    background:rgba(6,16,24,.88);box-shadow:0 24px 80px rgba(0,0,0,.5);
+    padding:22px;text-align:center;
+  }
+  h1{margin:0;font-size:clamp(34px,6vw,64px);line-height:.95;letter-spacing:.04em;text-transform:uppercase}
+  .card p{margin:12px auto 0;max-width:420px;color:#c2d2dd;line-height:1.45}
+  .startRow{margin-top:18px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+  .primary{min-width:132px;background:linear-gradient(180deg,#63f0ff,#21a8c5);color:#021016;border:0}
+  .ghost{min-width:132px}
+  .touch{
+    position:fixed;left:12px;right:12px;bottom:12px;z-index:2;display:none;
+    grid-template-columns:108px 1fr 92px 92px;gap:10px;align-items:end;pointer-events:none;
+  }
+  .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px}
+  #fireBtn{grid-column:1;justify-self:start;width:108px;background:rgba(255,85,115,.2);border-color:rgba(255,85,115,.5)}
+  #leftBtn{grid-column:3}
+  #rightBtn{grid-column:4}
+  body.controlsOff .touch{display:none!important}
+  .hide{display:none}
+  @media (max-width:720px){
+    .hud{grid-template-columns:1fr auto;align-items:start}
+    .center{grid-column:1/-1;grid-row:2;min-width:0;padding:7px 10px}
+    .rightPanel{grid-column:2;grid-row:1}
+    .stats{gap:9px;padding:8px}
+    .stat{min-width:42px}
+    .value{font-size:16px}
+    .sub{display:none}
+    .touch{display:grid}
+  }
+  @media (orientation:landscape) and (min-width:721px) and (max-width:1366px) and (pointer:coarse){
+    .hud{left:18px;right:18px;top:14px}
+    .center{min-width:260px}
+    .sub{display:none}
+    .touch{
+      display:grid;
+      left:calc(22px + env(safe-area-inset-left));
+      right:calc(22px + env(safe-area-inset-right));
+      bottom:calc(18px + env(safe-area-inset-bottom));
+      grid-template-columns:142px 1fr 96px 96px;
+      gap:14px;
+      align-items:end;
+    }
+    .touch button{
+      height:78px;
+      border-radius:12px;
+      background:rgba(255,255,255,.12);
+      border-color:rgba(255,255,255,.24);
+      box-shadow:0 12px 34px rgba(0,0,0,.32);
+      font-size:26px;
+    }
+    #fireBtn{
+      grid-column:1;
+      grid-row:1;
+      justify-self:start;
+      width:142px;
+      height:92px;
+      font-size:28px;
+      background:rgba(255,85,115,.24);
+      border-color:rgba(255,85,115,.58);
+    }
+    #leftBtn{grid-column:3;grid-row:1;width:96px}
+    #rightBtn{grid-column:4;grid-row:1;width:96px}
+  }
+  body.landscapePad .hud{left:18px;right:18px;top:14px}
+  body.landscapePad .center{min-width:260px}
+  body.landscapePad .sub{display:none}
+  body.landscapePad .touch{
+    display:grid;
+    left:calc(22px + env(safe-area-inset-left));
+    right:calc(22px + env(safe-area-inset-right));
+    bottom:calc(18px + env(safe-area-inset-bottom));
+    grid-template-columns:142px 1fr 96px 96px;
+    gap:14px;
+    align-items:end;
+  }
+  body.landscapePad .touch button{
+    height:78px;
+    border-radius:12px;
+    background:rgba(255,255,255,.12);
+    border-color:rgba(255,255,255,.24);
+    box-shadow:0 12px 34px rgba(0,0,0,.32);
+    font-size:26px;
+  }
+  body.landscapePad #fireBtn{
+    grid-column:1;
+    grid-row:1;
+    justify-self:start;
+    width:142px;
+    height:92px;
+    font-size:28px;
+    background:rgba(255,85,115,.24);
+    border-color:rgba(255,85,115,.58);
+  }
+  body.landscapePad #leftBtn{grid-column:3;grid-row:1;width:96px}
+  body.landscapePad #rightBtn{grid-column:4;grid-row:1;width:96px}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div class="hud" aria-live="polite">
+  <div class="stats">
+    <div class="stat"><span class="label">Score</span><span class="value" id="score">0</span></div>
+    <div class="stat"><span class="label">Wave</span><span class="value" id="wave">1</span></div>
+    <div class="stat"><span class="label">Lives</span><span class="value" id="lives">3</span></div>
+  </div>
+  <div class="center">
+    <div class="title">Space Raiders</div>
+    <div class="sub">Arrows or A/D to move. Space to fire. P pauses.</div>
+  </div>
+  <div class="rightPanel">
+    <button id="controlsToggleBtn" title="Show or hide on-screen controls">Pad</button>
+    <button id="pauseBtn" title="Pause or resume">II</button>
+    <button id="restartBtn" title="Restart">↻</button>
+  </div>
+</div>
+
+<div class="touch" aria-label="Touch controls">
+  <button id="fireBtn" title="Fire">●</button>
+  <button id="leftBtn" title="Move left">◀</button>
+  <button id="rightBtn" title="Move right">▶</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="card">
+    <h1>Space Raiders</h1>
+    <p>Drop the alien grid before it reaches your shield line. Pick up bright cores for rapid fire, repairs, and bonus points.</p>
+    <div class="startRow">
+      <button class="primary" id="startBtn">Start</button>
+      <button class="ghost" id="menuControlsBtn">Pad On</button>
+      <button class="ghost" id="howBtn">Controls</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const ui = {
+    score: document.getElementById('score'),
+    wave: document.getElementById('wave'),
+    lives: document.getElementById('lives'),
+    overlay: document.getElementById('overlay'),
+    pause: document.getElementById('pauseBtn'),
+    controlsToggle: document.getElementById('controlsToggleBtn'),
+    menuControls: document.getElementById('menuControlsBtn')
+  };
+  const keys = new Set();
+  const input = { left:false, right:false, fire:false };
+  let controlsOn = localStorage.getItem('spaceRaidersControlsOn') !== '0';
+  const state = {
+    running:false, paused:false, over:false, score:0, wave:1, lives:3,
+    player:null, shots:[], alienShots:[], aliens:[], shields:[], stars:[], sparks:[], powerups:[],
+    fleet:{ dir:1, step:22, speed:18, drop:18, edge:false }, last:0, fireCd:0, rapid:0, shake:0
+  };
+  const audio = {
+    ctx:null, master:null, stepTimer:0, stepTone:0,
+    ensure(){
+      if(this.ctx) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if(!AudioCtx) return;
+      this.ctx = new AudioCtx();
+      this.master = this.ctx.createGain();
+      this.master.gain.value = .315;
+      this.master.connect(this.ctx.destination);
+    },
+    resume(){
+      this.ensure();
+      if(this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    },
+    tone(freq, dur=.12, type='square', gain=.32, slide=1){
+      if(!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const amp = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, freq * slide), now + dur);
+      amp.gain.setValueAtTime(0.0001, now);
+      amp.gain.exponentialRampToValueAtTime(gain, now + .012);
+      amp.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      osc.connect(amp).connect(this.master);
+      osc.start(now);
+      osc.stop(now + dur + .03);
+    },
+    noise(dur=.18, gain=.28){
+      if(!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const buffer = this.ctx.createBuffer(1, this.ctx.sampleRate * dur, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for(let i=0;i<data.length;i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+      const src = this.ctx.createBufferSource();
+      const amp = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 1100;
+      amp.gain.setValueAtTime(gain, now);
+      amp.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      src.buffer = buffer;
+      src.connect(filter).connect(amp).connect(this.master);
+      src.start(now);
+    },
+    shoot(){ this.tone(760,.07,'square',.22,.45); },
+    alienShot(){ this.tone(260,.09,'sawtooth',.11,.7); },
+    hit(){ this.tone(190,.11,'square',.24,1.8); this.noise(.08,.12); },
+    shield(){ this.tone(120,.06,'triangle',.18,.65); },
+    power(){ this.tone(520,.08,'sine',.2,1.35); setTimeout(() => this.tone(780,.1,'sine',.16,1.25), 60); },
+    hurt(){ this.noise(.32,.4); this.tone(96,.28,'sawtooth',.28,.45); },
+    wave(){ [360,480,640].forEach((f,i) => setTimeout(() => this.tone(f,.12,'triangle',.18,1.08), i * 95)); },
+    over(){ this.tone(260,.18,'sawtooth',.24,.72); setTimeout(() => this.tone(150,.34,'sawtooth',.24,.55), 150); },
+    step(dt, aliens){
+      if(!this.ctx || !state.running || state.paused || !aliens.length) return;
+      this.stepTimer -= dt;
+      if(this.stepTimer <= 0){
+        const rate = Math.max(.12, .48 - state.wave * .025 - (1 - aliens.length / 55) * .2);
+        this.stepTimer = rate;
+        this.tone(this.stepTone ? 82 : 110, .055, 'square', .08, .92);
+        this.stepTone = 1 - this.stepTone;
+      }
+    }
+  };
+
+  function resize(){
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    canvas.width = Math.floor(innerWidth * dpr);
+    canvas.height = Math.floor(innerHeight * dpr);
+    canvas.style.width = innerWidth + 'px';
+    canvas.style.height = innerHeight + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    if(state.player) state.player.y = innerHeight - (innerWidth < 720 ? 90 : 64);
+    document.body.classList.toggle('landscapePad', innerWidth > innerHeight && innerWidth >= 721 && innerWidth <= 1366 && innerHeight <= 1024);
+    applyControlsVisibility();
+    buildStars();
+  }
+
+  function buildStars(){
+    state.stars = Array.from({length: Math.floor(innerWidth * innerHeight / 8500)}, () => ({
+      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+      z: .25 + Math.random() * 1.2, tw: Math.random() * Math.PI * 2
+    }));
+  }
+
+  function newGame(){
+    audio.resume();
+    state.running = true; state.paused = false; state.over = false;
+    state.score = 0; state.wave = 1; state.lives = 3; state.shots = []; state.alienShots = [];
+    state.powerups = []; state.sparks = []; state.rapid = 0; state.shake = 0;
+    state.player = { x: innerWidth / 2, y: innerHeight - (innerWidth < 720 ? 90 : 64), w:42, h:24, speed:380, inv:1.5 };
+    buildShields();
+    spawnWave();
+    ui.overlay.classList.add('hide');
+    updateHud();
+    audio.wave();
+  }
+
+  function buildShields(){
+    state.shields = [];
+    const count = innerWidth < 620 ? 3 : 4;
+    const gap = innerWidth / (count + 1);
+    for(let i=1;i<=count;i++){
+      const x = gap * i - 44;
+      const y = innerHeight - (innerWidth < 720 ? 160 : 142);
+      for(let r=0;r<3;r++){
+        for(let c=0;c<6;c++){
+          if((r === 0 && (c === 0 || c === 5)) || (r === 2 && (c === 2 || c === 3))) continue;
+          state.shields.push({x:x+c*15,y:y+r*13,w:13,h:11,hp:2});
+        }
+      }
+    }
+  }
+
+  function spawnWave(){
+    state.aliens = [];
+    const cols = Math.max(innerWidth < 520 ? 5 : 7, Math.min(11, Math.floor(innerWidth / 58)));
+    const rows = Math.min(5, 3 + Math.floor(state.wave / 2));
+    const gap = Math.min(54, Math.max(38, (innerWidth - 58) / Math.max(1, cols - 1)));
+    const startX = innerWidth / 2 - (cols - 1) * gap / 2;
+    for(let r=0;r<rows;r++){
+      for(let c=0;c<cols;c++){
+        state.aliens.push({x:startX+c*gap,y:82+r*42,w:34,h:24,row:r,phase:Math.random()*6,hp:r===0 && state.wave>2 ? 2 : 1});
+      }
+    }
+    state.fleet = { dir:1, step:18 + state.wave * 2, speed:16 + state.wave * 4, drop:16 + Math.min(20,state.wave*2), edge:false };
+  }
+
+  function updateHud(){
+    ui.score.textContent = state.score;
+    ui.wave.textContent = state.wave;
+    ui.lives.textContent = state.lives;
+    ui.pause.textContent = state.paused ? '▶' : 'II';
+  }
+
+  function shoot(){
+    if(state.fireCd > 0 || !state.running || state.paused || state.over) return;
+    state.shots.push({x:state.player.x,y:state.player.y-20,w:4,h:18,vy:-620});
+    state.fireCd = state.rapid > 0 ? .11 : .26;
+    audio.shoot();
+  }
+
+  function alienShoot(){
+    if(!state.aliens.length) return;
+    const bottom = [];
+    for(const a of state.aliens){
+      if(!bottom.some(b => Math.abs(b.x - a.x) < 20 && b.y > a.y)) bottom.push(a);
+    }
+    const a = bottom[Math.floor(Math.random()*bottom.length)];
+    state.alienShots.push({x:a.x,y:a.y+14,w:5,h:16,vy:220 + state.wave * 18});
+    audio.alienShot();
+  }
+
+  function hit(a,b){
+    return Math.abs(a.x-b.x) < (a.w+b.w)/2 && Math.abs(a.y-b.y) < (a.h+b.h)/2;
+  }
+
+  function burst(x,y,color,count=12){
+    for(let i=0;i<count;i++){
+      const ang = Math.random()*Math.PI*2, sp = 40 + Math.random()*190;
+      state.sparks.push({x,y,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp,life:.45+Math.random()*.35,color});
+    }
+  }
+
+  function update(dt){
+    if(!state.running || state.paused) return;
+    state.fireCd = Math.max(0, state.fireCd - dt);
+    state.rapid = Math.max(0, state.rapid - dt);
+    state.shake = Math.max(0, state.shake - dt * 18);
+    const p = state.player;
+    const left = keys.has('ArrowLeft') || keys.has('a') || keys.has('A') || input.left;
+    const right = keys.has('ArrowRight') || keys.has('d') || keys.has('D') || input.right;
+    if(left) p.x -= p.speed * dt;
+    if(right) p.x += p.speed * dt;
+    p.x = Math.max(26, Math.min(innerWidth - 26, p.x));
+    p.inv = Math.max(0, p.inv - dt);
+    if(keys.has(' ') || input.fire) shoot();
+
+    state.shots.forEach(s => s.y += s.vy * dt);
+    state.alienShots.forEach(s => s.y += s.vy * dt);
+    state.powerups.forEach(pu => pu.y += pu.vy * dt);
+    state.shots = state.shots.filter(s => s.y > -40);
+    state.alienShots = state.alienShots.filter(s => s.y < innerHeight + 40);
+    state.powerups = state.powerups.filter(pu => pu.y < innerHeight + 40);
+
+    const f = state.fleet;
+    f.edge = false;
+    for(const a of state.aliens){
+      a.x += f.dir * f.speed * dt;
+      a.phase += dt * 7;
+      if(a.x < 24 || a.x > innerWidth - 24) f.edge = true;
+    }
+    if(f.edge){
+      f.dir *= -1;
+      for(const a of state.aliens) a.y += f.drop;
+    }
+    if(Math.random() < dt * (.45 + state.wave * .12)) alienShoot();
+    audio.step(dt, state.aliens);
+
+    for(const s of [...state.shots]){
+      for(const a of [...state.aliens]){
+        if(hit(s,a)){
+          s.dead = true; a.hp--;
+          audio.hit();
+          burst(a.x,a.y,a.hp ? varColor('gold') : varColor('cyan'), a.hp ? 5 : 16);
+          if(a.hp <= 0){
+            a.dead = true; state.score += 20 + (4-a.row)*5 + state.wave*2;
+            if(Math.random() < .11) state.powerups.push({x:a.x,y:a.y,w:18,h:18,vy:92,type:Math.random()<.55?'rapid':Math.random()<.78?'repair':'bonus'});
+          }
+          break;
+        }
+      }
+      for(const b of state.shields){
+        if(!s.dead && hit(s,b)){ s.dead = true; b.hp--; audio.shield(); burst(s.x,s.y,varColor('green'),4); }
+      }
+    }
+    for(const s of [...state.alienShots]){
+      for(const b of state.shields){
+        if(hit(s,b)){ s.dead = true; b.hp--; audio.shield(); burst(s.x,s.y,varColor('green'),4); break; }
+      }
+      if(!s.dead && p.inv <= 0 && hit(s,p)) damagePlayer();
+    }
+    for(const a of state.aliens){
+      if(a.y > innerHeight - 180 || hit(a,p)){ damagePlayer(true); break; }
+    }
+    for(const pu of state.powerups){
+      if(hit(pu,p)){
+        pu.dead = true;
+        if(pu.type === 'rapid') state.rapid = 7;
+        if(pu.type === 'repair') state.lives = Math.min(5, state.lives + 1);
+        if(pu.type === 'bonus') state.score += 150;
+        audio.power();
+        burst(pu.x,pu.y,varColor('gold'),18);
+        updateHud();
+      }
+    }
+    state.aliens = state.aliens.filter(a => !a.dead);
+    state.shots = state.shots.filter(s => !s.dead);
+    state.alienShots = state.alienShots.filter(s => !s.dead);
+    state.powerups = state.powerups.filter(pu => !pu.dead);
+    state.shields = state.shields.filter(b => b.hp > 0);
+    state.sparks.forEach(sp => { sp.x += sp.vx*dt; sp.y += sp.vy*dt; sp.vy += 180*dt; sp.life -= dt; });
+    state.sparks = state.sparks.filter(sp => sp.life > 0);
+    if(!state.aliens.length){
+      state.wave++; state.score += 250; state.shots = []; state.alienShots = []; spawnWave(); updateHud();
+      audio.wave();
+    }
+  }
+
+  function varColor(name){ return getComputedStyle(document.documentElement).getPropertyValue('--'+name).trim(); }
+
+  function damagePlayer(invasion=false){
+    state.lives--; state.shake = 1;
+    audio.hurt();
+    burst(state.player.x,state.player.y,varColor('red'),28);
+    state.player.inv = 1.8;
+    state.alienShots = [];
+    if(invasion) buildShields();
+    if(state.lives <= 0){
+      state.over = true; state.running = false;
+      ui.overlay.classList.remove('hide');
+      ui.overlay.querySelector('h1').textContent = 'Game Over';
+      ui.overlay.querySelector('p').textContent = `Final score: ${state.score}. Press Start for another run.`;
+      audio.over();
+    }
+    updateHud();
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,innerWidth,innerHeight);
+    const shakeX = state.shake ? (Math.random()-.5)*state.shake*8 : 0;
+    ctx.save(); ctx.translate(shakeX,0);
+    const g = ctx.createLinearGradient(0,0,0,innerHeight);
+    g.addColorStop(0,'#06121f'); g.addColorStop(.58,'#081019'); g.addColorStop(1,'#110914');
+    ctx.fillStyle = g; ctx.fillRect(-20,0,innerWidth+40,innerHeight);
+    for(const s of state.stars){
+      s.y += s.z * .16; if(s.y > innerHeight) s.y = 0;
+      ctx.globalAlpha = .35 + Math.sin(performance.now()/800 + s.tw) * .22;
+      ctx.fillStyle = '#d9f8ff'; ctx.fillRect(s.x,s.y,s.z*1.8,s.z*1.8);
+    }
+    ctx.globalAlpha = 1;
+    drawPlayer();
+    state.aliens.forEach(drawAlien);
+    drawBlocks();
+    drawProjectiles();
+    drawPowerups();
+    drawSparks();
+    ctx.restore();
+    if(state.paused) banner('Paused');
+  }
+
+  function drawPlayer(){
+    if(!state.player) return;
+    const p = state.player;
+    if(p.inv > 0 && Math.floor(performance.now()/90)%2) ctx.globalAlpha = .5;
+    ctx.fillStyle = state.rapid > 0 ? varColor('gold') : varColor('cyan');
+    ctx.beginPath(); ctx.moveTo(p.x,p.y-22); ctx.lineTo(p.x-28,p.y+16); ctx.lineTo(p.x+28,p.y+16); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillRect(p.x-5,p.y-7,10,10);
+    ctx.globalAlpha = 1;
+  }
+
+  function drawAlien(a){
+    ctx.save(); ctx.translate(a.x,a.y);
+    ctx.fillStyle = a.hp > 1 ? '#ffd166' : '#7cff9a';
+    ctx.fillRect(-16,-9,32,18);
+    ctx.fillRect(-23,-2,8,10); ctx.fillRect(15,-2,8,10);
+    ctx.fillStyle = '#081019';
+    ctx.fillRect(-9,-3,5,5); ctx.fillRect(4,-3,5,5);
+    ctx.fillStyle = '#56e6ff';
+    const leg = Math.sin(a.phase) > 0 ? 1 : -1;
+    ctx.fillRect(-15,10,6,4*leg); ctx.fillRect(9,10,6,-4*leg);
+    ctx.restore();
+  }
+
+  function drawBlocks(){
+    for(const b of state.shields){
+      ctx.fillStyle = b.hp > 1 ? 'rgba(124,255,154,.9)' : 'rgba(255,209,102,.85)';
+      ctx.fillRect(b.x,b.y,b.w,b.h);
+    }
+  }
+
+  function drawProjectiles(){
+    ctx.fillStyle = '#f7fbff'; state.shots.forEach(s => ctx.fillRect(s.x-s.w/2,s.y-s.h/2,s.w,s.h));
+    ctx.fillStyle = varColor('red'); state.alienShots.forEach(s => ctx.fillRect(s.x-s.w/2,s.y-s.h/2,s.w,s.h));
+  }
+
+  function drawPowerups(){
+    for(const pu of state.powerups){
+      ctx.fillStyle = pu.type === 'rapid' ? varColor('gold') : pu.type === 'repair' ? varColor('green') : varColor('cyan');
+      ctx.beginPath(); ctx.arc(pu.x,pu.y,10,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#071018'; ctx.fillRect(pu.x-5,pu.y-2,10,4);
+    }
+  }
+
+  function drawSparks(){
+    for(const sp of state.sparks){
+      ctx.globalAlpha = Math.max(0, sp.life);
+      ctx.fillStyle = sp.color; ctx.fillRect(sp.x,sp.y,3,3);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function banner(text){
+    ctx.fillStyle = 'rgba(5,8,13,.64)'; ctx.fillRect(0,innerHeight/2-44,innerWidth,88);
+    ctx.fillStyle = '#f7fbff'; ctx.textAlign = 'center'; ctx.font = '900 42px system-ui';
+    ctx.fillText(text,innerWidth/2,innerHeight/2+15);
+  }
+
+  function loop(t){
+    const dt = Math.min(.033, (t - state.last) / 1000 || 0);
+    state.last = t; update(dt); draw(); requestAnimationFrame(loop);
+  }
+
+  addEventListener('resize', resize);
+  addEventListener('keydown', e => {
+    if(['ArrowLeft','ArrowRight',' ','p','P'].includes(e.key)) e.preventDefault();
+    keys.add(e.key);
+    if(e.key === 'p' || e.key === 'P') togglePause();
+    if(e.key === 'Enter' && !state.running) newGame();
+  });
+  addEventListener('keyup', e => keys.delete(e.key));
+  function bindHold(id, prop){
+    const el = document.getElementById(id);
+    const on = e => { e.preventDefault(); input[prop] = true; };
+    const off = e => { e.preventDefault(); input[prop] = false; };
+    el.addEventListener('pointerdown', on); el.addEventListener('pointerup', off);
+    el.addEventListener('pointercancel', off); el.addEventListener('pointerleave', off);
+  }
+  bindHold('leftBtn','left'); bindHold('rightBtn','right'); bindHold('fireBtn','fire');
+  ui.controlsToggle.onclick = e => {
+    e.preventDefault();
+    toggleControlsVisibility();
+  };
+  ui.menuControls.onclick = e => {
+    e.preventDefault();
+    toggleControlsVisibility();
+  };
+  document.getElementById('startBtn').onclick = () => {
+    ui.overlay.querySelector('h1').textContent = 'Space Raiders';
+    newGame();
+  };
+  document.getElementById('howBtn').onclick = () => {
+    ui.overlay.querySelector('p').textContent = 'Move with arrows or A/D, fire with Space, pause with P. On a phone or iPad, use the on-screen buttons.';
+  };
+  document.getElementById('restartBtn').onclick = newGame;
+  document.getElementById('pauseBtn').onclick = togglePause;
+  function applyControlsVisibility(){
+    document.body.classList.toggle('controlsOff', !controlsOn);
+    ui.controlsToggle.textContent = controlsOn ? 'Pad' : 'No';
+    ui.controlsToggle.title = controlsOn ? 'Hide on-screen controls' : 'Show on-screen controls';
+    ui.menuControls.textContent = controlsOn ? 'Pad On' : 'Pad Off';
+  }
+  function toggleControlsVisibility(){
+    controlsOn = !controlsOn;
+    localStorage.setItem('spaceRaidersControlsOn', controlsOn ? '1' : '0');
+    applyControlsVisibility();
+  }
+  function togglePause(){
+    if(!state.running) return;
+    audio.resume();
+    audio.tone(state.paused ? 520 : 300, .08, 'triangle', .13, state.paused ? 1.2 : .8);
+    state.paused = !state.paused; updateHud();
+  }
+  resize(); requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>

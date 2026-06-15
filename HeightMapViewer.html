@@ -220,6 +220,10 @@ canvas{display:block;width:100vw;height:100vh}
       <input id="roadOverlayPicker" type="file" accept="image/*">
     </div>
     <div class="hmRow">
+      <label for="texturePackPicker">Load GSMNP texture pack folder</label>
+      <input id="texturePackPicker" type="file" webkitdirectory directory multiple>
+    </div>
+    <div class="hmRow">
       <label for="texturePicker">Load local texture image</label>
       <input id="texturePicker" type="file" accept="image/*">
     </div>
@@ -282,9 +286,27 @@ const TILT_MAX   =  1.05;   // look DOWN limit
 const TEX_DIR = "";
 
 // Heightmap
-const HEIGHTMAP_FILE = "GreatSmokyMountains/THREE MAPS/1_HEIGHTMAP_plain_1024.png";
-const MINIMAP_FILE = "GreatSmokyMountains/THREE MAPS/2_MINIMAP_roads_towns_1024.png";
-const ROAD_OVERLAY_FILE = "GreatSmokyMountains/great_smoky_mountains_major_roads_towns_overlay_1024.png";
+const HEIGHTMAP_FILE = "GSMNP/THREE MAPS/1_HEIGHTMAP_plain_1024.png";
+const MINIMAP_FILE = "GSMNP/THREE MAPS/2_MINIMAP_roads_towns_1024.png";
+const ROAD_OVERLAY_FILE = "GSMNP/THREE MAPS/3_MAIN_MAP_road_overlay_1024.png";
+const DRAPE_FILE = "";
+const USE_ELEVATION_TEXTURE_BANDS = false;
+const USE_DRAPE_FALLBACK = false;
+const GSMNP_MIN_ELEV_FT = 875;
+const GSMNP_MAX_ELEV_FT = 6643;
+const ELEVATION_TEXTURE_BANDS = [
+  { name: "grass", minFt: 1500, maxFt: 2500, file: "GSMNP/THREE MAPS/6_TEXTURE_grass_albedo.jpg" },
+  { name: "forest", minFt: 2500, maxFt: 4500, file: "GSMNP/THREE MAPS/7_TEXTURE_forest.jpg" },
+  { name: "rock", minFt: 4500, maxFt: 6500, file: "GSMNP/THREE MAPS/8_TEXTURE_rock_albedo.png" }
+];
+const TEXTURE_PACKS = {
+  gsmnpElevation: {
+    name: "GSMNP elevation bands",
+    bands: ELEVATION_TEXTURE_BANDS
+  }
+};
+const ELEVATION_TEXTURE_REPEAT = 22;
+const ELEVATION_BAND_BLEND_FT = 125;
 // GSMNP metadata bbox: west/east span ~= 91.0 km, south/north span ~= 55.5 km.
 // The viewer uses a scaled model, but starts with the same real-world proportions.
 const DEFAULT_GROUND_WIDTH = 4000;
@@ -428,6 +450,8 @@ async function loadTextureFromObjectURL(url){
 const heightmapPickerEl = document.getElementById("heightmapPicker");
 const minimapPickerEl = document.getElementById("minimapPicker");
 const roadOverlayPickerEl = document.getElementById("roadOverlayPicker");
+const drapePickerEl = document.getElementById("drapePicker");
+const texturePackPickerEl = document.getElementById("texturePackPicker");
 const texturePickerEl = document.getElementById("texturePicker");
 const c = document.createElement("canvas");
 const ctx = c.getContext("2d");
@@ -461,6 +485,24 @@ function loadImageFromObjectURL(url){
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = url;
+  });
+}
+
+async function loadImageFromFile(file){
+  const url = URL.createObjectURL(file);
+  try {
+    return await loadImageFromObjectURL(url);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function loadImageSafe(path){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = path;
   });
 }
 
@@ -556,7 +598,10 @@ function drawMiniMarker(u,v,yaw){
   // Label: percent + pixel in the original heightmap
   const ix = Math.floor(u * (c.width - 1));
   const iy = Math.floor((1 - v) * (c.height - 1));
-  miniLabel.textContent = `Mini‑map: u ${(u*100).toFixed(1)}% · v ${(v*100).toFixed(1)}%  |  px ${ix}, ${iy}`;
+  const elevFt = (ix >= 0 && iy >= 0 && ix < c.width && iy < c.height)
+    ? elevationFeetFromHeightmapValue(hm[(iy*c.width + ix)*4] / 255)
+    : 0;
+  miniLabel.textContent = `Mini‑map: u ${(u*100).toFixed(1)}% · v ${(v*100).toFixed(1)}%  |  px ${ix}, ${iy} · ${Math.round(elevFt)} ft`;
 }
 
 
@@ -587,20 +632,241 @@ rebuildTerrainFromHeightmap();
    Load PBR textures (RESTORED)
    ========================= */
 let colorMap = null, normalMap = null, roughMap = null;
+let drapeStatus = "";
+let elevationTextureStatus = "";
+let elevationBandImages = null;
+let terrainMaterialStatus = "";
+let activeGroundTextureMode = "fallback";
+
+function configureDrapeTexture(tex){
+  tex.colorSpace = THREE.SRGBColorSpace;
+  prep(tex, 1, true);
+  // Map/drape images are north-up like the heightmap. Three.js needs flipY=true
+  // so image row 0 lands on UV v=1, matching rebuildTerrainFromHeightmap().
+  tex.flipY = true;
+  return tex;
+}
+
+function setGroundDrapeTexture(tex){
+  configureDrapeTexture(tex);
+  if (groundMat.map) groundMat.map.dispose();
+  groundMat.map = tex;
+  groundMat.color.setHex(0xffffff);
+  groundMat.needsUpdate = true;
+}
+
+function readImagePixels(img){
+  const pc = document.createElement("canvas");
+  pc.width = img.width;
+  pc.height = img.height;
+  const pctx = pc.getContext("2d");
+  pctx.drawImage(img, 0, 0);
+  return {
+    width: pc.width,
+    height: pc.height,
+    data: pctx.getImageData(0, 0, pc.width, pc.height).data
+  };
+}
+
+function sampleTile(src, u, v){
+  const x = Math.floor((((u % 1) + 1) % 1) * (src.width - 1));
+  const y = Math.floor((((v % 1) + 1) % 1) * (src.height - 1));
+  const i = (y * src.width + x) * 4;
+  return [src.data[i], src.data[i + 1], src.data[i + 2]];
+}
+
+function smoothstep(edge0, edge1, x){
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+function mixColor(a, b, t){
+  return [
+    a[0] * (1 - t) + b[0] * t,
+    a[1] * (1 - t) + b[1] * t,
+    a[2] * (1 - t) + b[2] * t
+  ];
+}
+
+async function loadElevationBandImages(bands=ELEVATION_TEXTURE_BANDS){
+  const entries = await Promise.all(
+    bands.map(async (band) => ({
+      ...band,
+      img: band.fileObj
+        ? await loadImageFromFile(band.fileObj)
+        : await loadImageSafe(TEX_DIR + band.file)
+    }))
+  );
+  const missing = entries.filter((band) => !band.img).map((band) => band.file);
+  if (missing.length){
+    elevationTextureStatus = `⚠ Missing elevation textures: <code>${missing.join("</code>, <code>")}</code>`;
+    addStatus(elevationTextureStatus);
+    return null;
+  }
+  return entries.map((band) => ({
+    ...band,
+    pixels: readImagePixels(band.img)
+  }));
+}
+
+function bandsFromTexturePackFiles(fileList){
+  const files = Array.from(fileList || []);
+  const findFile = (name) => files.find((file) => file.name === name || file.webkitRelativePath.endsWith("/" + name));
+  const packFiles = {
+    grass: findFile("6_TEXTURE_grass_albedo.jpg"),
+    forest: findFile("7_TEXTURE_forest.jpg"),
+    rock: findFile("8_TEXTURE_rock_albedo.png")
+  };
+  const missing = Object.entries(packFiles).filter(([, file]) => !file).map(([name]) => name);
+  if (missing.length){
+    addStatus(`⚠ Texture pack missing: <code>${missing.join("</code>, <code>")}</code>`);
+    return null;
+  }
+
+  return ELEVATION_TEXTURE_BANDS.map((band) => ({
+    ...band,
+    fileObj: packFiles[band.name]
+  }));
+}
+
+function elevationFeetFromHeightmapValue(value){
+  return GSMNP_MIN_ELEV_FT + value * (GSMNP_MAX_ELEV_FT - GSMNP_MIN_ELEV_FT);
+}
+
+function bandColorAtElevation(elevFt, u, v){
+  const bands = elevationBandImages;
+  let activeIndex = 0;
+  for (let i = 0; i < bands.length; i++){
+    if (elevFt >= bands[i].minFt) activeIndex = i;
+  }
+
+  let color = sampleTile(bands[activeIndex].pixels, u, v);
+  const next = bands[activeIndex + 1];
+  if (next && elevFt > next.minFt - ELEVATION_BAND_BLEND_FT){
+    const t = smoothstep(next.minFt - ELEVATION_BAND_BLEND_FT, next.minFt + ELEVATION_BAND_BLEND_FT, elevFt);
+    color = mixColor(color, sampleTile(next.pixels, u, v), t);
+  }
+
+  return color;
+}
+
+function buildElevationTextureFromHeightmap(){
+  if (!elevationBandImages || !hm) return null;
+
+  const out = document.createElement("canvas");
+  out.width = c.width;
+  out.height = c.height;
+  const outCtx = out.getContext("2d");
+  const imageData = outCtx.createImageData(out.width, out.height);
+  const dst = imageData.data;
+
+  for (let y = 0; y < out.height; y++){
+    for (let x = 0; x < out.width; x++){
+      const i = (y * out.width + x) * 4;
+      const elev = hm[i] / 255;
+      const elevFt = elevationFeetFromHeightmapValue(elev);
+      const u = (x / out.width) * ELEVATION_TEXTURE_REPEAT;
+      const v = (y / out.height) * ELEVATION_TEXTURE_REPEAT;
+
+      let color = bandColorAtElevation(elevFt, u, v);
+
+      const shade = 0.86 + elev * 0.24;
+      dst[i] = Math.min(255, color[0] * shade);
+      dst[i + 1] = Math.min(255, color[1] * shade);
+      dst[i + 2] = Math.min(255, color[2] * shade);
+      dst[i + 3] = 255;
+    }
+  }
+
+  outCtx.putImageData(imageData, 0, 0);
+  const tex = new THREE.CanvasTexture(out);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  prep(tex, 1, true);
+  tex.flipY = true;
+  return tex;
+}
+
+async function applyTexturePack(packKey){
+  const pack = TEXTURE_PACKS[packKey];
+  if (!pack) return;
+
+  addStatus(`Loading texture pack: <code>${pack.name}</code>…`);
+  const bandImages = await loadElevationBandImages(pack.bands);
+  if (!bandImages) return;
+
+  elevationBandImages = bandImages;
+  const elevationTex = buildElevationTextureFromHeightmap();
+  if (!elevationTex){
+    addStatus(`⚠ Could not build texture pack: <code>${pack.name}</code>`);
+    return;
+  }
+
+  setGroundDrapeTexture(elevationTex);
+  activeGroundTextureMode = "elevation";
+  elevationTextureStatus = `✅ Texture pack: <code>${pack.name}</code>`;
+  terrainMaterialStatus = `Terrain material: generated elevation texture`;
+  addStatus(elevationTextureStatus);
+}
+
+async function applyTexturePackFiles(fileList){
+  const bands = bandsFromTexturePackFiles(fileList);
+  if (!bands) return;
+
+  addStatus(`Loading texture pack: <code>GSMNP elevation bands</code>…`);
+  const bandImages = await loadElevationBandImages(bands);
+  if (!bandImages) return;
+
+  elevationBandImages = bandImages;
+  const elevationTex = buildElevationTextureFromHeightmap();
+  if (!elevationTex){
+    addStatus(`⚠ Could not build texture pack: <code>GSMNP elevation bands</code>`);
+    return;
+  }
+
+  setGroundDrapeTexture(elevationTex);
+  activeGroundTextureMode = "elevation";
+  elevationTextureStatus = `✅ Texture pack: <code>GSMNP elevation bands</code>`;
+  terrainMaterialStatus = `Terrain material: generated elevation texture`;
+  addStatus(elevationTextureStatus);
+}
 
 if (COLOR_FILE){
   colorMap = await loadTextureSafe(TEX_DIR + COLOR_FILE);
   if (colorMap){
     colorMap.colorSpace = THREE.SRGBColorSpace;
     prep(colorMap, 1, true);
-    // For draped imagery we usually want consistent orientation
-    colorMap.flipY = false;
+    // For draped imagery we usually want consistent map orientation.
+    colorMap.flipY = true;
     addStatus(`✅ Color: <code>${COLOR_FILE}</code>`);
   } else {
     addStatus(`⚠️ Missing color texture: <code>${COLOR_FILE}</code> (using fallback)`);
   }
 } else {
   addStatus(`ℹ️ COLOR_FILE empty (using fallback)`);
+}
+
+if (!colorMap && USE_ELEVATION_TEXTURE_BANDS){
+  elevationBandImages = await loadElevationBandImages();
+  if (elevationBandImages){
+    colorMap = buildElevationTextureFromHeightmap();
+    activeGroundTextureMode = "elevation";
+    elevationTextureStatus = `✅ Elevation textures: grass 1500-2500 ft · forest 2500-4500 ft · rock 4500-6500 ft`;
+    terrainMaterialStatus = `Terrain material: generated elevation texture`;
+    addStatus(elevationTextureStatus);
+  }
+}
+
+if (!colorMap && USE_DRAPE_FALLBACK && DRAPE_FILE){
+  const drapeMap = await loadTextureSafe(TEX_DIR + DRAPE_FILE);
+  if (drapeMap){
+    colorMap = configureDrapeTexture(drapeMap);
+    activeGroundTextureMode = "drape";
+    drapeStatus = `✅ Drape: <code>${DRAPE_FILE}</code>`;
+    addStatus(drapeStatus);
+  } else {
+    drapeStatus = `⚠ Missing drape: <code>${DRAPE_FILE}</code>. Use the drape picker below.`;
+    addStatus(drapeStatus);
+  }
 }
 
 if (NORMAL_FILE){
@@ -611,6 +877,12 @@ if (NORMAL_FILE){
   } else {
     addStatus(`⚠️ Missing normal map: <code>${NORMAL_FILE}</code>`);
   }
+}
+
+if (!terrainMaterialStatus){
+  terrainMaterialStatus = colorMap
+    ? `Terrain material: image texture`
+    : `Terrain material: fallback color only`;
 }
 
 if (ROUGH_FILE){
@@ -629,7 +901,7 @@ const groundMat = new THREE.MeshStandardMaterial({
   roughnessMap: roughMap || null,
   roughness: roughMap ? 1.0 : 0.95,
   metalness: 0.0,
-  color: colorMap ? 0xffffff : 0x556b2f
+  color: 0xffffff
 });
 if (groundMat.normalMap) groundMat.normalScale.set(1.0, 1.0);
 
@@ -712,6 +984,9 @@ if (startupWarning){
   setStatus(`✅ Loaded heightmap <code>${HEIGHTMAP_FILE}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
 }
 if (miniMapWarning) addStatus(miniMapWarning);
+if (elevationTextureStatus) addStatus(elevationTextureStatus);
+if (terrainMaterialStatus) addStatus(terrainMaterialStatus);
+if (drapeStatus) addStatus(drapeStatus);
 if (roadOverlayStatus) addStatus(roadOverlayStatus);
 
 let tiltReadout = document.getElementById("tiltReadout");
@@ -728,6 +1003,10 @@ heightmapPickerEl.addEventListener("change", async (e)=>{
     const img = await loadImageFromObjectURL(url);
     setHeightmapFromImage(img);
     rebuildTerrainFromHeightmap();
+    if (activeGroundTextureMode === "elevation" && elevationBandImages){
+      const elevationTex = buildElevationTextureFromHeightmap();
+      if (elevationTex) setGroundDrapeTexture(elevationTex);
+    }
     if (!customMiniMapLoaded) rebuildMiniFromCurrentHeightmap();
     const obj = controls.getObject();
     obj.position.y = Math.max(obj.position.y, heightAt(obj.position.x, obj.position.z) + 2);
@@ -781,6 +1060,33 @@ roadOverlayPickerEl.addEventListener("change", async (e)=>{
   }
 });
 
+texturePackPickerEl.addEventListener("change", async (e)=>{
+  await applyTexturePackFiles(e.target.files);
+  e.target.value = "";
+});
+
+if (drapePickerEl) drapePickerEl.addEventListener("change", async (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  try {
+    const drapeMap = await loadTextureFromObjectURL(url);
+    if (!drapeMap){
+      addStatus(`❌ Could not read local drape: <code>${file.name}</code>`);
+      return;
+    }
+    setGroundDrapeTexture(drapeMap);
+    activeGroundTextureMode = "drape";
+    addStatus(`✅ Loaded local drape: <code>${file.name}</code>`);
+  } catch (err) {
+    addStatus(`❌ Could not read local drape: <code>${file.name}</code>`);
+    console.error(err);
+  } finally {
+    URL.revokeObjectURL(url);
+    e.target.value = "";
+  }
+});
+
 texturePickerEl.addEventListener("change", async (e)=>{
   const file = e.target.files && e.target.files[0];
   if (!file) return;
@@ -791,13 +1097,8 @@ texturePickerEl.addEventListener("change", async (e)=>{
       addStatus(`❌ Could not read local texture: <code>${file.name}</code>`);
       return;
     }
-    localTex.colorSpace = THREE.SRGBColorSpace;
-    prep(localTex, 1, true);
-    localTex.flipY = false;
-    if (groundMat.map) groundMat.map.dispose();
-    groundMat.map = localTex;
-    groundMat.color.setHex(0xffffff);
-    groundMat.needsUpdate = true;
+    setGroundDrapeTexture(localTex);
+    activeGroundTextureMode = "single";
     addStatus(`✅ Loaded local texture: <code>${file.name}</code>`);
   } catch (err) {
     addStatus(`❌ Could not read local texture: <code>${file.name}</code>`);

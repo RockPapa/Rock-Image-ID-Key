@@ -91,7 +91,7 @@
       left:calc(22px + env(safe-area-inset-left));
       right:calc(22px + env(safe-area-inset-right));
       bottom:calc(18px + env(safe-area-inset-bottom));
-      grid-template-columns:142px 92px 1fr minmax(280px,36vw);
+      grid-template-columns:142px 92px 1fr minmax(168px,21.6vw);
       gap:14px;
       align-items:end;
     }
@@ -129,7 +129,7 @@
       align-items:center;
       width:100%;
       height:92px;
-      padding:0 28px;
+      padding:0 22px;
       border:1px solid rgba(85,232,255,.34);
       border-radius:14px;
       background:rgba(8,18,30,.58);
@@ -173,7 +173,7 @@
     left:calc(22px + env(safe-area-inset-left));
     right:calc(22px + env(safe-area-inset-right));
     bottom:calc(18px + env(safe-area-inset-bottom));
-    grid-template-columns:142px 92px 1fr minmax(280px,36vw);
+    grid-template-columns:142px 92px 1fr minmax(168px,21.6vw);
     gap:14px;
     align-items:end;
   }
@@ -212,7 +212,7 @@
     align-items:center;
     width:100%;
     height:92px;
-    padding:0 28px;
+    padding:0 22px;
     border:1px solid rgba(85,232,255,.34);
     border-radius:14px;
     background:rgba(8,18,30,.58);
@@ -319,7 +319,7 @@
     player:null, shots:[], enemyShots:[], enemies:[], bonuses:[], floaters:[], stars:[], sparks:[],
     spawnTimer:0, enemiesLeft:0, last:0, fireCd:0, rapid:0, shield:0, shake:0, flash:0
   };
-  ui.music.volume = .252;
+  ui.music.volume = .2016;
   let controlsOn = localStorage.getItem('rocketxControlsOn') !== '0';
   const audio = {
     ctx:null, master:null,
@@ -412,7 +412,7 @@
     audio.wave();
   }
 
-  function waveCount(){ return 9 + state.wave * 3; }
+  function waveCount(){ return 6 + state.wave * 2; }
 
   function updateHud(){
     ui.score.textContent = state.score;
@@ -434,9 +434,9 @@
       w:42,
       h:26,
       vx:(Math.random() - .5) * 80,
-      vy:72 + state.wave * 12 + Math.random() * 35,
-      hp: state.wave > 4 && Math.random() < .25 ? 2 : 1,
-      shoot:.55 + Math.random() * 1.2,
+      vy:66 + state.wave * 9 + Math.random() * 28,
+      hp: state.wave > 5 && Math.random() < .18 ? 2 : 1,
+      shoot:.8 + Math.random() * 1.45,
       wobble:Math.random() * Math.PI * 2,
       targetOffset:(Math.random() * 90 - 45)
     });
@@ -456,9 +456,9 @@
   }
 
   function dropBonus(x,y){
-    if(Math.random() > .22) return;
+    if(Math.random() > .34) return;
     const roll = Math.random();
-    const type = roll < .42 ? 'repair' : roll < .74 ? 'rapid' : 'score';
+    const type = roll < .48 ? 'repair' : roll < .78 ? 'rapid' : 'score';
     state.bonuses.push({x,y,w:20,h:20,vy:120,type,spin:0});
   }
 
@@ -468,7 +468,7 @@
     state.enemyShots.push({
       x:e.x, y:e.y+18, w:6, h:16,
       vx:Math.max(-150, Math.min(150, dx / mag * 95)),
-      vy:235 + state.wave * 14
+      vy:220 + state.wave * 11
     });
     audio.enemyShot();
   }
@@ -505,7 +505,7 @@
     state.spawnTimer -= dt;
     if(state.spawnTimer <= 0 && state.enemiesLeft > 0){
       spawnEnemy();
-      state.spawnTimer = Math.max(.28, .86 - state.wave * .045);
+      state.spawnTimer = Math.max(.38, .98 - state.wave * .035);
     }
 
     state.shots.forEach(s => s.y += s.vy * dt);
@@ -525,7 +525,7 @@
       e.shoot -= dt;
       if(e.shoot <= 0 && e.y > 55 && e.y < p.y - 130){
         enemyShoot(e);
-        e.shoot = .95 + Math.random() * 1.4 - Math.min(.45, state.wave * .04);
+        e.shoot = 1.15 + Math.random() * 1.55 - Math.min(.35, state.wave * .03);
       }
       if(e.x < 24 || e.x > innerWidth - 24) e.vx *= -1;
       e.x = Math.max(24, Math.min(innerWidth - 24, e.x));
@@ -550,7 +550,7 @@
     for(const s of [...state.enemyShots]){
       if(p.inv <= 0 && hit(s,p)){
         s.dead = true;
-        damagePlayer(18, -40, 'hit');
+        damagePlayer(12, -20, 'hit');
       }
     }
 
@@ -558,11 +558,11 @@
       const laneHit = Math.abs(e.x - p.x) < 48 && e.y > p.y - 76;
       if(laneHit || hit(e,p)){
         e.dead = true;
-        damagePlayer(34, -90, 'breach');
+        damagePlayer(22, -45, 'breach');
       } else if(e.y > innerHeight + 40) {
         e.dead = true;
-        if(Math.abs(e.x - p.x) < 100) damagePlayer(24, -70, 'miss');
-        else addScore(-20, e.x, innerHeight - 60);
+        if(Math.abs(e.x - p.x) < 100) damagePlayer(16, -35, 'miss');
+        else addScore(-8, e.x, innerHeight - 60);
       }
     }
 
@@ -585,7 +585,7 @@
     if(state.enemiesLeft <= 0 && !state.enemies.length){
       state.wave++;
       addScore(300, innerWidth / 2, 120);
-      state.health = Math.min(state.maxHealth, state.health + 12);
+      state.health = Math.min(state.maxHealth, state.health + 18);
       state.enemiesLeft = waveCount();
       state.spawnTimer = .6;
       state.enemyShots = [];
@@ -598,16 +598,16 @@
 
   function collectBonus(b){
     if(b.type === 'repair'){
-      state.health = Math.min(state.maxHealth, state.health + 24);
-      state.shield = 2.8;
-      addScore(30, b.x, b.y);
+      state.health = Math.min(state.maxHealth, state.health + 34);
+      state.shield = 4;
+      addScore(55, b.x, b.y);
     }
     if(b.type === 'rapid'){
-      state.rapid = 7;
-      addScore(45, b.x, b.y);
+      state.rapid = 9;
+      addScore(70, b.x, b.y);
     }
     if(b.type === 'score'){
-      addScore(180, b.x, b.y);
+      addScore(260, b.x, b.y);
     }
     burst(b.x,b.y,b.type === 'repair' ? varColor('green') : b.type === 'rapid' ? varColor('gold') : varColor('cyan'),22);
     audio.bonus();
@@ -914,7 +914,8 @@
       const rect = ui.slidePad.getBoundingClientRect();
       const x = Math.max(rect.left, Math.min(rect.right, e.clientX));
       const half = rect.width / 2;
-      input.axis = Math.max(-1, Math.min(1, (x - rect.left - half) / half));
+      const rawAxis = (x - rect.left - half) / half;
+      input.axis = Math.max(-1, Math.min(1, rawAxis * 1.65));
       ui.slideThumb.style.left = ((input.axis + 1) * 50) + '%';
     };
     const off = e => {

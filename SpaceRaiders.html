@@ -130,7 +130,7 @@
       left:calc(22px + env(safe-area-inset-left));
       right:calc(22px + env(safe-area-inset-right));
       bottom:calc(18px + env(safe-area-inset-bottom));
-      grid-template-columns:142px 1fr minmax(280px,36vw);
+      grid-template-columns:142px 1fr minmax(168px,21.6vw);
       gap:14px;
       align-items:end;
     }
@@ -157,7 +157,7 @@
       grid-row:1;
       width:100%;
       height:92px;
-      padding:0 28px;
+      padding:0 22px;
       border-radius:14px;
     }
     .slideTrack{height:12px}
@@ -172,7 +172,7 @@
     left:calc(22px + env(safe-area-inset-left));
     right:calc(22px + env(safe-area-inset-right));
     bottom:calc(18px + env(safe-area-inset-bottom));
-    grid-template-columns:142px 1fr minmax(280px,36vw);
+    grid-template-columns:142px 1fr minmax(168px,21.6vw);
     gap:14px;
     align-items:end;
   }
@@ -199,7 +199,7 @@
     grid-row:1;
     width:100%;
     height:92px;
-    padding:0 28px;
+    padding:0 22px;
     border-radius:14px;
   }
   body.landscapePad .slideTrack{height:12px}
@@ -279,7 +279,7 @@
       if(!AudioCtx) return;
       this.ctx = new AudioCtx();
       this.master = this.ctx.createGain();
-      this.master.gain.value = .315;
+      this.master.gain.value = .252;
       this.master.connect(this.ctx.destination);
     },
     resume(){
@@ -330,7 +330,7 @@
       if(!this.ctx || !state.running || state.paused || !aliens.length) return;
       this.stepTimer -= dt;
       if(this.stepTimer <= 0){
-        const rate = Math.max(.12, .48 - state.wave * .025 - (1 - aliens.length / 55) * .2);
+        const rate = Math.max(.16, .56 - state.wave * .018 - (1 - aliens.length / 45) * .16);
         this.stepTimer = rate;
         this.tone(this.stepTone ? 82 : 110, .055, 'square', .08, .92);
         this.stepTone = 1 - this.stepTone;
@@ -389,16 +389,17 @@
 
   function spawnWave(){
     state.aliens = [];
-    const cols = Math.max(innerWidth < 520 ? 5 : 7, Math.min(11, Math.floor(innerWidth / 58)));
-    const rows = Math.min(5, 3 + Math.floor(state.wave / 2));
+    const maxCols = innerWidth < 520 ? 7 : 9;
+    const cols = Math.max(innerWidth < 520 ? 4 : 6, Math.min(maxCols, Math.floor(innerWidth / 68) + Math.floor(state.wave / 4)));
+    const rows = Math.min(5, 2 + Math.ceil(state.wave / 2));
     const gap = Math.min(54, Math.max(38, (innerWidth - 58) / Math.max(1, cols - 1)));
     const startX = innerWidth / 2 - (cols - 1) * gap / 2;
     for(let r=0;r<rows;r++){
       for(let c=0;c<cols;c++){
-        state.aliens.push({x:startX+c*gap,y:82+r*42,w:34,h:24,row:r,phase:Math.random()*6,hp:r===0 && state.wave>2 ? 2 : 1});
+        state.aliens.push({x:startX+c*gap,y:82+r*42,w:34,h:24,row:r,phase:Math.random()*6,hp:r===0 && state.wave>4 ? 2 : 1});
       }
     }
-    state.fleet = { dir:1, step:18 + state.wave * 2, speed:16 + state.wave * 4, drop:16 + Math.min(20,state.wave*2), edge:false };
+    state.fleet = { dir:1, step:18 + state.wave * 2, speed:13 + state.wave * 3, drop:13 + Math.min(16,state.wave*1.5), edge:false };
   }
 
   function updateHud(){
@@ -422,7 +423,7 @@
       if(!bottom.some(b => Math.abs(b.x - a.x) < 20 && b.y > a.y)) bottom.push(a);
     }
     const a = bottom[Math.floor(Math.random()*bottom.length)];
-    state.alienShots.push({x:a.x,y:a.y+14,w:5,h:16,vy:220 + state.wave * 18});
+    state.alienShots.push({x:a.x,y:a.y+14,w:5,h:16,vy:205 + state.wave * 13});
     audio.alienShot();
   }
 
@@ -470,7 +471,7 @@
       f.dir *= -1;
       for(const a of state.aliens) a.y += f.drop;
     }
-    if(Math.random() < dt * (.45 + state.wave * .12)) alienShoot();
+    if(Math.random() < dt * (.32 + state.wave * .08)) alienShoot();
     audio.step(dt, state.aliens);
 
     for(const s of [...state.shots]){
@@ -480,8 +481,8 @@
           audio.hit();
           burst(a.x,a.y,a.hp ? varColor('gold') : varColor('cyan'), a.hp ? 5 : 16);
           if(a.hp <= 0){
-            a.dead = true; state.score += 20 + (4-a.row)*5 + state.wave*2;
-            if(Math.random() < .11) state.powerups.push({x:a.x,y:a.y,w:18,h:18,vy:92,type:Math.random()<.55?'rapid':Math.random()<.78?'repair':'bonus'});
+            a.dead = true; state.score += 26 + (4-a.row)*6 + state.wave*3;
+            if(Math.random() < .20) state.powerups.push({x:a.x,y:a.y,w:18,h:18,vy:92,type:Math.random()<.52?'rapid':Math.random()<.82?'repair':'bonus'});
           }
           break;
         }
@@ -502,9 +503,9 @@
     for(const pu of state.powerups){
       if(hit(pu,p)){
         pu.dead = true;
-        if(pu.type === 'rapid') state.rapid = 7;
-        if(pu.type === 'repair') state.lives = Math.min(5, state.lives + 1);
-        if(pu.type === 'bonus') state.score += 150;
+        if(pu.type === 'rapid') state.rapid = 9;
+        if(pu.type === 'repair') state.lives = Math.min(6, state.lives + 1);
+        if(pu.type === 'bonus') state.score += 240;
         audio.power();
         burst(pu.x,pu.y,varColor('gold'),18);
         updateHud();
@@ -518,7 +519,7 @@
     state.sparks.forEach(sp => { sp.x += sp.vx*dt; sp.y += sp.vy*dt; sp.vy += 180*dt; sp.life -= dt; });
     state.sparks = state.sparks.filter(sp => sp.life > 0);
     if(!state.aliens.length){
-      state.wave++; state.score += 250; state.shots = []; state.alienShots = []; spawnWave(); updateHud();
+      state.wave++; state.score += 350; state.shots = []; state.alienShots = []; spawnWave(); updateHud();
       audio.wave();
     }
   }
@@ -687,7 +688,8 @@
       const rect = ui.slidePad.getBoundingClientRect();
       const x = Math.max(rect.left, Math.min(rect.right, e.clientX));
       const half = rect.width / 2;
-      input.axis = Math.max(-1, Math.min(1, (x - rect.left - half) / half));
+      const rawAxis = (x - rect.left - half) / half;
+      input.axis = Math.max(-1, Math.min(1, rawAxis * 1.65));
       ui.slideThumb.style.left = ((input.axis + 1) * 50) + '%';
     };
     const off = e => {

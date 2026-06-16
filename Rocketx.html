@@ -62,13 +62,15 @@
   .ghost{min-width:132px}
   .touch{
     position:fixed;left:12px;right:12px;bottom:12px;z-index:2;display:none;
-    grid-template-columns:108px 1fr 92px 92px;gap:10px;align-items:end;pointer-events:none;
+    grid-template-columns:108px 92px 1fr 92px 92px;gap:10px;align-items:end;pointer-events:none;
   }
   .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px}
   #fireBtn{grid-column:1;justify-self:start;width:108px;background:rgba(255,82,112,.2);border-color:rgba(255,82,112,.5)}
-  #leftBtn{grid-column:3}
-  #rightBtn{grid-column:4}
-  body.controlsOff .touch{display:none!important}
+  #touchToggleBtn{grid-column:2;justify-self:start;width:92px;font-size:14px}
+  #leftBtn{grid-column:4}
+  #rightBtn{grid-column:5}
+  .slidePad{display:none;pointer-events:auto}
+  body.controlsOff .touchControl{display:none!important}
   .hide{display:none}
   @media (max-width:720px){
     .hud{grid-template-columns:1fr auto;align-items:start}
@@ -89,7 +91,7 @@
       left:calc(22px + env(safe-area-inset-left));
       right:calc(22px + env(safe-area-inset-right));
       bottom:calc(18px + env(safe-area-inset-bottom));
-      grid-template-columns:142px 1fr 96px 96px;
+      grid-template-columns:142px 92px 1fr minmax(280px,36vw);
       gap:14px;
       align-items:end;
     }
@@ -101,7 +103,7 @@
       box-shadow:0 12px 34px rgba(0,0,0,.32);
       font-size:26px;
     }
-    #leftBtn,#rightBtn{width:96px}
+    #leftBtn,#rightBtn{display:none}
     #fireBtn{
       grid-column:1;
       grid-row:1;
@@ -112,8 +114,56 @@
       background:rgba(255,82,112,.24);
       border-color:rgba(255,82,112,.58);
     }
-    #leftBtn{grid-column:3;grid-row:1}
-    #rightBtn{grid-column:4;grid-row:1}
+    #touchToggleBtn{
+      grid-column:2;
+      grid-row:1;
+      width:92px;
+      height:78px;
+      font-size:15px;
+    }
+    .slidePad{
+      grid-column:4;
+      grid-row:1;
+      justify-self:end;
+      display:flex;
+      align-items:center;
+      width:100%;
+      height:92px;
+      padding:0 28px;
+      border:1px solid rgba(85,232,255,.34);
+      border-radius:14px;
+      background:rgba(8,18,30,.58);
+      box-shadow:0 12px 34px rgba(0,0,0,.32), inset 0 0 20px rgba(85,232,255,.06);
+    }
+    .slideTrack{
+      position:relative;
+      width:100%;
+      height:12px;
+      border-radius:999px;
+      background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(85,232,255,.34),rgba(255,255,255,.1));
+    }
+    .slideTrack::before{
+      content:"";
+      position:absolute;
+      left:50%;
+      top:-10px;
+      width:2px;
+      height:32px;
+      background:rgba(255,255,255,.35);
+      transform:translateX(-50%);
+    }
+    .slideThumb{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:56px;
+      height:56px;
+      border-radius:50%;
+      transform:translate(-50%,-50%);
+      border:1px solid rgba(255,255,255,.52);
+      background:radial-gradient(circle at 35% 30%, #f7fbff, #55e8ff 46%, #156777);
+      box-shadow:0 10px 24px rgba(0,0,0,.38);
+    }
   }
   body.landscapePad .hud{left:18px;right:18px;top:14px}
   body.landscapePad .center{min-width:260px}
@@ -123,7 +173,7 @@
     left:calc(22px + env(safe-area-inset-left));
     right:calc(22px + env(safe-area-inset-right));
     bottom:calc(18px + env(safe-area-inset-bottom));
-    grid-template-columns:142px 1fr 96px 96px;
+    grid-template-columns:142px 92px 1fr minmax(280px,36vw);
     gap:14px;
     align-items:end;
   }
@@ -136,7 +186,7 @@
     font-size:26px;
   }
   body.landscapePad #leftBtn,
-  body.landscapePad #rightBtn{width:96px}
+  body.landscapePad #rightBtn{display:none}
   body.landscapePad #fireBtn{
     grid-column:1;
     grid-row:1;
@@ -147,8 +197,56 @@
     background:rgba(255,82,112,.24);
     border-color:rgba(255,82,112,.58);
   }
-  body.landscapePad #leftBtn{grid-column:3;grid-row:1}
-  body.landscapePad #rightBtn{grid-column:4;grid-row:1}
+  body.landscapePad #touchToggleBtn{
+    grid-column:2;
+    grid-row:1;
+    width:92px;
+    height:78px;
+    font-size:15px;
+  }
+  body.landscapePad .slidePad{
+    grid-column:4;
+    grid-row:1;
+    justify-self:end;
+    display:flex;
+    align-items:center;
+    width:100%;
+    height:92px;
+    padding:0 28px;
+    border:1px solid rgba(85,232,255,.34);
+    border-radius:14px;
+    background:rgba(8,18,30,.58);
+    box-shadow:0 12px 34px rgba(0,0,0,.32), inset 0 0 20px rgba(85,232,255,.06);
+  }
+  body.landscapePad .slideTrack{
+    position:relative;
+    width:100%;
+    height:12px;
+    border-radius:999px;
+    background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(85,232,255,.34),rgba(255,255,255,.1));
+  }
+  body.landscapePad .slideTrack::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:-10px;
+    width:2px;
+    height:32px;
+    background:rgba(255,255,255,.35);
+    transform:translateX(-50%);
+  }
+  body.landscapePad .slideThumb{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:56px;
+    height:56px;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    border:1px solid rgba(255,255,255,.52);
+    background:radial-gradient(circle at 35% 30%, #f7fbff, #55e8ff 46%, #156777);
+    box-shadow:0 10px 24px rgba(0,0,0,.38);
+  }
 </style>
 </head>
 <body>
@@ -173,9 +271,15 @@
 </div>
 
 <div class="touch" aria-label="Touch controls">
-  <button id="fireBtn" title="Fire">●</button>
-  <button id="leftBtn" title="Move left">◀</button>
-  <button id="rightBtn" title="Move right">▶</button>
+  <button id="fireBtn" class="touchControl" title="Fire">●</button>
+  <button id="touchToggleBtn" title="Show or hide on-screen controls">Pad On</button>
+  <div class="slidePad touchControl" id="slidePad" aria-label="Move left or right">
+    <div class="slideTrack" id="slideTrack">
+      <div class="slideThumb" id="slideThumb"></div>
+    </div>
+  </div>
+  <button id="leftBtn" class="touchControl" title="Move left">◀</button>
+  <button id="rightBtn" class="touchControl" title="Move right">▶</button>
 </div>
 
 <div class="overlay" id="overlay">
@@ -203,10 +307,13 @@
     pause: document.getElementById('pauseBtn'),
     music: document.getElementById('music'),
     controlsToggle: document.getElementById('controlsToggleBtn'),
-    menuControls: document.getElementById('menuControlsBtn')
+    menuControls: document.getElementById('menuControlsBtn'),
+    touchToggle: document.getElementById('touchToggleBtn'),
+    slidePad: document.getElementById('slidePad'),
+    slideThumb: document.getElementById('slideThumb')
   };
   const keys = new Set();
-  const input = { left:false, right:false, fire:false };
+  const input = { left:false, right:false, fire:false, axis:0 };
   const state = {
     running:false, paused:false, over:false, score:0, wave:1, health:100, maxHealth:100,
     player:null, shots:[], enemyShots:[], enemies:[], bonuses:[], floaters:[], stars:[], sparks:[],
@@ -391,6 +498,7 @@
     const right = keys.has('ArrowRight') || keys.has('d') || keys.has('D') || input.right;
     if(left) p.x -= p.speed * dt;
     if(right) p.x += p.speed * dt;
+    if(input.axis) p.x += p.speed * input.axis * dt;
     p.x = Math.max(28, Math.min(innerWidth - 28, p.x));
     if(keys.has(' ') || input.fire) shoot();
 
@@ -738,11 +846,16 @@
   bindHold('leftBtn','left');
   bindHold('rightBtn','right');
   bindHold('fireBtn','fire');
+  bindSlider();
   ui.controlsToggle.onclick = e => {
     e.preventDefault();
     toggleControlsVisibility();
   };
   ui.menuControls.onclick = e => {
+    e.preventDefault();
+    toggleControlsVisibility();
+  };
+  ui.touchToggle.onclick = e => {
     e.preventDefault();
     toggleControlsVisibility();
   };
@@ -772,6 +885,9 @@
     ui.controlsToggle.textContent = controlsOn ? 'Pad' : 'No';
     ui.controlsToggle.title = controlsOn ? 'Hide on-screen controls' : 'Show on-screen controls';
     ui.menuControls.textContent = controlsOn ? 'Pad On' : 'Pad Off';
+    ui.touchToggle.textContent = controlsOn ? 'Pad On' : 'Pad Off';
+    ui.touchToggle.title = controlsOn ? 'Hide on-screen controls' : 'Show on-screen controls';
+    if(!controlsOn) resetSlider();
   }
 
   function toggleControlsVisibility(){
@@ -788,6 +904,42 @@
     if(state.paused) ui.music.pause();
     else playMusic(false);
     updateHud();
+  }
+
+  function bindSlider(){
+    let activePointer = null;
+    const move = e => {
+      if(activePointer !== null && e.pointerId !== activePointer) return;
+      e.preventDefault();
+      const rect = ui.slidePad.getBoundingClientRect();
+      const x = Math.max(rect.left, Math.min(rect.right, e.clientX));
+      const half = rect.width / 2;
+      input.axis = Math.max(-1, Math.min(1, (x - rect.left - half) / half));
+      ui.slideThumb.style.left = ((input.axis + 1) * 50) + '%';
+    };
+    const off = e => {
+      if(activePointer !== null && e.pointerId !== activePointer) return;
+      e.preventDefault();
+      activePointer = null;
+      ui.slidePad.releasePointerCapture?.(e.pointerId);
+      resetSlider();
+    };
+    ui.slidePad.addEventListener('pointerdown', e => {
+      activePointer = e.pointerId;
+      ui.slidePad.setPointerCapture?.(e.pointerId);
+      move(e);
+    });
+    ui.slidePad.addEventListener('pointermove', move);
+    ui.slidePad.addEventListener('pointerup', off);
+    ui.slidePad.addEventListener('pointercancel', off);
+    ui.slidePad.addEventListener('pointerleave', e => {
+      if(activePointer === null) resetSlider();
+    });
+  }
+
+  function resetSlider(){
+    input.axis = 0;
+    ui.slideThumb.style.left = '50%';
   }
 
   addEventListener('pointerdown', unlockMusic);

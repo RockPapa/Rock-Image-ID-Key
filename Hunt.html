@@ -186,19 +186,13 @@ const bear3Img = new Image();  // griz25 bouncing
 bear3Img.src   = "images/griz25.png";
 let bear3Ready = false;
 
-const tigerImg = new Image();  // tiger top-lane attack
-tigerImg.src   = "images/tiger.png";
-let tigerReady = false;
-
 let nextBearTime1 = 0;
 let nextBearTime2 = 0;
 let nextBearTime3 = 0;
-let nextTigerTime = 0;
 
 bearImg.onload  = () => { bearReady  = true; resetBear1(); };
 bear2Img.onload = () => { bear2Ready = true; nextBearTime2 = Date.now() + getSpawnDelay(2500); };
 bear3Img.onload = () => { bear3Ready = true; nextBearTime3 = Date.now() + getSpawnDelay(4000); };
-tigerImg.onload = () => { tigerReady = true; };
 
 const shootSound  = new Audio("images/gun.mp3");
 shootSound.volume = 1.0;
@@ -214,13 +208,9 @@ jungleMusic.volume = 0.35;
 jungleMusic.preload = "auto";
 
 let musicStarted = false;
-let junglePlayCount = 0;
-let tigerUnlocked = false;
 
 function playJungleTrack() {
   if (!musicStarted) return;
-  junglePlayCount += 1;
-  if (junglePlayCount >= 1) tigerUnlocked = true;
   jungleMusic.currentTime = 0;
   jungleMusic.play().catch(() => {
     musicStarted = false;
@@ -254,7 +244,6 @@ const SURVIVAL_SCORE_PER_SECOND = 10;
 const KILL_HEAL_THRESHOLD_PCT = 50;
 const KILL_HEAL_PCT = 3;
 const KILL_HEAL_LIVES = START_LIVES * (KILL_HEAL_PCT / 100);
-const TIGER_START_DELAY_MS = 60000;
 
 function getDifficultyStep(now = Date.now()) {
   return Math.floor((now - gameStartTime) / 60000);
@@ -281,9 +270,6 @@ function getSurvivalScore(now = Date.now()) {
   return Math.max(0, Math.floor((elapsedMs / 1000) * SURVIVAL_SCORE_PER_SECOND));
 }
 
-function tigerDelayPassed(now = Date.now()) {
-  return (now - gameStartTime) >= TIGER_START_DELAY_MS;
-}
 function loseLife() {
   if (gameOver) return;
   lives -= 1;
@@ -317,12 +303,10 @@ function resetGame() {
   bear.active  = false;
   bear2.active = false;
   bear3.active = false;
-  tiger.active = false;
 
   nextBearTime1 = Date.now() + getSpawnDelay(1000);
   nextBearTime2 = Date.now() + getSpawnDelay(2000);
   nextBearTime3 = Date.now() + getSpawnDelay(3000);
-  nextTigerTime = 0;
 
   player.x = W * 0.5;
   player.y = H * 0.70;
@@ -519,7 +503,6 @@ function resize() {
   if (!bear.active  && bearReady  && !nextBearTime1) nextBearTime1 = Date.now() + getSpawnDelay(5000);
   if (!bear2.active && bear2Ready && !nextBearTime2) nextBearTime2 = Date.now() + getSpawnDelay(5000);
   if (!bear3.active && bear3Ready && !nextBearTime3) nextBearTime3 = Date.now() + getSpawnDelay(5000);
-  if (!tiger.active && tigerReady && tigerUnlocked && tigerDelayPassed() && !nextTigerTime) nextTigerTime = Date.now() + getSpawnDelay(2000);
 }
 window.addEventListener("resize", resize);
 
@@ -772,65 +755,6 @@ function updateBear3() {
   }
   if (!bear3.hasScared) checkRangerBearContact(bear3);
 }
-const tiger = { x:0,y:0,width:0,height:0,vx:0,vy:0,active:false,hasScared:false };
-function resetTiger() {
-  if (!tigerReady || !W || !H) return;
-
-  const desiredHeight = H * 0.14 * 1.40;
-  const aspect        = tigerImg.width / tigerImg.height;
-  tiger.height = desiredHeight;
-  tiger.width  = desiredHeight * aspect;
-
-  tiger.x = W + tiger.width * 0.5;
-  tiger.y = H * 0.22;
-
-  const speedMul = getDifficultyMultiplier();
-  tiger.vx = -4.6 * speedMul;
-  tiger.vy = 0;
-
-  tiger.active = true;
-  tiger.hasScared = false;
-  nextTigerTime = 0;
-
-  roarSound.currentTime = 0;
-  roarSound.play();
-}
-function updateTiger() {
-  const now = Date.now();
-  if (!tigerReady) return;
-
-  if (tigerUnlocked && tigerDelayPassed(now) && !tiger.active && !nextTigerTime) {
-    nextTigerTime = now + getSpawnDelay(2500);
-  }
-
-  if (!tiger.active && nextTigerTime && now >= nextTigerTime) resetTiger();
-  if (!tiger.active) return;
-
-  tiger.x += tiger.vx;
-
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    const b = bullets[i];
-    if (b.x > tiger.x - tiger.width/2 && b.x < tiger.x + tiger.width/2 &&
-        b.y > tiger.y - tiger.height/2 && b.y < tiger.y + tiger.height/2) {
-      bullets.splice(i,1);
-      tiger.active = false;
-      tiger.hasScared = false;
-      applyKillHeal();
-      nextTigerTime = now + getSpawnDelay(5000);
-      return;
-    }
-  }
-
-  if (!tiger.hasScared) checkRangerBearContact(tiger);
-
-  if (tiger.x < -tiger.width) {
-    tiger.active = false;
-    tiger.hasScared = false;
-    nextTigerTime = now + getSpawnDelay(5000);
-  }
-}
-
-
 /* Helper: rounded rectangle for score banner */
 function drawRoundedRect(x, y, w, h, r) {
   ctx.beginPath();
@@ -962,13 +886,6 @@ function drawBear3() {
   ctx.drawImage(bear3Img, -bear3.width/2, -bear3.height/2, bear3.width, bear3.height);
   ctx.restore();
 }
-function drawTiger() {
-  if (!tigerReady || !tiger.active) return;
-  ctx.save();
-  ctx.translate(tiger.x, tiger.y);
-  ctx.drawImage(tigerImg, -tiger.width/2, -tiger.height/2, tiger.width, tiger.height);
-  ctx.restore();
-}
 function drawBullets() {
   ctx.fillStyle = "red";
   for (const b of bullets) {
@@ -983,7 +900,6 @@ function draw() {
   drawBear1();
   drawBear2();
   drawBear3();
-  drawTiger();
   drawBullets();
   drawRanger();
   drawHealthBar();
@@ -997,7 +913,6 @@ function loop() {
     updateBear1();
     updateBear2();
     updateBear3();
-    updateTiger();
     updateBullets();
   }
   draw();

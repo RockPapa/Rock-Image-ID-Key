@@ -290,11 +290,9 @@ const GRAVITY    = 30;
 const GRASS_COLOR_FILE = 
 "rock_albedo.jpg";
 
-const GRASS_NORMAL_EXR = 
-"rock_normal.exr";
+const GRASS_NORMAL_EXR = "";
 
-const GRASS_ROUGH_EXR  = 
-"rock_rough.exr";
+const GRASS_ROUGH_EXR  = "";
 
 const GRASS_REPEAT = 90;
 
@@ -1945,40 +1943,16 @@ initHitSound();
 (async function initGrass(){
   const colorUrl  = TEX_DIR + GRASS_COLOR_FILE;
 
-  const normalUrl = GRASS_NORMAL_EXR ? (TEX_DIR + GRASS_NORMAL_EXR) : (TEX_DIR + GRASS_NORMAL_FILE);
-
-  // Roughness: try EXR first, then fall back to .jpg/.png with the same basename, then GRASS_ROUGH_FILE if provided.
-  const roughUrlEXR = GRASS_ROUGH_EXR ? (TEX_DIR + GRASS_ROUGH_EXR) : "";
-  const roughUrlIMG = (typeof GRASS_ROUGH_FILE !== "undefined" && GRASS_ROUGH_FILE) ? (TEX_DIR + GRASS_ROUGH_FILE) : "";
-
   const colorMap  = await loadTextureSafe(colorUrl, { colorSpace: THREE.SRGBColorSpace });
-  const normalMap = GRASS_NORMAL_EXR ? await loadEXRSafe(normalUrl) : await loadTextureSafe(normalUrl);
-
-  let roughMap = null;
-  if (roughUrlEXR){
-    roughMap = await loadEXRSafe(roughUrlEXR);
-    if (!roughMap){
-      const base = roughUrlEXR.replace(/\.exr$/i, "");
-      roughMap = await loadTextureSafe(base + ".jpg") || await loadTextureSafe(base + ".png");
-    }
-  }
-  if (!roughMap && roughUrlIMG){
-    roughMap = await loadTextureSafe(roughUrlIMG);
-  }
 
   if (colorMap){
     setRepeat(colorMap, GRASS_REPEAT);
-    if (normalMap) setRepeat(normalMap, GRASS_REPEAT);
-    if (roughMap)  setRepeat(roughMap,  GRASS_REPEAT);
 
     const mat = new THREE.MeshStandardMaterial({
       map: colorMap,
-      normalMap: normalMap || null,
-      roughnessMap: roughMap || null,
-      roughness: roughMap ? 1.0 : 0.95,
+      roughness: 0.95,
       metalness: 0.0
     });
-    if (mat.normalMap) mat.normalScale.set(1.0, 1.0);
 
     ground.material = mat;
     ground.material.needsUpdate = true;
@@ -2214,7 +2188,7 @@ initMountains();
 // --- TWEAK ZONE (PNG TREES) ---
 const BILLBOARD_TREE_FILE1 = "tree1.png";
 const BILLBOARD_TREE_FILE2 = "tree2.png"; // optional variety
-const BILLBOARD_COUNT = 2000;            // many is OK (no per-tree shadows)
+const BILLBOARD_COUNT = 1000;            // many is OK (no per-tree shadows)
 const BILLBOARD_AREA  = 3000;           // spread radius
 const BILLBOARD_MAX_SLOPE = 28;         // avoid steep slopes
 
@@ -2483,7 +2457,7 @@ async function spawnTreesWhenReady(){
   }
 
   // --- Smarter placement: avoid steep slopes, create clumps ---
-  const TARGET_TREES = 220;         // more trees, still fine (simple geometry)
+  const TARGET_TREES = 110;         // more trees, still fine (simple geometry)
   const AREA = 1900;                // spread radius
   const MAX_SLOPE = 24;             // degrees (lower = fewer on hills)
   const CLUMP_CHANCE = 0.55;        // more natural clustering

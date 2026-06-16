@@ -62,12 +62,53 @@
   .ghost{min-width:132px}
   .touch{
     position:fixed;left:12px;right:12px;bottom:12px;z-index:2;display:none;
-    grid-template-columns:108px 1fr 92px 92px;gap:10px;align-items:end;pointer-events:none;
+    grid-template-columns:108px 1fr minmax(184px,46vw);gap:10px;align-items:end;pointer-events:none;
   }
   .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px}
   #fireBtn{grid-column:1;justify-self:start;width:108px;background:rgba(255,85,115,.2);border-color:rgba(255,85,115,.5)}
-  #leftBtn{grid-column:3}
-  #rightBtn{grid-column:4}
+  .slidePad{
+    grid-column:3;
+    justify-self:end;
+    display:flex;
+    align-items:center;
+    width:100%;
+    height:62px;
+    padding:0 22px;
+    border:1px solid rgba(86,230,255,.34);
+    border-radius:10px;
+    background:rgba(8,18,28,.58);
+    box-shadow:0 10px 26px rgba(0,0,0,.28), inset 0 0 18px rgba(86,230,255,.06);
+    pointer-events:auto;
+  }
+  .slideTrack{
+    position:relative;
+    width:100%;
+    height:10px;
+    border-radius:999px;
+    background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(86,230,255,.34),rgba(255,255,255,.1));
+  }
+  .slideTrack::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:-8px;
+    width:2px;
+    height:26px;
+    background:rgba(255,255,255,.34);
+    transform:translateX(-50%);
+  }
+  .slideThumb{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:46px;
+    height:46px;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    border:1px solid rgba(255,255,255,.52);
+    background:radial-gradient(circle at 35% 30%, #f7fbff, #56e6ff 46%, #126978);
+    box-shadow:0 9px 20px rgba(0,0,0,.36);
+  }
   body.controlsOff .touch{display:none!important}
   .hide{display:none}
   @media (max-width:720px){
@@ -89,7 +130,7 @@
       left:calc(22px + env(safe-area-inset-left));
       right:calc(22px + env(safe-area-inset-right));
       bottom:calc(18px + env(safe-area-inset-bottom));
-      grid-template-columns:142px 1fr 96px 96px;
+      grid-template-columns:142px 1fr minmax(280px,36vw);
       gap:14px;
       align-items:end;
     }
@@ -111,8 +152,17 @@
       background:rgba(255,85,115,.24);
       border-color:rgba(255,85,115,.58);
     }
-    #leftBtn{grid-column:3;grid-row:1;width:96px}
-    #rightBtn{grid-column:4;grid-row:1;width:96px}
+    .slidePad{
+      grid-column:3;
+      grid-row:1;
+      width:100%;
+      height:92px;
+      padding:0 28px;
+      border-radius:14px;
+    }
+    .slideTrack{height:12px}
+    .slideTrack::before{top:-10px;height:32px}
+    .slideThumb{width:56px;height:56px}
   }
   body.landscapePad .hud{left:18px;right:18px;top:14px}
   body.landscapePad .center{min-width:260px}
@@ -122,7 +172,7 @@
     left:calc(22px + env(safe-area-inset-left));
     right:calc(22px + env(safe-area-inset-right));
     bottom:calc(18px + env(safe-area-inset-bottom));
-    grid-template-columns:142px 1fr 96px 96px;
+    grid-template-columns:142px 1fr minmax(280px,36vw);
     gap:14px;
     align-items:end;
   }
@@ -144,8 +194,17 @@
     background:rgba(255,85,115,.24);
     border-color:rgba(255,85,115,.58);
   }
-  body.landscapePad #leftBtn{grid-column:3;grid-row:1;width:96px}
-  body.landscapePad #rightBtn{grid-column:4;grid-row:1;width:96px}
+  body.landscapePad .slidePad{
+    grid-column:3;
+    grid-row:1;
+    width:100%;
+    height:92px;
+    padding:0 28px;
+    border-radius:14px;
+  }
+  body.landscapePad .slideTrack{height:12px}
+  body.landscapePad .slideTrack::before{top:-10px;height:32px}
+  body.landscapePad .slideThumb{width:56px;height:56px}
 </style>
 </head>
 <body>
@@ -170,8 +229,11 @@
 
 <div class="touch" aria-label="Touch controls">
   <button id="fireBtn" title="Fire">●</button>
-  <button id="leftBtn" title="Move left">◀</button>
-  <button id="rightBtn" title="Move right">▶</button>
+  <div class="slidePad" id="slidePad" aria-label="Move left or right">
+    <div class="slideTrack">
+      <div class="slideThumb" id="slideThumb"></div>
+    </div>
+  </div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -197,10 +259,12 @@
     overlay: document.getElementById('overlay'),
     pause: document.getElementById('pauseBtn'),
     controlsToggle: document.getElementById('controlsToggleBtn'),
-    menuControls: document.getElementById('menuControlsBtn')
+    menuControls: document.getElementById('menuControlsBtn'),
+    slidePad: document.getElementById('slidePad'),
+    slideThumb: document.getElementById('slideThumb')
   };
   const keys = new Set();
-  const input = { left:false, right:false, fire:false };
+  const input = { left:false, right:false, fire:false, axis:0 };
   let controlsOn = localStorage.getItem('spaceRaidersControlsOn') !== '0';
   const state = {
     running:false, paused:false, over:false, score:0, wave:1, lives:3,
@@ -383,6 +447,7 @@
     const right = keys.has('ArrowRight') || keys.has('d') || keys.has('D') || input.right;
     if(left) p.x -= p.speed * dt;
     if(right) p.x += p.speed * dt;
+    if(input.axis) p.x += p.speed * input.axis * dt;
     p.x = Math.max(26, Math.min(innerWidth - 26, p.x));
     p.inv = Math.max(0, p.inv - dt);
     if(keys.has(' ') || input.fire) shoot();
@@ -577,7 +642,8 @@
     el.addEventListener('pointerdown', on); el.addEventListener('pointerup', off);
     el.addEventListener('pointercancel', off); el.addEventListener('pointerleave', off);
   }
-  bindHold('leftBtn','left'); bindHold('rightBtn','right'); bindHold('fireBtn','fire');
+  bindHold('fireBtn','fire');
+  bindSlider();
   ui.controlsToggle.onclick = e => {
     e.preventDefault();
     toggleControlsVisibility();
@@ -600,6 +666,7 @@
     ui.controlsToggle.textContent = controlsOn ? 'Pad' : 'No';
     ui.controlsToggle.title = controlsOn ? 'Hide on-screen controls' : 'Show on-screen controls';
     ui.menuControls.textContent = controlsOn ? 'Pad On' : 'Pad Off';
+    if(!controlsOn) resetSlider();
   }
   function toggleControlsVisibility(){
     controlsOn = !controlsOn;
@@ -611,6 +678,40 @@
     audio.resume();
     audio.tone(state.paused ? 520 : 300, .08, 'triangle', .13, state.paused ? 1.2 : .8);
     state.paused = !state.paused; updateHud();
+  }
+  function bindSlider(){
+    let activePointer = null;
+    const move = e => {
+      if(activePointer !== null && e.pointerId !== activePointer) return;
+      e.preventDefault();
+      const rect = ui.slidePad.getBoundingClientRect();
+      const x = Math.max(rect.left, Math.min(rect.right, e.clientX));
+      const half = rect.width / 2;
+      input.axis = Math.max(-1, Math.min(1, (x - rect.left - half) / half));
+      ui.slideThumb.style.left = ((input.axis + 1) * 50) + '%';
+    };
+    const off = e => {
+      if(activePointer !== null && e.pointerId !== activePointer) return;
+      e.preventDefault();
+      activePointer = null;
+      ui.slidePad.releasePointerCapture?.(e.pointerId);
+      resetSlider();
+    };
+    ui.slidePad.addEventListener('pointerdown', e => {
+      activePointer = e.pointerId;
+      ui.slidePad.setPointerCapture?.(e.pointerId);
+      move(e);
+    });
+    ui.slidePad.addEventListener('pointermove', move);
+    ui.slidePad.addEventListener('pointerup', off);
+    ui.slidePad.addEventListener('pointercancel', off);
+    ui.slidePad.addEventListener('pointerleave', e => {
+      if(activePointer === null) resetSlider();
+    });
+  }
+  function resetSlider(){
+    input.axis = 0;
+    ui.slideThumb.style.left = '50%';
   }
   resize(); requestAnimationFrame(loop);
 })();

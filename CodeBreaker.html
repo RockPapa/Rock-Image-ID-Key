@@ -501,6 +501,7 @@
     let currentAnswers = ["cat"];
     let currentRound = 1;
     let correctThisRound = 0;
+    let roundTwoBlankCount = 1;
     const correctToAdvanceRound = 5;
 
     function getRoundLabel() {
@@ -612,6 +613,19 @@
         return scrambled;
       }
 
+      function blankWord(word, blankCount) {
+        const letters = word.toUpperCase().split("");
+        const letterIndexes = letters
+          .map((letter, index) => (/[A-Z0-9]/.test(letter) ? index : -1))
+          .filter((index) => index >= 0);
+        const blanksNeeded = Math.min(blankCount, letterIndexes.length);
+        for (let i = 0; i < blanksNeeded; i += 1) {
+          const pick = Math.floor((i + 1) * letterIndexes.length / (blanksNeeded + 1));
+          letters[letterIndexes[pick]] = "_";
+        }
+        return letters.join(" ");
+      }
+
       function numberVowelCode(word) {
         return word
           .toUpperCase()
@@ -675,6 +689,9 @@
         if (currentRound === 9 || currentRound === 10) {
           return numberVowelCode(word);
         }
+        if (currentRound === 2) {
+          return blankWord(word, roundTwoBlankCount);
+        }
         if (currentRound === 3) {
           if (!/[aeiu]/i.test(word)) return scrambleWord(word);
           return word
@@ -702,7 +719,12 @@
           if (currentRound === 1) {
             switchToRound(2);
           } else if (currentRound === 2) {
-            switchToRound(3);
+            if (roundTwoBlankCount === 1) {
+              roundTwoBlankCount = 2;
+              remainingWords = [...codeWords];
+            } else {
+              switchToRound(3);
+            }
           } else if (currentRound === 3) {
             switchToRound(4);
           } else if (currentRound === 4) {
@@ -754,6 +776,7 @@
         }
         remainingWords = [...codeWords];
         correctThisRound = 0;
+        roundTwoBlankCount = currentRound === 2 ? 1 : roundTwoBlankCount;
         roundHud.textContent = getRoundLabel();
         screen.classList.toggle("round-nine", currentRound === 9 || currentRound === 10);
       }
@@ -797,7 +820,8 @@
 
       function showRoundCompleteMessage(nextRound) {
         stopRoundTimer();
-        resultMessage.textContent = `YOU GOT ${correctToAdvanceRound} RIGHT OUT OF ${correctToAdvanceRound}`;
+        const roundTarget = currentRound === 2 ? roundTwoWords.length * 2 : correctToAdvanceRound;
+        resultMessage.textContent = `YOU GOT ${roundTarget} RIGHT OUT OF ${roundTarget}`;
         answerBox.disabled = true;
         submitButton.disabled = true;
         window.setTimeout(() => {
@@ -816,7 +840,8 @@
           stopRoundTimer();
           markCurrentWordSolved();
           correctThisRound += 1;
-          if (correctThisRound >= correctToAdvanceRound && currentRound < 10) {
+          const roundTarget = currentRound === 2 ? roundTwoWords.length * 2 : correctToAdvanceRound;
+          if (correctThisRound >= roundTarget && currentRound < 10) {
             showRoundCompleteMessage(currentRound + 1);
             return;
           }

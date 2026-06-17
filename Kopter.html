@@ -192,6 +192,84 @@ code{background:rgba(255,255,255,0.14);padding:1px 6px;border-radius:8px}
   background:linear-gradient(90deg,#22c55e,#f59e0b,#ef4444);
 }
 
+#controlsHudToggle{
+  position:fixed;
+  top:18px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:14;
+  border:1px solid rgba(255,255,255,.24);
+  background:rgba(20,24,32,.82);
+  color:#fff;
+  border-radius:12px;
+  padding:7px 12px;
+  font:800 13px system-ui;
+  cursor:pointer;
+  box-shadow:0 10px 26px rgba(0,0,0,.45);
+  touch-action:manipulation;
+}
+#controlsHud{
+  position:fixed;
+  top:58px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:13;
+  width:min(420px, calc(100vw - 28px));
+  padding:10px 12px;
+  border-radius:14px;
+  background:rgba(20,24,32,.78);
+  border:1px solid rgba(255,255,255,.16);
+  color:#fff;
+  font:13px system-ui;
+  box-shadow:0 10px 26px rgba(0,0,0,.5);
+  backdrop-filter:blur(4px);
+}
+#controlsHud.hidden{display:none}
+#controlsHud .controlsTitle{
+  font:900 13px/1.2 system-ui;
+  text-transform:uppercase;
+  letter-spacing:.4px;
+  margin-bottom:8px;
+  opacity:.96;
+}
+#controlsHud .controlsGrid{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:6px 10px;
+  align-items:center;
+}
+#controlsHud kbd{
+  display:inline-block;
+  min-width:64px;
+  padding:4px 7px;
+  border-radius:8px;
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.18);
+  color:#fff;
+  font:800 12px system-ui;
+  text-align:center;
+}
+#controlsHud span{
+  opacity:.94;
+  font-weight:650;
+}
+@media (max-width:640px){
+  #controlsHudToggle{
+    top:10px;
+    padding:7px 10px;
+    font-size:12px;
+  }
+  #controlsHud{
+    top:48px;
+    font-size:12px;
+    padding:9px 10px;
+  }
+  #controlsHud kbd{
+    min-width:54px;
+    font-size:11px;
+  }
+}
+
 
 /* 🔴 GAME OVER PANEL */
 .gameOverPanel{
@@ -246,6 +324,18 @@ code{background:rgba(255,255,255,0.14);padding:1px 6px;border-radius:8px}
   <div class="barOuter"><div class="barInner" id="refuelBar"></div></div>
 </div>
 <input id="folderInput" type="file" webkitdirectory directory multiple style="display:none;">
+
+<button id="controlsHudToggle" type="button" aria-expanded="true" aria-controls="controlsHud">Controls: ON</button>
+<div id="controlsHud" role="status" aria-label="Keyboard controls">
+  <div class="controlsTitle">Controls</div>
+  <div class="controlsGrid">
+    <kbd>↑ ↓</kbd><span>Forward / reverse</span>
+    <kbd>← →</kbd><span>Turn left / right</span>
+    <kbd>SPACE</kbd><span>Fire</span>
+    <kbd>R</kbd><span>Up</span>
+    <kbd>F</kbd><span>Down</span>
+  </div>
+</div>
 
 <div class="hud" id="hud">
   <div id="hudLoadWrap">
@@ -4628,6 +4718,19 @@ function frameCamera(){
 /* =========================
    HUD toggle
    ========================= */
+const controlsHudEl = $("controlsHud");
+const controlsHudToggleEl = $("controlsHudToggle");
+let controlsHudOn = true;
+function setControlsHUD(on){
+  controlsHudOn = !!on;
+  if(controlsHudEl) controlsHudEl.classList.toggle("hidden", !controlsHudOn);
+  if(controlsHudToggleEl){
+    controlsHudToggleEl.textContent = "Controls: " + (controlsHudOn ? "ON" : "OFF");
+    controlsHudToggleEl.setAttribute("aria-expanded", controlsHudOn ? "true" : "false");
+  }
+}
+if(controlsHudToggleEl) controlsHudToggleEl.addEventListener("click", ()=>setControlsHUD(!controlsHudOn));
+
 let hudOn=true;
 function setHUD(on){
   hudOn=!!on;

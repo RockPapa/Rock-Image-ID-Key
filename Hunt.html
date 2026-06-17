@@ -397,6 +397,7 @@ let joystickCenterY = 0;
 let joystickRadius = 1;
 
 const JOYSTICK_DEADZONE = 0.15;
+const JOYSTICK_SPEED_MULTIPLIER = 1.35;
 
 function updateJoystickMetrics() {
   if (!joystickArea) return;
@@ -518,6 +519,7 @@ function updatePlayer() {
   if (upKey)    vy -= 1;
   if (downKey)  vy += 1;
 
+  let moveSpeed = player.speed;
   if (controlsEnabled) {
     const joyMag = Math.hypot(joystickX, joystickY);
     if (joyMag > JOYSTICK_DEADZONE) {
@@ -526,6 +528,7 @@ function updatePlayer() {
       const joyNY = joystickY / joyMag;
       vx += joyNX * scaled;
       vy += joyNY * scaled;
+      moveSpeed = player.speed * JOYSTICK_SPEED_MULTIPLIER;
 
       if (joyNX < -0.2) player.facing = -1;
       else if (joyNX > 0.2) player.facing = 1;
@@ -534,8 +537,8 @@ function updatePlayer() {
 
   const mag = Math.hypot(vx, vy);
   if (mag > 0) {
-    vx = vx / mag * player.speed;
-    vy = vy / mag * player.speed;
+    vx = vx / mag * moveSpeed;
+    vy = vy / mag * moveSpeed;
     player.x += vx;
     player.y += vy;
   }

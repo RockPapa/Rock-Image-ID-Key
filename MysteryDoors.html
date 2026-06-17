@@ -180,7 +180,7 @@
   const DAMAGE_COOLDOWN_MS = 850;    // prevents rapid multi-hits
   const SAFE_REGEN_PER_SEC = 8;      // regen while standing on X
   const TREASURE_HEALTH_BONUS = 20;  // health gained on treasure pickup
-  const STUN_PICKUP_BONUS = 8;       // health gained when you get stun power
+  const STUN_PICKUP_BONUS = 8;       // health gained from the bonus door
 
   let lastDamageAt = -1e9;
   let damageFlashUntil = 0;
@@ -228,18 +228,30 @@
      1 = SPECIAL WALL TYPE (solid black texture)
   ========================================================= */
   const MAP = [
-    "##111##111##111##111##111##########",
-    "##...##...##...##...##...##########",
-    "###D####D####D####D####D###########",
-    "#........................##########",
-    "#....Z...................##########",
-    "#........................##########",
-    "#........................D.....XX##",
-    "#........................######XX##",
-    "###D####D####D####D####D###########",
-    "##...##...##...##...##...##########",
-    "##...##...##...##...##...##########",
-    "##111##111##111##111##111##########",
+    "##111##111##111##111##111##111##111##111##111##111##111##111############",
+    "##...##...##...##...##...##...##...##...##...##...##...##...############",
+    "###D####D####D####D####D####D####D####D####D####D####D####D#############",
+    "#.................................................................######",
+    "#....Z............................................................######",
+    "#.................................................................######",
+    "#........................D.........................D.........XX..#######",
+    "#........................######....................######....XX..#######",
+    "###D####D####D####D####D####D####D####D####D####D####D####D#############",
+    "##...##...##...##...##...##...##...##...##...##...##...##...############",
+    "##...##...##...##...##...##...##...##...##...##...##...##...############",
+    "##111##111##111##111##111##111##111##111##111##111##111##111############",
+    "##111##111##111##111##111##111##111##111##111##111##111##111############",
+    "##...##...##...##...##...##...##...##...##...##...##...##...############",
+    "###D####D####D####D####D####D####D####D####D####D####D####D#############",
+    "#.................................................................######",
+    "#.................................................................######",
+    "#..............XX.........D.........................D............#######",
+    "#..............XX.........######....................######.......#######",
+    "###D####D####D####D####D####D####D####D####D####D####D####D#############",
+    "##...##...##...##...##...##...##...##...##...##...##...##...############",
+    "##...##...##...##...##...##...##...##...##...##...##...##...############",
+    "##111##111##111##111##111##111##111##111##111##111##111##111############",
+    "########################################################################",
   ];
 
   const TILE = 64;
@@ -302,7 +314,7 @@
   const TREASURE_SIZE = 0.72;
   const TREASURE_PICKUP_DIST = 34;
 
-  // STUN DOOR (NEW)
+  // HEALTH BONUS DOOR
   const STUN_DOOR_SIZE = 0.72;
   const STUN_DOOR_PICKUP_DIST = 34;
   const AUTO_DOOR_OPEN_DIST = 88;
@@ -579,8 +591,10 @@
 
   // VOID DOOR
   let voidDoor = null;
+  let voidTriggeredThisRun = false;
   function pickRandomVoidDoor(excludeKeys){
     voidDoor = null;
+    voidTriggeredThisRun = false;
     if(!allDoors.length) return;
     const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
     const pickFrom = candidates.length ? candidates : allDoors;
@@ -667,6 +681,7 @@
   // GRIZ
   let grizDoor = null;
   let grizActive = false;
+  let grizAlive = true;
 
   const griz = {
     x: 3.0*TILE, y: 2.2*TILE, a: 0,
@@ -676,6 +691,7 @@
   function pickRandomGrizDoor(excludeKeys, usedPositions){
     grizDoor = null;
     grizActive = false;
+    grizAlive = true;
 
     const candidates = allDoors.filter(d => !excludeKeys.has(d.key));
     const pickFrom = candidates.length ? candidates : allDoors;
@@ -724,6 +740,7 @@
         x: spawn.x, y: spawn.y, a: 0,
         radius: ZOMBIE_RADIUS, speed: ZOMBIE_SPEED, size: ZOMBIE_SIZE_FACTOR,
         active: false,
+        alive: true,
         stunnedUntil: 0,
         stunAfterCatchUntil: 0,
         lastCatchSoundAt: -1e9
@@ -776,6 +793,7 @@
     voidActive = false;
     voidUntil = 0;
     voidStartedAt = 0;
+    voidTriggeredThisRun = false;
   }
   setupRound();
 
@@ -805,7 +823,7 @@
     }
   }
 
-  // ✅ NEW: stun-door pickup logic
+  // Health bonus door pickup logic
   function checkStunDoorPickup(nowMs){
     if(gameOver || voidActive) return;
     if(!stunDoor || !stunPos || stunDoorCollected) return;
@@ -814,9 +832,6 @@
     const d = Math.hypot(player.x - stunPos.x, player.y - stunPos.y);
     if(d <= STUN_DOOR_PICKUP_DIST){
       stunDoorCollected = true;
-      player.hasStun = true;
-      player.stunCharges = STUN_START_CHARGES;
-      player.lastStunShotAt = -1e9;
       heal(STUN_PICKUP_BONUS);
       zapUntil = nowMs + 220;
     }
@@ -828,20 +843,21 @@
     const key = doorKey(mx,my);
     doorsOpen.add(key);
 
-    if(voidDoor && key === voidDoor.key){
+    if(voidDoor && key === voidDoor.key && !voidTriggeredThisRun){
+      voidTriggeredThisRun = true;
       triggerVoid(nowMs);
       return;
     }
     if(gameOver || voidActive) return;
 
-    if(grizDoor && key === grizDoor.key && !grizActive){
+    if(grizDoor && key === grizDoor.key && grizAlive && !grizActive){
       grizActive = true;
       playOneShot(SND.bear);
     }
 
     for(let i=0;i<zombies.length;i++){
       if(zombieDoors[i] && key === zombieDoors[i].key){
-        if(!zombies[i].active){
+        if(zombies[i].alive && !zombies[i].active){
           zombies[i].active = true;
           playOneShot(SND.bear);
         }
@@ -887,6 +903,7 @@
   const joyKeys = { ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false };
   let joyPointerId = null;
   let touchControlsOn = false;
+  const JOYSTICK_DEADZONE_FRAC = 0.20;
 
   function applyTouchControlsState(){
     if(touchToggle) touchToggle.textContent = touchControlsOn ? "📱 Controls: ON" : "📱 Controls: OFF";
@@ -935,7 +952,7 @@
     }
     if(joyStick) joyStick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
 
-    const dead = rect.width * 0.12;
+    const dead = rect.width * JOYSTICK_DEADZONE_FRAC;
     setJoyKey("ArrowLeft", dx < -dead);
     setJoyKey("ArrowRight", dx > dead);
     setJoyKey("ArrowUp", dy < -dead);
@@ -1204,6 +1221,25 @@
     }
   }
 
+  function killGriz(){
+    grizAlive = false;
+    grizActive = false;
+    grizStunnedUntil = 0;
+    grizStunAfterCatchUntil = 0;
+  }
+
+  function killZombie(z){
+    z.alive = false;
+    z.active = false;
+    z.stunnedUntil = 0;
+    z.stunAfterCatchUntil = 0;
+  }
+
+  function killSpider(s){
+    s.alive = false;
+    s.active = false;
+  }
+
   function fireStunGun(nowMs){
     if(gameOver || voidActive) return;
     if(!player.hasStun || player.stunCharges <= 0) return;
@@ -1213,22 +1249,32 @@
     player.stunCharges -= 1;
     zapUntil = nowMs + ZAP_FLASH_MS;
 
-    if(grizActive){
+    if(grizActive && grizAlive){
       const dx = griz.x - player.x, dy = griz.y - player.y;
       const dist = Math.hypot(dx,dy);
       const aimErr = angleDiff(Math.atan2(dy, dx), player.a);
       if(dist <= STUN_RANGE && aimErr <= STUN_FOV){
-        grizStunnedUntil = nowMs + STUN_DURATION_MS;
+        killGriz();
       }
     }
 
     for(const z of zombies){
-      if(!z.active) continue;
+      if(!z.active || !z.alive) continue;
       const dx = z.x - player.x, dy = z.y - player.y;
       const dist = Math.hypot(dx,dy);
       const aimErr = angleDiff(Math.atan2(dy, dx), player.a);
       if(dist <= STUN_RANGE && aimErr <= STUN_FOV){
-        z.stunnedUntil = nowMs + STUN_DURATION_MS;
+        killZombie(z);
+      }
+    }
+
+    for(const s of spiders){
+      if(!s.active || !s.alive) continue;
+      const dx = s.x - player.x, dy = s.y - player.y;
+      const dist = Math.hypot(dx,dy);
+      const aimErr = angleDiff(Math.atan2(dy, dx), player.a);
+      if(dist <= STUN_RANGE && aimErr <= STUN_FOV){
+        killSpider(s);
       }
     }
   }
@@ -1271,10 +1317,10 @@
         continue;
       }
 
-      if(grizActive && nowMs >= grizStunnedUntil){
+      if(grizActive && grizAlive){
         const dg = Math.hypot(griz.x - b.x, griz.y - b.y);
         if(dg <= griz.radius + BULLET_RADIUS){
-          grizStunnedUntil = nowMs + STUN_DURATION_MS;
+          killGriz();
           bullets.splice(i, 1);
           continue;
         }
@@ -1282,10 +1328,10 @@
 
       let hitZombie = false;
       for(const z of zombies){
-        if(!z.active) continue;
+        if(!z.active || !z.alive) continue;
         const dz = Math.hypot(z.x - b.x, z.y - b.y);
         if(dz <= z.radius + BULLET_RADIUS){
-          z.stunnedUntil = nowMs + STUN_DURATION_MS;
+          killZombie(z);
           hitZombie = true;
           break;
         }
@@ -1300,8 +1346,7 @@
         if(!s.active || !s.alive) continue;
         const ds = Math.hypot(s.x - b.x, s.y - b.y);
         if(ds <= s.radius + BULLET_RADIUS){
-          s.alive = false;
-          s.active = false;
+          killSpider(s);
           hitSpider = true;
           break;
         }
@@ -1317,7 +1362,7 @@
 
   function updateGriz(dt, nowMs){
     if(gameOver || voidActive) return;
-    if(!grizActive) return;
+    if(!grizActive || !grizAlive) return;
     if(nowMs < grizStunnedUntil) return;
     if(playerIsSafe() && SAFE_FREEZE_ENEMIES) return;
 
@@ -1359,7 +1404,7 @@
   function updateZombies(dt, nowMs){
     if(gameOver || voidActive) return;
     for(const z of zombies){
-      if(!z.active) continue;
+      if(!z.active || !z.alive) continue;
       if(nowMs < z.stunnedUntil) continue;
       if(playerIsSafe() && SAFE_FREEZE_ENEMIES) continue;
 
@@ -1545,12 +1590,14 @@
     player.lastStunShotAt = -1e9;
 
     grizActive = false;
+    grizAlive = true;
     grizStunnedUntil = 0;
     grizStunAfterCatchUntil = 0;
     lastGrizCatchSoundAt = -1e9;
 
     for(const z of zombies){
       z.active = false;
+      z.alive = true;
       z.stunnedUntil = 0;
       z.stunAfterCatchUntil = 0;
       z.lastCatchSoundAt = -1e9;
@@ -1697,12 +1744,12 @@
       }
     }
 
-    if(grizActive && IMG.griz.complete && IMG.griz.naturalWidth > 0){
+    if(grizActive && grizAlive && IMG.griz.complete && IMG.griz.naturalWidth > 0){
       drawBillboard(IMG.griz, griz.x, griz.y, griz.size, w,h,horizon,projPlane,wallZ);
     }
     if(IMG.zombie.complete && IMG.zombie.naturalWidth > 0){
       for(const z of zombies){
-        if(!z.active) continue;
+        if(!z.active || !z.alive) continue;
         drawBillboard(IMG.zombie, z.x, z.y, z.size, w,h,horizon,projPlane,wallZ);
       }
     }
@@ -1734,7 +1781,7 @@
       }
     }
 
-    // ✅ NEW: draw stun icon behind stun door when opened
+    // Draw health bonus icon behind the bonus door when opened.
     if(stunDoor && stunPos && doorsOpen.has(stunDoor.key) && !stunDoorCollected){
       const img = IMG.stunIcon;
       if(img.complete && img.naturalWidth > 0){
@@ -1750,8 +1797,9 @@
       ? (doorsOpen.has(portalDoor.key) ? "OPEN (portal visible)" : "HIDDEN (behind a door)")
       : "none";
 
-    const zActive = zombies.filter(z => z.active).length;
-    const zHidden = zombies.length - zActive;
+    const zActive = zombies.filter(z => z.active && z.alive).length;
+    const zDead = zombies.filter(z => !z.alive).length;
+    const zHidden = zombies.length - zActive - zDead;
     const sActive = spiders.filter(s => s.active && s.alive).length;
     const sHidden = spiders.length - sActive;
 
@@ -1766,7 +1814,7 @@
 
     const stunDoorState = stunDoor
       ? (stunDoorCollected ? "COLLECTED"
-        : (doorsOpen.has(stunDoor.key) ? "OPEN (stun visible)" : "HIDDEN (behind a door)"))
+        : (doorsOpen.has(stunDoor.key) ? "OPEN (health bonus visible)" : "HIDDEN (behind a door)"))
       : "none";
 
     if(statusEl){
@@ -1774,7 +1822,7 @@
         `<b>Music:</b> jungle.mp3 • <b>Stun:</b> ${stunState} • <b>Stun Door:</b> ${stunDoorState} • <b>Safe:</b> ${playerIsSafe()?"YES":"no"} • ` +
         `<b>Portal:</b> ${portalState} • <b>Void:</b> ${voidState} • ` +
         `<b>Treasure:</b> ${treasureState} • ` +
-        `<b>Griz:</b> ${grizActive?"ACTIVE":"hidden"} • <b>Zombies:</b> ${zActive} active / ${zHidden} hidden • <b>Spiders:</b> ${sActive} active / ${sHidden} hidden • <b>Black walls:</b> tile '1'`;
+        `<b>Griz:</b> ${grizAlive ? (grizActive?"ACTIVE":"hidden") : "DEAD"} • <b>Zombies:</b> ${zActive} active / ${zHidden} hidden / ${zDead} dead • <b>Spiders:</b> ${sActive} active / ${sHidden} hidden • <b>Black walls:</b> tile '1'`;
     }
 
     requestAnimationFrame(tick);

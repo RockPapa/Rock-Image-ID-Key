@@ -308,9 +308,9 @@
   const AUTO_DOOR_OPEN_DIST = 88;
 
   /* =========================================================
-     MUSIC (INSIDE): images/drama.mp3
+     MUSIC (INSIDE): images/jungle.mp3
   ========================================================= */
-  const MUSIC = new Audio("images/drama.mp3");
+  const MUSIC = new Audio("images/jungle.mp3");
   MUSIC.loop = true;
   MUSIC.preload = "auto";
   MUSIC.volume = 0.40;
@@ -1771,7 +1771,7 @@
 
     if(statusEl){
       statusEl.innerHTML =
-        `<b>Music:</b> drama.mp3 • <b>Stun:</b> ${stunState} • <b>Stun Door:</b> ${stunDoorState} • <b>Safe:</b> ${playerIsSafe()?"YES":"no"} • ` +
+        `<b>Music:</b> jungle.mp3 • <b>Stun:</b> ${stunState} • <b>Stun Door:</b> ${stunDoorState} • <b>Safe:</b> ${playerIsSafe()?"YES":"no"} • ` +
         `<b>Portal:</b> ${portalState} • <b>Void:</b> ${voidState} • ` +
         `<b>Treasure:</b> ${treasureState} • ` +
         `<b>Griz:</b> ${grizActive?"ACTIVE":"hidden"} • <b>Zombies:</b> ${zActive} active / ${zHidden} hidden • <b>Spiders:</b> ${sActive} active / ${sHidden} hidden • <b>Black walls:</b> tile '1'`;

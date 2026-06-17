@@ -17,26 +17,58 @@ canvas{display:block;width:100vw;height:100vh}
   max-height:calc(100vh - 306px);
   overflow-y:auto;
   overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
 }
 .hmRow{margin-top:4px}
 .hmRow label{display:block;font-size:11px;opacity:.9;margin-bottom:2px}
 .hmRow label[for^="github"]{color:#ff5a5a;opacity:1;font-weight:700}
-.hmRow input[type="file"]{
-  width:100%;
-  font:11px system-ui;
-  color:#fff;
-}
+.hmRow input[type="file"]{display:none}
 .hmRow select{
   width:100%;
-  font:11px system-ui;
+  font:700 13px system-ui;
   color:#fff;
-  background:rgba(20,24,32,.92);
+  background:rgba(255,255,255,.1);
   border:1px solid rgba(255,255,255,.26);
-  border-radius:6px;
-  padding:3px 5px;
+  border-radius:8px;
+  padding:9px 10px;
 }
 .hmRow input[type="range"]{
   width:100%;
+}
+.pickerGroup{
+  margin-top:14px;
+  padding-top:12px;
+  border-top:1px solid rgba(255,255,255,.18);
+}
+.pickerGroup h3{
+  margin:0 0 8px;
+  color:#fff;
+  font:800 14px/1.2 system-ui;
+  letter-spacing:0;
+  text-transform:uppercase;
+}
+.pickerButton{
+  display:block;
+  box-sizing:border-box;
+  width:100%;
+  margin-top:7px;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(255,255,255,.1);
+  color:#fff;
+  border-radius:8px;
+  padding:10px 12px;
+  font:700 13px/1.2 system-ui;
+  text-align:center;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.pickerButton:active{
+  background:rgba(255,255,255,.22);
+  transform:translateY(1px);
+}
+.pickerSelect{
+  appearance:none;
+  -webkit-appearance:none;
 }
 .ctrlToggle{
   margin-top:8px;
@@ -217,36 +249,36 @@ canvas{display:block;width:100vw;height:100vh}
       <label for="terrainSizeSlider">Terrain width: <span id="terrainSizeReadout">4000</span></label>
       <input id="terrainSizeSlider" type="range" min="1000" max="12000" step="50" value="4000">
     </div>
-    <div class="hmRow">
-      <label for="heightmapPicker">Load local heightmap image</label>
+    <div class="hmRow pickerGroup">
+      <h3>Select Height Map</h3>
+      <label class="pickerButton" for="heightmapPicker">Choose from your computer.</label>
       <input id="heightmapPicker" type="file" accept="image/*">
-      <label for="githubHeightmapPicker">GitHub heightmap from main/images</label>
-      <select id="githubHeightmapPicker" data-github-picker="heightmap">
-        <option value="">Loading GitHub images...</option>
+      <select id="githubHeightmapPicker" class="pickerSelect" data-github-picker="heightmap" aria-label="Choose height map from online images folder">
+        <option value="">Loading online images folder...</option>
       </select>
     </div>
-    <div class="hmRow">
-      <label for="minimapPicker">Load local minimap image</label>
+    <div class="hmRow pickerGroup">
+      <h3>Select Mini Map</h3>
+      <label class="pickerButton" for="minimapPicker">Choose from your computer.</label>
       <input id="minimapPicker" type="file" accept="image/*">
-      <label for="githubMinimapPicker">GitHub minimap from main/images</label>
-      <select id="githubMinimapPicker" data-github-picker="minimap">
-        <option value="">Loading GitHub images...</option>
+      <select id="githubMinimapPicker" class="pickerSelect" data-github-picker="minimap" aria-label="Choose mini map from online images folder">
+        <option value="">Loading online images folder...</option>
       </select>
     </div>
-    <div class="hmRow">
-      <label for="roadOverlayPicker">Load local road overlay image</label>
+    <div class="hmRow pickerGroup">
+      <h3>Select Road Overlay</h3>
+      <label class="pickerButton" for="roadOverlayPicker">Choose from your computer.</label>
       <input id="roadOverlayPicker" type="file" accept="image/*">
-      <label for="githubRoadOverlayPicker">GitHub road overlay from main/images</label>
-      <select id="githubRoadOverlayPicker" data-github-picker="roadOverlay">
-        <option value="">Loading GitHub images...</option>
+      <select id="githubRoadOverlayPicker" class="pickerSelect" data-github-picker="roadOverlay" aria-label="Choose road overlay from online images folder">
+        <option value="">Loading online images folder...</option>
       </select>
     </div>
-    <div class="hmRow">
-      <label for="texturePicker">Load local texture image</label>
+    <div class="hmRow pickerGroup">
+      <h3>Select Texture</h3>
+      <label class="pickerButton" for="texturePicker">Choose from your computer.</label>
       <input id="texturePicker" type="file" accept="image/*">
-      <label for="githubTexturePicker">GitHub texture from main/images</label>
-      <select id="githubTexturePicker" data-github-picker="texture">
-        <option value="">Loading GitHub images...</option>
+      <select id="githubTexturePicker" class="pickerSelect" data-github-picker="texture" aria-label="Choose texture from online images folder">
+        <option value="">Loading online images folder...</option>
       </select>
     </div>
   </div>
@@ -827,7 +859,7 @@ async function loadGitHubImages(){
 
     for (const select of pickers){
       select.innerHTML = "";
-      select.append(new Option(files.length ? "Choose GitHub image..." : "No images found", ""));
+      select.append(new Option(files.length ? "Choose from online images folder." : "No online images found", ""));
       for (const file of files){
         select.append(new Option(file.name, file.download_url));
       }
@@ -838,7 +870,7 @@ async function loadGitHubImages(){
   } catch (err) {
     for (const select of pickers){
       select.innerHTML = "";
-      select.append(new Option("GitHub images unavailable", ""));
+      select.append(new Option("Online images folder unavailable", ""));
       select.disabled = true;
     }
     addStatus(`⚠ Could not list GitHub images from <code>${GITHUB_IMAGES_DIR}</code>`);

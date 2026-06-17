@@ -9,7 +9,7 @@
       margin: 0;
       min-height: 100%;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f1d12 url("images/Screenshot 2026-06-17 at 3.35.19 PM.png") center / cover fixed no-repeat;
+      background: #0f1d12 url("images/background.png") center / cover fixed no-repeat;
       color: #162316;
     }
 
@@ -19,6 +19,73 @@
       inset: 0;
       background: linear-gradient(180deg, rgba(8, 18, 10, 0.28), rgba(8, 18, 10, 0.48));
       pointer-events: none;
+    }
+
+    body.show-app #startPage {
+      display: none;
+    }
+
+    body:not(.show-app) main {
+      display: none;
+    }
+
+    body:not(.show-app)::before {
+      display: none;
+    }
+
+    #startPage {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      background: #276cf2;
+      overflow: hidden;
+    }
+
+    #startPage img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      object-position: top center;
+    }
+
+    #beginBtn {
+      position: absolute;
+      left: 12%;
+      right: 12%;
+      top: 55%;
+      height: 9%;
+      border: 0;
+      padding: 0;
+      margin: 0;
+      background: transparent;
+      color: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #beginBtn:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 4px;
+      border-radius: 4px;
+    }
+
+    #backBtn {
+      position: absolute;
+      left: 18px;
+      top: 18px;
+      width: auto;
+      min-height: 40px;
+      margin: 0;
+      padding: 8px 14px;
+      border: 0;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font: 800 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      cursor: pointer;
+      display: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     main {
@@ -123,6 +190,12 @@
   </style>
 </head>
 <body>
+  <div id="startPage" aria-label="Tree ID introduction">
+    <img id="startPageImage" src="images/page1.png" alt="Tree ID introduction">
+    <button id="beginBtn" type="button" aria-label="Let's begin">Let's begin</button>
+    <button id="backBtn" type="button" aria-label="Back">Back</button>
+  </div>
+
   <main>
     <h1>Tree ID</h1>
 
@@ -163,6 +236,23 @@
   <script>
     const result = document.getElementById("result");
     const identifyBtn = document.getElementById("identifyBtn");
+    const beginBtn = document.getElementById("beginBtn");
+    const backBtn = document.getElementById("backBtn");
+    const startPageImage = document.getElementById("startPageImage");
+
+    beginBtn.addEventListener("click", () => {
+      startPageImage.src = "images/page2.png";
+      startPageImage.alt = "Tree ID page 2";
+      beginBtn.style.display = "none";
+      backBtn.style.display = "block";
+    });
+
+    backBtn.addEventListener("click", () => {
+      startPageImage.src = "images/page1.png";
+      startPageImage.alt = "Tree ID introduction";
+      beginBtn.style.display = "block";
+      backBtn.style.display = "none";
+    });
 
     identifyBtn.addEventListener("click", () => {
       const leafShape = document.getElementById("leafShape").value;

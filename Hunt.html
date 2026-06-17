@@ -240,7 +240,9 @@ let gameOver = false;
 let gameStartTime = Date.now();
 let gameEndTime = null;
 
-const SURVIVAL_SCORE_PER_SECOND = 10;
+const MAX_GAME_DURATION_MS = 2 * 60 * 1000;
+const BEAR_HIT_POINTS = 10;
+const RANGER_HIT_PENALTY = 10;
 const KILL_HEAL_THRESHOLD_PCT = 50;
 const KILL_HEAL_PCT = 3;
 const KILL_HEAL_LIVES = START_LIVES * (KILL_HEAL_PCT / 100);
@@ -265,18 +267,25 @@ function askPlayerName() {
   playerName = trimmed.length ? trimmed : "Ranger";
 }
 
-function getSurvivalScore(now = Date.now()) {
-  const elapsedMs = now - gameStartTime;
-  return Math.max(0, Math.floor((elapsedMs / 1000) * SURVIVAL_SCORE_PER_SECOND));
+function endGame(now = Date.now()) {
+  if (gameOver) return;
+  gameOver = true;
+  gameEndTime = now;
+}
+
+function addBearHitScore() {
+  score += BEAR_HIT_POINTS;
+}
+
+function subtractRangerHitScore() {
+  score -= RANGER_HIT_PENALTY;
 }
 
 function loseLife() {
   if (gameOver) return;
   lives -= 1;
   if (lives <= 0) {
-    gameOver = true;
-    gameEndTime = Date.now();
-    score = getSurvivalScore(gameEndTime);
+    endGame();
   }
 }
 
@@ -337,7 +346,7 @@ window.addEventListener("keydown", e => {
   keys[e.key.toLowerCase()] = true;
 
   if (gameOver && (e.key === "r" || e.key === "R")) {
-    resetGame();
+    location.reload();
     return;
   }
 
@@ -356,7 +365,7 @@ window.addEventListener("keyup", e => {
 let touchActive = false, tx = 0, ty = 0;
 canvas.addEventListener("touchstart", e => {
   e.preventDefault();
-  if (gameOver) { resetGame(); return; }
+  if (gameOver) { location.reload(); return; }
   const t = e.touches[0];
   tx = t.clientX; ty = t.clientY;
   touchActive = true;
@@ -372,7 +381,7 @@ canvas.addEventListener("touchend", e => {
 },{passive:false});
 
 canvas.addEventListener("click", e => {
-  if (gameOver) { resetGame(); return; }
+  if (gameOver) { location.reload(); return; }
   const mx = e.clientX, my = e.clientY;
   const m  = getMuzzle();
   const dx = mx - m.x, dy = my - m.y;
@@ -630,7 +639,9 @@ function updateBear1() {
         b.y > bear.y - bear.height/2 && b.y < bear.y + bear.height/2) {
       bullets.splice(i,1);
       bear.active = false;
-      bear.hasScared = false;      applyKillHeal();
+      bear.hasScared = false;
+      addBearHitScore();
+      applyKillHeal();
       nextBearTime1 = now + getSpawnDelay(5000);
       return;
     }
@@ -677,7 +688,9 @@ function updateBear2() {
         b.y > bear2.y - bear2.height/2 && b.y < bear2.y + bear2.height/2) {
       bullets.splice(i,1);
       bear2.active = false;
-      bear2.hasScared = false;      applyKillHeal();
+      bear2.hasScared = false;
+      addBearHitScore();
+      applyKillHeal();
       nextBearTime2 = now + getSpawnDelay(5000);
       return;
     }
@@ -751,7 +764,9 @@ function updateBear3() {
         b.y > bear3.y - bear3.height/2 && b.y < bear3.y + bear3.height/2) {
       bullets.splice(i,1);
       bear3.active = false;
-      bear3.hasScared = false;      applyKillHeal();
+      bear3.hasScared = false;
+      addBearHitScore();
+      applyKillHeal();
       nextBearTime3 = now + getSpawnDelay(5000);
       return;
     }
@@ -796,6 +811,7 @@ function checkRangerBearContact(b) {
     b.hasScared = true;
     screamSound.currentTime = 0;
     screamSound.play();
+    subtractRangerHitScore();
     loseLife();
   }
 }
@@ -823,6 +839,27 @@ function drawHealthBar() {
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText("HEALTH " + Math.round(pct) + "%", x + barW / 2, y + barH / 2);
+  ctx.restore();
+}
+
+function drawScoreBoard() {
+  if (gameOver) return;
+
+  ctx.save();
+  const boardW = Math.min(210, W * 0.36);
+  const boardH = 38;
+  const x = W < 560 ? 14 : W - boardW - 14;
+  const y = W < 560 ? 42 : 12;
+
+  ctx.fillStyle = "rgba(0,0,0,0.55)";
+  drawRoundedRect(x, y, boardW, boardH, 10);
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+  ctx.font = "bold 18px system-ui, -apple-system, sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("SCORE " + score, x + boardW / 2, y + boardH / 2);
   ctx.restore();
 }
 
@@ -854,7 +891,7 @@ function drawGameOverOverlay() {
   ctx.fillText(scoreLine, centerX, boxY + boxH * 0.58);
 
   ctx.font = "22px system-ui, -apple-system, sans-serif";
-  ctx.fillText("Tap or press R to restart", centerX, boxY + boxH * 0.83);
+  ctx.fillText("Reload to play again.", centerX, boxY + boxH * 0.83);
   ctx.restore();
 }
 
@@ -906,17 +943,22 @@ function draw() {
   drawBullets();
   drawRanger();
   drawHealthBar();
+  drawScoreBoard();
   drawGameOverOverlay();
 }
 
 function loop() {
   if (!gameOver) {
-    score = getSurvivalScore();
-    updatePlayer();
-    updateBear1();
-    updateBear2();
-    updateBear3();
-    updateBullets();
+    const now = Date.now();
+    if (now - gameStartTime >= MAX_GAME_DURATION_MS) {
+      endGame(gameStartTime + MAX_GAME_DURATION_MS);
+    } else {
+      updatePlayer();
+      updateBear1();
+      updateBear2();
+      updateBear3();
+      updateBullets();
+    }
   }
   draw();
   requestAnimationFrame(loop);

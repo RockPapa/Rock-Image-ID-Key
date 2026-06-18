@@ -11,6 +11,27 @@
   button { padding: 10px 14px; border-radius: 10px; border: 1px solid #bbb; background:#f7f7f7; cursor:pointer; }
   button:active { transform: translateY(1px); }
 
+  #backBtn {
+    position: fixed;
+    left: 14px;
+    top: 14px;
+    z-index: 100;
+    width: auto;
+    padding: 9px 14px;
+    border: 1px solid rgba(255,255,255,0.7);
+    border-radius: 10px;
+    background: rgba(0,0,0,0.58);
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.24);
+  }
+  #backBtn:hover,
+  #backBtn:focus-visible {
+    background: rgba(0,0,0,0.78);
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+
   #topBar {
     display: flex;
     gap: 30px;
@@ -252,6 +273,8 @@ body.map-only #stage {
 </head>
 
 <body>
+<button id="backBtn" type="button" onclick="goBack()">Back</button>
+
 <div id="topBar">
   <h1 id="topTitle">GEORGIA INTERACTIVE GEOLOGY MAP</h1>
   <button id="loadBtn">Reload From GitHub</button>
@@ -294,6 +317,14 @@ body.map-only #stage {
 </div>
 
 <script>
+function goBack() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = "../RockIndex.html";
+  }
+}
+
 (() => {
   const loadBtn = document.getElementById("loadBtn");
 

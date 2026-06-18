@@ -150,17 +150,17 @@
     #backBtn {
       position: absolute;
       z-index: 3;
-      left: 18px;
+      left: max(6px, env(safe-area-inset-left));
       top: max(6px, env(safe-area-inset-top));
-      width: auto;
-      min-height: 40px;
+      width: 38px;
+      min-height: 38px;
       margin: 0;
-      padding: 8px 14px;
+      padding: 0;
       border: 0;
-      border-radius: 8px;
+      border-radius: 999px;
       background: rgba(0, 0, 0, 0.45);
       color: #fff;
-      font: 800 16px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font: 900 28px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       cursor: pointer;
       display: none;
       -webkit-tap-highlight-color: transparent;
@@ -283,7 +283,7 @@
   <div id="startPage" aria-label="Tree ID introduction">
     <img id="startPageImage" src="images/page1.png" alt="Tree ID introduction">
     <button id="beginBtn" type="button" aria-label="Let's begin">Let's begin</button>
-    <button id="backBtn" type="button" aria-label="Back">Back</button>
+    <button id="backBtn" type="button" aria-label="Back">‹</button>
     <button id="evergreenBtn" class="choiceBtn" type="button" aria-label="Tree is evergreen">Tree is evergreen</button>
     <button id="oppositeBtn" class="choiceBtn" type="button" aria-label="Leaves and twigs are opposite">Leaves and twigs are opposite</button>
     <button id="alternateBtn" class="choiceBtn" type="button" aria-label="Leaves and twigs are alternate">Leaves and twigs are alternate</button>
@@ -417,7 +417,7 @@
         showIntroPage(1, "Tree ID introduction");
       } else if (currentIntroPage === "pines" || currentIntroPage === "redcedar" || currentIntroPage === "spruce" || currentIntroPage === "fir" || currentIntroPage === "hemlock") {
         showIntroImage("evergreen", "images/evergreen.png", "Evergreen tree choices");
-      } else if (currentIntroPage === "evergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
+      } else if (currentIntroPage === "evergreen" || currentIntroPage === "broadleafEvergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
         showIntroPage(3, "Tree ID evergreen page");
       } else {
         showIntroPage(2, "Tree ID page 2");
@@ -461,7 +461,7 @@
     });
 
     document.getElementById("broadEvergreenBtn").addEventListener("click", () => {
-      showIntroPage(7, "Tree ID broad evergreen page");
+      showIntroImage("broadleafEvergreen", "images/broadleaf_evergreen.png", "Broadleaf evergreen choices");
     });
 
     identifyBtn.addEventListener("click", () => {

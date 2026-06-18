@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Rocketx</title>
 <style>
   :root{
@@ -18,11 +18,11 @@
     --violet:#b693ff;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden;background:#04070d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-  body{touch-action:none;user-select:none}
-  #game{position:fixed;inset:0;width:100%;height:100%;display:block;background:#04070d}
+  html,body{margin:0;height:100%;min-height:100dvh;overflow:hidden;background:#04070d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body{position:fixed;inset:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+  #game{position:fixed;inset:0;width:100vw;height:100dvh;display:block;background:#04070d}
   .hud{
-    position:fixed;left:14px;right:14px;top:12px;z-index:2;
+    position:fixed;left:calc(14px + env(safe-area-inset-left));right:calc(14px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:2;
     display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start;
     pointer-events:none;
   }
@@ -50,6 +50,29 @@
     position:fixed;inset:0;z-index:3;display:grid;place-items:center;padding:24px;
     background:radial-gradient(circle at 50% 38%, rgba(38,46,88,.38), rgba(4,7,13,.84) 68%);
   }
+  .rotateHint{
+    position:fixed;
+    inset:0;
+    z-index:4;
+    display:none;
+    place-items:center;
+    padding:24px;
+    text-align:center;
+    background:rgba(4,7,13,.86);
+    color:var(--ink);
+    pointer-events:none;
+  }
+  .rotateHint div{
+    max-width:320px;
+    padding:18px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+    font-weight:850;
+    line-height:1.25;
+  }
+  body.touchDevice.portraitPlay .rotateHint{display:grid}
   .card{
     width:min(540px,100%);border:1px solid rgba(255,255,255,.2);border-radius:8px;
     background:rgba(8,16,28,.9);box-shadow:0 24px 80px rgba(0,0,0,.5);
@@ -61,7 +84,7 @@
   .primary{min-width:132px;background:linear-gradient(180deg,#78f4ff,#22abc7);color:#021016;border:0}
   .ghost{min-width:132px}
   .touch{
-    position:fixed;left:12px;right:12px;bottom:12px;z-index:2;display:none;
+    position:fixed;left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));z-index:2;display:none;
     grid-template-columns:108px 92px 1fr 92px 92px;gap:10px;align-items:end;pointer-events:none;
   }
   .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px}
@@ -247,6 +270,161 @@
     background:radial-gradient(circle at 35% 30%, #f7fbff, #55e8ff 46%, #156777);
     box-shadow:0 10px 24px rgba(0,0,0,.38);
   }
+
+  body.touchDevice .touch{display:grid}
+
+  body.phone .hud,
+  body.tablet .hud{
+    left:calc(8px + env(safe-area-inset-left));
+    right:calc(8px + env(safe-area-inset-right));
+    top:calc(7px + env(safe-area-inset-top));
+    grid-template-columns:1fr auto;
+    gap:6px;
+  }
+  body.phone .stats,
+  body.tablet .stats{
+    gap:7px;
+    padding:7px 8px;
+    border-radius:8px;
+  }
+  body.phone .stat,
+  body.tablet .stat{min-width:36px}
+  body.phone .healthStat,
+  body.tablet .healthStat{min-width:72px}
+  body.phone .label,
+  body.tablet .label{font-size:9px}
+  body.phone .value,
+  body.tablet .value{font-size:15px}
+  body.phone .healthShell,
+  body.tablet .healthShell{width:72px;height:8px}
+  body.phone .center,
+  body.tablet.landscapePlay .center{display:none}
+  body.phone .rightPanel,
+  body.tablet .rightPanel{
+    grid-column:2;
+    grid-row:1;
+    gap:5px;
+    padding:6px;
+    border-radius:8px;
+  }
+  body.phone .rightPanel button,
+  body.tablet .rightPanel button{
+    min-width:34px;
+    height:34px;
+    padding:0 8px;
+    font-size:13px;
+  }
+  body.phone .overlay,
+  body.tablet .overlay{padding:16px}
+  body.phone .card,
+  body.tablet .card{
+    width:min(420px,100%);
+    padding:18px;
+  }
+  body.phone h1,
+  body.tablet h1{font-size:clamp(34px,12vw,54px)}
+  body.phone .card p,
+  body.tablet .card p{font-size:14px;line-height:1.35}
+  body.phone .startRow,
+  body.tablet .startRow{margin-top:14px;gap:8px}
+  body.phone .startRow button,
+  body.tablet .startRow button{
+    height:42px;
+    min-width:104px;
+  }
+
+  body.phone .touch,
+  body.tablet.landscapePlay .touch{
+    display:grid;
+    left:calc(12px + env(safe-area-inset-left));
+    right:calc(12px + env(safe-area-inset-right));
+    bottom:calc(10px + env(safe-area-inset-bottom));
+    grid-template-columns:104px 1fr minmax(210px,32vw);
+    gap:10px;
+    align-items:end;
+  }
+  body.phone .touch button,
+  body.tablet.landscapePlay .touch button{
+    height:56px;
+    border-radius:12px;
+    background:rgba(255,255,255,.12);
+    border-color:rgba(255,255,255,.24);
+    box-shadow:0 12px 34px rgba(0,0,0,.32);
+    font-size:20px;
+  }
+  body.phone #leftBtn,
+  body.phone #rightBtn,
+  body.phone #touchToggleBtn,
+  body.tablet.landscapePlay #leftBtn,
+  body.tablet.landscapePlay #rightBtn,
+  body.tablet.landscapePlay #touchToggleBtn{display:none}
+  body.phone #fireBtn,
+  body.tablet.landscapePlay #fireBtn{
+    grid-column:1;
+    grid-row:1;
+    justify-self:start;
+    width:104px;
+    height:64px;
+    font-size:24px;
+    background:rgba(255,82,112,.24);
+    border-color:rgba(255,82,112,.58);
+  }
+  body.phone .slidePad,
+  body.tablet.landscapePlay .slidePad{
+    grid-column:3;
+    grid-row:1;
+    justify-self:end;
+    display:flex;
+    align-items:center;
+    width:100%;
+    height:64px;
+    padding:0 18px;
+    border:1px solid rgba(85,232,255,.34);
+    border-radius:14px;
+    background:rgba(8,18,30,.58);
+    box-shadow:0 12px 34px rgba(0,0,0,.32), inset 0 0 20px rgba(85,232,255,.06);
+  }
+  body.phone .slideTrack,
+  body.tablet.landscapePlay .slideTrack{
+    position:relative;
+    width:100%;
+    height:10px;
+    border-radius:999px;
+    background:linear-gradient(90deg,rgba(255,255,255,.1),rgba(85,232,255,.34),rgba(255,255,255,.1));
+  }
+  body.phone .slideTrack::before,
+  body.tablet.landscapePlay .slideTrack::before{
+    content:"";
+    position:absolute;
+    left:50%;
+    top:-8px;
+    width:2px;
+    height:26px;
+    background:rgba(255,255,255,.35);
+    transform:translateX(-50%);
+  }
+  body.phone .slideThumb,
+  body.tablet.landscapePlay .slideThumb{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:48px;
+    height:48px;
+    border-radius:50%;
+    transform:translate(-50%,-50%);
+    border:1px solid rgba(255,255,255,.52);
+    background:radial-gradient(circle at 35% 30%, #f7fbff, #55e8ff 46%, #156777);
+    box-shadow:0 10px 24px rgba(0,0,0,.38);
+  }
+
+  body.phone:not(.landscapePlay) .touch{
+    grid-template-columns:96px 1fr;
+  }
+  body.phone:not(.landscapePlay) .slidePad{
+    grid-column:2;
+  }
+
+  body.computer .touch{display:none}
 </style>
 </head>
 <body>
@@ -280,6 +458,10 @@
   </div>
   <button id="leftBtn" class="touchControl" title="Move left">◀</button>
   <button id="rightBtn" class="touchControl" title="Move right">▶</button>
+</div>
+
+<div class="rotateHint" aria-hidden="true">
+  <div>Rotate your phone or iPad sideways for best play.</div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -377,24 +559,59 @@
     over(){ this.tone(250,.18,'sawtooth',.25,.7); setTimeout(() => this.tone(130,.36,'sawtooth',.25,.55), 150); }
   };
 
+  function viewportWidth(){
+    return Math.round(window.visualViewport?.width || innerWidth);
+  }
+
+  function viewportHeight(){
+    return Math.round(window.visualViewport?.height || innerHeight);
+  }
+
+  function classifyPlatform(){
+    const w = viewportWidth();
+    const h = viewportHeight();
+    const shortSide = Math.min(w, h);
+    const longSide = Math.max(w, h);
+    const isTouch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+    const isPhone = isTouch && shortSide <= 520 && longSide <= 950;
+    const isTablet = isTouch && !isPhone && shortSide <= 1024 && longSide <= 1400;
+    const isLandscape = w > h;
+
+    document.body.classList.toggle('touchDevice', isTouch);
+    document.body.classList.toggle('phone', isPhone);
+    document.body.classList.toggle('tablet', isTablet);
+    document.body.classList.toggle('computer', !isTouch || (!isPhone && !isTablet));
+    document.body.classList.toggle('landscapePlay', isLandscape && (isPhone || isTablet));
+    document.body.classList.toggle('portraitPlay', !isLandscape && (isPhone || isTablet));
+    document.body.classList.toggle('landscapePad', isLandscape && isTouch && w >= 721 && w <= 1366 && h <= 1024);
+  }
+
   function resize(){
+    const w = viewportWidth();
+    const h = viewportHeight();
     const dpr = Math.min(devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(innerWidth * dpr);
-    canvas.height = Math.floor(innerHeight * dpr);
-    canvas.style.width = innerWidth + 'px';
-    canvas.style.height = innerHeight + 'px';
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
     ctx.setTransform(dpr,0,0,dpr,0,0);
     if(state.player) state.player.y = rocketY();
-    document.body.classList.toggle('landscapePad', innerWidth > innerHeight && innerWidth >= 721 && innerWidth <= 1366 && innerHeight <= 1024);
+    classifyPlatform();
     applyControlsVisibility();
     buildStars();
   }
 
-  function rocketY(){ return innerHeight - (innerWidth < 720 ? 90 : 64); }
+  function rocketY(){
+    const w = viewportWidth();
+    const h = viewportHeight();
+    return h - (w < 720 ? 96 : 72);
+  }
 
   function buildStars(){
-    state.stars = Array.from({length: Math.floor(innerWidth * innerHeight / 7800)}, () => ({
-      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+    const w = viewportWidth();
+    const h = viewportHeight();
+    state.stars = Array.from({length: Math.floor(w * h / 7800)}, () => ({
+      x: Math.random() * w, y: Math.random() * h,
       z: .25 + Math.random() * 1.4, tw: Math.random() * Math.PI * 2
     }));
   }
@@ -406,7 +623,7 @@
     state.score = 0; state.wave = 1; state.health = state.maxHealth;
     state.shots = []; state.enemyShots = []; state.enemies = []; state.bonuses = []; state.floaters = []; state.sparks = [];
     state.spawnTimer = .2; state.enemiesLeft = waveCount(); state.fireCd = 0; state.rapid = 0; state.shield = 0; state.shake = 0; state.flash = 0;
-    state.player = { x:innerWidth/2, y:rocketY(), w:44, h:34, speed:410, inv:1.2 };
+    state.player = { x:viewportWidth()/2, y:rocketY(), w:44, h:34, speed:410, inv:1.2 };
     ui.overlay.classList.add('hide');
     updateHud();
     audio.wave();
@@ -425,11 +642,12 @@
   function spawnEnemy(){
     if(state.enemiesLeft <= 0) return;
     state.enemiesLeft--;
+    const w = viewportWidth();
     const margin = 34;
     const fromLeft = Math.random() < .5;
-    const x = Math.max(margin, Math.min(innerWidth - margin, state.player.x + (Math.random() * 180 - 90)));
+    const x = Math.max(margin, Math.min(w - margin, state.player.x + (Math.random() * 180 - 90)));
     state.enemies.push({
-      x: Math.random() < .45 ? (fromLeft ? margin : innerWidth - margin) : x,
+      x: Math.random() < .45 ? (fromLeft ? margin : w - margin) : x,
       y: -35,
       w:42,
       h:26,
@@ -486,6 +704,8 @@
 
   function update(dt){
     if(!state.running || state.paused) return;
+    const w = viewportWidth();
+    const h = viewportHeight();
     const p = state.player;
     state.fireCd = Math.max(0, state.fireCd - dt);
     state.rapid = Math.max(0, state.rapid - dt);
@@ -499,7 +719,7 @@
     if(left) p.x -= p.speed * dt;
     if(right) p.x += p.speed * dt;
     if(input.axis) p.x += p.speed * input.axis * dt;
-    p.x = Math.max(28, Math.min(innerWidth - 28, p.x));
+    p.x = Math.max(28, Math.min(w - 28, p.x));
     if(keys.has(' ') || input.fire) shoot();
 
     state.spawnTimer -= dt;
@@ -512,8 +732,8 @@
     state.enemyShots.forEach(s => { s.x += s.vx * dt; s.y += s.vy * dt; });
     state.bonuses.forEach(b => { b.y += b.vy * dt; b.spin += dt * 5; });
     state.shots = state.shots.filter(s => s.y > -40);
-    state.enemyShots = state.enemyShots.filter(s => s.y < innerHeight + 50 && s.x > -40 && s.x < innerWidth + 40);
-    state.bonuses = state.bonuses.filter(b => b.y < innerHeight + 40);
+    state.enemyShots = state.enemyShots.filter(s => s.y < h + 50 && s.x > -40 && s.x < w + 40);
+    state.bonuses = state.bonuses.filter(b => b.y < h + 40);
 
     for(const e of state.enemies){
       const desired = p.x + e.targetOffset + Math.sin(e.wobble) * 45;
@@ -527,8 +747,8 @@
         enemyShoot(e);
         e.shoot = 1.15 + Math.random() * 1.55 - Math.min(.35, state.wave * .03);
       }
-      if(e.x < 24 || e.x > innerWidth - 24) e.vx *= -1;
-      e.x = Math.max(24, Math.min(innerWidth - 24, e.x));
+      if(e.x < 24 || e.x > w - 24) e.vx *= -1;
+      e.x = Math.max(24, Math.min(w - 24, e.x));
     }
 
     for(const s of [...state.shots]){
@@ -559,10 +779,10 @@
       if(laneHit || hit(e,p)){
         e.dead = true;
         damagePlayer(22, -45, 'breach');
-      } else if(e.y > innerHeight + 40) {
+      } else if(e.y > h + 40) {
         e.dead = true;
         if(Math.abs(e.x - p.x) < 100) damagePlayer(16, -35, 'miss');
-        else addScore(-8, e.x, innerHeight - 60);
+        else addScore(-8, e.x, h - 60);
       }
     }
 
@@ -584,7 +804,7 @@
 
     if(state.enemiesLeft <= 0 && !state.enemies.length){
       state.wave++;
-      addScore(300, innerWidth / 2, 120);
+      addScore(300, w / 2, 120);
       state.health = Math.min(state.maxHealth, state.health + 18);
       state.enemiesLeft = waveCount();
       state.spawnTimer = .6;
@@ -640,18 +860,20 @@
   }
 
   function draw(){
-    ctx.clearRect(0,0,innerWidth,innerHeight);
+    const w = viewportWidth();
+    const h = viewportHeight();
+    ctx.clearRect(0,0,w,h);
     const shakeX = state.shake ? (Math.random()-.5)*state.shake*8 : 0;
     ctx.save();
     ctx.translate(shakeX,0);
-    const g = ctx.createLinearGradient(0,0,0,innerHeight);
+    const g = ctx.createLinearGradient(0,0,0,h);
     g.addColorStop(0,'#070b18');
     g.addColorStop(.55,'#07131f');
     g.addColorStop(1,'#150912');
     ctx.fillStyle = g;
-    ctx.fillRect(-20,0,innerWidth+40,innerHeight);
+    ctx.fillRect(-20,0,w+40,h);
     for(const s of state.stars){
-      s.y += s.z * .2; if(s.y > innerHeight) s.y = 0;
+      s.y += s.z * .2; if(s.y > h) s.y = 0;
       ctx.globalAlpha = .35 + Math.sin(performance.now()/800 + s.tw) * .22;
       ctx.fillStyle = '#dff8ff';
       ctx.fillRect(s.x,s.y,s.z*1.8,s.z*1.8);
@@ -667,7 +889,7 @@
     if(state.flash > 0){
       ctx.globalAlpha = state.flash * .25;
       ctx.fillStyle = varColor('red');
-      ctx.fillRect(0,0,innerWidth,innerHeight);
+      ctx.fillRect(0,0,w,h);
       ctx.globalAlpha = 1;
     }
     ctx.restore();
@@ -676,6 +898,7 @@
 
   function drawDangerLane(){
     if(!state.player || !state.running) return;
+    const w = viewportWidth();
     const p = state.player;
     const lineY = p.y - 76;
     ctx.globalAlpha = .18;
@@ -683,7 +906,7 @@
     ctx.setLineDash([8,10]);
     ctx.beginPath();
     ctx.moveTo(Math.max(0,p.x-58), lineY);
-    ctx.lineTo(Math.min(innerWidth,p.x+58), lineY);
+    ctx.lineTo(Math.min(w,p.x+58), lineY);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
@@ -807,12 +1030,14 @@
   }
 
   function banner(text){
+    const w = viewportWidth();
+    const h = viewportHeight();
     ctx.fillStyle = 'rgba(4,7,13,.66)';
-    ctx.fillRect(0,innerHeight/2-44,innerWidth,88);
+    ctx.fillRect(0,h/2-44,w,88);
     ctx.fillStyle = '#f7fbff';
     ctx.textAlign = 'center';
     ctx.font = '900 42px system-ui';
-    ctx.fillText(text,innerWidth/2,innerHeight/2+15);
+    ctx.fillText(text,w/2,h/2+15);
   }
 
   function loop(t){
@@ -824,6 +1049,8 @@
   }
 
   addEventListener('resize', resize);
+  addEventListener('orientationchange', () => setTimeout(resize, 120));
+  window.visualViewport?.addEventListener('resize', resize);
   addEventListener('keydown', e => {
     if(['ArrowLeft','ArrowRight',' ','p','P'].includes(e.key)) e.preventDefault();
     keys.add(e.key);

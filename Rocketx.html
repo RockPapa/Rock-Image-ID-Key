@@ -347,6 +347,7 @@
   }
   body.phone .touch{
     position:fixed;
+    bottom:calc(8px + env(safe-area-inset-bottom));
     z-index:5;
     width:auto;
     max-width:none;
@@ -436,7 +437,7 @@
 
   body.phone.landscapePlay .hud{
     top:auto;
-    bottom:calc(52px + env(safe-area-inset-bottom));
+    bottom:calc(8px + env(safe-area-inset-bottom));
     left:calc(128px + env(safe-area-inset-left));
     right:calc(max(244px, 32vw) + env(safe-area-inset-right));
     grid-template-columns:1fr auto;

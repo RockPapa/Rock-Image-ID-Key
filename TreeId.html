@@ -125,7 +125,7 @@
       position: absolute;
       z-index: 3;
       left: 18px;
-      top: 18px;
+      top: max(6px, env(safe-area-inset-top));
       width: auto;
       min-height: 40px;
       margin: 0;
@@ -207,8 +207,8 @@
 
     @media (max-width: 430px) {
       #startPage img {
-        height: 100vh;
-        height: 100dvh;
+        height: 90vh;
+        height: 90dvh;
         object-fit: cover;
         object-position: center top;
       }

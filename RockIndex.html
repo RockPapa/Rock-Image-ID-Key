@@ -22,6 +22,29 @@
     text-align: center;
   }
 
+  .back-button {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 2px solid white;
+    border-radius: 8px;
+    background: transparent;
+    color: white;
+    padding: 0.35rem 0.7rem;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .back-button:hover,
+  .back-button:focus {
+    background: white;
+    color: #004080;
+    outline: none;
+  }
+
   #searchBox {
     width: 90%;
     margin: 1rem auto;
@@ -57,7 +80,10 @@
 </style>
 </head>
 <body>
-  <header>Rock Index</header>
+  <header>
+    <button type="button" class="back-button" onclick="goBack()">Back</button>
+    Rock Index
+  </header>
 
   <input type="text" id="searchBox" placeholder="Search rocks..." onkeyup="filterList()">
 
@@ -113,6 +139,14 @@
   </ul>
 
 <script>
+function goBack() {
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = "index.html";
+  }
+}
+
 function filterList() {
   const input = document.getElementById("searchBox");
   const filter = input.value.toLowerCase();

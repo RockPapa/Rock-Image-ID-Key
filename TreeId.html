@@ -127,6 +127,26 @@
       height: 11%;
     }
 
+    #redcedarBtn {
+      top: 24%;
+      height: 12%;
+    }
+
+    #spruceBtn {
+      top: 39%;
+      height: 12%;
+    }
+
+    #firBtn {
+      top: 52%;
+      height: 12%;
+    }
+
+    #hemlockBtn {
+      top: 67%;
+      height: 12%;
+    }
+
     #backBtn {
       position: absolute;
       z-index: 3;
@@ -214,12 +234,12 @@
     @media (max-width: 430px) {
       #startPage {
         bottom: auto;
-        height: calc(var(--visible-height) - 12px);
+        height: calc(var(--visible-height) - 32px);
         min-height: 0;
       }
 
       #startPage img {
-        height: calc(var(--visible-height) - 12px);
+        height: calc(var(--visible-height) - 32px);
         object-fit: contain;
         object-position: center top;
       }
@@ -270,6 +290,10 @@
     <button id="needleEvergreenBtn" class="choiceBtn" type="button" aria-label="Trees with needles or scale-like leaves">Trees with needles or scale-like leaves</button>
     <button id="broadEvergreenBtn" class="choiceBtn" type="button" aria-label="Trees with broad evergreen leaves">Trees with broad evergreen leaves</button>
     <button id="pinesBtn" class="choiceBtn" type="button" aria-label="Pines">Pines</button>
+    <button id="redcedarBtn" class="choiceBtn" type="button" aria-label="Eastern redcedar">Eastern redcedar</button>
+    <button id="spruceBtn" class="choiceBtn" type="button" aria-label="Spruce">Spruce</button>
+    <button id="firBtn" class="choiceBtn" type="button" aria-label="Fir">Fir</button>
+    <button id="hemlockBtn" class="choiceBtn" type="button" aria-label="Hemlock">Hemlock</button>
   </div>
 
   <main>
@@ -322,7 +346,11 @@
       document.getElementById("alternateBtn"),
       document.getElementById("needleEvergreenBtn"),
       document.getElementById("broadEvergreenBtn"),
-      document.getElementById("pinesBtn")
+      document.getElementById("pinesBtn"),
+      document.getElementById("redcedarBtn"),
+      document.getElementById("spruceBtn"),
+      document.getElementById("firBtn"),
+      document.getElementById("hemlockBtn")
     ];
     let currentIntroPage = 1;
 
@@ -354,6 +382,10 @@
       document.getElementById("needleEvergreenBtn").style.display = pageNumber === 3 ? "block" : "none";
       document.getElementById("broadEvergreenBtn").style.display = pageNumber === 3 ? "block" : "none";
       document.getElementById("pinesBtn").style.display = "none";
+      document.getElementById("redcedarBtn").style.display = "none";
+      document.getElementById("spruceBtn").style.display = "none";
+      document.getElementById("firBtn").style.display = "none";
+      document.getElementById("hemlockBtn").style.display = "none";
     }
 
     function showIntroImage(pageKey, imageSrc, altText) {
@@ -364,6 +396,10 @@
       backBtn.style.display = "block";
       showChoiceButtons(false);
       document.getElementById("pinesBtn").style.display = pageKey === "evergreen" ? "block" : "none";
+      document.getElementById("redcedarBtn").style.display = pageKey === "evergreen" ? "block" : "none";
+      document.getElementById("spruceBtn").style.display = pageKey === "evergreen" ? "block" : "none";
+      document.getElementById("firBtn").style.display = pageKey === "evergreen" ? "block" : "none";
+      document.getElementById("hemlockBtn").style.display = pageKey === "evergreen" ? "block" : "none";
     }
 
     beginBtn.addEventListener("click", () => {
@@ -379,7 +415,7 @@
     backBtn.addEventListener("click", () => {
       if (currentIntroPage === 2) {
         showIntroPage(1, "Tree ID introduction");
-      } else if (currentIntroPage === "pines") {
+      } else if (currentIntroPage === "pines" || currentIntroPage === "redcedar" || currentIntroPage === "spruce" || currentIntroPage === "fir" || currentIntroPage === "hemlock") {
         showIntroImage("evergreen", "images/evergreen.png", "Evergreen tree choices");
       } else if (currentIntroPage === "evergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
         showIntroPage(3, "Tree ID evergreen page");
@@ -406,6 +442,22 @@
 
     document.getElementById("pinesBtn").addEventListener("click", () => {
       showIntroImage("pines", "images/pines.png", "Pines");
+    });
+
+    document.getElementById("redcedarBtn").addEventListener("click", () => {
+      showIntroImage("redcedar", "images/redcedar.jpg", "Eastern redcedar");
+    });
+
+    document.getElementById("spruceBtn").addEventListener("click", () => {
+      showIntroImage("spruce", "images/red_spruce.jpg", "Red spruce");
+    });
+
+    document.getElementById("firBtn").addEventListener("click", () => {
+      showIntroImage("fir", "images/fraser_fir.jpg", "Fraser fir");
+    });
+
+    document.getElementById("hemlockBtn").addEventListener("click", () => {
+      showIntroImage("hemlock", "images/eastern_hemlock.jpg", "Eastern hemlock");
     });
 
     document.getElementById("broadEvergreenBtn").addEventListener("click", () => {

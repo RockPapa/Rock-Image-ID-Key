@@ -84,7 +84,7 @@
   .primary{min-width:132px;background:linear-gradient(180deg,#78f4ff,#22abc7);color:#021016;border:0}
   .ghost{min-width:132px}
   .touch{
-    position:fixed;left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));bottom:calc(12px + env(safe-area-inset-bottom));z-index:2;display:none;
+    position:fixed;left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));bottom:calc(52px + env(safe-area-inset-bottom));z-index:2;display:none;
     grid-template-columns:108px 92px 1fr 92px 92px;gap:10px;align-items:end;pointer-events:none;
   }
   .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px}
@@ -113,7 +113,7 @@
       display:grid;
       left:calc(22px + env(safe-area-inset-left));
       right:calc(22px + env(safe-area-inset-right));
-      bottom:calc(18px + env(safe-area-inset-bottom));
+      bottom:calc(52px + env(safe-area-inset-bottom));
       grid-template-columns:142px 92px 1fr minmax(168px,21.6vw);
       gap:14px;
       align-items:end;
@@ -195,7 +195,7 @@
     display:grid;
     left:calc(22px + env(safe-area-inset-left));
     right:calc(22px + env(safe-area-inset-right));
-    bottom:calc(18px + env(safe-area-inset-bottom));
+    bottom:calc(52px + env(safe-area-inset-bottom));
     grid-template-columns:142px 92px 1fr minmax(168px,21.6vw);
     gap:14px;
     align-items:end;
@@ -338,7 +338,7 @@
     display:grid;
     left:calc(12px + env(safe-area-inset-left));
     right:calc(12px + env(safe-area-inset-right));
-    bottom:calc(10px + env(safe-area-inset-bottom));
+    bottom:calc(52px + env(safe-area-inset-bottom));
     grid-template-columns:104px 1fr minmax(210px,32vw);
     gap:10px;
     align-items:end;
@@ -424,7 +424,7 @@
     grid-column:2;
   }
 
-  body.computer .touch{display:none}
+  body.computer .touch{display:grid}
 </style>
 </head>
 <body>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Rocketx</title>
 <style>
   :root{
@@ -18,7 +18,7 @@
     --violet:#b693ff;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;min-height:100dvh;overflow:hidden;background:#04070d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  html,body{margin:0;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:#04070d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
   body{position:fixed;inset:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-text-size-adjust:100%;overscroll-behavior:none}
   #game{position:fixed;inset:0;width:100vw;height:100dvh;display:block;background:#04070d}
   .hud{
@@ -86,13 +86,15 @@
   .touch{
     position:fixed;left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));bottom:calc(52px + env(safe-area-inset-bottom));z-index:2;display:none;
     grid-template-columns:108px 92px 1fr 92px 92px;gap:10px;align-items:end;pointer-events:none;
+    touch-action:none;
+    -webkit-user-select:none;
   }
-  .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px}
+  .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px;touch-action:none}
   #fireBtn{grid-column:1;justify-self:start;width:108px;background:rgba(255,82,112,.2);border-color:rgba(255,82,112,.5)}
   #touchToggleBtn{grid-column:2;justify-self:start;width:92px;font-size:14px}
   #leftBtn{grid-column:4}
   #rightBtn{grid-column:5}
-  .slidePad{display:none;pointer-events:auto}
+  .slidePad{display:none;pointer-events:auto;touch-action:none;-webkit-user-select:none}
   body.controlsOff .touchControl{display:none!important}
   .hide{display:none}
   @media (max-width:720px){
@@ -337,11 +339,19 @@
   body.tablet.landscapePlay .touch{
     display:grid;
     left:calc(12px + env(safe-area-inset-left));
-    right:calc(12px + env(safe-area-inset-right));
+    right:calc(28px + env(safe-area-inset-right));
     bottom:calc(52px + env(safe-area-inset-bottom));
     grid-template-columns:104px 1fr minmax(210px,32vw);
     gap:10px;
     align-items:end;
+  }
+  body.phone .touch{
+    position:fixed;
+    z-index:5;
+    width:auto;
+    max-width:none;
+    transform:none;
+    contain:layout paint;
   }
   body.phone .touch button,
   body.tablet.landscapePlay .touch button{
@@ -517,6 +527,7 @@
     player:null, shots:[], enemyShots:[], enemies:[], bonuses:[], floaters:[], stars:[], sparks:[],
     spawnTimer:0, enemiesLeft:0, last:0, fireCd:0, rapid:0, shield:0, shake:0, flash:0
   };
+  let lastViewport = { w: 0, h: 0 };
   ui.music.volume = .2016;
   let controlsOn = localStorage.getItem('rocketxControlsOn') !== '0';
   const audio = {
@@ -589,7 +600,7 @@
     const shortSide = Math.min(w, h);
     const longSide = Math.max(w, h);
     const isTouch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
-    const isPhone = isTouch && shortSide <= 520 && longSide <= 950;
+    const isPhone = isTouch && shortSide <= 560 && longSide <= 1000;
     const isTablet = isTouch && !isPhone && shortSide <= 1024 && longSide <= 1400;
     const isLandscape = w > h;
 
@@ -605,6 +616,9 @@
   function resize(){
     const w = viewportWidth();
     const h = viewportHeight();
+    const tinyViewportShift = Math.abs(w - lastViewport.w) < 4 && Math.abs(h - lastViewport.h) < 28;
+    if (tinyViewportShift && document.body.classList.contains('phone')) return;
+    lastViewport = { w, h };
     const dpr = Math.min(devicePixelRatio || 1, 2);
     canvas.width = Math.floor(w * dpr);
     canvas.height = Math.floor(h * dpr);
@@ -1067,6 +1081,12 @@
   addEventListener('resize', resize);
   addEventListener('orientationchange', () => setTimeout(resize, 120));
   window.visualViewport?.addEventListener('resize', resize);
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+    document.addEventListener(type, e => e.preventDefault(), { passive:false });
+  });
+  document.addEventListener('touchmove', e => {
+    if (e.target.closest?.('.touch')) e.preventDefault();
+  }, { passive:false });
   addEventListener('keydown', e => {
     if(['ArrowLeft','ArrowRight',' ','p','P'].includes(e.key)) e.preventDefault();
     keys.add(e.key);
@@ -1169,6 +1189,7 @@
       resetSlider();
     };
     ui.slidePad.addEventListener('pointerdown', e => {
+      e.preventDefault();
       activePointer = e.pointerId;
       ui.slidePad.setPointerCapture?.(e.pointerId);
       move(e);

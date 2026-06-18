@@ -50,10 +50,12 @@
       display: block;
       object-fit: contain;
       object-position: top center;
+      pointer-events: none;
     }
 
     #beginBtn {
       position: absolute;
+      z-index: 2;
       left: 12%;
       right: 12%;
       top: 55%;
@@ -75,6 +77,7 @@
 
     .choiceBtn {
       position: absolute;
+      z-index: 2;
       left: 6%;
       right: 6%;
       border: 0;
@@ -120,6 +123,7 @@
 
     #backBtn {
       position: absolute;
+      z-index: 3;
       left: 18px;
       top: 18px;
       width: auto;
@@ -298,6 +302,7 @@
     const identifyBtn = document.getElementById("identifyBtn");
     const beginBtn = document.getElementById("beginBtn");
     const backBtn = document.getElementById("backBtn");
+    const startPage = document.getElementById("startPage");
     const startPageImage = document.getElementById("startPageImage");
     const choiceButtons = [
       document.getElementById("evergreenBtn"),
@@ -330,6 +335,12 @@
 
     beginBtn.addEventListener("click", () => {
       showIntroPage(2, "Tree ID page 2");
+    });
+
+    startPage.addEventListener("click", (event) => {
+      if (currentIntroPage === 1 && event.target === startPage) {
+        showIntroPage(2, "Tree ID page 2");
+      }
     });
 
     backBtn.addEventListener("click", () => {

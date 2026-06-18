@@ -424,6 +424,22 @@
     grid-column:2;
   }
 
+  body.phone.landscapePlay .hud{
+    top:auto;
+    bottom:calc(52px + env(safe-area-inset-bottom));
+    left:calc(128px + env(safe-area-inset-left));
+    right:calc(max(244px, 32vw) + env(safe-area-inset-right));
+    grid-template-columns:1fr auto;
+    align-items:end;
+  }
+  body.phone.landscapePlay .stats{
+    min-width:0;
+    overflow:hidden;
+  }
+  body.phone.landscapePlay .rightPanel{
+    justify-self:end;
+  }
+
   body.computer .touch{display:grid}
 </style>
 </head>

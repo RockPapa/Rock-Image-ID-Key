@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Space Raiders</title>
 <style>
   :root{
@@ -17,11 +17,11 @@
     --green:#7cff9a;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden;background:#05080d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-  body{touch-action:none;user-select:none}
-  #game{position:fixed;inset:0;width:100%;height:100%;display:block;background:#05080d}
+  html,body{margin:0;width:100%;height:100%;min-height:100dvh;overflow:hidden;background:#05080d;color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+  body{position:fixed;inset:0;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-text-size-adjust:100%;overscroll-behavior:none}
+  #game{position:fixed;inset:0;width:100vw;height:100dvh;display:block;background:#05080d}
   .hud{
-    position:fixed;left:14px;right:14px;top:12px;z-index:2;
+    position:fixed;left:calc(14px + env(safe-area-inset-left));right:calc(14px + env(safe-area-inset-right));top:calc(12px + env(safe-area-inset-top));z-index:2;
     display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start;
     pointer-events:none;
   }
@@ -50,6 +50,29 @@
     position:fixed;inset:0;z-index:3;display:grid;place-items:center;padding:24px;
     background:radial-gradient(circle at 50% 38%, rgba(26,55,72,.38), rgba(5,8,13,.82) 68%);
   }
+  .rotateHint{
+    position:fixed;
+    inset:0;
+    z-index:4;
+    display:none;
+    place-items:center;
+    padding:24px;
+    text-align:center;
+    background:rgba(5,8,13,.86);
+    color:var(--ink);
+    pointer-events:none;
+  }
+  .rotateHint div{
+    max-width:320px;
+    padding:18px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    box-shadow:0 20px 60px rgba(0,0,0,.45);
+    font-weight:850;
+    line-height:1.25;
+  }
+  body.touchDevice.portraitPlay .rotateHint{display:grid}
   .card{
     width:min(520px,100%);border:1px solid rgba(255,255,255,.2);border-radius:8px;
     background:rgba(6,16,24,.88);box-shadow:0 24px 80px rgba(0,0,0,.5);
@@ -61,10 +84,12 @@
   .primary{min-width:132px;background:linear-gradient(180deg,#63f0ff,#21a8c5);color:#021016;border:0}
   .ghost{min-width:132px}
   .touch{
-    position:fixed;left:12px;right:12px;bottom:12px;z-index:2;display:none;
+    position:fixed;left:calc(12px + env(safe-area-inset-left));right:calc(12px + env(safe-area-inset-right));bottom:calc(52px + env(safe-area-inset-bottom));z-index:2;display:none;
     grid-template-columns:108px 1fr minmax(184px,46vw);gap:10px;align-items:end;pointer-events:none;
+    touch-action:none;
+    -webkit-user-select:none;
   }
-  .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px}
+  .touch button{height:62px;background:rgba(255,255,255,.1);pointer-events:auto;font-size:20px;touch-action:none}
   #fireBtn{grid-column:1;justify-self:start;width:108px;background:rgba(255,85,115,.2);border-color:rgba(255,85,115,.5)}
   .slidePad{
     grid-column:3;
@@ -79,6 +104,8 @@
     background:rgba(8,18,28,.58);
     box-shadow:0 10px 26px rgba(0,0,0,.28), inset 0 0 18px rgba(86,230,255,.06);
     pointer-events:auto;
+    touch-action:none;
+    -webkit-user-select:none;
   }
   .slideTrack{
     position:relative;
@@ -205,6 +232,144 @@
   body.landscapePad .slideTrack{height:12px}
   body.landscapePad .slideTrack::before{top:-10px;height:32px}
   body.landscapePad .slideThumb{width:56px;height:56px}
+
+  body.touchDevice .touch,
+  body.computer .touch{display:grid}
+
+  body.phone .hud,
+  body.tablet .hud{
+    left:calc(8px + env(safe-area-inset-left));
+    right:calc(8px + env(safe-area-inset-right));
+    top:calc(7px + env(safe-area-inset-top));
+    grid-template-columns:1fr auto;
+    gap:6px;
+  }
+  body.phone .stats,
+  body.tablet .stats{
+    gap:7px;
+    padding:7px 8px;
+    border-radius:8px;
+  }
+  body.phone .stat,
+  body.tablet .stat{min-width:36px}
+  body.phone .label,
+  body.tablet .label{font-size:9px}
+  body.phone .value,
+  body.tablet .value{font-size:15px}
+  body.phone .center,
+  body.tablet.landscapePlay .center{display:none}
+  body.phone .rightPanel,
+  body.tablet .rightPanel{
+    grid-column:2;
+    grid-row:1;
+    gap:5px;
+    padding:6px;
+    border-radius:8px;
+  }
+  body.phone .rightPanel button,
+  body.tablet .rightPanel button{
+    min-width:34px;
+    height:34px;
+    padding:0 8px;
+    font-size:13px;
+  }
+  body.phone .overlay,
+  body.tablet .overlay{padding:16px}
+  body.phone .card,
+  body.tablet .card{
+    width:min(420px,100%);
+    padding:18px;
+  }
+  body.phone h1,
+  body.tablet h1{font-size:clamp(34px,12vw,54px)}
+  body.phone .card p,
+  body.tablet .card p{font-size:14px;line-height:1.35}
+  body.phone .startRow,
+  body.tablet .startRow{margin-top:14px;gap:8px}
+  body.phone .startRow button,
+  body.tablet .startRow button{
+    height:42px;
+    min-width:104px;
+  }
+
+  body.phone .touch,
+  body.tablet.landscapePlay .touch{
+    display:grid;
+    left:calc(12px + env(safe-area-inset-left));
+    right:calc(28px + env(safe-area-inset-right));
+    bottom:calc(52px + env(safe-area-inset-bottom));
+    grid-template-columns:104px 1fr minmax(210px,32vw);
+    gap:10px;
+    align-items:end;
+  }
+  body.phone .touch{
+    position:fixed;
+    bottom:calc(8px + env(safe-area-inset-bottom));
+    z-index:5;
+    width:auto;
+    max-width:none;
+    transform:none;
+    contain:layout paint;
+  }
+  body.phone .touch button,
+  body.tablet.landscapePlay .touch button{
+    height:56px;
+    border-radius:12px;
+    background:rgba(255,255,255,.12);
+    border-color:rgba(255,255,255,.24);
+    box-shadow:0 12px 34px rgba(0,0,0,.32);
+    font-size:20px;
+  }
+  body.phone #fireBtn,
+  body.tablet.landscapePlay #fireBtn{
+    grid-column:1;
+    grid-row:1;
+    justify-self:start;
+    width:104px;
+    height:64px;
+    font-size:24px;
+    background:rgba(255,85,115,.24);
+    border-color:rgba(255,85,115,.58);
+  }
+  body.phone .slidePad,
+  body.tablet.landscapePlay .slidePad{
+    grid-column:3;
+    grid-row:1;
+    justify-self:end;
+    width:100%;
+    height:64px;
+    padding:0 18px;
+    border-radius:14px;
+  }
+  body.phone .slideTrack,
+  body.tablet.landscapePlay .slideTrack{height:10px}
+  body.phone .slideTrack::before,
+  body.tablet.landscapePlay .slideTrack::before{top:-8px;height:26px}
+  body.phone .slideThumb,
+  body.tablet.landscapePlay .slideThumb{width:48px;height:48px}
+
+  body.phone:not(.landscapePlay) .touch{
+    grid-template-columns:96px 1fr;
+  }
+  body.phone:not(.landscapePlay) .slidePad{
+    grid-column:2;
+  }
+
+  body.phone.landscapePlay .hud{
+    top:auto;
+    bottom:calc(8px + env(safe-area-inset-bottom));
+    left:calc(128px + env(safe-area-inset-left));
+    right:calc(max(244px, 32vw) + env(safe-area-inset-right));
+    grid-template-columns:1fr auto;
+    align-items:end;
+  }
+  body.phone.landscapePlay .stats{
+    min-width:0;
+    overflow:hidden;
+  }
+  body.phone.landscapePlay .rightPanel{
+    justify-self:end;
+  }
 </style>
 </head>
 <body>
@@ -234,6 +399,10 @@
       <div class="slideThumb" id="slideThumb"></div>
     </div>
   </div>
+</div>
+
+<div class="rotateHint" aria-hidden="true">
+  <div>Rotate your phone or iPad sideways for best play.</div>
 </div>
 
 <div class="overlay" id="overlay">
@@ -271,6 +440,7 @@
     player:null, shots:[], alienShots:[], aliens:[], shields:[], stars:[], sparks:[], powerups:[],
     fleet:{ dir:1, step:22, speed:18, drop:18, edge:false }, last:0, fireCd:0, rapid:0, shake:0
   };
+  let lastViewport = { w: 0, h: 0 };
   const audio = {
     ctx:null, master:null, stepTimer:0, stepTone:0,
     ensure(){
@@ -338,22 +508,68 @@
     }
   };
 
+  function viewportWidth(){
+    return Math.round(window.visualViewport?.width || innerWidth);
+  }
+
+  function viewportHeight(){
+    return Math.round(window.visualViewport?.height || innerHeight);
+  }
+
+  function classifyPlatform(){
+    const w = viewportWidth();
+    const h = viewportHeight();
+    const shortSide = Math.min(w, h);
+    const longSide = Math.max(w, h);
+    const isTouch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
+    const isPhone = isTouch && shortSide <= 560 && longSide <= 1000;
+    const isTablet = isTouch && !isPhone && shortSide <= 1024 && longSide <= 1400;
+    const isLandscape = w > h;
+
+    document.body.classList.toggle('touchDevice', isTouch);
+    document.body.classList.toggle('phone', isPhone);
+    document.body.classList.toggle('tablet', isTablet);
+    document.body.classList.toggle('computer', !isTouch || (!isPhone && !isTablet));
+    document.body.classList.toggle('landscapePlay', isLandscape && (isPhone || isTablet));
+    document.body.classList.toggle('portraitPlay', !isLandscape && (isPhone || isTablet));
+    document.body.classList.toggle('landscapePad', isLandscape && isTouch && w >= 721 && w <= 1366 && h <= 1024);
+  }
+
+  function playerY(){
+    const w = viewportWidth();
+    const h = viewportHeight();
+    return h - (w < 720 ? 96 : 72);
+  }
+
+  function shieldY(){
+    const w = viewportWidth();
+    const h = viewportHeight();
+    return h - (w < 720 ? 160 : 142);
+  }
+
   function resize(){
+    const w = viewportWidth();
+    const h = viewportHeight();
+    const tinyViewportShift = Math.abs(w - lastViewport.w) < 4 && Math.abs(h - lastViewport.h) < 28;
+    if (tinyViewportShift && document.body.classList.contains('phone')) return;
+    lastViewport = { w, h };
     const dpr = Math.min(devicePixelRatio || 1, 2);
-    canvas.width = Math.floor(innerWidth * dpr);
-    canvas.height = Math.floor(innerHeight * dpr);
-    canvas.style.width = innerWidth + 'px';
-    canvas.style.height = innerHeight + 'px';
+    canvas.width = Math.floor(w * dpr);
+    canvas.height = Math.floor(h * dpr);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    if(state.player) state.player.y = innerHeight - (innerWidth < 720 ? 90 : 64);
-    document.body.classList.toggle('landscapePad', innerWidth > innerHeight && innerWidth >= 721 && innerWidth <= 1366 && innerHeight <= 1024);
+    if(state.player) state.player.y = playerY();
+    classifyPlatform();
     applyControlsVisibility();
     buildStars();
   }
 
   function buildStars(){
-    state.stars = Array.from({length: Math.floor(innerWidth * innerHeight / 8500)}, () => ({
-      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+    const w = viewportWidth();
+    const h = viewportHeight();
+    state.stars = Array.from({length: Math.floor(w * h / 8500)}, () => ({
+      x: Math.random() * w, y: Math.random() * h,
       z: .25 + Math.random() * 1.2, tw: Math.random() * Math.PI * 2
     }));
   }
@@ -363,7 +579,7 @@
     state.running = true; state.paused = false; state.over = false;
     state.score = 0; state.wave = 1; state.lives = 3; state.shots = []; state.alienShots = [];
     state.powerups = []; state.sparks = []; state.rapid = 0; state.shake = 0;
-    state.player = { x: innerWidth / 2, y: innerHeight - (innerWidth < 720 ? 90 : 64), w:42, h:24, speed:380, inv:1.5 };
+    state.player = { x: viewportWidth() / 2, y: playerY(), w:42, h:24, speed:380, inv:1.5 };
     buildShields();
     spawnWave();
     ui.overlay.classList.add('hide');
@@ -373,11 +589,12 @@
 
   function buildShields(){
     state.shields = [];
-    const count = innerWidth < 620 ? 3 : 4;
-    const gap = innerWidth / (count + 1);
+    const w = viewportWidth();
+    const count = w < 620 ? 3 : 4;
+    const gap = w / (count + 1);
     for(let i=1;i<=count;i++){
       const x = gap * i - 44;
-      const y = innerHeight - (innerWidth < 720 ? 160 : 142);
+      const y = shieldY();
       for(let r=0;r<3;r++){
         for(let c=0;c<6;c++){
           if((r === 0 && (c === 0 || c === 5)) || (r === 2 && (c === 2 || c === 3))) continue;
@@ -389,11 +606,12 @@
 
   function spawnWave(){
     state.aliens = [];
-    const maxCols = innerWidth < 520 ? 7 : 9;
-    const cols = Math.max(innerWidth < 520 ? 4 : 6, Math.min(maxCols, Math.floor(innerWidth / 68) + Math.floor(state.wave / 4)));
+    const w = viewportWidth();
+    const maxCols = w < 520 ? 7 : 9;
+    const cols = Math.max(w < 520 ? 4 : 6, Math.min(maxCols, Math.floor(w / 68) + Math.floor(state.wave / 4)));
     const rows = Math.min(5, 2 + Math.ceil(state.wave / 2));
-    const gap = Math.min(54, Math.max(38, (innerWidth - 58) / Math.max(1, cols - 1)));
-    const startX = innerWidth / 2 - (cols - 1) * gap / 2;
+    const gap = Math.min(54, Math.max(38, (w - 58) / Math.max(1, cols - 1)));
+    const startX = w / 2 - (cols - 1) * gap / 2;
     for(let r=0;r<rows;r++){
       for(let c=0;c<cols;c++){
         state.aliens.push({x:startX+c*gap,y:82+r*42,w:34,h:24,row:r,phase:Math.random()*6,hp:r===0 && state.wave>4 ? 2 : 1});
@@ -440,6 +658,8 @@
 
   function update(dt){
     if(!state.running || state.paused) return;
+    const w = viewportWidth();
+    const h = viewportHeight();
     state.fireCd = Math.max(0, state.fireCd - dt);
     state.rapid = Math.max(0, state.rapid - dt);
     state.shake = Math.max(0, state.shake - dt * 18);
@@ -449,7 +669,7 @@
     if(left) p.x -= p.speed * dt;
     if(right) p.x += p.speed * dt;
     if(input.axis) p.x += p.speed * input.axis * dt;
-    p.x = Math.max(26, Math.min(innerWidth - 26, p.x));
+    p.x = Math.max(26, Math.min(w - 26, p.x));
     p.inv = Math.max(0, p.inv - dt);
     if(keys.has(' ') || input.fire) shoot();
 
@@ -457,15 +677,15 @@
     state.alienShots.forEach(s => s.y += s.vy * dt);
     state.powerups.forEach(pu => pu.y += pu.vy * dt);
     state.shots = state.shots.filter(s => s.y > -40);
-    state.alienShots = state.alienShots.filter(s => s.y < innerHeight + 40);
-    state.powerups = state.powerups.filter(pu => pu.y < innerHeight + 40);
+    state.alienShots = state.alienShots.filter(s => s.y < h + 40);
+    state.powerups = state.powerups.filter(pu => pu.y < h + 40);
 
     const f = state.fleet;
     f.edge = false;
     for(const a of state.aliens){
       a.x += f.dir * f.speed * dt;
       a.phase += dt * 7;
-      if(a.x < 24 || a.x > innerWidth - 24) f.edge = true;
+      if(a.x < 24 || a.x > w - 24) f.edge = true;
     }
     if(f.edge){
       f.dir *= -1;
@@ -498,7 +718,7 @@
       if(!s.dead && p.inv <= 0 && hit(s,p)) damagePlayer();
     }
     for(const a of state.aliens){
-      if(a.y > innerHeight - 180 || hit(a,p)){ damagePlayer(true); break; }
+      if(a.y > h - 180 || hit(a,p)){ damagePlayer(true); break; }
     }
     for(const pu of state.powerups){
       if(hit(pu,p)){
@@ -544,14 +764,16 @@
   }
 
   function draw(){
-    ctx.clearRect(0,0,innerWidth,innerHeight);
+    const w = viewportWidth();
+    const h = viewportHeight();
+    ctx.clearRect(0,0,w,h);
     const shakeX = state.shake ? (Math.random()-.5)*state.shake*8 : 0;
     ctx.save(); ctx.translate(shakeX,0);
-    const g = ctx.createLinearGradient(0,0,0,innerHeight);
+    const g = ctx.createLinearGradient(0,0,0,h);
     g.addColorStop(0,'#06121f'); g.addColorStop(.58,'#081019'); g.addColorStop(1,'#110914');
-    ctx.fillStyle = g; ctx.fillRect(-20,0,innerWidth+40,innerHeight);
+    ctx.fillStyle = g; ctx.fillRect(-20,0,w+40,h);
     for(const s of state.stars){
-      s.y += s.z * .16; if(s.y > innerHeight) s.y = 0;
+      s.y += s.z * .16; if(s.y > h) s.y = 0;
       ctx.globalAlpha = .35 + Math.sin(performance.now()/800 + s.tw) * .22;
       ctx.fillStyle = '#d9f8ff'; ctx.fillRect(s.x,s.y,s.z*1.8,s.z*1.8);
     }
@@ -618,9 +840,11 @@
   }
 
   function banner(text){
-    ctx.fillStyle = 'rgba(5,8,13,.64)'; ctx.fillRect(0,innerHeight/2-44,innerWidth,88);
+    const w = viewportWidth();
+    const h = viewportHeight();
+    ctx.fillStyle = 'rgba(5,8,13,.64)'; ctx.fillRect(0,h/2-44,w,88);
     ctx.fillStyle = '#f7fbff'; ctx.textAlign = 'center'; ctx.font = '900 42px system-ui';
-    ctx.fillText(text,innerWidth/2,innerHeight/2+15);
+    ctx.fillText(text,w/2,h/2+15);
   }
 
   function loop(t){
@@ -629,6 +853,14 @@
   }
 
   addEventListener('resize', resize);
+  addEventListener('orientationchange', () => setTimeout(resize, 120));
+  window.visualViewport?.addEventListener('resize', resize);
+  ['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+    document.addEventListener(type, e => e.preventDefault(), { passive:false });
+  });
+  document.addEventListener('touchmove', e => {
+    if (e.target.closest?.('.touch')) e.preventDefault();
+  }, { passive:false });
   addEventListener('keydown', e => {
     if(['ArrowLeft','ArrowRight',' ','p','P'].includes(e.key)) e.preventDefault();
     keys.add(e.key);
@@ -700,6 +932,7 @@
       resetSlider();
     };
     ui.slidePad.addEventListener('pointerdown', e => {
+      e.preventDefault();
       activePointer = e.pointerId;
       ui.slidePad.setPointerCapture?.(e.pointerId);
       move(e);

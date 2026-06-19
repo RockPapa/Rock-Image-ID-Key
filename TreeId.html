@@ -11,7 +11,7 @@
       min-height: 100%;
       --visible-height: 100vh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f1d12 url("images/background.png") center / cover fixed no-repeat;
+      background: #0f1d12 url("treeid/background.png") center / cover fixed no-repeat;
       color: #162316;
     }
 
@@ -311,7 +311,7 @@
 </head>
 <body>
   <div id="startPage" aria-label="Tree ID introduction">
-    <img id="startPageImage" src="images/page1.png" alt="Tree ID introduction">
+    <img id="startPageImage" src="treeid/page1.png" alt="Tree ID introduction">
     <button id="beginBtn" type="button" aria-label="Let's begin">Let's begin</button>
     <button id="backBtn" type="button" aria-label="Back">‹</button>
     <button id="evergreenBtn" class="choiceBtn" type="button" aria-label="Tree is evergreen">Tree is evergreen</button>
@@ -413,16 +413,16 @@
       document.getElementById("hemlockNeedlesBtn")
     ];
     const pineSpecies = [
-      { btn: document.getElementById("virginiaPineBtn"), pageKey: "virginiaPine", imageSrc: "images/virginia_pine.jpg", altText: "Virginia pine" },
-      { btn: document.getElementById("sprucePineBtn"), pageKey: "sprucePine", imageSrc: "images/spruce_pine.jpg", altText: "Spruce pine" },
-      { btn: document.getElementById("slashPineBtn"), pageKey: "slashPine", imageSrc: "images/slash_pine.jpg", altText: "Slash pine" },
-      { btn: document.getElementById("tableMountainPineBtn"), pageKey: "tableMountainPine", imageSrc: "images/table_mountain_pine.jpg", altText: "Table Mountain pine" },
-      { btn: document.getElementById("shortleafPineBtn"), pageKey: "shortleafPine", imageSrc: "images/shortleaf_pine.jpg", altText: "Shortleaf pine" },
-      { btn: document.getElementById("loblollyPineBtn"), pageKey: "loblollyPine", imageSrc: "images/loblolly_pine.jpg", altText: "Loblolly pine" },
-      { btn: document.getElementById("longleafPineBtn"), pageKey: "longleafPine", imageSrc: "images/longleaf_pine.jpg", altText: "Longleaf pine" },
-      { btn: document.getElementById("pitchPineBtn"), pageKey: "pitchPine", imageSrc: "images/pitch_pine.jpg", altText: "Pitch pine" },
-      { btn: document.getElementById("pondPineBtn"), pageKey: "pondPine", imageSrc: "images/pond_pine.jpg", altText: "Pond pine" },
-      { btn: document.getElementById("easternWhitePineBtn"), pageKey: "easternWhitePine", imageSrc: "images/eastern_white_pine.jpg", altText: "Eastern white pine" }
+      { btn: document.getElementById("virginiaPineBtn"), pageKey: "virginiaPine", imageSrc: "treeid/virginia_pine.jpg", altText: "Virginia pine" },
+      { btn: document.getElementById("sprucePineBtn"), pageKey: "sprucePine", imageSrc: "treeid/spruce_pine.jpg", altText: "Spruce pine" },
+      { btn: document.getElementById("slashPineBtn"), pageKey: "slashPine", imageSrc: "treeid/slash_pine.jpg", altText: "Slash pine" },
+      { btn: document.getElementById("tableMountainPineBtn"), pageKey: "tableMountainPine", imageSrc: "treeid/table_mountain_pine.jpg", altText: "Table Mountain pine" },
+      { btn: document.getElementById("shortleafPineBtn"), pageKey: "shortleafPine", imageSrc: "treeid/shortleaf_pine.jpg", altText: "Shortleaf pine" },
+      { btn: document.getElementById("loblollyPineBtn"), pageKey: "loblollyPine", imageSrc: "treeid/loblolly_pine.jpg", altText: "Loblolly pine" },
+      { btn: document.getElementById("longleafPineBtn"), pageKey: "longleafPine", imageSrc: "treeid/longleaf_pine.jpg", altText: "Longleaf pine" },
+      { btn: document.getElementById("pitchPineBtn"), pageKey: "pitchPine", imageSrc: "treeid/pitch_pine.jpg", altText: "Pitch pine" },
+      { btn: document.getElementById("pondPineBtn"), pageKey: "pondPine", imageSrc: "treeid/pond_pine.jpg", altText: "Pond pine" },
+      { btn: document.getElementById("easternWhitePineBtn"), pageKey: "easternWhitePine", imageSrc: "treeid/eastern_white_pine.jpg", altText: "Eastern white pine" }
     ];
     let currentIntroPage = 1;
     let lastPineSpeciesPage = null;
@@ -591,7 +591,7 @@
     function showIntroPage(pageNumber, altText) {
       currentIntroPage = pageNumber;
       startPage.classList.remove("placeholderPage");
-      startPageImage.src = `images/page${pageNumber}.png`;
+      startPageImage.src = `treeid/page${pageNumber}.png`;
       startPageImage.alt = altText;
       beginBtn.style.display = pageNumber === 1 ? "block" : "none";
       backBtn.style.display = pageNumber === 1 ? "none" : "block";
@@ -651,19 +651,19 @@
       if (currentIntroPage === 2) {
         showIntroPage(1, "Tree ID introduction");
       } else if (currentIntroPage === "redcedarNeedles") {
-        showIntroImage("redcedar", "images/redcedar.jpg", "Eastern redcedar");
+        showIntroImage("redcedar", "treeid/redcedar.jpg", "Eastern redcedar");
       } else if (currentIntroPage === "spruceNeedles") {
-        showIntroImage("spruce", "images/red_spruce.jpg", "Red spruce");
+        showIntroImage("spruce", "treeid/red_spruce.jpg", "Red spruce");
       } else if (currentIntroPage === "firNeedles") {
-        showIntroImage("fir", "images/fraser_fir.jpg", "Fraser fir");
+        showIntroImage("fir", "treeid/fraser_fir.jpg", "Fraser fir");
       } else if (currentIntroPage === "hemlockNeedles") {
-        showIntroImage("hemlock", "images/eastern_hemlock.jpg", "Eastern hemlock");
+        showIntroImage("hemlock", "treeid/eastern_hemlock.jpg", "Eastern hemlock");
       } else if (currentIntroPage === "pineBlueSquare" && lastPineSpeciesPage) {
         showIntroImage(lastPineSpeciesPage.pageKey, lastPineSpeciesPage.imageSrc, lastPineSpeciesPage.altText);
       } else if (pineSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
-        showIntroImage("pines", "images/pines.png", "Pines");
+        showIntroImage("pines", "treeid/pines.png", "Pines");
       } else if (currentIntroPage === "pines" || currentIntroPage === "redcedar" || currentIntroPage === "spruce" || currentIntroPage === "fir" || currentIntroPage === "hemlock") {
-        showIntroImage("evergreen", "images/evergreen.png", "Evergreen tree choices");
+        showIntroImage("evergreen", "treeid/evergreen.png", "Evergreen tree choices");
       } else if (currentIntroPage === "evergreen" || currentIntroPage === "broadleafEvergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
         showIntroPage(3, "Tree ID evergreen page");
       } else {
@@ -684,11 +684,11 @@
     });
 
     document.getElementById("needleEvergreenBtn").addEventListener("click", () => {
-      showIntroImage("evergreen", "images/evergreen.png", "Evergreen tree choices");
+      showIntroImage("evergreen", "treeid/evergreen.png", "Evergreen tree choices");
     });
 
     document.getElementById("pinesBtn").addEventListener("click", () => {
-      showIntroImage("pines", "images/pines.png", "Pines");
+      showIntroImage("pines", "treeid/pines.png", "Pines");
     });
 
     for (const { btn, pageKey, imageSrc, altText } of pineSpecies) {
@@ -699,43 +699,43 @@
 
     document.getElementById("pineBlueSquareBtn").addEventListener("click", () => {
       lastPineSpeciesPage = pineSpecies.find(({ pageKey }) => pageKey === currentIntroPage) || lastPineSpeciesPage;
-      showIntroImage("pineBlueSquare", "images/place_holder.png", "Pine detail placeholder image");
+      showIntroImage("pineBlueSquare", "treeid/place_holder.png", "Pine detail placeholder image");
     });
 
     document.getElementById("redcedarBtn").addEventListener("click", () => {
-      showIntroImage("redcedar", "images/redcedar.jpg", "Eastern redcedar");
+      showIntroImage("redcedar", "treeid/redcedar.jpg", "Eastern redcedar");
     });
 
     document.getElementById("spruceBtn").addEventListener("click", () => {
-      showIntroImage("spruce", "images/red_spruce.jpg", "Red spruce");
+      showIntroImage("spruce", "treeid/red_spruce.jpg", "Red spruce");
     });
 
     document.getElementById("firBtn").addEventListener("click", () => {
-      showIntroImage("fir", "images/fraser_fir.jpg", "Fraser fir");
+      showIntroImage("fir", "treeid/fraser_fir.jpg", "Fraser fir");
     });
 
     document.getElementById("hemlockBtn").addEventListener("click", () => {
-      showIntroImage("hemlock", "images/eastern_hemlock.jpg", "Eastern hemlock");
+      showIntroImage("hemlock", "treeid/eastern_hemlock.jpg", "Eastern hemlock");
     });
 
     document.getElementById("redcedarNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("redcedarNeedles", "images/place_holder.png", "Redcedar needle placeholder image");
+      showIntroImage("redcedarNeedles", "treeid/place_holder.png", "Redcedar needle placeholder image");
     });
 
     document.getElementById("spruceNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("spruceNeedles", "images/place_holder.png", "Spruce needle placeholder image");
+      showIntroImage("spruceNeedles", "treeid/place_holder.png", "Spruce needle placeholder image");
     });
 
     document.getElementById("firNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("firNeedles", "images/place_holder.png", "Fir needle placeholder image");
+      showIntroImage("firNeedles", "treeid/place_holder.png", "Fir needle placeholder image");
     });
 
     document.getElementById("hemlockNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("hemlockNeedles", "images/place_holder.png", "Hemlock needle placeholder image");
+      showIntroImage("hemlockNeedles", "treeid/place_holder.png", "Hemlock needle placeholder image");
     });
 
     document.getElementById("broadEvergreenBtn").addEventListener("click", () => {
-      showIntroImage("broadleafEvergreen", "images/broadleaf_evergreen.png", "Broadleaf evergreen choices");
+      showIntroImage("broadleafEvergreen", "treeid/broadleaf_evergreen.png", "Broadleaf evergreen choices");
     });
 
     identifyBtn.addEventListener("click", () => {

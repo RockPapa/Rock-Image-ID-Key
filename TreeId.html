@@ -37,12 +37,15 @@
 
     #startPage {
       position: fixed;
-      inset: 0;
+      top: 0;
+      right: 0;
+      bottom: auto;
+      left: 0;
       z-index: 5;
       background: #276cf2;
       overflow: hidden;
-      min-height: 100vh;
-      min-height: 100dvh;
+      height: var(--visible-height);
+      min-height: 0;
     }
 
     #startPage img {
@@ -251,15 +254,13 @@
       min-height: 48px;
     }
 
-    @media (max-width: 430px) {
+    @media (pointer: coarse), (max-width: 430px) {
       #startPage {
-        bottom: auto;
-        height: var(--visible-height);
-        min-height: 0;
+        height: calc(var(--visible-height) - env(safe-area-inset-bottom));
       }
 
       #startPage img {
-        height: var(--visible-height);
+        height: calc(var(--visible-height) - env(safe-area-inset-bottom));
         object-fit: contain;
         object-position: center center;
       }
@@ -269,7 +270,7 @@
       }
 
       #startPage.placeholderPage img {
-        height: calc(var(--visible-height) - 48px);
+        height: calc(var(--visible-height) - env(safe-area-inset-bottom) - 48px);
         object-fit: contain;
         transform: translateY(48px);
       }
@@ -597,7 +598,7 @@
 
       return {
         left: imageElementRect.left - startPageRect.left + (imageElementRect.width - width) / 2,
-        top: imageElementRect.top - startPageRect.top,
+        top: imageElementRect.top - startPageRect.top + (imageElementRect.height - height) / 2,
         width,
         height
       };

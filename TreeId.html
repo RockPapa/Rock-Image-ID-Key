@@ -147,6 +147,13 @@
       height: 12%;
     }
 
+    #redcedarNeedlesBtn {
+      background: rgba(62, 145, 255, 0.16);
+      border: 2px solid rgba(62, 145, 255, 0.5);
+      border-radius: 8px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+    }
+
     #backBtn {
       position: absolute;
       z-index: 3;
@@ -294,6 +301,7 @@
     <button id="spruceBtn" class="choiceBtn" type="button" aria-label="Spruce">Spruce</button>
     <button id="firBtn" class="choiceBtn" type="button" aria-label="Fir">Fir</button>
     <button id="hemlockBtn" class="choiceBtn" type="button" aria-label="Hemlock">Hemlock</button>
+    <button id="redcedarNeedlesBtn" class="choiceBtn" type="button" aria-label="Open redcedar needle image">Open redcedar needle image</button>
   </div>
 
   <main>
@@ -350,9 +358,35 @@
       document.getElementById("redcedarBtn"),
       document.getElementById("spruceBtn"),
       document.getElementById("firBtn"),
-      document.getElementById("hemlockBtn")
+      document.getElementById("hemlockBtn"),
+      document.getElementById("redcedarNeedlesBtn")
     ];
     let currentIntroPage = 1;
+
+    const overlayPositions = {
+      1: [
+        { btn: beginBtn, x: 0.12, y: 0.55, width: 0.76, height: 0.09 }
+      ],
+      2: [
+        { btn: document.getElementById("evergreenBtn"), x: 0.06, y: 0.17, width: 0.88, height: 0.13 },
+        { btn: document.getElementById("oppositeBtn"), x: 0.06, y: 0.34, width: 0.88, height: 0.22 },
+        { btn: document.getElementById("alternateBtn"), x: 0.06, y: 0.62, width: 0.88, height: 0.19 }
+      ],
+      3: [
+        { btn: document.getElementById("needleEvergreenBtn"), x: 0.06, y: 0.22, width: 0.88, height: 0.36 },
+        { btn: document.getElementById("broadEvergreenBtn"), x: 0.06, y: 0.62, width: 0.88, height: 0.28 }
+      ],
+      evergreen: [
+        { btn: document.getElementById("pinesBtn"), x: 0.06, y: 0.10, width: 0.88, height: 0.11 },
+        { btn: document.getElementById("redcedarBtn"), x: 0.06, y: 0.24, width: 0.88, height: 0.12 },
+        { btn: document.getElementById("spruceBtn"), x: 0.06, y: 0.39, width: 0.88, height: 0.12 },
+        { btn: document.getElementById("firBtn"), x: 0.06, y: 0.52, width: 0.88, height: 0.12 },
+        { btn: document.getElementById("hemlockBtn"), x: 0.06, y: 0.67, width: 0.88, height: 0.12 }
+      ],
+      redcedar: [
+        { btn: document.getElementById("redcedarNeedlesBtn"), x: 0.755, y: 0.29, width: 0.17, height: 0.19 }
+      ]
+    };
 
     function updateVisibleHeight() {
       const height = Math.round(window.visualViewport?.height || window.innerHeight);
@@ -360,8 +394,59 @@
     }
 
     updateVisibleHeight();
-    window.addEventListener("resize", updateVisibleHeight);
-    window.visualViewport?.addEventListener("resize", updateVisibleHeight);
+    window.addEventListener("resize", () => {
+      updateVisibleHeight();
+      positionCurrentOverlays();
+    });
+    window.visualViewport?.addEventListener("resize", () => {
+      updateVisibleHeight();
+      positionCurrentOverlays();
+    });
+    startPageImage.addEventListener("load", positionCurrentOverlays);
+    positionCurrentOverlays();
+
+    function getDisplayedImageRect() {
+      if (!startPageImage.naturalWidth || !startPageImage.naturalHeight) {
+        return null;
+      }
+
+      const imageElementRect = startPageImage.getBoundingClientRect();
+      const startPageRect = startPage.getBoundingClientRect();
+      const scale = Math.min(
+        imageElementRect.width / startPageImage.naturalWidth,
+        imageElementRect.height / startPageImage.naturalHeight
+      );
+      const width = startPageImage.naturalWidth * scale;
+      const height = startPageImage.naturalHeight * scale;
+
+      return {
+        left: imageElementRect.left - startPageRect.left + (imageElementRect.width - width) / 2,
+        top: imageElementRect.top - startPageRect.top,
+        width,
+        height
+      };
+    }
+
+    function positionButtonOverImage(btn, position, imageRect) {
+      btn.style.left = `${imageRect.left + imageRect.width * position.x}px`;
+      btn.style.top = `${imageRect.top + imageRect.height * position.y}px`;
+      btn.style.width = `${imageRect.width * position.width}px`;
+      btn.style.height = `${imageRect.height * position.height}px`;
+      btn.style.right = "auto";
+    }
+
+    function positionCurrentOverlays() {
+      const imageRect = getDisplayedImageRect();
+      const positions = overlayPositions[currentIntroPage];
+
+      if (!imageRect || !positions) {
+        return;
+      }
+
+      for (const position of positions) {
+        positionButtonOverImage(position.btn, position, imageRect);
+      }
+    }
 
     function showChoiceButtons(show) {
       for (const btn of choiceButtons) {
@@ -386,6 +471,8 @@
       document.getElementById("spruceBtn").style.display = "none";
       document.getElementById("firBtn").style.display = "none";
       document.getElementById("hemlockBtn").style.display = "none";
+      document.getElementById("redcedarNeedlesBtn").style.display = "none";
+      positionCurrentOverlays();
     }
 
     function showIntroImage(pageKey, imageSrc, altText) {
@@ -400,6 +487,8 @@
       document.getElementById("spruceBtn").style.display = pageKey === "evergreen" ? "block" : "none";
       document.getElementById("firBtn").style.display = pageKey === "evergreen" ? "block" : "none";
       document.getElementById("hemlockBtn").style.display = pageKey === "evergreen" ? "block" : "none";
+      document.getElementById("redcedarNeedlesBtn").style.display = pageKey === "redcedar" ? "block" : "none";
+      positionCurrentOverlays();
     }
 
     beginBtn.addEventListener("click", () => {
@@ -415,6 +504,8 @@
     backBtn.addEventListener("click", () => {
       if (currentIntroPage === 2) {
         showIntroPage(1, "Tree ID introduction");
+      } else if (currentIntroPage === "redcedarNeedles") {
+        showIntroImage("redcedar", "images/redcedar.jpg", "Eastern redcedar");
       } else if (currentIntroPage === "pines" || currentIntroPage === "redcedar" || currentIntroPage === "spruce" || currentIntroPage === "fir" || currentIntroPage === "hemlock") {
         showIntroImage("evergreen", "images/evergreen.png", "Evergreen tree choices");
       } else if (currentIntroPage === "evergreen" || currentIntroPage === "broadleafEvergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
@@ -458,6 +549,10 @@
 
     document.getElementById("hemlockBtn").addEventListener("click", () => {
       showIntroImage("hemlock", "images/eastern_hemlock.jpg", "Eastern hemlock");
+    });
+
+    document.getElementById("redcedarNeedlesBtn").addEventListener("click", () => {
+      showIntroImage("redcedarNeedles", "images/place_holder.png", "Redcedar needle placeholder image");
     });
 
     document.getElementById("broadEvergreenBtn").addEventListener("click", () => {

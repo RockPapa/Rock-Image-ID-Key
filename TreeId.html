@@ -147,11 +147,14 @@
       height: 12%;
     }
 
-    #redcedarNeedlesBtn {
-      background: rgba(62, 145, 255, 0.16);
-      border: 2px solid rgba(62, 145, 255, 0.5);
-      border-radius: 8px;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22) inset;
+    .specimenOverlayBtn {
+      background: transparent;
+      border: 0;
+      color: transparent;
+    }
+
+    .specimenOverlayBtn::after {
+      content: none;
     }
 
     #backBtn {
@@ -301,7 +304,10 @@
     <button id="spruceBtn" class="choiceBtn" type="button" aria-label="Spruce">Spruce</button>
     <button id="firBtn" class="choiceBtn" type="button" aria-label="Fir">Fir</button>
     <button id="hemlockBtn" class="choiceBtn" type="button" aria-label="Hemlock">Hemlock</button>
-    <button id="redcedarNeedlesBtn" class="choiceBtn" type="button" aria-label="Open redcedar needle image">Open redcedar needle image</button>
+    <button id="redcedarNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open redcedar needle image">Open redcedar needle image</button>
+    <button id="spruceNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open spruce needle image">Open spruce needle image</button>
+    <button id="firNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open fir needle image">Open fir needle image</button>
+    <button id="hemlockNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open hemlock needle image">Open hemlock needle image</button>
   </div>
 
   <main>
@@ -359,9 +365,13 @@
       document.getElementById("spruceBtn"),
       document.getElementById("firBtn"),
       document.getElementById("hemlockBtn"),
-      document.getElementById("redcedarNeedlesBtn")
+      document.getElementById("redcedarNeedlesBtn"),
+      document.getElementById("spruceNeedlesBtn"),
+      document.getElementById("firNeedlesBtn"),
+      document.getElementById("hemlockNeedlesBtn")
     ];
     let currentIntroPage = 1;
+    const specimenOverlayPosition = { x: 0.58, y: 0.29, width: 0.35, height: 0.23 };
 
     const overlayPositions = {
       1: [
@@ -384,7 +394,16 @@
         { btn: document.getElementById("hemlockBtn"), x: 0.06, y: 0.67, width: 0.88, height: 0.12 }
       ],
       redcedar: [
-        { btn: document.getElementById("redcedarNeedlesBtn"), x: 0.755, y: 0.29, width: 0.17, height: 0.19 }
+        { btn: document.getElementById("redcedarNeedlesBtn"), ...specimenOverlayPosition }
+      ],
+      spruce: [
+        { btn: document.getElementById("spruceNeedlesBtn"), ...specimenOverlayPosition }
+      ],
+      fir: [
+        { btn: document.getElementById("firNeedlesBtn"), ...specimenOverlayPosition }
+      ],
+      hemlock: [
+        { btn: document.getElementById("hemlockNeedlesBtn"), ...specimenOverlayPosition }
       ]
     };
 
@@ -472,6 +491,9 @@
       document.getElementById("firBtn").style.display = "none";
       document.getElementById("hemlockBtn").style.display = "none";
       document.getElementById("redcedarNeedlesBtn").style.display = "none";
+      document.getElementById("spruceNeedlesBtn").style.display = "none";
+      document.getElementById("firNeedlesBtn").style.display = "none";
+      document.getElementById("hemlockNeedlesBtn").style.display = "none";
       positionCurrentOverlays();
     }
 
@@ -488,6 +510,9 @@
       document.getElementById("firBtn").style.display = pageKey === "evergreen" ? "block" : "none";
       document.getElementById("hemlockBtn").style.display = pageKey === "evergreen" ? "block" : "none";
       document.getElementById("redcedarNeedlesBtn").style.display = pageKey === "redcedar" ? "block" : "none";
+      document.getElementById("spruceNeedlesBtn").style.display = pageKey === "spruce" ? "block" : "none";
+      document.getElementById("firNeedlesBtn").style.display = pageKey === "fir" ? "block" : "none";
+      document.getElementById("hemlockNeedlesBtn").style.display = pageKey === "hemlock" ? "block" : "none";
       positionCurrentOverlays();
     }
 
@@ -506,6 +531,12 @@
         showIntroPage(1, "Tree ID introduction");
       } else if (currentIntroPage === "redcedarNeedles") {
         showIntroImage("redcedar", "images/redcedar.jpg", "Eastern redcedar");
+      } else if (currentIntroPage === "spruceNeedles") {
+        showIntroImage("spruce", "images/red_spruce.jpg", "Red spruce");
+      } else if (currentIntroPage === "firNeedles") {
+        showIntroImage("fir", "images/fraser_fir.jpg", "Fraser fir");
+      } else if (currentIntroPage === "hemlockNeedles") {
+        showIntroImage("hemlock", "images/eastern_hemlock.jpg", "Eastern hemlock");
       } else if (currentIntroPage === "pines" || currentIntroPage === "redcedar" || currentIntroPage === "spruce" || currentIntroPage === "fir" || currentIntroPage === "hemlock") {
         showIntroImage("evergreen", "images/evergreen.png", "Evergreen tree choices");
       } else if (currentIntroPage === "evergreen" || currentIntroPage === "broadleafEvergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
@@ -553,6 +584,18 @@
 
     document.getElementById("redcedarNeedlesBtn").addEventListener("click", () => {
       showIntroImage("redcedarNeedles", "images/place_holder.png", "Redcedar needle placeholder image");
+    });
+
+    document.getElementById("spruceNeedlesBtn").addEventListener("click", () => {
+      showIntroImage("spruceNeedles", "images/place_holder.png", "Spruce needle placeholder image");
+    });
+
+    document.getElementById("firNeedlesBtn").addEventListener("click", () => {
+      showIntroImage("firNeedles", "images/place_holder.png", "Fir needle placeholder image");
+    });
+
+    document.getElementById("hemlockNeedlesBtn").addEventListener("click", () => {
+      showIntroImage("hemlockNeedles", "images/place_holder.png", "Hemlock needle placeholder image");
     });
 
     document.getElementById("broadEvergreenBtn").addEventListener("click", () => {

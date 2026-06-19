@@ -750,7 +750,11 @@
 
     document.getElementById("pineBlueSquareBtn").addEventListener("click", () => {
       lastPineSpeciesPage = pineSpecies.find(({ pageKey }) => pageKey === currentIntroPage) || lastPineSpeciesPage;
-      showIntroImage("pineBlueSquare", "treeid/place_holder.png", "Pine detail placeholder image");
+      if (lastPineSpeciesPage?.pageKey === "easternWhitePine") {
+        showIntroImage("pineBlueSquare", "treeid/eastern_white_pine_pix.png", "Eastern white pine detail image");
+      } else {
+        showIntroImage("pineBlueSquare", "treeid/place_holder.png", "Pine detail placeholder image");
+      }
     });
 
     for (const { btn, pageKey, imageSrc, altText } of broadleafSpecies) {

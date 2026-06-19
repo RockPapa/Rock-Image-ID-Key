@@ -335,6 +335,12 @@
     <button id="pondPineBtn" class="choiceBtn" type="button" aria-label="Pond pine">Pond pine</button>
     <button id="easternWhitePineBtn" class="choiceBtn" type="button" aria-label="Eastern white pine">Eastern white pine</button>
     <button id="pineBlueSquareBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open pine detail image">Open pine detail image</button>
+    <button id="carolinaLaurelcherryBtn" class="choiceBtn" type="button" aria-label="Carolina laurel-cherry">Carolina laurel-cherry</button>
+    <button id="southernMagnoliaBtn" class="choiceBtn" type="button" aria-label="Southern magnolia">Southern magnolia</button>
+    <button id="sweetbayMagnoliaBtn" class="choiceBtn" type="button" aria-label="Sweetbay magnolia">Sweetbay magnolia</button>
+    <button id="redbayBtn" class="choiceBtn" type="button" aria-label="Red bay">Red bay</button>
+    <button id="loblollyBayBtn" class="choiceBtn" type="button" aria-label="Loblolly bay">Loblolly bay</button>
+    <button id="broadleafBlueSquareBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open broadleaf detail image">Open broadleaf detail image</button>
     <button id="redcedarNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open redcedar needle image">Open redcedar needle image</button>
     <button id="spruceNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open spruce needle image">Open spruce needle image</button>
     <button id="firNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open fir needle image">Open fir needle image</button>
@@ -407,6 +413,12 @@
       document.getElementById("pondPineBtn"),
       document.getElementById("easternWhitePineBtn"),
       document.getElementById("pineBlueSquareBtn"),
+      document.getElementById("carolinaLaurelcherryBtn"),
+      document.getElementById("southernMagnoliaBtn"),
+      document.getElementById("sweetbayMagnoliaBtn"),
+      document.getElementById("redbayBtn"),
+      document.getElementById("loblollyBayBtn"),
+      document.getElementById("broadleafBlueSquareBtn"),
       document.getElementById("redcedarNeedlesBtn"),
       document.getElementById("spruceNeedlesBtn"),
       document.getElementById("firNeedlesBtn"),
@@ -424,8 +436,16 @@
       { btn: document.getElementById("pondPineBtn"), pageKey: "pondPine", imageSrc: "treeid/pond_pine.jpg", altText: "Pond pine" },
       { btn: document.getElementById("easternWhitePineBtn"), pageKey: "easternWhitePine", imageSrc: "treeid/eastern_white_pine.jpg", altText: "Eastern white pine" }
     ];
+    const broadleafSpecies = [
+      { btn: document.getElementById("carolinaLaurelcherryBtn"), pageKey: "carolinaLaurelcherry", imageSrc: "treeid/carolina_laurelcherry.jpg", altText: "Carolina laurel-cherry" },
+      { btn: document.getElementById("southernMagnoliaBtn"), pageKey: "southernMagnolia", imageSrc: "treeid/southern_magnolia.jpg", altText: "Southern magnolia" },
+      { btn: document.getElementById("sweetbayMagnoliaBtn"), pageKey: "sweetbayMagnolia", imageSrc: "treeid/sweetbay_magnolia.jpg", altText: "Sweetbay magnolia" },
+      { btn: document.getElementById("redbayBtn"), pageKey: "redbay", imageSrc: "treeid/redbay.jpg", altText: "Red bay" },
+      { btn: document.getElementById("loblollyBayBtn"), pageKey: "loblollyBay", imageSrc: "treeid/loblolly_bay.png", altText: "Loblolly bay" }
+    ];
     let currentIntroPage = 1;
     let lastPineSpeciesPage = null;
+    let lastBroadleafSpeciesPage = null;
     const specimenOverlayPosition = { x: 0.58, y: 0.29, width: 0.35, height: 0.23 };
 
     function isComputerPlatform() {
@@ -474,6 +494,13 @@
         { btn: document.getElementById("pondPineBtn"), x: 0.37, y: 0.69, width: 0.26, height: 0.04 },
         { btn: document.getElementById("easternWhitePineBtn"), x: 0.29, y: 0.83, width: 0.42, height: 0.04 }
       ],
+      broadleafEvergreen: [
+        { btn: document.getElementById("carolinaLaurelcherryBtn"), x: 0.03, y: 0.14, width: 0.94, height: 0.08 },
+        { btn: document.getElementById("southernMagnoliaBtn"), x: 0.12, y: 0.29, width: 0.76, height: 0.08 },
+        { btn: document.getElementById("sweetbayMagnoliaBtn"), x: 0.12, y: 0.43, width: 0.76, height: 0.08 },
+        { btn: document.getElementById("redbayBtn"), x: 0.32, y: 0.56, width: 0.36, height: 0.08 },
+        { btn: document.getElementById("loblollyBayBtn"), x: 0.22, y: 0.72, width: 0.56, height: 0.08 }
+      ],
       redcedar: [
         { btn: document.getElementById("redcedarNeedlesBtn"), ...specimenOverlayPosition }
       ],
@@ -515,6 +542,21 @@
       ],
       easternWhitePine: [
         { btn: document.getElementById("pineBlueSquareBtn"), x: 0.76, y: 0.37, width: 0.15, height: 0.08 }
+      ],
+      carolinaLaurelcherry: [
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.73, y: 0.43, width: 0.18, height: 0.08 }
+      ],
+      southernMagnolia: [
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.59, y: 0.33, width: 0.18, height: 0.08 }
+      ],
+      sweetbayMagnolia: [
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.56, y: 0.30, width: 0.20, height: 0.09 }
+      ],
+      redbay: [
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.55, y: 0.28, width: 0.18, height: 0.08 }
+      ],
+      loblollyBay: [
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.30, y: 0.47, width: 0.40, height: 0.08 }
       ]
     };
 
@@ -615,7 +657,7 @@
 
     function showIntroImage(pageKey, imageSrc, altText) {
       currentIntroPage = pageKey;
-      startPage.classList.toggle("placeholderPage", pageKey === "pineBlueSquare");
+      startPage.classList.toggle("placeholderPage", pageKey === "pineBlueSquare" || pageKey === "broadleafBlueSquare");
       startPageImage.src = imageSrc;
       startPageImage.alt = altText;
       beginBtn.style.display = "none";
@@ -633,7 +675,11 @@
       for (const { btn } of pineSpecies) {
         btn.style.display = pageKey === "pines" ? "block" : "none";
       }
+      for (const { btn } of broadleafSpecies) {
+        btn.style.display = pageKey === "broadleafEvergreen" ? "block" : "none";
+      }
       document.getElementById("pineBlueSquareBtn").style.display = pineSpecies.some(({ pageKey: pinePageKey }) => pinePageKey === pageKey) ? "block" : "none";
+      document.getElementById("broadleafBlueSquareBtn").style.display = broadleafSpecies.some(({ pageKey: broadleafPageKey }) => broadleafPageKey === pageKey) ? "block" : "none";
       positionCurrentOverlays();
     }
 
@@ -660,8 +706,12 @@
         showIntroImage("hemlock", "treeid/eastern_hemlock.jpg", "Eastern hemlock");
       } else if (currentIntroPage === "pineBlueSquare" && lastPineSpeciesPage) {
         showIntroImage(lastPineSpeciesPage.pageKey, lastPineSpeciesPage.imageSrc, lastPineSpeciesPage.altText);
+      } else if (currentIntroPage === "broadleafBlueSquare" && lastBroadleafSpeciesPage) {
+        showIntroImage(lastBroadleafSpeciesPage.pageKey, lastBroadleafSpeciesPage.imageSrc, lastBroadleafSpeciesPage.altText);
       } else if (pineSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
         showIntroImage("pines", "treeid/pines.png", "Pines");
+      } else if (broadleafSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
+        showIntroImage("broadleafEvergreen", "treeid/broadleaf_evergreen.png", "Broadleaf evergreen choices");
       } else if (currentIntroPage === "pines" || currentIntroPage === "redcedar" || currentIntroPage === "spruce" || currentIntroPage === "fir" || currentIntroPage === "hemlock") {
         showIntroImage("evergreen", "treeid/evergreen.png", "Evergreen tree choices");
       } else if (currentIntroPage === "evergreen" || currentIntroPage === "broadleafEvergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
@@ -700,6 +750,17 @@
     document.getElementById("pineBlueSquareBtn").addEventListener("click", () => {
       lastPineSpeciesPage = pineSpecies.find(({ pageKey }) => pageKey === currentIntroPage) || lastPineSpeciesPage;
       showIntroImage("pineBlueSquare", "treeid/place_holder.png", "Pine detail placeholder image");
+    });
+
+    for (const { btn, pageKey, imageSrc, altText } of broadleafSpecies) {
+      btn.addEventListener("click", () => {
+        showIntroImage(pageKey, imageSrc, altText);
+      });
+    }
+
+    document.getElementById("broadleafBlueSquareBtn").addEventListener("click", () => {
+      lastBroadleafSpeciesPage = broadleafSpecies.find(({ pageKey }) => pageKey === currentIntroPage) || lastBroadleafSpeciesPage;
+      showIntroImage("broadleafBlueSquare", "treeid/place_holder.png", "Broadleaf detail placeholder image");
     });
 
     document.getElementById("redcedarBtn").addEventListener("click", () => {

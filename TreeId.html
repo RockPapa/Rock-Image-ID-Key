@@ -509,7 +509,7 @@
         { btn: document.getElementById("loblollyBayBtn"), x: 0.22, y: 0.72, width: 0.56, height: 0.08 }
       ],
       redcedar: [
-        { btn: document.getElementById("redcedarNeedlesBtn"), ...specimenOverlayPosition }
+        { btn: document.getElementById("redcedarNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       spruce: [
         { btn: document.getElementById("spruceNeedlesBtn"), ...specimenOverlayPosition }
@@ -518,7 +518,7 @@
         { btn: document.getElementById("firNeedlesBtn"), ...specimenOverlayPosition }
       ],
       hemlock: [
-        { btn: document.getElementById("hemlockNeedlesBtn"), ...specimenOverlayPosition }
+        { btn: document.getElementById("hemlockNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       virginiaPine: [
         { btn: document.getElementById("pineBlueSquareBtn"), x: 0.79, y: 0.41, width: 0.15, height: 0.08 }
@@ -799,7 +799,7 @@
     });
 
     document.getElementById("redcedarNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("redcedarNeedles", "treeid/place_holder.png", "Redcedar needle placeholder image");
+      showIntroImage("redcedarNeedles", "treeid/redcedar_pix.png", "Eastern redcedar detail image");
     });
 
     document.getElementById("spruceNeedlesBtn").addEventListener("click", () => {
@@ -811,7 +811,7 @@
     });
 
     document.getElementById("hemlockNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("hemlockNeedles", "treeid/place_holder.png", "Hemlock needle placeholder image");
+      showIntroImage("hemlockNeedles", "treeid/eastern_hemlock_pix.png", "Eastern hemlock detail image");
     });
 
     document.getElementById("broadEvergreenBtn").addEventListener("click", () => {

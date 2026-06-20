@@ -515,7 +515,7 @@
         { btn: document.getElementById("spruceNeedlesBtn"), ...specimenOverlayPosition }
       ],
       fir: [
-        { btn: document.getElementById("firNeedlesBtn"), ...specimenOverlayPosition }
+        { btn: document.getElementById("firNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       hemlock: [
         { btn: document.getElementById("hemlockNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
@@ -807,7 +807,7 @@
     });
 
     document.getElementById("firNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("firNeedles", "treeid/place_holder.png", "Fir needle placeholder image");
+      showIntroImage("firNeedles", "treeid/fraser_fir_pix.png", "Fraser fir detail image");
     });
 
     document.getElementById("hemlockNeedlesBtn").addEventListener("click", () => {

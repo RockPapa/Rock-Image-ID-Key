@@ -95,6 +95,30 @@
       border-radius: 4px;
     }
 
+    #wikiLink {
+      position: absolute;
+      z-index: 3;
+      left: 50%;
+      bottom: max(8px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      display: none;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(0, 35, 105, 0.72);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 800;
+      line-height: 1.2;
+      text-decoration: none;
+      letter-spacing: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    #wikiLink:focus-visible {
+      outline: 3px solid #fff;
+      outline-offset: 3px;
+    }
+
     .choiceBtn {
       position: absolute;
       z-index: 2;
@@ -346,12 +370,13 @@
     <button id="southernMagnoliaBtn" class="choiceBtn" type="button" aria-label="Southern magnolia">Southern magnolia</button>
     <button id="sweetbayMagnoliaBtn" class="choiceBtn" type="button" aria-label="Sweetbay magnolia">Sweetbay magnolia</button>
     <button id="redbayBtn" class="choiceBtn" type="button" aria-label="Red bay">Red bay</button>
-    <button id="loblollyBayBtn" class="choiceBtn" type="button" aria-label="Loblolly bay">Loblolly bay</button>
+    <button id="loblollyBayBtn" class="choiceBtn" type="button" aria-label="Live oak">Live oak</button>
     <button id="broadleafBlueSquareBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open broadleaf detail image">Open broadleaf detail image</button>
     <button id="redcedarNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open redcedar needle image">Open redcedar needle image</button>
     <button id="spruceNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open spruce needle image">Open spruce needle image</button>
     <button id="firNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open fir needle image">Open fir needle image</button>
     <button id="hemlockNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open hemlock needle image">Open hemlock needle image</button>
+    <a id="wikiLink" href="#" target="_blank" rel="noopener noreferrer">Wikipedia</a>
   </div>
 
   <main>
@@ -398,6 +423,7 @@
     const backBtn = document.getElementById("backBtn");
     const startPage = document.getElementById("startPage");
     const startPageImage = document.getElementById("startPageImage");
+    const wikiLink = document.getElementById("wikiLink");
     const choiceButtons = [
       document.getElementById("evergreenBtn"),
       document.getElementById("oppositeBtn"),
@@ -448,8 +474,29 @@
       { btn: document.getElementById("southernMagnoliaBtn"), pageKey: "southernMagnolia", imageSrc: "treeid/southern_magnolia.jpg", altText: "Southern magnolia" },
       { btn: document.getElementById("sweetbayMagnoliaBtn"), pageKey: "sweetbayMagnolia", imageSrc: "treeid/sweetbay_magnolia.jpg", altText: "Sweetbay magnolia" },
       { btn: document.getElementById("redbayBtn"), pageKey: "redbay", imageSrc: "treeid/redbay.jpg", altText: "Red bay" },
-      { btn: document.getElementById("loblollyBayBtn"), pageKey: "loblollyBay", imageSrc: "treeid/loblolly_bay.png", altText: "Loblolly bay" }
+      { btn: document.getElementById("loblollyBayBtn"), pageKey: "liveOak", imageSrc: "treeid/live_oak.jpg", altText: "Live oak" }
     ];
+    const wikipediaLinks = {
+      redcedar: "https://en.wikipedia.org/wiki/Juniperus_virginiana",
+      spruce: "https://en.wikipedia.org/wiki/Picea_rubens",
+      fir: "https://en.wikipedia.org/wiki/Abies_fraseri",
+      hemlock: "https://en.wikipedia.org/wiki/Tsuga_canadensis",
+      virginiaPine: "https://en.wikipedia.org/wiki/Pinus_virginiana",
+      sprucePine: "https://en.wikipedia.org/wiki/Pinus_glabra",
+      slashPine: "https://en.wikipedia.org/wiki/Pinus_elliottii",
+      tableMountainPine: "https://en.wikipedia.org/wiki/Pinus_pungens",
+      shortleafPine: "https://en.wikipedia.org/wiki/Pinus_echinata",
+      loblollyPine: "https://en.wikipedia.org/wiki/Pinus_taeda",
+      longleafPine: "https://en.wikipedia.org/wiki/Pinus_palustris",
+      pitchPine: "https://en.wikipedia.org/wiki/Pinus_rigida",
+      pondPine: "https://en.wikipedia.org/wiki/Pinus_serotina",
+      easternWhitePine: "https://en.wikipedia.org/wiki/Pinus_strobus",
+      carolinaLaurelcherry: "https://en.wikipedia.org/wiki/Prunus_caroliniana",
+      southernMagnolia: "https://en.wikipedia.org/wiki/Magnolia_grandiflora",
+      sweetbayMagnolia: "https://en.wikipedia.org/wiki/Magnolia_virginiana",
+      redbay: "https://en.wikipedia.org/wiki/Persea_borbonia",
+      liveOak: "https://en.wikipedia.org/wiki/Quercus_virginiana"
+    };
     let currentIntroPage = 1;
     let lastPineSpeciesPage = null;
     let lastBroadleafSpeciesPage = null;
@@ -512,7 +559,7 @@
         { btn: document.getElementById("redcedarNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       spruce: [
-        { btn: document.getElementById("spruceNeedlesBtn"), ...specimenOverlayPosition }
+        { btn: document.getElementById("spruceNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       fir: [
         { btn: document.getElementById("firNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
@@ -521,49 +568,49 @@
         { btn: document.getElementById("hemlockNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       virginiaPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.79, y: 0.41, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       sprucePine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.76, y: 0.38, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       slashPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.82, y: 0.34, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       tableMountainPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.81, y: 0.40, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       shortleafPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.79, y: 0.38, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       loblollyPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.83, y: 0.32, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       longleafPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.80, y: 0.39, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       pitchPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.82, y: 0.36, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       pondPine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.79, y: 0.38, width: 0.17, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       easternWhitePine: [
         { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       carolinaLaurelcherry: [
-        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.73, y: 0.43, width: 0.18, height: 0.08 }
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       southernMagnolia: [
-        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.59, y: 0.33, width: 0.18, height: 0.08 }
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       sweetbayMagnolia: [
-        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.56, y: 0.30, width: 0.20, height: 0.09 }
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       redbay: [
-        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.55, y: 0.28, width: 0.18, height: 0.08 }
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
-      loblollyBay: [
-        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.30, y: 0.47, width: 0.40, height: 0.08 }
+      liveOak: [
+        { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ]
     };
 
@@ -645,6 +692,19 @@
       }
     }
 
+    function updateWikipediaLink(pageKey) {
+      const url = wikipediaLinks[pageKey];
+
+      if (!url) {
+        wikiLink.style.display = "none";
+        wikiLink.removeAttribute("href");
+        return;
+      }
+
+      wikiLink.href = url;
+      wikiLink.style.display = "inline-block";
+    }
+
     function showIntroPage(pageNumber, altText) {
       currentIntroPage = pageNumber;
       startPage.classList.remove("placeholderPage");
@@ -667,6 +727,7 @@
       document.getElementById("spruceNeedlesBtn").style.display = "none";
       document.getElementById("firNeedlesBtn").style.display = "none";
       document.getElementById("hemlockNeedlesBtn").style.display = "none";
+      updateWikipediaLink(null);
       positionCurrentOverlays();
     }
 
@@ -695,6 +756,7 @@
       }
       document.getElementById("pineBlueSquareBtn").style.display = pineSpecies.some(({ pageKey: pinePageKey }) => pinePageKey === pageKey) ? "block" : "none";
       document.getElementById("broadleafBlueSquareBtn").style.display = broadleafSpecies.some(({ pageKey: broadleafPageKey }) => broadleafPageKey === pageKey) ? "block" : "none";
+      updateWikipediaLink(pageKey);
       positionCurrentOverlays();
     }
 
@@ -766,6 +828,24 @@
       lastPineSpeciesPage = pineSpecies.find(({ pageKey }) => pageKey === currentIntroPage) || lastPineSpeciesPage;
       if (lastPineSpeciesPage?.pageKey === "easternWhitePine") {
         showIntroImage("pineBlueSquare", "treeid/eastern_white_pine_pix.png", "Eastern white pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "virginiaPine") {
+        showIntroImage("pineBlueSquare", "treeid/virginia_pine_pix.png", "Virginia pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "sprucePine") {
+        showIntroImage("pineBlueSquare", "treeid/spruce_pine_pix.png", "Spruce pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "slashPine") {
+        showIntroImage("pineBlueSquare", "treeid/slash_pinePix.png", "Slash pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "tableMountainPine") {
+        showIntroImage("pineBlueSquare", "treeid/table_mountain_pine_pix.png", "Table Mountain pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "shortleafPine") {
+        showIntroImage("pineBlueSquare", "treeid/shortleaf_pine_pix.png", "Shortleaf pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "loblollyPine") {
+        showIntroImage("pineBlueSquare", "treeid/loblolly_pine_pix.png", "Loblolly pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "longleafPine") {
+        showIntroImage("pineBlueSquare", "treeid/longleaf_pine_pix.png", "Longleaf pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "pitchPine") {
+        showIntroImage("pineBlueSquare", "treeid/pitch_pine_pix.png", "Pitch pine detail image");
+      } else if (lastPineSpeciesPage?.pageKey === "pondPine") {
+        showIntroImage("pineBlueSquare", "treeid/pond_pine_pix.png", "Pond pine detail image");
       } else {
         showIntroImage("pineBlueSquare", "treeid/place_holder.png", "Pine detail placeholder image");
       }
@@ -779,7 +859,19 @@
 
     document.getElementById("broadleafBlueSquareBtn").addEventListener("click", () => {
       lastBroadleafSpeciesPage = broadleafSpecies.find(({ pageKey }) => pageKey === currentIntroPage) || lastBroadleafSpeciesPage;
-      showIntroImage("broadleafBlueSquare", "treeid/place_holder.png", "Broadleaf detail placeholder image");
+      if (lastBroadleafSpeciesPage?.pageKey === "carolinaLaurelcherry") {
+        showIntroImage("broadleafBlueSquare", "treeid/carolina_laurelcherry_pix.png", "Carolina laurel-cherry detail image");
+      } else if (lastBroadleafSpeciesPage?.pageKey === "southernMagnolia") {
+        showIntroImage("broadleafBlueSquare", "treeid/southern_magnolia_pix.png", "Southern magnolia detail image");
+      } else if (lastBroadleafSpeciesPage?.pageKey === "sweetbayMagnolia") {
+        showIntroImage("broadleafBlueSquare", "treeid/sweetbay_magnolia_pix.png", "Sweetbay magnolia detail image");
+      } else if (lastBroadleafSpeciesPage?.pageKey === "redbay") {
+        showIntroImage("broadleafBlueSquare", "treeid/redbay_pix.png", "Red bay detail image");
+      } else if (lastBroadleafSpeciesPage?.pageKey === "liveOak") {
+        showIntroImage("broadleafBlueSquare", "treeid/live_oak_pix.png", "Live oak detail image");
+      } else {
+        showIntroImage("broadleafBlueSquare", "treeid/place_holder.png", "Broadleaf detail placeholder image");
+      }
     });
 
     document.getElementById("redcedarBtn").addEventListener("click", () => {
@@ -803,7 +895,7 @@
     });
 
     document.getElementById("spruceNeedlesBtn").addEventListener("click", () => {
-      showIntroImage("spruceNeedles", "treeid/place_holder.png", "Spruce needle placeholder image");
+      showIntroImage("spruceNeedles", "treeid/red_spruce_pix.png", "Red spruce detail image");
     });
 
     document.getElementById("firNeedlesBtn").addEventListener("click", () => {

@@ -67,6 +67,18 @@
       transform: translateY(48px);
     }
 
+    #startPage.landscapeDetailPage img {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: var(--visible-height);
+      height: 100vw;
+      max-width: none;
+      object-fit: contain;
+      transform: translate(-50%, -50%) rotate(90deg);
+      transform-origin: center center;
+    }
+
     #beginBtn {
       position: absolute;
       z-index: 2;
@@ -273,6 +285,12 @@
         height: calc(var(--visible-height) - env(safe-area-inset-bottom) - 48px);
         object-fit: contain;
         transform: translateY(48px);
+      }
+
+      #startPage.landscapeDetailPage img {
+        width: calc(var(--visible-height) - env(safe-area-inset-bottom));
+        height: 100vw;
+        transform: translate(-50%, -50%) rotate(90deg);
       }
 
       main {
@@ -542,7 +560,7 @@
         { btn: document.getElementById("pineBlueSquareBtn"), x: 0.79, y: 0.38, width: 0.17, height: 0.08 }
       ],
       easternWhitePine: [
-        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.76, y: 0.37, width: 0.15, height: 0.08 }
+        { btn: document.getElementById("pineBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
       ],
       carolinaLaurelcherry: [
         { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.73, y: 0.43, width: 0.18, height: 0.08 }
@@ -634,6 +652,7 @@
     function showIntroPage(pageNumber, altText) {
       currentIntroPage = pageNumber;
       startPage.classList.remove("placeholderPage");
+      startPage.classList.remove("landscapeDetailPage");
       startPageImage.src = `treeid/page${pageNumber}.png`;
       startPageImage.alt = altText;
       beginBtn.style.display = pageNumber === 1 ? "block" : "none";
@@ -658,7 +677,8 @@
 
     function showIntroImage(pageKey, imageSrc, altText) {
       currentIntroPage = pageKey;
-      startPage.classList.toggle("placeholderPage", pageKey === "pineBlueSquare" || pageKey === "broadleafBlueSquare");
+      startPage.classList.toggle("placeholderPage", imageSrc === "treeid/place_holder.png");
+      startPage.classList.toggle("landscapeDetailPage", imageSrc === "treeid/eastern_white_pine_pix.png");
       startPageImage.src = imageSrc;
       startPageImage.alt = altText;
       beginBtn.style.display = "none";

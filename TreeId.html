@@ -67,18 +67,6 @@
       transform: translateY(48px);
     }
 
-    #startPage.landscapeDetailPage img {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: var(--visible-height);
-      height: 100vw;
-      max-width: none;
-      object-fit: contain;
-      transform: translate(-50%, -50%) rotate(90deg);
-      transform-origin: center center;
-    }
-
     #beginBtn {
       position: absolute;
       z-index: 2;
@@ -285,12 +273,6 @@
         height: calc(var(--visible-height) - env(safe-area-inset-bottom) - 48px);
         object-fit: contain;
         transform: translateY(48px);
-      }
-
-      #startPage.landscapeDetailPage img {
-        width: calc(var(--visible-height) - env(safe-area-inset-bottom));
-        height: 100vw;
-        transform: translate(-50%, -50%) rotate(90deg);
       }
 
       main {
@@ -652,7 +634,6 @@
     function showIntroPage(pageNumber, altText) {
       currentIntroPage = pageNumber;
       startPage.classList.remove("placeholderPage");
-      startPage.classList.remove("landscapeDetailPage");
       startPageImage.src = `treeid/page${pageNumber}.png`;
       startPageImage.alt = altText;
       beginBtn.style.display = pageNumber === 1 ? "block" : "none";
@@ -678,7 +659,6 @@
     function showIntroImage(pageKey, imageSrc, altText) {
       currentIntroPage = pageKey;
       startPage.classList.toggle("placeholderPage", imageSrc === "treeid/place_holder.png");
-      startPage.classList.toggle("landscapeDetailPage", imageSrc === "treeid/eastern_white_pine_pix.png");
       startPageImage.src = imageSrc;
       startPageImage.alt = altText;
       beginBtn.style.display = "none";

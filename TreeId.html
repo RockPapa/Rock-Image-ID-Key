@@ -371,7 +371,23 @@
     <button id="sweetbayMagnoliaBtn" class="choiceBtn" type="button" aria-label="Sweetbay magnolia">Sweetbay magnolia</button>
     <button id="redbayBtn" class="choiceBtn" type="button" aria-label="Red bay">Red bay</button>
     <button id="loblollyBayBtn" class="choiceBtn" type="button" aria-label="Live oak">Live oak</button>
+    <button id="redMapleBtn" class="choiceBtn" type="button" aria-label="Red maple">Red maple</button>
+    <button id="sugarMapleBtn" class="choiceBtn" type="button" aria-label="Sugar maple">Sugar maple</button>
+    <button id="chalkMapleBtn" class="choiceBtn" type="button" aria-label="Chalk maple">Chalk maple</button>
+    <button id="southernSugarMapleBtn" class="choiceBtn" type="button" aria-label="Southern sugar maple">Southern sugar maple</button>
+    <button id="boxelderMapleBtn" class="choiceBtn" type="button" aria-label="Boxelder maple">Boxelder maple</button>
+    <button id="silverMapleBtn" class="choiceBtn" type="button" aria-label="Silver maple">Silver maple</button>
+    <button id="stripedMapleBtn" class="choiceBtn" type="button" aria-label="Striped maple">Striped maple</button>
+    <button id="mountainMapleBtn" class="choiceBtn" type="button" aria-label="Mountain maple">Mountain maple</button>
     <button id="broadleafBlueSquareBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open broadleaf detail image">Open broadleaf detail image</button>
+    <button id="redMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open red maple detail image">Open red maple detail image</button>
+    <button id="sugarMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open sugar maple detail image">Open sugar maple detail image</button>
+    <button id="chalkMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open chalk maple detail image">Open chalk maple detail image</button>
+    <button id="southernSugarMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open southern sugar maple detail image">Open southern sugar maple detail image</button>
+    <button id="boxelderMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open boxelder maple detail image">Open boxelder maple detail image</button>
+    <button id="silverMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open silver maple detail image">Open silver maple detail image</button>
+    <button id="stripedMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open striped maple detail image">Open striped maple detail image</button>
+    <button id="mountainMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open mountain maple detail image">Open mountain maple detail image</button>
     <button id="redcedarNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open redcedar needle image">Open redcedar needle image</button>
     <button id="spruceNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open spruce needle image">Open spruce needle image</button>
     <button id="firNeedlesBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open fir needle image">Open fir needle image</button>
@@ -451,7 +467,23 @@
       document.getElementById("sweetbayMagnoliaBtn"),
       document.getElementById("redbayBtn"),
       document.getElementById("loblollyBayBtn"),
+      document.getElementById("redMapleBtn"),
+      document.getElementById("sugarMapleBtn"),
+      document.getElementById("chalkMapleBtn"),
+      document.getElementById("southernSugarMapleBtn"),
+      document.getElementById("boxelderMapleBtn"),
+      document.getElementById("silverMapleBtn"),
+      document.getElementById("stripedMapleBtn"),
+      document.getElementById("mountainMapleBtn"),
       document.getElementById("broadleafBlueSquareBtn"),
+      document.getElementById("redMapleImageBtn"),
+      document.getElementById("sugarMapleImageBtn"),
+      document.getElementById("chalkMapleImageBtn"),
+      document.getElementById("southernSugarMapleImageBtn"),
+      document.getElementById("boxelderMapleImageBtn"),
+      document.getElementById("silverMapleImageBtn"),
+      document.getElementById("stripedMapleImageBtn"),
+      document.getElementById("mountainMapleImageBtn"),
       document.getElementById("redcedarNeedlesBtn"),
       document.getElementById("spruceNeedlesBtn"),
       document.getElementById("firNeedlesBtn"),
@@ -495,7 +527,15 @@
       southernMagnolia: "https://en.wikipedia.org/wiki/Magnolia_grandiflora",
       sweetbayMagnolia: "https://en.wikipedia.org/wiki/Magnolia_virginiana",
       redbay: "https://en.wikipedia.org/wiki/Persea_borbonia",
-      liveOak: "https://en.wikipedia.org/wiki/Quercus_virginiana"
+      liveOak: "https://en.wikipedia.org/wiki/Quercus_virginiana",
+      redMaple: "https://en.wikipedia.org/wiki/Acer_rubrum",
+      sugarMaple: "https://en.wikipedia.org/wiki/Acer_saccharum",
+      chalkMaple: "https://en.wikipedia.org/wiki/Acer_leucoderme",
+      southernSugarMaple: "https://en.wikipedia.org/wiki/Acer_floridanum",
+      boxelderMaple: "https://en.wikipedia.org/wiki/Acer_negundo",
+      silverMaple: "https://en.wikipedia.org/wiki/Acer_saccharinum",
+      stripedMaple: "https://en.wikipedia.org/wiki/Acer_pensylvanicum",
+      mountainMaple: "https://en.wikipedia.org/wiki/Acer_spicatum"
     };
     let currentIntroPage = 1;
     let lastPineSpeciesPage = null;
@@ -522,7 +562,7 @@
       ],
       2: [
         { btn: document.getElementById("evergreenBtn"), x: 0.06, y: 0.17, width: 0.88, height: 0.13 },
-        { btn: document.getElementById("oppositeBtn"), x: 0.06, y: 0.34, width: 0.88, height: 0.22 },
+        { btn: document.getElementById("oppositeBtn"), x: 0.06, y: 0.31, width: 0.88, height: 0.22 },
         { btn: document.getElementById("alternateBtn"), x: 0.06, y: 0.62, width: 0.88, height: 0.19 }
       ],
       3: [
@@ -554,6 +594,19 @@
         { btn: document.getElementById("sweetbayMagnoliaBtn"), x: 0.12, y: 0.43, width: 0.76, height: 0.08 },
         { btn: document.getElementById("redbayBtn"), x: 0.32, y: 0.56, width: 0.36, height: 0.08 },
         { btn: document.getElementById("loblollyBayBtn"), x: 0.22, y: 0.72, width: 0.56, height: 0.08 }
+      ],
+      oppositeLeaves: [
+        { btn: document.getElementById("redMapleBtn"), x: 0.27, y: 0.28, width: 0.46, height: 0.07 }
+      ],
+      maples: [
+        { btn: document.getElementById("redMapleBtn"), x: 0.27, y: 0.17, width: 0.46, height: 0.06 },
+        { btn: document.getElementById("sugarMapleBtn"), x: 0.24, y: 0.25, width: 0.52, height: 0.06 },
+        { btn: document.getElementById("chalkMapleBtn"), x: 0.27, y: 0.34, width: 0.46, height: 0.06 },
+        { btn: document.getElementById("southernSugarMapleBtn"), x: 0.11, y: 0.43, width: 0.78, height: 0.06 },
+        { btn: document.getElementById("boxelderMapleBtn"), x: 0.21, y: 0.52, width: 0.58, height: 0.06 },
+        { btn: document.getElementById("silverMapleBtn"), x: 0.27, y: 0.61, width: 0.46, height: 0.06 },
+        { btn: document.getElementById("stripedMapleBtn"), x: 0.25, y: 0.71, width: 0.50, height: 0.06 },
+        { btn: document.getElementById("mountainMapleBtn"), x: 0.21, y: 0.81, width: 0.58, height: 0.06 }
       ],
       redcedar: [
         { btn: document.getElementById("redcedarNeedlesBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
@@ -611,6 +664,30 @@
       ],
       liveOak: [
         { btn: document.getElementById("broadleafBlueSquareBtn"), x: 0.17, y: 0.79, width: 0.66, height: 0.09 }
+      ],
+      redMaple: [
+        { btn: document.getElementById("redMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      sugarMaple: [
+        { btn: document.getElementById("sugarMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      chalkMaple: [
+        { btn: document.getElementById("chalkMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      southernSugarMaple: [
+        { btn: document.getElementById("southernSugarMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      boxelderMaple: [
+        { btn: document.getElementById("boxelderMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      silverMaple: [
+        { btn: document.getElementById("silverMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      stripedMaple: [
+        { btn: document.getElementById("stripedMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      mountainMaple: [
+        { btn: document.getElementById("mountainMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
       ]
     };
 
@@ -748,6 +825,14 @@
       document.getElementById("spruceNeedlesBtn").style.display = pageKey === "spruce" ? "block" : "none";
       document.getElementById("firNeedlesBtn").style.display = pageKey === "fir" ? "block" : "none";
       document.getElementById("hemlockNeedlesBtn").style.display = pageKey === "hemlock" ? "block" : "none";
+      document.getElementById("redMapleBtn").style.display = pageKey === "oppositeLeaves" || pageKey === "maples" ? "block" : "none";
+      document.getElementById("sugarMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
+      document.getElementById("chalkMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
+      document.getElementById("southernSugarMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
+      document.getElementById("boxelderMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
+      document.getElementById("silverMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
+      document.getElementById("stripedMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
+      document.getElementById("mountainMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       for (const { btn } of pineSpecies) {
         btn.style.display = pageKey === "pines" ? "block" : "none";
       }
@@ -756,6 +841,14 @@
       }
       document.getElementById("pineBlueSquareBtn").style.display = pineSpecies.some(({ pageKey: pinePageKey }) => pinePageKey === pageKey) ? "block" : "none";
       document.getElementById("broadleafBlueSquareBtn").style.display = broadleafSpecies.some(({ pageKey: broadleafPageKey }) => broadleafPageKey === pageKey) ? "block" : "none";
+      document.getElementById("redMapleImageBtn").style.display = pageKey === "redMaple" ? "block" : "none";
+      document.getElementById("sugarMapleImageBtn").style.display = pageKey === "sugarMaple" ? "block" : "none";
+      document.getElementById("chalkMapleImageBtn").style.display = pageKey === "chalkMaple" ? "block" : "none";
+      document.getElementById("southernSugarMapleImageBtn").style.display = pageKey === "southernSugarMaple" ? "block" : "none";
+      document.getElementById("boxelderMapleImageBtn").style.display = pageKey === "boxelderMaple" ? "block" : "none";
+      document.getElementById("silverMapleImageBtn").style.display = pageKey === "silverMaple" ? "block" : "none";
+      document.getElementById("stripedMapleImageBtn").style.display = pageKey === "stripedMaple" ? "block" : "none";
+      document.getElementById("mountainMapleImageBtn").style.display = pageKey === "mountainMaple" ? "block" : "none";
       updateWikipediaLink(pageKey);
       positionCurrentOverlays();
     }
@@ -785,10 +878,30 @@
         showIntroImage(lastPineSpeciesPage.pageKey, lastPineSpeciesPage.imageSrc, lastPineSpeciesPage.altText);
       } else if (currentIntroPage === "broadleafBlueSquare" && lastBroadleafSpeciesPage) {
         showIntroImage(lastBroadleafSpeciesPage.pageKey, lastBroadleafSpeciesPage.imageSrc, lastBroadleafSpeciesPage.altText);
+      } else if (currentIntroPage === "redMapleImage") {
+        showIntroImage("redMaple", "treeid/red_maple.jpg", "Red maple");
+      } else if (currentIntroPage === "sugarMapleImage") {
+        showIntroImage("sugarMaple", "treeid/sugar_maple.jpg", "Sugar maple");
+      } else if (currentIntroPage === "chalkMapleImage") {
+        showIntroImage("chalkMaple", "treeid/chalk_maple.jpg", "Chalk maple");
+      } else if (currentIntroPage === "southernSugarMapleImage") {
+        showIntroImage("southernSugarMaple", "treeid/southern_sugar_maple.jpg", "Southern sugar maple");
+      } else if (currentIntroPage === "boxelderMapleImage") {
+        showIntroImage("boxelderMaple", "treeid/boxelder_maple.jpg", "Boxelder maple");
+      } else if (currentIntroPage === "silverMapleImage") {
+        showIntroImage("silverMaple", "treeid/silver_maple.jpg", "Silver maple");
+      } else if (currentIntroPage === "stripedMapleImage") {
+        showIntroImage("stripedMaple", "treeid/striped_maple.jpg", "Striped maple");
+      } else if (currentIntroPage === "mountainMapleImage") {
+        showIntroImage("mountainMaple", "treeid/mountain_maple.jpg", "Mountain maple");
       } else if (pineSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
         showIntroImage("pines", "treeid/pines.png", "Pines");
       } else if (broadleafSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
         showIntroImage("broadleafEvergreen", "treeid/broadleaf_evergreen.png", "Broadleaf evergreen choices");
+      } else if (currentIntroPage === "redMaple" || currentIntroPage === "sugarMaple" || currentIntroPage === "chalkMaple" || currentIntroPage === "southernSugarMaple" || currentIntroPage === "boxelderMaple" || currentIntroPage === "silverMaple" || currentIntroPage === "stripedMaple" || currentIntroPage === "mountainMaple") {
+        showIntroImage("maples", "treeid/maples.png", "Maples");
+      } else if (currentIntroPage === "maples") {
+        showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "pines" || currentIntroPage === "redcedar" || currentIntroPage === "spruce" || currentIntroPage === "fir" || currentIntroPage === "hemlock") {
         showIntroImage("evergreen", "treeid/evergreen.png", "Evergreen tree choices");
       } else if (currentIntroPage === "evergreen" || currentIntroPage === "broadleafEvergreen" || currentIntroPage === 6 || currentIntroPage === 7) {
@@ -803,7 +916,75 @@
     });
 
     document.getElementById("oppositeBtn").addEventListener("click", () => {
-      showIntroPage(4, "Tree ID opposite leaves page");
+      showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
+    });
+
+    document.getElementById("redMapleBtn").addEventListener("click", () => {
+      if (currentIntroPage === "oppositeLeaves") {
+        showIntroImage("maples", "treeid/maples.png", "Maples");
+      } else {
+        showIntroImage("redMaple", "treeid/red_maple.jpg", "Red maple");
+      }
+    });
+
+    document.getElementById("redMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("redMapleImage", "treeid/red_maple_pix.png", "Red maple detail image");
+    });
+
+    document.getElementById("sugarMapleBtn").addEventListener("click", () => {
+      showIntroImage("sugarMaple", "treeid/sugar_maple.jpg", "Sugar maple");
+    });
+
+    document.getElementById("sugarMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("sugarMapleImage", "treeid/sugar_maple_pix.png", "Sugar maple detail image");
+    });
+
+    document.getElementById("chalkMapleBtn").addEventListener("click", () => {
+      showIntroImage("chalkMaple", "treeid/chalk_maple.jpg", "Chalk maple");
+    });
+
+    document.getElementById("chalkMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("chalkMapleImage", "treeid/chalk_maple_pix.png", "Chalk maple detail image");
+    });
+
+    document.getElementById("southernSugarMapleBtn").addEventListener("click", () => {
+      showIntroImage("southernSugarMaple", "treeid/southern_sugar_maple.jpg", "Southern sugar maple");
+    });
+
+    document.getElementById("southernSugarMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("southernSugarMapleImage", "treeid/southern_sugar_maple_pix.png", "Southern sugar maple detail image");
+    });
+
+    document.getElementById("boxelderMapleBtn").addEventListener("click", () => {
+      showIntroImage("boxelderMaple", "treeid/boxelder_maple.jpg", "Boxelder maple");
+    });
+
+    document.getElementById("boxelderMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("boxelderMapleImage", "treeid/boxelder_maple_pix.png", "Boxelder maple detail image");
+    });
+
+    document.getElementById("silverMapleBtn").addEventListener("click", () => {
+      showIntroImage("silverMaple", "treeid/silver_maple.jpg", "Silver maple");
+    });
+
+    document.getElementById("silverMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("silverMapleImage", "treeid/silver_maple_pix.png", "Silver maple detail image");
+    });
+
+    document.getElementById("stripedMapleBtn").addEventListener("click", () => {
+      showIntroImage("stripedMaple", "treeid/striped_maple.jpg", "Striped maple");
+    });
+
+    document.getElementById("stripedMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("stripedMapleImage", "treeid/striped_maple_pix.png", "Striped maple detail image");
+    });
+
+    document.getElementById("mountainMapleBtn").addEventListener("click", () => {
+      showIntroImage("mountainMaple", "treeid/mountain_maple.jpg", "Mountain maple");
+    });
+
+    document.getElementById("mountainMapleImageBtn").addEventListener("click", () => {
+      showIntroImage("mountainMapleImage", "treeid/mountain_maple_pix.png", "Mountain maple detail image");
     });
 
     document.getElementById("alternateBtn").addEventListener("click", () => {

@@ -406,16 +406,23 @@ function enterMapOnlyMode(){
   }
 
   function pretty(unitId){
-    return unitId.split("_").filter(Boolean).map(w => w[0].toUpperCase()+w.slice(1)).join(" ");
+    return unitId
+      .split("_")
+      .filter(Boolean)
+      .map(w => w.trim())
+      .filter(Boolean)
+      .map(w => w[0].toUpperCase()+w.slice(1))
+      .join(" ")
+      .replace(/\s+/g, " ");
   }
 
   function unitFromFile(fileName){
     return fileName
       .toLowerCase()
       .replace(/\.json$/,"")
-      .replace(/^valley_ridge_?/,"")
+      .replace(/^(valley_ridge|valley_and_ridge|eastern_blueridge|eastern_bleridge|western_blueridge|westyern_blueridge|inner_piedmont|carolina_terrane|carolina_twrrane|carolina_yerrane|caroliona_terrane|caroloina_terrane|coastal_plain|coasgtal_plain|cat_square)_?/,"")
       .replace(/_\d+$/,"")
-      .replace(/^_+|_+$/g,"");
+      .replace(/^[_\s.]+|[_\s.]+$/g,"");
   }
 
   function bbox(pts){

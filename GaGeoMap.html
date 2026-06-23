@@ -369,6 +369,29 @@ body.map-only #stage {
     return { ix, iy, r:d[0], g:d[1], b:d[2], a:d[3] };
   }
 
+  const AMPHIBOLITE_COLOR_RANGES = [
+    { r:[100,120], g:[20,40], b:[110,150] },
+    { r:[80,155], g:[60,100], b:[95,175] }
+  ];
+
+  const ULTRAMAFIC_COLOR_RANGES = [
+    { r:[160,195], g:[75,115], b:[55,95] }
+  ];
+
+  function isColorInRanges(r, g, b, ranges){
+    return ranges.some(k =>
+      r >= k.r[0] && r <= k.r[1] &&
+      g >= k.g[0] && g <= k.g[1] &&
+      b >= k.b[0] && b <= k.b[1]
+    );
+  }
+
+  function forcedRockNameFromColor(r, g, b){
+    if (isColorInRanges(r, g, b, AMPHIBOLITE_COLOR_RANGES)) return "Amphibolite";
+    if (isColorInRanges(r, g, b, ULTRAMAFIC_COLOR_RANGES)) return "Ultramafic Rock";
+    return "";
+  }
+
 
 
   function setStatus(line1, line2){
@@ -524,7 +547,7 @@ polygons loaded: ${polygons.length}`);
     }catch(_e){
       return;
     }
-    const match = identifyRock(pix.r, pix.g, pix.b);
+    const match = forcedRockNameFromColor(pix.r, pix.g, pix.b) || identifyRock(pix.r, pix.g, pix.b);
 
     popupTitle.textContent = match;
     popupMeta.textContent = "";
@@ -554,7 +577,18 @@ polygons loaded: ${polygons.length}`);
 
   function showPopupAtStageXY(stageX, stageY, hit){
   // hit contains: unitId, name, fileName, polyIndexInFile, etc.
-  popupTitle.textContent = hit.name;
+  let sampledColor = null;
+  if (Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY)){
+    try {
+      sampledColor = getRGBAtWorld(hit._clickWX, hit._clickWY);
+    } catch(_e) {}
+  }
+
+  const title = sampledColor
+    ? forcedRockNameFromColor(sampledColor.r, sampledColor.g, sampledColor.b) || hit.name
+    : hit.name;
+
+  popupTitle.textContent = title;
 
   const info = GEO_INFO[hit.unitId] || {};
   const lith = info.lithology ? "Rock type: " + info.lithology : "";
@@ -1063,6 +1097,8 @@ overlayCanvas.addEventListener("pointercancel", stopDrag);
   ROCKS.push({ name:"Biotite gneiss Mica schist Amphibolite", r:[180,220], g:[120,145], b:[240,255] });
 
   ROCKS.push({ name:"Amphibolite", r:[100,120], g:[20,40], b:[110,150] });
+  ROCKS.push({ name:"Amphibolite", r:[80,155], g:[60,100], b:[95,175] });
+  ROCKS.push({ name:"Ultramafic Rock", r:[160,195], g:[75,115], b:[55,95] });
   ROCKS.push({ name:"Granite gneiss", r:[200,215], g:[160,175], b:[240,255] });
   ROCKS.push({ name:"Biotite gneiss Mica schist Amphibolite", r:[180,220], g:[120,145], b:[240,255] });
 

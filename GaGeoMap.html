@@ -330,6 +330,16 @@ body.map-only #stage {
   const GITHUB_BRANCH = "main";
   const GITHUB_PROJECT_FOLDER = "PROJECT_FILES";
   const GITHUB_MAP_PATH = "PROJECT_FILES/map.webp";
+  const PROJECT_CACHE_DB = "ga-geo-map-cache-v1";
+  const PROJECT_CACHE_STORE = "project";
+  const PROJECT_CACHE_KEY = [
+    GITHUB_OWNER,
+    GITHUB_REPO,
+    GITHUB_BRANCH,
+    GITHUB_PROJECT_FOLDER,
+    GITHUB_MAP_PATH
+  ].join("|");
+  const VIEW_STATE_KEY = "gaGeoMapViewState";
 
   // ===== OPTIONAL: GEO INFO LOOKUP (EDIT ME LATER) =====
   // key is unitId (filename-derived), values are whatever you want.
@@ -450,7 +460,67 @@ body.map-only #stage {
   }
   function setDebug(s){ debugEl.textContent = s; }
 
-function enterMapOnlyMode(){
+  function openProjectCache(){
+    if (!("indexedDB" in window)) return Promise.resolve(null);
+    return new Promise(resolve => {
+      const req = indexedDB.open(PROJECT_CACHE_DB, 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore(PROJECT_CACHE_STORE);
+      };
+      req.onerror = () => resolve(null);
+      req.onsuccess = () => resolve(req.result);
+    });
+  }
+
+  async function readProjectCache(){
+    const db = await openProjectCache();
+    if (!db) return null;
+    return new Promise(resolve => {
+      const tx = db.transaction(PROJECT_CACHE_STORE, "readonly");
+      const req = tx.objectStore(PROJECT_CACHE_STORE).get(PROJECT_CACHE_KEY);
+      req.onerror = () => resolve(null);
+      req.onsuccess = () => resolve(req.result || null);
+      tx.oncomplete = () => db.close();
+      tx.onerror = () => db.close();
+    });
+  }
+
+  async function writeProjectCache(record){
+    const db = await openProjectCache();
+    if (!db) return;
+    await new Promise(resolve => {
+      const tx = db.transaction(PROJECT_CACHE_STORE, "readwrite");
+      tx.objectStore(PROJECT_CACHE_STORE).put(record, PROJECT_CACHE_KEY);
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onerror = () => { db.close(); resolve(); };
+    });
+  }
+
+  function saveViewState(){
+    if (!img) return;
+    try {
+      sessionStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ scale, offsetX, offsetY }));
+    } catch(_e) {}
+  }
+
+  function restoreViewState(){
+    try {
+      const raw = sessionStorage.getItem(VIEW_STATE_KEY);
+      if (!raw) return false;
+      const state = JSON.parse(raw);
+      if (!Number.isFinite(state.scale) || !Number.isFinite(state.offsetX) || !Number.isFinite(state.offsetY)) return false;
+      scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, state.scale));
+      offsetX = state.offsetX;
+      offsetY = state.offsetY;
+      clampView();
+      redraw();
+      return true;
+    } catch(_e) {
+      return false;
+    }
+  }
+
+function enterMapOnlyMode(options = {}){
   if (mapOnlyMode) return;
   mapOnlyMode = true;
   document.body.classList.add("map-only");
@@ -458,7 +528,7 @@ function enterMapOnlyMode(){
   requestAnimationFrame(() => {
     if (!img) return;
     setCanvasSizes();
-    fitViewToStage();
+    if (!options.preserveView) fitViewToStage();
     redraw();
   });
 }
@@ -785,8 +855,9 @@ function resetView(){
     return jsonEntries;
   }
 
-    async function loadProjectFilesFromGitHub(){
+    async function loadProjectFilesFromGitHub(options = {}){
     if (githubLoadInFlight) return;
+    const preferCache = options.preferCache !== false;
     githubLoadInFlight = true;
     loadBtn.disabled = true;
 
@@ -798,6 +869,36 @@ function resetView(){
         setStatus("Configure GitHub repo first.", "Set GITHUB_OWNER and GITHUB_REPO in GaGeoMap.html.");
         setProgress(0, 0, "GitHub repo config missing.");
         return;
+      }
+
+      const mapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${GITHUB_MAP_PATH.split("/").map(encodeURIComponent).join("/")}`;
+
+      if (preferCache) {
+        setStatus("Checking saved map data...", "Looking for previously loaded PROJECT_FILES in this browser.");
+        setProgress(0, 0, "Checking browser cache...");
+
+        const cached = await readProjectCache();
+        if (cached && Array.isArray(cached.polygons) && cached.polygons.length) {
+          try {
+            img = await loadImageFromUrl(mapUrl);
+            polygons = cached.polygons;
+            setCanvasSizes();
+            rebuildSampler();
+            const restoredView = restoreViewState();
+            if (!restoredView) resetView();
+            setStatus(
+              `Loaded saved map data: map (${img.width}x${img.height}) | ${cached.okCount || "cached"} JSON | ${polygons.length} polys`,
+              MAP_CONTROL_HINT
+            );
+            setProgress(cached.totalJson || cached.okCount || 0, cached.totalJson || cached.okCount || 0, "Loaded from browser cache.");
+            enterMapOnlyMode({ preserveView: restoredView });
+            stage.focus();
+            return;
+          } catch(err) {
+            polygons = [];
+            console.warn("Cached map data could not be restored:", err);
+          }
+        }
       }
 
       setStatus("Loading PROJECT_FILES from GitHub...", "Fetching JSON list from GitHub");
@@ -814,7 +915,6 @@ function resetView(){
 
       jsonEntries.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
 
-      const mapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${GITHUB_MAP_PATH.split("/").map(encodeURIComponent).join("/")}`;
       setStatus("Loading map from GitHub...", `${GITHUB_MAP_PATH} + ${jsonEntries.length} JSON files`);
       setProgress(0, jsonEntries.length, "Loading map image...");
 
@@ -917,7 +1017,18 @@ function resetView(){
 
       await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
-      resetView();
+      await writeProjectCache({
+        createdAt: Date.now(),
+        polygons,
+        okCount,
+        failCount,
+        totalJson: jsonEntries.length,
+        mapWidth: img.width,
+        mapHeight: img.height
+      });
+
+      const restoredView = restoreViewState();
+      if (!restoredView) resetView();
 
       if (failCount === 0) {
         setStatus(
@@ -933,7 +1044,7 @@ function resetView(){
         setProgress(jsonEntries.length, jsonEntries.length, `Load complete with ${failCount} file failures.`);
       }
 
-      enterMapOnlyMode();
+      enterMapOnlyMode({ preserveView: restoredView });
       stage.focus();
     } finally {
       githubLoadInFlight = false;
@@ -944,7 +1055,7 @@ function resetView(){
 
 
   // ===== Load Project Files =====
-  loadBtn.addEventListener("click", () => loadProjectFilesFromGitHub());
+  loadBtn.addEventListener("click", () => loadProjectFilesFromGitHub({ preferCache: false }));
 
 
 
@@ -1101,6 +1212,9 @@ overlayCanvas.addEventListener("pointerup", stopDrag);
 overlayCanvas.addEventListener("pointercancel", stopDrag);
 
   // Close link + X
+  keyLink.addEventListener("click", () => saveViewState());
+  window.addEventListener("pagehide", () => saveViewState());
+
   popupClose.addEventListener("click", (e) => {
     e.preventDefault();
     hidePopup();

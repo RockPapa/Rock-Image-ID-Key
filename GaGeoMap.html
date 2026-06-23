@@ -369,13 +369,30 @@ body.map-only #stage {
     return { ix, iy, r:d[0], g:d[1], b:d[2], a:d[3] };
   }
 
+  function sampleNearbyPixels(wx, wy, radius){
+    const pixels = [];
+    const cx = Math.round(wx);
+    const cy = Math.round(wy);
+    const r = Math.max(0, Math.round(radius));
+
+    for (let dy = -r; dy <= r; dy++){
+      for (let dx = -r; dx <= r; dx++){
+        if (dx * dx + dy * dy > r * r) continue;
+        pixels.push(getRGBAtWorld(cx + dx, cy + dy));
+      }
+    }
+
+    return pixels;
+  }
+
   const AMPHIBOLITE_COLOR_RANGES = [
     { r:[100,120], g:[20,40], b:[110,150] },
     { r:[80,155], g:[60,100], b:[95,175] }
   ];
 
   const ULTRAMAFIC_COLOR_RANGES = [
-    { r:[160,195], g:[75,115], b:[55,95] }
+    { r:[145,205], g:[55,125], b:[45,120] },
+    { r:[205,225], g:[60,115], b:[85,130] }
   ];
 
   function isColorInRanges(r, g, b, ranges){
@@ -386,10 +403,43 @@ body.map-only #stage {
     );
   }
 
+  function isDarkPurpleAmphibolite(r, g, b){
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const saturation = max - min;
+    const avg = (r + g + b) / 3;
+
+    return (
+      avg >= 70 && avg <= 155 &&
+      saturation >= 35 &&
+      r >= 75 && r <= 175 &&
+      b >= 95 && b <= 190 &&
+      g <= 125 &&
+      g + 18 < r &&
+      g + 18 < b
+    );
+  }
+
   function forcedRockNameFromColor(r, g, b){
-    if (isColorInRanges(r, g, b, AMPHIBOLITE_COLOR_RANGES)) return "Amphibolite";
+    if (isColorInRanges(r, g, b, AMPHIBOLITE_COLOR_RANGES) || isDarkPurpleAmphibolite(r, g, b)) return "Amphibolite";
     if (isColorInRanges(r, g, b, ULTRAMAFIC_COLOR_RANGES)) return "Ultramafic Rock";
     return "";
+  }
+
+  function forcedRockNameNearPoint(wx, wy){
+    let pixels;
+    try {
+      pixels = sampleNearbyPixels(wx, wy, 4);
+    } catch(_e) {
+      return "";
+    }
+
+    if (pixels.some(p => isColorInRanges(p.r, p.g, p.b, ULTRAMAFIC_COLOR_RANGES))) {
+      return "Ultramafic Rock";
+    }
+
+    const center = pixels.find(p => p.ix === Math.round(wx) && p.iy === Math.round(wy)) || pixels[0];
+    return center ? forcedRockNameFromColor(center.r, center.g, center.b) : "";
   }
 
 
@@ -444,6 +494,8 @@ function enterMapOnlyMode(){
       .toLowerCase()
       .replace(/\.json$/,"")
       .replace(/^(valley_ridge|valley_and_ridge|eastern_blueridge|eastern_bleridge|western_blueridge|westyern_blueridge|inner_piedmont|carolina_terrane|carolina_twrrane|carolina_yerrane|caroliona_terrane|caroloina_terrane|coastal_plain|coasgtal_plain|cat_square)_?/,"")
+      .replace(/pl\.ocene/g,"pliocene")
+      .replace(/_\d+json$/,"")
       .replace(/_\d+$/,"")
       .replace(/^[_\s.]+|[_\s.]+$/g,"");
   }
@@ -547,7 +599,7 @@ polygons loaded: ${polygons.length}`);
     }catch(_e){
       return;
     }
-    const match = forcedRockNameFromColor(pix.r, pix.g, pix.b) || identifyRock(pix.r, pix.g, pix.b);
+    const match = forcedRockNameNearPoint(wx, wy) || forcedRockNameFromColor(pix.r, pix.g, pix.b) || identifyRock(pix.r, pix.g, pix.b);
 
     popupTitle.textContent = match;
     popupMeta.textContent = "";
@@ -584,8 +636,12 @@ polygons loaded: ${polygons.length}`);
     } catch(_e) {}
   }
 
+  const nearbyTitle = Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY)
+    ? forcedRockNameNearPoint(hit._clickWX, hit._clickWY)
+    : "";
+
   const title = sampledColor
-    ? forcedRockNameFromColor(sampledColor.r, sampledColor.g, sampledColor.b) || hit.name
+    ? nearbyTitle || forcedRockNameFromColor(sampledColor.r, sampledColor.g, sampledColor.b) || hit.name
     : hit.name;
 
   popupTitle.textContent = title;
@@ -1089,8 +1145,8 @@ overlayCanvas.addEventListener("pointercancel", stopDrag);
   // =====================================================
   
   const ROCKS = [];
-  ROCKS.push({ name:"Coastal Plain Twiggs Clay", r:[240,255], g:[235,255], b:[80,100] });
-  ROCKS.push({ name:"Coastal Plain Irwinton sand", r:[250,255], g:[200,225], b:[30,50] });
+  ROCKS.push({ name:"Twiggs Clay", r:[240,255], g:[235,255], b:[80,100] });
+  ROCKS.push({ name:"Irwinton sand", r:[250,255], g:[200,225], b:[30,50] });
  
  ROCKS.push({ name:"Coastal Plain Neogene undifferentiated", r:[180,200], g:[250,255], b:[200,220] });
 
@@ -1098,7 +1154,8 @@ overlayCanvas.addEventListener("pointercancel", stopDrag);
 
   ROCKS.push({ name:"Amphibolite", r:[100,120], g:[20,40], b:[110,150] });
   ROCKS.push({ name:"Amphibolite", r:[80,155], g:[60,100], b:[95,175] });
-  ROCKS.push({ name:"Ultramafic Rock", r:[160,195], g:[75,115], b:[55,95] });
+  ROCKS.push({ name:"Ultramafic Rock", r:[145,205], g:[55,125], b:[45,120] });
+  ROCKS.push({ name:"Ultramafic Rock", r:[205,225], g:[60,115], b:[85,130] });
   ROCKS.push({ name:"Granite gneiss", r:[200,215], g:[160,175], b:[240,255] });
   ROCKS.push({ name:"Biotite gneiss Mica schist Amphibolite", r:[180,220], g:[120,145], b:[240,255] });
 

@@ -291,6 +291,8 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 // 25+    = fast scouting
 const CAMI_SPEED = 240;   // ground travel speed
 const CAMI_CLIMB = 240;   
+const START_CAMERA_HEIGHT = 2600;
+const START_CAMERA_DOWN_TILT_DEG = 30;
 // ===== CAMI VIEW TILT (NEW!) =====
 // Hold E = tilt view up, hold D = tilt view down
 // Tilt is clamped so you can't flip upside-down.
@@ -1018,10 +1020,18 @@ function applyTerrainSize(){
 
 applyTerrainSize();
 
+function applyStartingView(){
+  const obj = controls.getObject();
+  obj.position.set(0, heightAt(0, 0) + START_CAMERA_HEIGHT, 0);
+  camera.rotation.x = THREE.MathUtils.degToRad(START_CAMERA_DOWN_TILT_DEG);
+}
+
+applyStartingView();
+
 if (startupWarning){
-  setStatus(`${startupWarning}<br>Fallback terrain active (${c.width}×${c.height}).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
+  setStatus(`${startupWarning}<br>Fallback terrain active (${c.width}×${c.height}).<br>Tilt: <b><span id="tiltReadout">${START_CAMERA_DOWN_TILT_DEG}</span>°</b> (E/D)`);
 } else {
-  setStatus(`✅ Loaded heightmap <code>${HEIGHTMAP_FILE}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
+  setStatus(`✅ Loaded heightmap <code>${HEIGHTMAP_FILE}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">${START_CAMERA_DOWN_TILT_DEG}</span>°</b> (E/D)`);
 }
 if (miniMapWarning) addStatus(miniMapWarning);
 if (elevationTextureStatus) addStatus(elevationTextureStatus);

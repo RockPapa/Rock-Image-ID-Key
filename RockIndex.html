@@ -92,7 +92,7 @@
     <li><a href="Amphibolite.html">Amphibolite</a></li>
     <li><a href="Amphibolite.html">Amphibolite</a>, <a href="BiotiteGneiss.html">Biotite Gneiss</a>, <a href="Schist.html">Quartz Sericite Schist</a></li>
     <li><a href="Andesite.html">Andesite</a></li>
-    <li><a href="Argillite.html">Argillite</a></li>
+    <li><a href="https://www.google.com/search?q=argillite%20geology">Argillite</a></li>
     <li><a href="Asbestos.html">Asbestos</a></li>
     <li><a href="Basalt.html">Basalt</a></li>
     <li><a href="BiotiteGneiss.html">Biotite Gneiss</a></li>
@@ -102,7 +102,7 @@
     <li><a href="Granite.html">Biotite Granite</a></li>
     <li><a href="Breccia.html">Breccia</a></li>
     <li><a href="https://www.google.com/search?q=calc-silicate%20gneiss%20geology">Calc-Silicate Gneiss</a></li>
-    <li><a href="Granite.html">Charnockite</a></li>
+    <li><a href="GraniteGneiss.html">Charnockite</a></li>
     <li><a href="Chert.html">Chert</a></li>
     <li><a href="https://www.google.com/search?q=Chickamauga%20Group%20geology">Chickamauga Group</a></li>
     <li><a href="https://www.google.com/search?q=Chickamauga%20Group%20Athens%20Shale%20geology">Chickamauga Group Athens Shale</a></li>
@@ -235,11 +235,14 @@
 
 <script>
 function goBack() {
-  if (window.history.length > 1) {
-    window.history.back();
-  } else {
-    window.location.href = "GaGeoMap.html";
-  }
+  try {
+    if (window.parent && window.parent !== window && typeof window.parent.closeRockIndexOverlay === "function") {
+      window.parent.closeRockIndexOverlay();
+      return;
+    }
+  } catch (_e) {}
+
+  window.location.replace("GaGeoMap.html");
 }
 
 function filterList() {

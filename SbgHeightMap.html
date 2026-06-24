@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Apache HeightMap Viewer – HeightMapViewer12 – Compass + Textures Restored</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#000}
+canvas{display:block;width:100vw;height:100vh}
+.hud{
+  position:fixed;left:18px;top:56px;z-index:10;
+  padding:8px 10px;border-radius:10px;
+  background:rgba(20,24,32,.8);
+  color:#fff;font:13px system-ui;
+  max-width: 560px;
+  max-height:calc(100vh - 306px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.ctrlToggle{
+  margin-top:8px;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  border-radius:8px;
+  padding:5px 10px;
+  font:12px system-ui;
+  cursor:pointer;
+}
+.ctrlPanel.hidden{display:none;}
+.hud.hidden{display:none;}
+.hudToggleFloat{
+  position:fixed;left:18px;top:18px;z-index:20;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(20,24,32,.85);
+  color:#fff;
+  border-radius:8px;
+  padding:6px 10px;
+  font:12px system-ui;
+  cursor:pointer;
+}
+.keyHelpToggle{
+  position:fixed;left:50%;top:18px;z-index:20;
+  transform:translateX(-50%);
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(20,24,32,.85);
+  color:#fff;
+  border-radius:8px;
+  padding:6px 10px;
+  font:12px system-ui;
+  cursor:pointer;
+}
+.keyHelp{
+  position:fixed;left:50%;top:52px;z-index:19;
+  transform:translateX(-50%);
+  width:min(360px,calc(100vw - 28px));
+  padding:8px 10px;
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:10px;
+  background:rgba(20,24,32,.82);
+  color:#fff;
+  font:12px/1.35 system-ui;
+  box-shadow:0 8px 22px rgba(0,0,0,.38);
+}
+.keyHelp.hidden{display:none;}
+.keyHelp b{font-size:12px;}
+.keyHelpGrid{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:3px 10px;
+  margin-top:5px;
+}
+.keyHelpGrid kbd{
+  font:11px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:#fff;
+  background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:5px;
+  padding:1px 5px;
+  white-space:nowrap;
+}
+.hud .small{
+  opacity:.9;
+  font-size:11px;
+  margin-top:4px;
+  line-height:1.22;
+  max-height:72px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.compass{
+  position:fixed;right:18px;top:18px;
+  width:90px;height:90px;border-radius:50%;
+  background:#1b1f2a;border:2px solid rgba(255,255,255,.3);
+  box-shadow:0 8px 22px rgba(0,0,0,.45);
+  pointer-events:none;
+}
+.compass .needle{
+  position:absolute;left:50%;top:10px;
+  width:2px;height:36px;background:red;
+  transform-origin:50% 100%;
+}
+.compass span{
+  position:absolute;color:#fff;font-weight:600;font-size:13px;
+}
+.n{top:4px;left:50%;transform:translateX(-50%)}
+.s{bottom:4px;left:50%;transform:translateX(-50%)}
+.e{right:6px;top:50%;transform:translateY(-50%)}
+.w{left:6px;top:50%;transform:translateY(-50%)}
+
+.minimapWrap{
+  position:fixed;right:18px;bottom:18px;z-index:11;
+  width:190px;
+  background:rgba(20,24,32,.78);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:12px;
+  box-shadow:0 10px 26px rgba(0,0,0,.55);
+  padding:10px;
+}
+#minimap{
+  width:170px;height:170px;
+  border-radius:10px;
+  background:#000;
+  display:block;
+  image-rendering:auto;
+}
+.miniLabel{
+  margin-top:8px;
+  color:#fff;font:12px system-ui;
+  opacity:.92;
+  line-height:1.25;
+}
+.touchToggle{
+  position:fixed;left:184px;bottom:22px;z-index:22;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(20,24,32,.85);
+  color:#fff;
+  border-radius:8px;
+  padding:6px 9px;
+  font:12px system-ui;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.touchControls{
+  position:fixed;inset:0;z-index:21;
+  display:block;
+  pointer-events:none;
+}
+.touchControls.hidden{display:none;}
+.touchPad,.touchColumn{
+  position:fixed;
+  pointer-events:auto;
+  display:grid;
+  gap:8px;
+}
+.touchPad{
+  left:18px;
+  bottom:18px;
+  grid-template-columns:repeat(3,44px);
+  grid-template-rows:repeat(3,44px);
+}
+.touchColumn{
+  right:18px;
+  bottom:262px;
+  grid-template-columns:repeat(2,58px);
+}
+.touchBtn{
+  border:1px solid rgba(255,255,255,.32);
+  background:rgba(20,24,32,.72);
+  color:#fff;
+  border-radius:8px;
+  min-width:44px;
+  min-height:44px;
+  font:700 17px system-ui;
+  box-shadow:0 8px 20px rgba(0,0,0,.35);
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:none;
+}
+.touchBtn:active,.touchBtn.active{
+  background:rgba(255,255,255,.25);
+  transform:translateY(1px);
+}
+.touchBtn.forward{grid-column:2;grid-row:1;}
+.touchBtn.left{grid-column:1;grid-row:2;}
+.touchBtn.back{grid-column:2;grid-row:3;}
+.touchBtn.right{grid-column:3;grid-row:2;}
+@media (max-width:720px){
+  .hud{
+    left:10px;
+    top:48px;
+    max-width:calc(100vw - 44px);
+    max-height:calc(100vh - 274px);
+    font-size:12px;
+  }
+  .hudToggleFloat{left:10px;top:10px;}
+  .keyHelpToggle{top:10px;}
+  .keyHelp{top:44px;}
+  .compass{right:10px;top:10px;width:74px;height:74px;}
+  .minimapWrap{right:10px;bottom:74px;width:132px;padding:8px;}
+  #minimap{width:116px;height:116px;}
+  .touchToggle{left:148px;bottom:14px;font-size:11px;padding:5px 8px;}
+  .touchControls{inset:0;}
+  .touchPad{left:10px;bottom:10px;}
+  .touchPad{grid-template-columns:repeat(3,42px);grid-template-rows:repeat(3,42px);}
+  .touchColumn{right:10px;bottom:242px;grid-template-columns:repeat(2,58px);gap:7px;}
+  .touchBtn{min-width:42px;min-height:42px;font-size:15px;}
+}
+
+</style>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+
+<body>
+
+<button id="controlsToggle" class="hudToggleFloat" type="button" aria-expanded="true">Hide HUD</button>
+<button id="keyHelpToggle" class="keyHelpToggle" type="button" aria-expanded="false">Keys</button>
+<button id="touchToggle" class="touchToggle" type="button" aria-expanded="true">Hide Touch Controls</button>
+
+<div id="keyHelp" class="keyHelp hidden" aria-hidden="true">
+  <b>Computer Controls</b>
+  <div class="keyHelpGrid">
+    <kbd>Arrow Up / Down</kbd><span>Move forward / backward</span>
+    <kbd>Arrow Left / Right</kbd><span>Turn left / right</span>
+    <kbd>E / D</kbd><span>Tilt view up / down</span>
+    <kbd>R / F</kbd><span>Move up / down</span>
+    <kbd>Shift + I J K L</kbd><span>Align map overlay</span>
+    <kbd>Shift + [ / ]</kbd><span>Scale overlay</span>
+    <kbd>Shift + - / =</kbd><span>Overlay opacity</span>
+    <kbd>Esc</kbd><span>Release mouse lock</span>
+  </div>
+</div>
+
+<div class="hud" id="hud">
+  <b>HeightMap Viewer</b><br>
+  Top of heightmap = <b>North</b> · Compass top-right
+  <div class="small" id="status">Loading…</div>
+</div>
+
+<div class="compass">
+  <div class="needle" id="needle"></div>
+  <span class="n">N</span>
+  <span class="s">S</span>
+  <span class="e">E</span>
+  <span class="w">W</span>
+</div>
+
+<div id="touchControls" class="touchControls" aria-label="Onscreen movement controls">
+  <div class="touchPad" aria-label="Move and turn">
+    <button class="touchBtn forward" type="button" data-key="ArrowUp" aria-label="Move forward">▲</button>
+    <button class="touchBtn left" type="button" data-key="ArrowLeft" aria-label="Turn left">◀</button>
+    <button class="touchBtn right" type="button" data-key="ArrowRight" aria-label="Turn right">▶</button>
+    <button class="touchBtn back" type="button" data-key="ArrowDown" aria-label="Move backward">▼</button>
+  </div>
+  <div></div>
+  <div class="touchColumn" aria-label="Tilt and height">
+    <button class="touchBtn" type="button" data-key="KeyE" aria-label="Tilt up">Tilt Up</button>
+    <button class="touchBtn" type="button" data-key="KeyD" aria-label="Tilt down">Tilt Down</button>
+    <button class="touchBtn" type="button" data-key="KeyR" aria-label="Move up">Up</button>
+    <button class="touchBtn" type="button" data-key="KeyF" aria-label="Move down">Down</button>
+  </div>
+</div>
+
+
+<div class="minimapWrap">
+  <canvas id="minimap" width="170" height="170"></canvas>
+  <div class="miniLabel" id="miniLabel">Mini‑map: loading…</div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { PointerLockControls } from "three/addons/controls/PointerLockControls.js";
+
+/* =========================
+   TWEAK ZONE (textures!)
+   ========================= */
+
+// ===== CAMI MOVEMENT (EASY KNOBS) =====
+// Slowbrain‑Dan‑friendly 🙂
+// 10–15 = careful survey walking
+// 18     = normal hiking (old default)
+// 25+    = fast scouting
+const CAMI_SPEED = 240;   // ground travel speed
+const CAMI_CLIMB = 240;   
+// ===== CAMI VIEW TILT (NEW!) =====
+// Hold E = tilt view up, hold D = tilt view down
+// Tilt is clamped so you can't flip upside-down.
+const TILT_SPEED = 1.4;     // radians/sec (try 0.9–2.2)
+const TILT_MIN   = -1.20;   // look UP limit
+const TILT_MAX   =  1.05;   // look DOWN limit
+// vertical R/F speed
+
+const GITHUB_BRANCH = "main";
+const GITHUB_OWNER = "";
+const GITHUB_REPO = "";
+const GITHUB_ASSET_BASE = "";
+const TEX_DIR = "";
+const ASSET_FOLDER = "THREE MAPS";
+
+function githubAssetBase(){
+  if (GITHUB_ASSET_BASE) {
+    return GITHUB_ASSET_BASE.replace(/\/?$/, "/");
+  }
+
+  if (GITHUB_OWNER && GITHUB_REPO) {
+    return `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/`;
+  }
+
+  const host = location.hostname.toLowerCase();
+  if (host.endsWith(".github.io")) {
+    const owner = host.replace(/\.github\.io$/, "");
+    const repo = location.pathname.split("/").filter(Boolean)[0] || `${owner}.github.io`;
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${GITHUB_BRANCH}/`;
+  }
+
+  if (host === "raw.githubusercontent.com") {
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts.length >= 3) {
+      return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${parts[2]}/`;
+    }
+  }
+
+  if (host === "github.com") {
+    const parts = location.pathname.split("/").filter(Boolean);
+    if (parts.length >= 4 && parts[2] === "blob") {
+      return `https://raw.githubusercontent.com/${parts[0]}/${parts[1]}/${parts[3]}/`;
+    }
+  }
+
+  return TEX_DIR;
+}
+
+function encodeAssetPath(path){
+  return String(path || "")
+    .split("/")
+    .map(part => encodeURIComponent(part))
+    .join("/");
+}
+
+function assetUrl(path){
+  if (!path) return "";
+  if (/^(https?:|blob:|data:)/i.test(path)) return path;
+  const base = githubAssetBase();
+  return base ? base + encodeAssetPath(path) : path;
+}
+
+const HEIGHTMAP_FILE = `${ASSET_FOLDER}/1_HEIGHTMAP_plain_1024.png`;
+const MINIMAP_FILE = `${ASSET_FOLDER}/2_MINIMAP_roads_towns_1024.png`;
+const ROAD_OVERLAY_FILE = `${ASSET_FOLDER}/3_MAIN_MAP_road_overlay_1024.png`;
+const MAP5_OVERLAY_FILE = "";
+const DRAPE_FILE = "";
+const USE_ELEVATION_TEXTURE_BANDS = false;
+const USE_DRAPE_FALLBACK = false;
+const GSMNP_MIN_ELEV_FT = 875;
+const GSMNP_MAX_ELEV_FT = 6643;
+const ELEVATION_TEXTURE_BANDS = [
+  { name: "grass", minFt: 1500, maxFt: 2500, file: "GSMNP/THREE MAPS/6_TEXTURE_grass_albedo.jpg" },
+  { name: "forest", minFt: 2500, maxFt: 4500, file: "GSMNP/THREE MAPS/7_TEXTURE_forest.jpg" },
+  { name: "rock", minFt: 4500, maxFt: 6500, file: "GSMNP/THREE MAPS/8_TEXTURE_rock_albedo.png" }
+];
+const TEXTURE_PACKS = {
+  gsmnpElevation: {
+    name: "GSMNP elevation bands",
+    bands: ELEVATION_TEXTURE_BANDS
+  }
+};
+const ELEVATION_TEXTURE_REPEAT = 22;
+const ELEVATION_BAND_BLEND_FT = 125;
+// GSMNP metadata bbox: west/east span ~= 91.0 km, south/north span ~= 55.5 km.
+// The viewer uses a scaled model, but starts with the same real-world proportions.
+const DEFAULT_GROUND_WIDTH = 4000;
+const DEFAULT_GROUND_DEPTH = 2439;
+const DEFAULT_TERRAIN_HEIGHT = 1500;
+const TERRAIN_SEGMENTS = 456;
+const DEFAULT_GROUND_SIZE = DEFAULT_GROUND_WIDTH;
+let terrainHeight = DEFAULT_TERRAIN_HEIGHT;
+let terrainSize = 30000;
+
+const MAP5_IMAGE_WIDTH = 1815;
+const MAP5_IMAGE_HEIGHT = 1279;
+const MAP5_IMAGE_ASPECT = MAP5_IMAGE_WIDTH / MAP5_IMAGE_HEIGHT;
+const TERRAIN_ASPECT = DEFAULT_GROUND_WIDTH / DEFAULT_GROUND_DEPTH;
+let map5OverlayWidthRatio = 1.0;
+let map5OverlayOffsetX = 0.0;
+let map5OverlayOffsetZ = 0.0;
+let map5OverlayOpacity = 0.56;
+let map5OverlayVisible = true;
+
+
+// Minimap zoom: >1 makes the marker move more (shows a smaller area)
+const MINI_ZOOM = 2;
+// PBR textures. Any can be blank "" to disable.
+const COLOR_FILE  = `${ASSET_FOLDER}/forest.jpg`;   // diffuse / albedo
+const NORMAL_FILE = ""; // optional (leave blank for NAIP drape)    // optional
+const ROUGH_FILE  = ""; // optional                          // optional
+const TEX_REPEAT  = 1;   // for NAIP drape: 1 (no tiling)                          // tiling density
+
+/* =========================
+   Scene / Camera / Renderer
+   ========================= */
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87b7ff);
+scene.fog = new THREE.Fog(0x87b7ff, 1200, 30000);
+
+const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 40000);
+camera.position.set(0, 2, 5);
+
+camera.rotation.order = "YXZ";
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(devicePixelRatio);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+// Shadows
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+document.body.appendChild(renderer.domElement);
+
+/* =========================
+   Controls
+   ========================= */
+const controls = new PointerLockControls(camera, document.body);
+scene.add(controls.getObject());
+
+/* =========================
+   Lights (good relief)
+   ========================= */
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445066, 0.18));
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+sun.position.set(200, 180, 120);
+sun.castShadow = true;
+
+// shadow tuning
+sun.shadow.mapSize.set(2048, 2048);
+const D = 700;
+sun.shadow.camera.left = -D;
+sun.shadow.camera.right = D;
+sun.shadow.camera.top = D;
+sun.shadow.camera.bottom = -D;
+sun.shadow.camera.near = 50;
+sun.shadow.camera.far = 3000;
+sun.shadow.bias = -0.0006;
+sun.shadow.normalBias = 0.04;
+
+scene.add(sun);
+scene.add(sun.target);
+
+/* =========================
+   HUD status
+   ========================= */
+const hudEl = document.getElementById("hud");
+const statusEl = document.getElementById("status");
+const controlsToggleEl = document.getElementById("controlsToggle");
+const keyHelpToggleEl = document.getElementById("keyHelpToggle");
+const keyHelpEl = document.getElementById("keyHelp");
+const touchToggleEl = document.getElementById("touchToggle");
+const touchControlsEl = document.getElementById("touchControls");
+function setStatus(html){ statusEl.innerHTML = html; }
+function addStatus(html){ statusEl.innerHTML += "<br>" + html; }
+
+controlsToggleEl.addEventListener("click", ()=>{
+  const isHidden = hudEl.classList.toggle("hidden");
+  controlsToggleEl.textContent = isHidden ? "Show HUD" : "Hide HUD";
+  controlsToggleEl.setAttribute("aria-expanded", String(!isHidden));
+});
+
+keyHelpToggleEl.addEventListener("click", ()=>{
+  const isHidden = keyHelpEl.classList.toggle("hidden");
+  keyHelpToggleEl.textContent = isHidden ? "Keys" : "Hide Keys";
+  keyHelpToggleEl.setAttribute("aria-expanded", String(!isHidden));
+  keyHelpEl.setAttribute("aria-hidden", String(isHidden));
+});
+
+touchToggleEl.addEventListener("click", ()=>{
+  const isHidden = touchControlsEl.classList.toggle("hidden");
+  touchToggleEl.textContent = isHidden ? "Show Touch Controls" : "Hide Touch Controls";
+  touchToggleEl.setAttribute("aria-expanded", String(!isHidden));
+});
+
+/* =========================
+   Texture loader helpers
+   ========================= */
+const loader = new THREE.TextureLoader();
+loader.setCrossOrigin("anonymous");
+
+function prep(tex, repeat=TEX_REPEAT, clamp=false){
+  if (clamp){
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(1, 1);
+  } else {
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(repeat, repeat);
+  }
+  tex.anisotropy = Math.min(renderer.capabilities.getMaxAnisotropy(), 12);
+}
+
+async function loadTextureSafe(path){
+  return new Promise((resolve)=>{
+    loader.load(
+      path,
+      (tex)=>resolve(tex),
+      undefined,
+      ()=>resolve(null)
+    );
+  });
+}
+
+/* =========================
+   Load heightmap
+   ========================= */
+const c = document.createElement("canvas");
+const ctx = c.getContext("2d");
+let hm = null;
+let startupWarning = "";
+
+function setHeightmapFromImage(img){
+  c.width = img.width;
+  c.height = img.height;
+  ctx.clearRect(0, 0, c.width, c.height);
+  ctx.drawImage(img, 0, 0);
+  hm = ctx.getImageData(0, 0, c.width, c.height).data;
+}
+
+function makeFallbackHeightmap(size=256){
+  const fallback = document.createElement("canvas");
+  fallback.width = size;
+  fallback.height = size;
+  const fctx = fallback.getContext("2d");
+  const grad = fctx.createLinearGradient(0, 0, 0, size);
+  grad.addColorStop(0, "#e0e0e0");
+  grad.addColorStop(1, "#606060");
+  fctx.fillStyle = grad;
+  fctx.fillRect(0, 0, size, size);
+  return fallback;
+}
+
+function loadImageSafe(path){
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = path;
+  });
+}
+
+setStatus(`(Apache) Loading heightmap: <code>${HEIGHTMAP_FILE}</code>…`);
+const hmTex = await loadTextureSafe(assetUrl(HEIGHTMAP_FILE));
+if (hmTex && hmTex.image){
+  setHeightmapFromImage(hmTex.image);
+} else {
+  setHeightmapFromImage(makeFallbackHeightmap(256));
+  startupWarning = `⚠ Missing default heightmap: <code>${HEIGHTMAP_FILE}</code>. Check the GitHub <code>${GITHUB_BRANCH}/${ASSET_FOLDER}</code> assets.`;
+}
+
+/* =========================
+   Mini‑map (shows where Cami is on the heightmap)
+   ========================= */
+const MINI_SIZE = 170;
+const mini = document.getElementById("minimap");
+const miniLabel = document.getElementById("miniLabel");
+const mctx = mini.getContext("2d");
+
+// Draw the heightmap image once into an offscreen "base" canvas (fast redraw)
+const miniBase = document.createElement("canvas");
+miniBase.width = MINI_SIZE;
+miniBase.height = MINI_SIZE;
+const bctx = miniBase.getContext("2d");
+
+function rebuildMiniBaseFromImage(source){
+  bctx.clearRect(0,0,MINI_SIZE,MINI_SIZE);
+  bctx.imageSmoothingEnabled = true;
+  bctx.drawImage(source, 0, 0, MINI_SIZE, MINI_SIZE);
+
+  // Optional: faint grid (helps eyeballing landmarks)
+  bctx.strokeStyle = "rgba(255,255,255,0.10)";
+  bctx.lineWidth = 1;
+  for (let i=1;i<=3;i++){
+    const t = (i/4)*MINI_SIZE;
+    bctx.beginPath(); bctx.moveTo(t,0); bctx.lineTo(t,MINI_SIZE); bctx.stroke();
+    bctx.beginPath(); bctx.moveTo(0,t); bctx.lineTo(MINI_SIZE,t); bctx.stroke();
+  }
+}
+
+let miniMapWarning = "";
+const miniTex = MINIMAP_FILE ? await loadTextureSafe(assetUrl(MINIMAP_FILE)) : null;
+if (miniTex && miniTex.image){
+  rebuildMiniBaseFromImage(miniTex.image);
+} else {
+  rebuildMiniBaseFromImage(c);
+  miniMapWarning = MINIMAP_FILE
+    ? `⚠ Missing minimap image: <code>${MINIMAP_FILE}</code>. Showing heightmap only.`
+    : "";
+}
+
+function drawMiniMarker(u,v,yaw){
+  // Clamp into [0,1] so marker stays on-map when you wander off edge
+  u = Math.max(0, Math.min(1, u));
+  v = Math.max(0, Math.min(1, v));
+
+  const px = u * MINI_SIZE;
+  const py = (1 - v) * MINI_SIZE; // (1-v) matches how we sample the heightmap
+
+  // Redraw base
+  mctx.clearRect(0,0,MINI_SIZE,MINI_SIZE);
+  mctx.drawImage(miniBase, 0, 0);
+
+  // Dot
+  mctx.beginPath();
+  mctx.arc(px, py, 4.2, 0, Math.PI*2);
+  mctx.fillStyle = "rgba(0,255,255,0.95)";
+  mctx.fill();
+
+  // Facing arrow
+  const ang = (-yaw) - Math.PI/2; // yaw=0 => north/up
+  const r1 = 13, r2 = 7;
+  const ax1 = px + Math.cos(ang) * r1;
+  const ay1 = py + Math.sin(ang) * r1;
+  const ax2 = px + Math.cos(ang + 2.6) * r2;
+  const ay2 = py + Math.sin(ang + 2.6) * r2;
+  const ax3 = px + Math.cos(ang - 2.6) * r2;
+  const ay3 = py + Math.sin(ang - 2.6) * r2;
+
+  mctx.beginPath();
+  mctx.moveTo(ax1, ay1);
+  mctx.lineTo(ax2, ay2);
+  mctx.lineTo(ax3, ay3);
+  mctx.closePath();
+  mctx.fillStyle = "rgba(255,80,80,0.95)";
+  mctx.fill();
+
+  // Label: percent + pixel in the original heightmap
+  const ix = Math.floor(u * (c.width - 1));
+  const iy = Math.floor((1 - v) * (c.height - 1));
+  const elevFt = (ix >= 0 && iy >= 0 && ix < c.width && iy < c.height)
+    ? elevationFeetFromHeightmapValue(hm[(iy*c.width + ix)*4] / 255)
+    : 0;
+  miniLabel.textContent = `Mini‑map: u ${(u*100).toFixed(1)}% · v ${(v*100).toFixed(1)}%  |  px ${ix}, ${iy} · ${Math.round(elevFt)} ft`;
+}
+
+
+/* =========================
+   Terrain geometry
+   ========================= */
+const geo = new THREE.PlaneGeometry(DEFAULT_GROUND_WIDTH, DEFAULT_GROUND_DEPTH, TERRAIN_SEGMENTS, TERRAIN_SEGMENTS);
+geo.rotateX(-Math.PI/2);
+
+const pos = geo.attributes.position;
+const uv = geo.attributes.uv;
+
+function rebuildTerrainFromHeightmap(){
+  for (let i=0; i<pos.count; i++){
+    const u = uv.getX(i);
+    const v = uv.getY(i);
+    const x = Math.floor(u * (c.width - 1));
+    const y = Math.floor((1 - v) * (c.height - 1));
+    pos.setY(i, (hm[(y*c.width + x)*4] / 255) * terrainHeight);
+  }
+  pos.needsUpdate = true;
+  geo.computeVertexNormals();
+}
+
+rebuildTerrainFromHeightmap();
+
+/* =========================
+   Load PBR textures (RESTORED)
+   ========================= */
+let colorMap = null, normalMap = null, roughMap = null;
+let drapeStatus = "";
+let elevationTextureStatus = "";
+let elevationBandImages = null;
+let terrainMaterialStatus = "";
+let activeGroundTextureMode = "fallback";
+
+function configureDrapeTexture(tex){
+  tex.colorSpace = THREE.SRGBColorSpace;
+  prep(tex, 1, true);
+  // Map/drape images are north-up like the heightmap. Three.js needs flipY=true
+  // so image row 0 lands on UV v=1, matching rebuildTerrainFromHeightmap().
+  tex.flipY = true;
+  return tex;
+}
+
+function setGroundDrapeTexture(tex){
+  configureDrapeTexture(tex);
+  if (groundMat.map) groundMat.map.dispose();
+  groundMat.map = tex;
+  groundMat.color.setHex(0xffffff);
+  groundMat.needsUpdate = true;
+}
+
+function readImagePixels(img){
+  const pc = document.createElement("canvas");
+  pc.width = img.width;
+  pc.height = img.height;
+  const pctx = pc.getContext("2d");
+  pctx.drawImage(img, 0, 0);
+  return {
+    width: pc.width,
+    height: pc.height,
+    data: pctx.getImageData(0, 0, pc.width, pc.height).data
+  };
+}
+
+function sampleTile(src, u, v){
+  const x = Math.floor((((u % 1) + 1) % 1) * (src.width - 1));
+  const y = Math.floor((((v % 1) + 1) % 1) * (src.height - 1));
+  const i = (y * src.width + x) * 4;
+  return [src.data[i], src.data[i + 1], src.data[i + 2]];
+}
+
+function smoothstep(edge0, edge1, x){
+  const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+function mixColor(a, b, t){
+  return [
+    a[0] * (1 - t) + b[0] * t,
+    a[1] * (1 - t) + b[1] * t,
+    a[2] * (1 - t) + b[2] * t
+  ];
+}
+
+async function loadElevationBandImages(bands=ELEVATION_TEXTURE_BANDS){
+  const entries = await Promise.all(
+    bands.map(async (band) => ({
+      ...band,
+      img: await loadImageSafe(assetUrl(band.file))
+    }))
+  );
+  const missing = entries.filter((band) => !band.img).map((band) => band.file);
+  if (missing.length){
+    elevationTextureStatus = `⚠ Missing elevation textures: <code>${missing.join("</code>, <code>")}</code>`;
+    addStatus(elevationTextureStatus);
+    return null;
+  }
+  return entries.map((band) => ({
+    ...band,
+    pixels: readImagePixels(band.img)
+  }));
+}
+
+function elevationFeetFromHeightmapValue(value){
+  return GSMNP_MIN_ELEV_FT + value * (GSMNP_MAX_ELEV_FT - GSMNP_MIN_ELEV_FT);
+}
+
+function bandColorAtElevation(elevFt, u, v){
+  const bands = elevationBandImages;
+  let activeIndex = 0;
+  for (let i = 0; i < bands.length; i++){
+    if (elevFt >= bands[i].minFt) activeIndex = i;
+  }
+
+  let color = sampleTile(bands[activeIndex].pixels, u, v);
+  const next = bands[activeIndex + 1];
+  if (next && elevFt > next.minFt - ELEVATION_BAND_BLEND_FT){
+    const t = smoothstep(next.minFt - ELEVATION_BAND_BLEND_FT, next.minFt + ELEVATION_BAND_BLEND_FT, elevFt);
+    color = mixColor(color, sampleTile(next.pixels, u, v), t);
+  }
+
+  return color;
+}
+
+function buildElevationTextureFromHeightmap(){
+  if (!elevationBandImages || !hm) return null;
+
+  const out = document.createElement("canvas");
+  out.width = c.width;
+  out.height = c.height;
+  const outCtx = out.getContext("2d");
+  const imageData = outCtx.createImageData(out.width, out.height);
+  const dst = imageData.data;
+
+  for (let y = 0; y < out.height; y++){
+    for (let x = 0; x < out.width; x++){
+      const i = (y * out.width + x) * 4;
+      const elev = hm[i] / 255;
+      const elevFt = elevationFeetFromHeightmapValue(elev);
+      const u = (x / out.width) * ELEVATION_TEXTURE_REPEAT;
+      const v = (y / out.height) * ELEVATION_TEXTURE_REPEAT;
+
+      let color = bandColorAtElevation(elevFt, u, v);
+
+      const shade = 0.86 + elev * 0.24;
+      dst[i] = Math.min(255, color[0] * shade);
+      dst[i + 1] = Math.min(255, color[1] * shade);
+      dst[i + 2] = Math.min(255, color[2] * shade);
+      dst[i + 3] = 255;
+    }
+  }
+
+  outCtx.putImageData(imageData, 0, 0);
+  const tex = new THREE.CanvasTexture(out);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  prep(tex, 1, true);
+  tex.flipY = true;
+  return tex;
+}
+
+async function applyTexturePack(packKey){
+  const pack = TEXTURE_PACKS[packKey];
+  if (!pack) return;
+
+  addStatus(`Loading texture pack: <code>${pack.name}</code>…`);
+  const bandImages = await loadElevationBandImages(pack.bands);
+  if (!bandImages) return;
+
+  elevationBandImages = bandImages;
+  const elevationTex = buildElevationTextureFromHeightmap();
+  if (!elevationTex){
+    addStatus(`⚠ Could not build texture pack: <code>${pack.name}</code>`);
+    return;
+  }
+
+  setGroundDrapeTexture(elevationTex);
+  activeGroundTextureMode = "elevation";
+  elevationTextureStatus = `✅ Texture pack: <code>${pack.name}</code>`;
+  terrainMaterialStatus = `Terrain material: generated elevation texture`;
+  addStatus(elevationTextureStatus);
+}
+
+if (COLOR_FILE){
+  colorMap = await loadTextureSafe(assetUrl(COLOR_FILE));
+  if (colorMap){
+    colorMap.colorSpace = THREE.SRGBColorSpace;
+    prep(colorMap, 1, true);
+    // For draped imagery we usually want consistent map orientation.
+    colorMap.flipY = true;
+    addStatus(`✅ Color: <code>${COLOR_FILE}</code>`);
+  } else {
+    addStatus(`⚠️ Missing color texture: <code>${COLOR_FILE}</code> (using fallback)`);
+  }
+} else {
+  addStatus(`ℹ️ COLOR_FILE empty (using fallback)`);
+}
+
+if (!colorMap && USE_ELEVATION_TEXTURE_BANDS){
+  elevationBandImages = await loadElevationBandImages();
+  if (elevationBandImages){
+    colorMap = buildElevationTextureFromHeightmap();
+    activeGroundTextureMode = "elevation";
+    elevationTextureStatus = `✅ Elevation textures: grass 1500-2500 ft · forest 2500-4500 ft · rock 4500-6500 ft`;
+    terrainMaterialStatus = `Terrain material: generated elevation texture`;
+    addStatus(elevationTextureStatus);
+  }
+}
+
+if (!colorMap && USE_DRAPE_FALLBACK && DRAPE_FILE){
+  const drapeMap = await loadTextureSafe(assetUrl(DRAPE_FILE));
+  if (drapeMap){
+    colorMap = configureDrapeTexture(drapeMap);
+    activeGroundTextureMode = "drape";
+    drapeStatus = `✅ Drape: <code>${DRAPE_FILE}</code>`;
+    addStatus(drapeStatus);
+  } else {
+    drapeStatus = `⚠ Missing drape: <code>${DRAPE_FILE}</code>. Use the drape picker below.`;
+    addStatus(drapeStatus);
+  }
+}
+
+if (NORMAL_FILE){
+  normalMap = await loadTextureSafe(assetUrl(NORMAL_FILE));
+  if (normalMap){
+    prep(normalMap);
+    addStatus(`✅ Normal: <code>${NORMAL_FILE}</code>`);
+  } else {
+    addStatus(`⚠️ Missing normal map: <code>${NORMAL_FILE}</code>`);
+  }
+}
+
+if (!terrainMaterialStatus){
+  terrainMaterialStatus = colorMap
+    ? `Terrain material: image texture`
+    : `Terrain material: fallback color only`;
+}
+
+if (ROUGH_FILE){
+  roughMap = await loadTextureSafe(assetUrl(ROUGH_FILE));
+  if (roughMap){
+    prep(roughMap);
+    addStatus(`✅ Rough: <code>${ROUGH_FILE}</code>`);
+  } else {
+    addStatus(`⚠️ Missing roughness map: <code>${ROUGH_FILE}</code>`);
+  }
+}
+
+const groundMat = new THREE.MeshStandardMaterial({
+  map: colorMap || null,
+  normalMap: normalMap || null,
+  roughnessMap: roughMap || null,
+  roughness: roughMap ? 1.0 : 0.95,
+  metalness: 0.0,
+  color: 0xffffff
+});
+if (groundMat.normalMap) groundMat.normalScale.set(1.0, 1.0);
+
+const ground = new THREE.Mesh(geo, groundMat);
+ground.receiveShadow = true;
+scene.add(ground);
+
+let roadOverlay = null;
+let roadOverlayStatus = "";
+let map5Overlay = null;
+let map5OverlayStatus = "";
+
+function updateMap5OverlayTransform(){
+  if (!map5Overlay) return;
+  const terrainScale = terrainSize / DEFAULT_GROUND_SIZE;
+  map5Overlay.scale.set(terrainScale, 1, terrainScale);
+  map5Overlay.position.y = 3.5;
+  map5Overlay.visible = map5OverlayVisible;
+  map5Overlay.material.map.repeat.set(
+    map5OverlayWidthRatio,
+    map5OverlayWidthRatio * (MAP5_IMAGE_ASPECT / TERRAIN_ASPECT)
+  );
+  map5Overlay.material.map.offset.set(map5OverlayOffsetX, map5OverlayOffsetZ);
+  map5Overlay.material.map.needsUpdate = true;
+  map5Overlay.material.opacity = map5OverlayOpacity;
+  map5Overlay.material.needsUpdate = true;
+}
+
+function setRoadOverlayTexture(roadMap){
+  roadMap.colorSpace = THREE.SRGBColorSpace;
+  prep(roadMap, 1, true);
+  roadMap.flipY = true;
+  if (roadOverlay){
+    roadOverlay.material.map.dispose();
+    roadOverlay.material.map = roadMap;
+    roadOverlay.material.needsUpdate = true;
+  } else {
+    const roadMat = new THREE.MeshBasicMaterial({
+      map: roadMap,
+      transparent: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2
+    });
+    roadOverlay = new THREE.Mesh(geo, roadMat);
+    roadOverlay.renderOrder = 2;
+    roadOverlay.position.y = 1.5;
+    scene.add(roadOverlay);
+    applyTerrainSize();
+  }
+}
+
+function setMap5OverlayTexture(mapTexture){
+  mapTexture.colorSpace = THREE.SRGBColorSpace;
+  prep(mapTexture, 1, true);
+  mapTexture.flipY = true;
+
+  if (map5Overlay){
+    map5Overlay.material.map.dispose();
+    map5Overlay.material.map = mapTexture;
+    map5Overlay.material.needsUpdate = true;
+    updateMap5OverlayTransform();
+    return;
+  }
+
+  const mapMat = new THREE.MeshBasicMaterial({
+    map: mapTexture,
+    transparent: true,
+    opacity: map5OverlayOpacity,
+    depthWrite: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -4,
+    polygonOffsetUnits: -4
+  });
+
+  map5Overlay = new THREE.Mesh(geo.clone(), mapMat);
+  map5Overlay.renderOrder = 3;
+  scene.add(map5Overlay);
+  updateMap5OverlayTransform();
+}
+
+if (ROAD_OVERLAY_FILE){
+  const roadMap = await loadTextureSafe(assetUrl(ROAD_OVERLAY_FILE));
+  if (roadMap){
+    setRoadOverlayTexture(roadMap);
+    roadOverlayStatus = `✅ Road overlay: <code>${ROAD_OVERLAY_FILE}</code>`;
+    addStatus(roadOverlayStatus);
+  } else {
+    roadOverlayStatus = `⚠ Missing road overlay: <code>${ROAD_OVERLAY_FILE}</code>`;
+    addStatus(roadOverlayStatus);
+  }
+}
+
+if (MAP5_OVERLAY_FILE){
+  const map5Texture = await loadTextureSafe(assetUrl(MAP5_OVERLAY_FILE));
+  if (map5Texture){
+    setMap5OverlayTexture(map5Texture);
+    map5OverlayStatus = `✅ Map overlay: <code>${MAP5_OVERLAY_FILE}</code>`;
+    addStatus(map5OverlayStatus);
+  } else {
+    map5OverlayStatus = `⚠ Missing map overlay: <code>${MAP5_OVERLAY_FILE}</code>`;
+    addStatus(map5OverlayStatus);
+  }
+}
+
+function applyTerrainSize(){
+  const scale = terrainSize / DEFAULT_GROUND_SIZE;
+  ground.scale.set(scale, 1, scale);
+  if (roadOverlay) roadOverlay.scale.set(scale, 1, scale);
+  updateMap5OverlayTransform();
+}
+
+applyTerrainSize();
+
+if (startupWarning){
+  setStatus(`${startupWarning}<br>Fallback terrain active (${c.width}×${c.height}).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
+} else {
+  setStatus(`✅ Loaded heightmap <code>${HEIGHTMAP_FILE}</code> (${c.width}×${c.height})<br>Textures loaded (or safely fell back).<br>Tilt: <b><span id="tiltReadout">0</span>°</b> (E/D)`);
+}
+if (miniMapWarning) addStatus(miniMapWarning);
+if (elevationTextureStatus) addStatus(elevationTextureStatus);
+if (terrainMaterialStatus) addStatus(terrainMaterialStatus);
+if (drapeStatus) addStatus(drapeStatus);
+if (roadOverlayStatus) addStatus(roadOverlayStatus);
+if (map5OverlayStatus) addStatus(map5OverlayStatus);
+
+let tiltReadout = document.getElementById("tiltReadout");
+
+/* =========================
+   Compass
+   ========================= */
+const needle = document.getElementById("needle");
+function updateCompass(){
+  // Map 3D yaw to a 2D compass needle.
+  // Three.js yaw (+) turns left (toward -X / West), but CSS positive rotation is clockwise.
+  // So we flip the sign to keep East/West correct while preserving North/South.
+  const yaw = controls.getObject().rotation.y;
+  const deg = -THREE.MathUtils.radToDeg(yaw);
+  needle.style.transform = `rotate(${deg}deg)`;
+}
+
+/* =========================
+   Movement
+   ========================= */
+const keys = new Set();
+const CONTROL_KEYS = new Set([
+  "ArrowLeft","ArrowRight","ArrowUp","ArrowDown","KeyE","KeyD","KeyR","KeyF","Escape"
+]);
+const touchPointers = new Map();
+
+function maybeBlurRangeControl(){
+  const ae = document.activeElement;
+  if (ae && ae.tagName === "INPUT" && ae.type === "range") ae.blur();
+}
+
+function handleMap5OverlayCalibrationKey(e){
+  if (!map5Overlay || !e.shiftKey) return false;
+
+  const moveStep = e.altKey ? 0.001 : 0.005;
+  let handled = true;
+
+  if (e.code === "KeyI") map5OverlayOffsetZ -= moveStep;
+  else if (e.code === "KeyK") map5OverlayOffsetZ += moveStep;
+  else if (e.code === "KeyJ") map5OverlayOffsetX -= moveStep;
+  else if (e.code === "KeyL") map5OverlayOffsetX += moveStep;
+  else if (e.code === "BracketLeft") map5OverlayWidthRatio = Math.max(0.15, map5OverlayWidthRatio - 0.01);
+  else if (e.code === "BracketRight") map5OverlayWidthRatio = Math.min(3.0, map5OverlayWidthRatio + 0.01);
+  else if (e.code === "Minus") map5OverlayOpacity = Math.max(0.05, map5OverlayOpacity - 0.05);
+  else if (e.code === "Equal") map5OverlayOpacity = Math.min(1.0, map5OverlayOpacity + 0.05);
+  else if (e.code === "KeyM") map5OverlayVisible = !map5OverlayVisible;
+  else handled = false;
+
+  if (!handled) return false;
+  e.preventDefault();
+  updateMap5OverlayTransform();
+  console.log(
+    `map5 overlay: widthRatio=${map5OverlayWidthRatio.toFixed(3)}, ` +
+    `offsetX=${map5OverlayOffsetX.toFixed(3)}, offsetZ=${map5OverlayOffsetZ.toFixed(3)}, ` +
+    `opacity=${map5OverlayOpacity.toFixed(2)}, visible=${map5OverlayVisible}`
+  );
+  return true;
+}
+
+addEventListener("keydown", (e)=>{
+  if (handleMap5OverlayCalibrationKey(e)) return;
+
+  if (CONTROL_KEYS.has(e.code)){
+    e.preventDefault();
+    maybeBlurRangeControl();
+  }
+  keys.add(e.code);
+});
+
+addEventListener("keyup", (e)=>{
+  if (CONTROL_KEYS.has(e.code)) e.preventDefault();
+  keys.delete(e.code);
+});
+
+function releaseTouchKey(pointerId){
+  const active = touchPointers.get(pointerId);
+  if (!active) return;
+  keys.delete(active.key);
+  active.button.classList.remove("active");
+  touchPointers.delete(pointerId);
+}
+
+document.querySelectorAll(".touchBtn[data-key]").forEach((button)=>{
+  button.addEventListener("pointerdown", (e)=>{
+    e.preventDefault();
+    const key = button.dataset.key;
+    keys.add(key);
+    button.classList.add("active");
+    touchPointers.set(e.pointerId, { key, button });
+    button.setPointerCapture(e.pointerId);
+  });
+  button.addEventListener("pointerup", (e)=>{
+    e.preventDefault();
+    releaseTouchKey(e.pointerId);
+  });
+  button.addEventListener("pointercancel", (e)=>releaseTouchKey(e.pointerId));
+  button.addEventListener("lostpointercapture", (e)=>releaseTouchKey(e.pointerId));
+});
+
+function heightAt(x,z){
+  const terrainDepth = terrainSize * (DEFAULT_GROUND_DEPTH / DEFAULT_GROUND_WIDTH);
+  const u = (x/terrainSize)+0.5;
+  const v = (-z/terrainDepth)+0.5;
+  const ix = Math.floor(u*(c.width-1));
+  const iz = Math.floor((1-v)*(c.height-1));
+  if (ix<0||iz<0||ix>=c.width||iz>=c.height) return 0;
+  return (hm[(iz*c.width + ix)*4]/255) * terrainHeight;
+}
+
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt = Math.min(0.033, clock.getDelta());
+  const obj = controls.getObject();
+
+  if (keys.has("ArrowLeft"))  obj.rotation.y += 2*dt;
+  if (keys.has("ArrowRight")) obj.rotation.y -= 2*dt;
+
+// Tilt (pitch) with E/D  (bulletproof: apply directly to camera)
+// This avoids relying on PointerLockControls' internal pitch object.
+if (keys.has("KeyE")) camera.rotation.x += TILT_SPEED * dt; // tilt down
+if (keys.has("KeyD")) camera.rotation.x -= TILT_SPEED * dt; // tilt up
+camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, TILT_MIN, TILT_MAX);
+if (tiltReadout) tiltReadout.textContent = THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(0);
+
+  let dir = 0;
+  if (keys.has("ArrowUp")) dir = 1;
+  if (keys.has("ArrowDown")) dir = -1;
+
+  if (dir){
+    obj.position.x += -Math.sin(obj.rotation.y) * dir * CAMI_SPEED * dt;
+    obj.position.z += -Math.cos(obj.rotation.y) * dir * CAMI_SPEED * dt;
+  }
+
+  if (keys.has("KeyR")) obj.position.y += CAMI_CLIMB * dt;
+  if (keys.has("KeyF")) obj.position.y -= CAMI_CLIMB * dt;
+
+  const floor = heightAt(obj.position.x, obj.position.z) + 2;
+  if (obj.position.y < floor) obj.position.y = floor;
+
+  // Mini‑map update (convert world x/z -> heightmap UV)
+  const terrainDepth = terrainSize * (DEFAULT_GROUND_DEPTH / DEFAULT_GROUND_WIDTH);
+  const u = (obj.position.x / (terrainSize / MINI_ZOOM)) + 0.5;
+  const v = (-obj.position.z / (terrainDepth / MINI_ZOOM)) + 0.5;
+  drawMiniMarker(u, v, obj.rotation.y);
+
+
+  updateCompass();
+  renderer.render(scene, camera);
+}
+animate();
+
+addEventListener("resize", ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>

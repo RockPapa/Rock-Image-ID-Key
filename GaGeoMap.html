@@ -213,6 +213,23 @@ body.map-only #stage {
   max-height: none;
 }
 
+  #rockIndexOverlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 1000;
+    background: #fff;
+  }
+  #rockIndexOverlay.is-open {
+    display: block;
+  }
+  #rockIndexFrame {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
   #loadProgressMeta {
     margin-top: 5px;
     font-size: 12px;
@@ -255,10 +272,14 @@ body.map-only #stage {
     <div class="meta" id="popupMeta">—</div>
     <div class="mono" id="popupBody"></div>
     <div class="btnRow">
-      <a id="keyLink" href="#" target="_blank" rel="noopener">Open Rock Image ID Key Alphabetical Index</a>
+      <a id="keyLink" href="#">Open Rock Image ID Key Alphabetical Index</a>
       <a href="#" class="closeBtn" id="popupClose">Close</a>
     </div>
   </div>
+</div>
+
+<div id="rockIndexOverlay" aria-hidden="true">
+  <iframe id="rockIndexFrame" title="Rock Index"></iframe>
 </div>
 
 <script>
@@ -289,6 +310,8 @@ body.map-only #stage {
   const keyLink = document.getElementById("keyLink");
   const popupClose = document.getElementById("popupClose");
   const popupX = document.getElementById("popupX");
+  const rockIndexOverlay = document.getElementById("rockIndexOverlay");
+  const rockIndexFrame = document.getElementById("rockIndexFrame");
 
   let img = null;
 
@@ -499,7 +522,16 @@ body.map-only #stage {
   function saveViewState(){
     if (!img) return;
     try {
-      sessionStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ scale, offsetX, offsetY }));
+      const popupState = {
+        visible: getComputedStyle(popup).display !== "none",
+        title: popupTitle.textContent || "",
+        meta: popupMeta.textContent || "",
+        body: popupBody.textContent || "",
+        href: keyLink.getAttribute("href") || "",
+        left: popup.style.left || "",
+        top: popup.style.top || ""
+      };
+      sessionStorage.setItem(VIEW_STATE_KEY, JSON.stringify({ scale, offsetX, offsetY, popup: popupState }));
     } catch(_e) {}
   }
 
@@ -518,6 +550,35 @@ body.map-only #stage {
     } catch(_e) {
       return false;
     }
+  }
+
+  function restorePopupState(){
+    try {
+      const raw = sessionStorage.getItem(VIEW_STATE_KEY);
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      const savedPopup = state && state.popup;
+      if (!savedPopup || !savedPopup.visible) return;
+
+      popupTitle.textContent = savedPopup.title || "";
+      popupMeta.textContent = savedPopup.meta || "";
+      popupBody.textContent = savedPopup.body || "";
+      keyLink.href = savedPopup.href || "#";
+      popup.style.display = "block";
+
+      requestAnimationFrame(() => {
+        const pad = 10;
+        const stageRect = stage.getBoundingClientRect();
+        const pw = popup.offsetWidth;
+        const ph = popup.offsetHeight;
+        const savedLeft = parseFloat(savedPopup.left);
+        const savedTop = parseFloat(savedPopup.top);
+        const x = Number.isFinite(savedLeft) ? savedLeft : 12;
+        const y = Number.isFinite(savedTop) ? savedTop : 12;
+        popup.style.left = Math.max(pad, Math.min(stageRect.width - pw - pad, x)) + "px";
+        popup.style.top = Math.max(pad, Math.min(stageRect.height - ph - pad, y)) + "px";
+      });
+    } catch(_e) {}
   }
 
 function enterMapOnlyMode(options = {}){
@@ -674,6 +735,19 @@ polygons loaded: ${polygons.length}`);
       .replace(/^-+|-+$/g, "");
     return slug ? `${ROCK_KEY_URL}#${slug}` : ROCK_KEY_URL;
   }
+
+  function openRockIndex(url){
+    saveViewState();
+    rockIndexFrame.src = url || ROCK_KEY_URL;
+    rockIndexOverlay.classList.add("is-open");
+    rockIndexOverlay.setAttribute("aria-hidden", "false");
+  }
+
+  window.closeRockIndexOverlay = function(){
+    rockIndexOverlay.classList.remove("is-open");
+    rockIndexOverlay.setAttribute("aria-hidden", "true");
+    stage.focus();
+  };
 
   function showColorOnlyPopupAtStageXY(stageX, stageY, wx, wy){
     // Color-only popup when click is OUTSIDE all polygons
@@ -892,6 +966,7 @@ function resetView(){
             );
             setProgress(cached.totalJson || cached.okCount || 0, cached.totalJson || cached.okCount || 0, "Loaded from browser cache.");
             enterMapOnlyMode({ preserveView: restoredView });
+            restorePopupState();
             stage.focus();
             return;
           } catch(err) {
@@ -1045,6 +1120,7 @@ function resetView(){
       }
 
       enterMapOnlyMode({ preserveView: restoredView });
+      restorePopupState();
       stage.focus();
     } finally {
       githubLoadInFlight = false;
@@ -1212,7 +1288,12 @@ overlayCanvas.addEventListener("pointerup", stopDrag);
 overlayCanvas.addEventListener("pointercancel", stopDrag);
 
   // Close link + X
-  keyLink.addEventListener("click", () => saveViewState());
+  keyLink.addEventListener("click", (e) => {
+    e.preventDefault();
+    saveViewState();
+    const href = keyLink.getAttribute("href") || ROCK_KEY_URL;
+    openRockIndex(href);
+  });
   window.addEventListener("pagehide", () => saveViewState());
 
   popupClose.addEventListener("click", (e) => {

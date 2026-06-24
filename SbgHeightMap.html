@@ -291,8 +291,9 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 // 25+    = fast scouting
 const CAMI_SPEED = 240;   // ground travel speed
 const CAMI_CLIMB = 240;   
-const START_CAMERA_HEIGHT = 3250;
+const START_CAMERA_HEIGHT = 4063;
 const START_CAMERA_DOWN_TILT_DEG = 45;
+const START_SOUTH_EDGE_MARGIN = 0.04;
 // ===== CAMI VIEW TILT (NEW!) =====
 // Hold E = tilt view down, hold D = tilt view up
 // Tilt is clamped so you can't flip upside-down.
@@ -1028,7 +1029,10 @@ applyTerrainSize();
 
 function applyStartingView(){
   const obj = controls.getObject();
-  obj.position.set(0, heightAt(0, 0) + START_CAMERA_HEIGHT, 0);
+  const terrainDepth = terrainSize * (DEFAULT_GROUND_DEPTH / DEFAULT_GROUND_WIDTH);
+  const startZ = (terrainDepth * 0.5) - (terrainDepth * START_SOUTH_EDGE_MARGIN);
+  obj.position.set(0, heightAt(0, startZ) + START_CAMERA_HEIGHT, startZ);
+  obj.rotation.y = 0;
   camera.rotation.x = -THREE.MathUtils.degToRad(START_CAMERA_DOWN_TILT_DEG);
 }
 

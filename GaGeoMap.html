@@ -782,12 +782,12 @@ polygons loaded: ${polygons.length}`);
 
   function updateRockIndexBackLabel(){
     const path = rockIndexFramePath();
-    rockIndexBack.textContent = /(^|\/)RockIndex\.html$/i.test(path) ? "Back" : "Back to Index";
+    rockIndexBack.textContent = path && /(^|\/)RockIndex\.html$/i.test(path) ? "Back" : "Back to Index";
   }
 
   function handleRockIndexBack(){
     const path = rockIndexFramePath();
-    if (!path || /(^|\/)RockIndex\.html$/i.test(path)) {
+    if (path && /(^|\/)RockIndex\.html$/i.test(path)) {
       window.closeRockIndexOverlay();
       return;
     }

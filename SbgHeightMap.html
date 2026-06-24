@@ -292,7 +292,7 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 const CAMI_SPEED = 240;   // ground travel speed
 const CAMI_CLIMB = 240;   
 const START_CAMERA_HEIGHT = 2600;
-const START_CAMERA_DOWN_TILT_DEG = 30;
+const START_CAMERA_DOWN_TILT_DEG = 45;
 // ===== CAMI VIEW TILT (NEW!) =====
 // Hold E = tilt view up, hold D = tilt view down
 // Tilt is clamped so you can't flip upside-down.
@@ -405,13 +405,14 @@ const COLOR_FILE  = `${ASSET_FOLDER}/forest.jpg`;   // diffuse / albedo
 const NORMAL_FILE = ""; // optional (leave blank for NAIP drape)    // optional
 const ROUGH_FILE  = ""; // optional                          // optional
 const TEX_REPEAT  = 1;   // for NAIP drape: 1 (no tiling)                          // tiling density
+const GOLDEN_HOUR = true;
 
 /* =========================
    Scene / Camera / Renderer
    ========================= */
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87b7ff);
-scene.fog = new THREE.Fog(0x87b7ff, 1200, 30000);
+scene.background = new THREE.Color(GOLDEN_HOUR ? 0xf2b36f : 0x87b7ff);
+scene.fog = new THREE.Fog(GOLDEN_HOUR ? 0xf0b071 : 0x87b7ff, 1200, 30000);
 
 const camera = new THREE.PerspectiveCamera(70, innerWidth/innerHeight, 0.1, 40000);
 camera.position.set(0, 2, 5);
@@ -437,21 +438,26 @@ scene.add(controls.getObject());
 /* =========================
    Lights (good relief)
    ========================= */
-scene.add(new THREE.HemisphereLight(0xffffff, 0x445066, 0.18));
+const hemiLight = new THREE.HemisphereLight(
+  GOLDEN_HOUR ? 0xffd8a3 : 0xffffff,
+  GOLDEN_HOUR ? 0x31445c : 0x445066,
+  GOLDEN_HOUR ? 0.28 : 0.18
+);
+scene.add(hemiLight);
 
-const sun = new THREE.DirectionalLight(0xffffff, 1.5);
-sun.position.set(200, 180, 120);
+const sun = new THREE.DirectionalLight(GOLDEN_HOUR ? 0xffb15c : 0xffffff, GOLDEN_HOUR ? 1.85 : 1.5);
+sun.position.set(GOLDEN_HOUR ? -520 : 200, GOLDEN_HOUR ? 92 : 180, GOLDEN_HOUR ? 260 : 120);
 sun.castShadow = true;
 
 // shadow tuning
 sun.shadow.mapSize.set(2048, 2048);
-const D = 700;
+const D = GOLDEN_HOUR ? 1400 : 700;
 sun.shadow.camera.left = -D;
 sun.shadow.camera.right = D;
 sun.shadow.camera.top = D;
 sun.shadow.camera.bottom = -D;
-sun.shadow.camera.near = 50;
-sun.shadow.camera.far = 3000;
+sun.shadow.camera.near = GOLDEN_HOUR ? 10 : 50;
+sun.shadow.camera.far = GOLDEN_HOUR ? 6000 : 3000;
 sun.shadow.bias = -0.0006;
 sun.shadow.normalBias = 0.04;
 

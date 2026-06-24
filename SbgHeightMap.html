@@ -263,8 +263,8 @@ canvas{display:block;width:100vw;height:100vh}
   </div>
   <div></div>
   <div class="touchColumn" aria-label="Tilt and height">
-    <button class="touchBtn" type="button" data-key="KeyE" aria-label="Tilt up">Tilt Up</button>
-    <button class="touchBtn" type="button" data-key="KeyD" aria-label="Tilt down">Tilt Down</button>
+    <button class="touchBtn" type="button" data-key="KeyE" aria-label="Tilt down">Tilt Down</button>
+    <button class="touchBtn" type="button" data-key="KeyD" aria-label="Tilt up">Tilt Up</button>
     <button class="touchBtn" type="button" data-key="KeyR" aria-label="Move up">Up</button>
     <button class="touchBtn" type="button" data-key="KeyF" aria-label="Move down">Down</button>
   </div>
@@ -291,14 +291,14 @@ import { PointerLockControls } from "three/addons/controls/PointerLockControls.j
 // 25+    = fast scouting
 const CAMI_SPEED = 240;   // ground travel speed
 const CAMI_CLIMB = 240;   
-const START_CAMERA_HEIGHT = 2600;
+const START_CAMERA_HEIGHT = 3250;
 const START_CAMERA_DOWN_TILT_DEG = 45;
 // ===== CAMI VIEW TILT (NEW!) =====
-// Hold E = tilt view up, hold D = tilt view down
+// Hold E = tilt view down, hold D = tilt view up
 // Tilt is clamped so you can't flip upside-down.
 const TILT_SPEED = 1.4;     // radians/sec (try 0.9–2.2)
-const TILT_MIN   = -1.20;   // look UP limit
-const TILT_MAX   =  1.05;   // look DOWN limit
+const TILT_MIN   = -1.20;   // look DOWN limit
+const TILT_MAX   =  1.05;   // look UP limit
 // vertical R/F speed
 
 const GITHUB_BRANCH = "main";
@@ -1029,7 +1029,7 @@ applyTerrainSize();
 function applyStartingView(){
   const obj = controls.getObject();
   obj.position.set(0, heightAt(0, 0) + START_CAMERA_HEIGHT, 0);
-  camera.rotation.x = THREE.MathUtils.degToRad(START_CAMERA_DOWN_TILT_DEG);
+  camera.rotation.x = -THREE.MathUtils.degToRad(START_CAMERA_DOWN_TILT_DEG);
 }
 
 applyStartingView();
@@ -1164,10 +1164,10 @@ function animate(){
 
 // Tilt (pitch) with E/D  (bulletproof: apply directly to camera)
 // This avoids relying on PointerLockControls' internal pitch object.
-if (keys.has("KeyE")) camera.rotation.x += TILT_SPEED * dt; // tilt down
-if (keys.has("KeyD")) camera.rotation.x -= TILT_SPEED * dt; // tilt up
+if (keys.has("KeyE")) camera.rotation.x -= TILT_SPEED * dt; // tilt down
+if (keys.has("KeyD")) camera.rotation.x += TILT_SPEED * dt; // tilt up
 camera.rotation.x = THREE.MathUtils.clamp(camera.rotation.x, TILT_MIN, TILT_MAX);
-if (tiltReadout) tiltReadout.textContent = THREE.MathUtils.radToDeg(camera.rotation.x).toFixed(0);
+if (tiltReadout) tiltReadout.textContent = Math.abs(THREE.MathUtils.radToDeg(camera.rotation.x)).toFixed(0);
 
   let dir = 0;
   if (keys.has("ArrowUp")) dir = 1;

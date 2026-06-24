@@ -229,6 +229,25 @@ body.map-only #stage {
     border: 0;
     display: block;
   }
+  #rockIndexBack {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 1001;
+    border: 2px solid #fff;
+    border-radius: 8px;
+    background: #004080;
+    color: #fff;
+    padding: 0.35rem 0.7rem;
+    font: 700 1rem system-ui, -apple-system, Arial;
+    cursor: pointer;
+  }
+  #rockIndexBack:hover,
+  #rockIndexBack:focus {
+    background: #fff;
+    color: #004080;
+    outline: none;
+  }
 
   #loadProgressMeta {
     margin-top: 5px;
@@ -279,6 +298,7 @@ body.map-only #stage {
 </div>
 
 <div id="rockIndexOverlay" aria-hidden="true">
+  <button type="button" id="rockIndexBack">Back</button>
   <iframe id="rockIndexFrame" title="Rock Index"></iframe>
 </div>
 
@@ -312,6 +332,7 @@ body.map-only #stage {
   const popupX = document.getElementById("popupX");
   const rockIndexOverlay = document.getElementById("rockIndexOverlay");
   const rockIndexFrame = document.getElementById("rockIndexFrame");
+  const rockIndexBack = document.getElementById("rockIndexBack");
 
   let img = null;
 
@@ -746,6 +767,7 @@ polygons loaded: ${polygons.length}`);
   window.closeRockIndexOverlay = function(){
     rockIndexOverlay.classList.remove("is-open");
     rockIndexOverlay.setAttribute("aria-hidden", "true");
+    rockIndexFrame.src = "about:blank";
     stage.focus();
   };
 
@@ -1294,6 +1316,7 @@ overlayCanvas.addEventListener("pointercancel", stopDrag);
     const href = keyLink.getAttribute("href") || ROCK_KEY_URL;
     openRockIndex(href);
   });
+  rockIndexBack.addEventListener("click", () => window.closeRockIndexOverlay());
   window.addEventListener("pagehide", () => saveViewState());
 
   popupClose.addEventListener("click", (e) => {

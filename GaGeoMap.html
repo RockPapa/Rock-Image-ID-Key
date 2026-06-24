@@ -762,6 +762,7 @@ polygons loaded: ${polygons.length}`);
     rockIndexFrame.src = url || ROCK_KEY_URL;
     rockIndexOverlay.classList.add("is-open");
     rockIndexOverlay.setAttribute("aria-hidden", "false");
+    rockIndexBack.textContent = "Back";
   }
 
   window.closeRockIndexOverlay = function(){
@@ -770,6 +771,33 @@ polygons loaded: ${polygons.length}`);
     rockIndexFrame.src = "about:blank";
     stage.focus();
   };
+
+  function rockIndexFramePath(){
+    try {
+      return rockIndexFrame.contentWindow.location.pathname || "";
+    } catch (_e) {
+      return "";
+    }
+  }
+
+  function updateRockIndexBackLabel(){
+    const path = rockIndexFramePath();
+    rockIndexBack.textContent = /(^|\/)RockIndex\.html$/i.test(path) ? "Back" : "Back to Index";
+  }
+
+  function handleRockIndexBack(){
+    const path = rockIndexFramePath();
+    if (!path || /(^|\/)RockIndex\.html$/i.test(path)) {
+      window.closeRockIndexOverlay();
+      return;
+    }
+
+    try {
+      rockIndexFrame.contentWindow.history.back();
+    } catch (_e) {
+      rockIndexFrame.src = ROCK_KEY_URL;
+    }
+  }
 
   function showColorOnlyPopupAtStageXY(stageX, stageY, wx, wy){
     // Color-only popup when click is OUTSIDE all polygons
@@ -1316,7 +1344,8 @@ overlayCanvas.addEventListener("pointercancel", stopDrag);
     const href = keyLink.getAttribute("href") || ROCK_KEY_URL;
     openRockIndex(href);
   });
-  rockIndexBack.addEventListener("click", () => window.closeRockIndexOverlay());
+  rockIndexBack.addEventListener("click", handleRockIndexBack);
+  rockIndexFrame.addEventListener("load", updateRockIndexBackLabel);
   window.addEventListener("pagehide", () => saveViewState());
 
   popupClose.addEventListener("click", (e) => {

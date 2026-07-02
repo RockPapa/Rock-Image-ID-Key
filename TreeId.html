@@ -385,6 +385,7 @@
     <button id="floweringDogwoodBtn" class="choiceBtn" type="button" aria-label="Flowering dogwood">Flowering dogwood</button>
     <button id="alternateleafDogwoodBtn" class="choiceBtn" type="button" aria-label="Alternate-leaf dogwood">Alternate-leaf dogwood</button>
     <button id="swampDogwoodBtn" class="choiceBtn" type="button" aria-label="Swamp dogwood">Swamp dogwood</button>
+    <button id="southernCatalpaBtn" class="choiceBtn" type="button" aria-label="Southern catalpa">Southern catalpa</button>
     <button id="sugarMapleBtn" class="choiceBtn" type="button" aria-label="Sugar maple">Sugar maple</button>
     <button id="chalkMapleBtn" class="choiceBtn" type="button" aria-label="Chalk maple">Chalk maple</button>
     <button id="southernSugarMapleBtn" class="choiceBtn" type="button" aria-label="Southern sugar maple">Southern sugar maple</button>
@@ -415,6 +416,7 @@
     <button id="floweringDogwoodImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open flowering dogwood detail image">Open flowering dogwood detail image</button>
     <button id="alternateleafDogwoodImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open alternate-leaf dogwood detail image">Open alternate-leaf dogwood detail image</button>
     <button id="swampDogwoodImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open swamp dogwood detail image">Open swamp dogwood detail image</button>
+    <button id="southernCatalpaImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open southern catalpa detail image">Open southern catalpa detail image</button>
     <button id="sugarMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open sugar maple detail image">Open sugar maple detail image</button>
     <button id="chalkMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open chalk maple detail image">Open chalk maple detail image</button>
     <button id="southernSugarMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open southern sugar maple detail image">Open southern sugar maple detail image</button>
@@ -551,6 +553,7 @@
       document.getElementById("floweringDogwoodBtn"),
       document.getElementById("alternateleafDogwoodBtn"),
       document.getElementById("swampDogwoodBtn"),
+      document.getElementById("southernCatalpaBtn"),
       document.getElementById("sugarMapleBtn"),
       document.getElementById("chalkMapleBtn"),
       document.getElementById("southernSugarMapleBtn"),
@@ -581,6 +584,7 @@
       document.getElementById("floweringDogwoodImageBtn"),
       document.getElementById("alternateleafDogwoodImageBtn"),
       document.getElementById("swampDogwoodImageBtn"),
+      document.getElementById("southernCatalpaImageBtn"),
       document.getElementById("sugarMapleImageBtn"),
       document.getElementById("chalkMapleImageBtn"),
       document.getElementById("southernSugarMapleImageBtn"),
@@ -650,6 +654,7 @@
       floweringDogwood: "https://en.wikipedia.org/wiki/Cornus_florida",
       alternateleafDogwood: "https://en.wikipedia.org/wiki/Cornus_alternifolia",
       swampDogwood: "https://en.wikipedia.org/wiki/Cornus_stricta",
+      southernCatalpa: "https://en.wikipedia.org/wiki/Catalpa_bignonioides",
       sugarMaple: "https://en.wikipedia.org/wiki/Acer_saccharum",
       chalkMaple: "https://en.wikipedia.org/wiki/Acer_leucoderme",
       southernSugarMaple: "https://en.wikipedia.org/wiki/Acer_floridanum",
@@ -728,7 +733,8 @@
         { btn: document.getElementById("dogwoodsBtn"), x: 0.25, y: 0.44, width: 0.50, height: 0.07 },
         { btn: document.getElementById("rustyBlackhawBtn"), x: 0.19, y: 0.52, width: 0.62, height: 0.07 },
         { btn: document.getElementById("fringetreeBtn"), x: 0.26, y: 0.61, width: 0.48, height: 0.07 },
-        { btn: document.getElementById("buckeyesBtn"), x: 0.29, y: 0.70, width: 0.42, height: 0.07 }
+        { btn: document.getElementById("buckeyesBtn"), x: 0.29, y: 0.70, width: 0.42, height: 0.07 },
+        { btn: document.getElementById("southernCatalpaBtn"), x: 0.18, y: 0.79, width: 0.64, height: 0.07 }
       ],
       ashes: [
         { btn: document.getElementById("greenAshBtn"), x: 0.26, y: 0.25, width: 0.48, height: 0.08 },
@@ -864,6 +870,9 @@
       ],
       swampDogwood: [
         { btn: document.getElementById("swampDogwoodImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      southernCatalpa: [
+        { btn: document.getElementById("southernCatalpaImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
       ],
       sugarMaple: [
         { btn: document.getElementById("sugarMapleImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
@@ -1062,6 +1071,7 @@
       document.getElementById("floweringDogwoodBtn").style.display = pageKey === "dogwoods" ? "block" : "none";
       document.getElementById("alternateleafDogwoodBtn").style.display = pageKey === "dogwoods" ? "block" : "none";
       document.getElementById("swampDogwoodBtn").style.display = pageKey === "dogwoods" ? "block" : "none";
+      document.getElementById("southernCatalpaBtn").style.display = pageKey === "oppositeLeaves" ? "block" : "none";
       document.getElementById("sugarMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       document.getElementById("chalkMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       document.getElementById("southernSugarMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
@@ -1095,6 +1105,7 @@
       document.getElementById("floweringDogwoodImageBtn").style.display = pageKey === "floweringDogwood" ? "block" : "none";
       document.getElementById("alternateleafDogwoodImageBtn").style.display = pageKey === "alternateleafDogwood" ? "block" : "none";
       document.getElementById("swampDogwoodImageBtn").style.display = pageKey === "swampDogwood" ? "block" : "none";
+      document.getElementById("southernCatalpaImageBtn").style.display = pageKey === "southernCatalpa" ? "block" : "none";
       document.getElementById("sugarMapleImageBtn").style.display = pageKey === "sugarMaple" ? "block" : "none";
       document.getElementById("chalkMapleImageBtn").style.display = pageKey === "chalkMaple" ? "block" : "none";
       document.getElementById("southernSugarMapleImageBtn").style.display = pageKey === "southernSugarMaple" ? "block" : "none";
@@ -1212,8 +1223,12 @@
         showIntroImage("buckeyes", "treeid/buckeyes.png", "Buckeyes");
       } else if (currentIntroPage === "buckeyes") {
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
+      } else if (currentIntroPage === "southernCatalpaImage") {
+        showIntroImage("southernCatalpa", "treeid/southern_catalpa.jpg", "Southern catalpa");
       } else if (currentIntroPage === "floweringDogwood" || currentIntroPage === "alternateleafDogwood" || currentIntroPage === "swampDogwood") {
         showIntroImage("dogwoods", "treeid/dogwoods.jpg", "Dogwoods");
+      } else if (currentIntroPage === "southernCatalpa") {
+        showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "dogwoods") {
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "alternateCompound") {
@@ -1285,6 +1300,14 @@
 
     document.getElementById("fringetreeImageBtn").addEventListener("click", () => {
       showIntroImage("fringetreeImage", "treeid/fringetree.png", "Fringetree detail image");
+    });
+
+    document.getElementById("southernCatalpaBtn").addEventListener("click", () => {
+      showIntroImage("southernCatalpa", "treeid/southern_catalpa.jpg", "Southern catalpa");
+    });
+
+    document.getElementById("southernCatalpaImageBtn").addEventListener("click", () => {
+      showIntroImage("southernCatalpaImage", "treeid/southern_catalpa.png", "Southern catalpa detail image");
     });
 
     document.getElementById("buckeyesBtn").addEventListener("click", () => {

@@ -397,6 +397,10 @@
     <button id="alternateCompoundBtn" class="choiceBtn" type="button" aria-label="Trees with alternate compound leaves">Trees with alternate compound leaves</button>
     <button id="compoundListBtn" class="choiceBtn" type="button" aria-label="Continue to alternate compound leaf list">Continue to alternate compound leaf list</button>
     <button id="hickoriesBtn" class="choiceBtn" type="button" aria-label="Hickories">Hickories</button>
+    <button id="blackLocustBtn" class="choiceBtn" type="button" aria-label="Black locust">Black locust</button>
+    <button id="honeylocustBtn" class="choiceBtn" type="button" aria-label="Honeylocust">Honeylocust</button>
+    <button id="blackWalnutBtn" class="choiceBtn" type="button" aria-label="Black walnut">Black walnut</button>
+    <button id="pecanBtn" class="choiceBtn" type="button" aria-label="Pecan">Pecan</button>
     <button id="mockernutHickoryBtn" class="choiceBtn" type="button" aria-label="Mockernut hickory">Mockernut hickory</button>
     <button id="pignutHickoryBtn" class="choiceBtn" type="button" aria-label="Pignut hickory">Pignut hickory</button>
     <button id="redHickoryBtn" class="choiceBtn" type="button" aria-label="Red hickory">Red hickory</button>
@@ -404,6 +408,7 @@
     <button id="bitternutHickoryBtn" class="choiceBtn" type="button" aria-label="Bitternut hickory">Bitternut hickory</button>
     <button id="sandHickoryBtn" class="choiceBtn" type="button" aria-label="Sand hickory">Sand hickory</button>
     <button id="broadleafBlueSquareBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open broadleaf detail image">Open broadleaf detail image</button>
+    <button id="compoundImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open compound-leaf tree detail image">Open compound-leaf tree detail image</button>
     <button id="hickoryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open hickory detail image">Open hickory detail image</button>
     <button id="redMapleImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open red maple detail image">Open red maple detail image</button>
     <button id="greenAshImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open green ash detail image">Open green ash detail image</button>
@@ -567,6 +572,10 @@
       document.getElementById("alternateCompoundBtn"),
       document.getElementById("compoundListBtn"),
       document.getElementById("hickoriesBtn"),
+      document.getElementById("blackLocustBtn"),
+      document.getElementById("honeylocustBtn"),
+      document.getElementById("blackWalnutBtn"),
+      document.getElementById("pecanBtn"),
       document.getElementById("mockernutHickoryBtn"),
       document.getElementById("pignutHickoryBtn"),
       document.getElementById("redHickoryBtn"),
@@ -574,6 +583,7 @@
       document.getElementById("bitternutHickoryBtn"),
       document.getElementById("sandHickoryBtn"),
       document.getElementById("broadleafBlueSquareBtn"),
+      document.getElementById("compoundImageBtn"),
       document.getElementById("hickoryImageBtn"),
       document.getElementById("redMapleImageBtn"),
       document.getElementById("greenAshImageBtn"),
@@ -601,6 +611,23 @@
       document.getElementById("firNeedlesBtn"),
       document.getElementById("hemlockNeedlesBtn")
     ];
+    const preferredBackPage = {};
+
+    function rememberBackPage(pageKey, backPageKey) {
+      if (backPageKey) {
+        preferredBackPage[pageKey] = backPageKey;
+      }
+    }
+
+    function goBackToRemembered(pageKey, fallbackPageKey, fallbackImageSrc, fallbackAltText) {
+      if (preferredBackPage[pageKey] === "compoundList") {
+        showIntroImage("compoundList", "treeid/compound_list.png", "Trees with alternate compound leaves list");
+        return;
+      }
+
+      showIntroImage(fallbackPageKey, fallbackImageSrc, fallbackAltText);
+    }
+
     const pineSpecies = [
       { btn: document.getElementById("virginiaPineBtn"), pageKey: "virginiaPine", imageSrc: "treeid/virginia_pine.jpg", altText: "Virginia pine" },
       { btn: document.getElementById("sprucePineBtn"), pageKey: "sprucePine", imageSrc: "treeid/spruce_pine.jpg", altText: "Spruce pine" },
@@ -627,6 +654,12 @@
       { btn: document.getElementById("shagbarkHickoryBtn"), pageKey: "shagbarkHickory", imageSrc: "treeid/shagbark_hickory.jpg", detailSrc: "treeid/shagbark_hickory.png", altText: "Shagbark hickory", detailAltText: "Shagbark hickory detail image" },
       { btn: document.getElementById("bitternutHickoryBtn"), pageKey: "bitternutHickory", imageSrc: "treeid/bitternut_hickory.jpg", detailSrc: "treeid/bitternut_hickory.png", altText: "Bitternut hickory", detailAltText: "Bitternut hickory detail image" },
       { btn: document.getElementById("sandHickoryBtn"), pageKey: "sandHickory", imageSrc: "treeid/sand_hickory.jpg", detailSrc: "treeid/sand_hickory.png", altText: "Sand hickory", detailAltText: "Sand hickory detail image" }
+    ];
+    const compoundSpecies = [
+      { btn: document.getElementById("blackLocustBtn"), pageKey: "blackLocust", imageSrc: "treeid/black_locust.jpg", detailSrc: "treeid/black_locust.png", altText: "Black locust", detailAltText: "Black locust detail image" },
+      { btn: document.getElementById("honeylocustBtn"), pageKey: "honeylocust", imageSrc: "treeid/honeylocust.jpg", detailSrc: "treeid/honeylocust.png", altText: "Honeylocust", detailAltText: "Honeylocust detail image" },
+      { btn: document.getElementById("blackWalnutBtn"), pageKey: "blackWalnut", imageSrc: "treeid/black_walnut.jpg", detailSrc: "treeid/black_walnut.png", altText: "Black walnut", detailAltText: "Black walnut detail image" },
+      { btn: document.getElementById("pecanBtn"), pageKey: "pecan", imageSrc: "treeid/pecan.jpg", detailSrc: "treeid/pecan.png", altText: "Pecan", detailAltText: "Pecan detail image" }
     ];
     const wikipediaLinks = {
       redcedar: "https://en.wikipedia.org/wiki/Juniperus_virginiana",
@@ -673,6 +706,11 @@
       shagbarkHickory: "https://en.wikipedia.org/wiki/Carya_ovata",
       bitternutHickory: "https://en.wikipedia.org/wiki/Carya_cordiformis",
       sandHickory: "https://en.wikipedia.org/wiki/Carya_pallida"
+      ,
+      blackLocust: "https://en.wikipedia.org/wiki/Robinia_pseudoacacia",
+      honeylocust: "https://en.wikipedia.org/wiki/Gleditsia_triacanthos",
+      blackWalnut: "https://en.wikipedia.org/wiki/Juglans_nigra",
+      pecan: "https://en.wikipedia.org/wiki/Carya_illinoinensis"
     };
     let currentIntroPage = 1;
     let lastPineSpeciesPage = null;
@@ -753,7 +791,13 @@
         { btn: document.getElementById("compoundListBtn"), x: 0.30, y: 0.88, width: 0.40, height: 0.07 }
       ],
       compoundList: [
-        { btn: document.getElementById("hickoriesBtn"), x: 0.30, y: 0.31, width: 0.40, height: 0.07 }
+        { btn: document.getElementById("hickoriesBtn"), x: 0.27, y: 0.33, width: 0.46, height: 0.06 },
+        { btn: document.getElementById("pecanBtn"), x: 0.34, y: 0.41, width: 0.32, height: 0.06 },
+        { btn: document.getElementById("blackLocustBtn"), x: 0.22, y: 0.49, width: 0.56, height: 0.06 },
+        { btn: document.getElementById("honeylocustBtn"), x: 0.21, y: 0.57, width: 0.58, height: 0.06 },
+        { btn: document.getElementById("blackWalnutBtn"), x: 0.22, y: 0.65, width: 0.56, height: 0.06 },
+        { btn: document.getElementById("boxelderMapleBtn"), x: 0.20, y: 0.73, width: 0.60, height: 0.06 },
+        { btn: document.getElementById("greenAshBtn"), x: 0.35, y: 0.81, width: 0.30, height: 0.06 }
       ],
       hickories: [
         { btn: document.getElementById("mockernutHickoryBtn"), x: 0.21, y: 0.20, width: 0.58, height: 0.07 },
@@ -921,6 +965,18 @@
       ],
       sandHickory: [
         { btn: document.getElementById("hickoryImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      blackLocust: [
+        { btn: document.getElementById("compoundImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      honeylocust: [
+        { btn: document.getElementById("compoundImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      blackWalnut: [
+        { btn: document.getElementById("compoundImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
+      ],
+      pecan: [
+        { btn: document.getElementById("compoundImageBtn"), x: 0.14, y: 0.80, width: 0.72, height: 0.10 }
       ]
     };
 
@@ -1067,7 +1123,7 @@
       document.getElementById("firNeedlesBtn").style.display = pageKey === "fir" ? "block" : "none";
       document.getElementById("hemlockNeedlesBtn").style.display = pageKey === "hemlock" ? "block" : "none";
       document.getElementById("redMapleBtn").style.display = pageKey === "oppositeLeaves" || pageKey === "maples" ? "block" : "none";
-      document.getElementById("greenAshBtn").style.display = pageKey === "oppositeLeaves" || pageKey === "ashes" ? "block" : "none";
+      document.getElementById("greenAshBtn").style.display = pageKey === "oppositeLeaves" || pageKey === "ashes" || pageKey === "compoundList" ? "block" : "none";
       document.getElementById("whiteAshBtn").style.display = pageKey === "ashes" ? "block" : "none";
       document.getElementById("dogwoodsBtn").style.display = pageKey === "oppositeLeaves" ? "block" : "none";
       document.getElementById("rustyBlackhawBtn").style.display = pageKey === "oppositeLeaves" ? "block" : "none";
@@ -1085,13 +1141,16 @@
       document.getElementById("sugarMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       document.getElementById("chalkMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       document.getElementById("southernSugarMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
-      document.getElementById("boxelderMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
+      document.getElementById("boxelderMapleBtn").style.display = pageKey === "maples" || pageKey === "compoundList" ? "block" : "none";
       document.getElementById("silverMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       document.getElementById("stripedMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       document.getElementById("mountainMapleBtn").style.display = pageKey === "maples" ? "block" : "none";
       document.getElementById("alternateCompoundBtn").style.display = pageKey === "alternateLeaves" ? "block" : "none";
       document.getElementById("compoundListBtn").style.display = pageKey === "alternateCompound" ? "block" : "none";
       document.getElementById("hickoriesBtn").style.display = pageKey === "compoundList" ? "block" : "none";
+      for (const { btn } of compoundSpecies) {
+        btn.style.display = pageKey === "compoundList" ? "block" : "none";
+      }
       for (const { btn } of hickorySpecies) {
         btn.style.display = pageKey === "hickories" ? "block" : "none";
       }
@@ -1124,6 +1183,7 @@
       document.getElementById("silverMapleImageBtn").style.display = pageKey === "silverMaple" ? "block" : "none";
       document.getElementById("stripedMapleImageBtn").style.display = pageKey === "stripedMaple" ? "block" : "none";
       document.getElementById("mountainMapleImageBtn").style.display = pageKey === "mountainMaple" ? "block" : "none";
+      document.getElementById("compoundImageBtn").style.display = compoundSpecies.some(({ pageKey: compoundPageKey }) => compoundPageKey === pageKey) ? "block" : "none";
       document.getElementById("hickoryImageBtn").style.display = hickorySpecies.some(({ pageKey: hickoryPageKey }) => hickoryPageKey === pageKey) ? "block" : "none";
       updateWikipediaLink(pageKey);
       positionCurrentOverlays();
@@ -1204,22 +1264,34 @@
         showIntroImage("bitternutHickory", "treeid/bitternut_hickory.jpg", "Bitternut hickory");
       } else if (currentIntroPage === "sandHickoryImage") {
         showIntroImage("sandHickory", "treeid/sand_hickory.jpg", "Sand hickory");
+      } else if (currentIntroPage === "blackLocustImage") {
+        showIntroImage("blackLocust", "treeid/black_locust.jpg", "Black locust");
+      } else if (currentIntroPage === "honeylocustImage") {
+        showIntroImage("honeylocust", "treeid/honeylocust.jpg", "Honeylocust");
+      } else if (currentIntroPage === "blackWalnutImage") {
+        showIntroImage("blackWalnut", "treeid/black_walnut.jpg", "Black walnut");
+      } else if (currentIntroPage === "pecanImage") {
+        showIntroImage("pecan", "treeid/pecan.jpg", "Pecan");
       } else if (pineSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
         showIntroImage("pines", "treeid/pines.png", "Pines");
       } else if (broadleafSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
         showIntroImage("broadleafEvergreen", "treeid/broadleaf_evergreen.png", "Broadleaf evergreen choices");
+      } else if (compoundSpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
+        showIntroImage("compoundList", "treeid/compound_list.png", "Trees with alternate compound leaves list");
       } else if (hickorySpecies.some(({ pageKey }) => pageKey === currentIntroPage)) {
         showIntroImage("hickories", "treeid/hickories.png", "Hickories");
-      } else if (currentIntroPage === "redMaple" || currentIntroPage === "sugarMaple" || currentIntroPage === "chalkMaple" || currentIntroPage === "southernSugarMaple" || currentIntroPage === "boxelderMaple" || currentIntroPage === "silverMaple" || currentIntroPage === "stripedMaple" || currentIntroPage === "mountainMaple") {
+      } else if (currentIntroPage === "boxelderMaple") {
+        goBackToRemembered("boxelderMaple", "maples", "treeid/maples.png", "Maples");
+      } else if (currentIntroPage === "redMaple" || currentIntroPage === "sugarMaple" || currentIntroPage === "chalkMaple" || currentIntroPage === "southernSugarMaple" || currentIntroPage === "silverMaple" || currentIntroPage === "stripedMaple" || currentIntroPage === "mountainMaple") {
         showIntroImage("maples", "treeid/maples.png", "Maples");
       } else if (currentIntroPage === "maples") {
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "greenAsh") {
-        showIntroImage("ashes", "treeid/ashes.png", "Ashes");
+        goBackToRemembered("ashes", "ashes", "treeid/ashes.png", "Ashes");
       } else if (currentIntroPage === "whiteAsh") {
-        showIntroImage("ashes", "treeid/ashes.png", "Ashes");
+        goBackToRemembered("ashes", "ashes", "treeid/ashes.png", "Ashes");
       } else if (currentIntroPage === "ashes") {
-        showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
+        goBackToRemembered("ashes", "oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "rustyBlackhaw") {
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "fringetree") {
@@ -1281,6 +1353,10 @@
 
     document.getElementById("greenAshBtn").addEventListener("click", () => {
       if (currentIntroPage === "oppositeLeaves") {
+        rememberBackPage("ashes", "oppositeLeaves");
+        showIntroImage("ashes", "treeid/ashes.png", "Ashes");
+      } else if (currentIntroPage === "compoundList") {
+        rememberBackPage("ashes", "compoundList");
         showIntroImage("ashes", "treeid/ashes.png", "Ashes");
       } else {
         showIntroImage("greenAsh", "treeid/green_ash.jpg", "Green ash");
@@ -1420,6 +1496,7 @@
     });
 
     document.getElementById("boxelderMapleBtn").addEventListener("click", () => {
+      rememberBackPage("boxelderMaple", currentIntroPage === "compoundList" ? "compoundList" : "maples");
       showIntroImage("boxelderMaple", "treeid/boxelder_maple.jpg", "Boxelder maple");
     });
 
@@ -1465,6 +1542,19 @@
 
     document.getElementById("hickoriesBtn").addEventListener("click", () => {
       showIntroImage("hickories", "treeid/hickories.png", "Hickories");
+    });
+
+    for (const { btn, pageKey, imageSrc, altText } of compoundSpecies) {
+      btn.addEventListener("click", () => {
+        showIntroImage(pageKey, imageSrc, altText);
+      });
+    }
+
+    document.getElementById("compoundImageBtn").addEventListener("click", () => {
+      const compound = compoundSpecies.find(({ pageKey }) => pageKey === currentIntroPage);
+      if (compound) {
+        showIntroImage(`${compound.pageKey}Image`, compound.detailSrc, compound.detailAltText);
+      }
     });
 
     for (const { btn, pageKey, imageSrc, altText } of hickorySpecies) {

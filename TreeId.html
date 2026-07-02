@@ -11,7 +11,7 @@
       min-height: 100%;
       --visible-height: 100dvh;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f1d12 image-set(url("treeid_fast/background.webp") type("image/webp"), url("treeid/background.png") type("image/png")) center / cover no-repeat;
+      background: #0f1d12 image-set(url("treeid_fast/background.png.webp") type("image/webp"), url("treeid/background.png") type("image/png")) center / cover no-repeat;
       color: #162316;
     }
 
@@ -342,7 +342,7 @@
 </head>
 <body>
   <div id="startPage" aria-label="Tree ID introduction">
-    <img id="startPageImage" src="treeid_fast/page1.webp" data-original-src="treeid/page1.png" alt="Tree ID introduction">
+    <img id="startPageImage" src="treeid_fast/page1.png.webp" data-original-src="treeid/page1.png" alt="Tree ID introduction">
     <button id="beginBtn" type="button" aria-label="Let's begin">Let's begin</button>
     <button id="backBtn" type="button" aria-label="Back">‹</button>
     <button id="evergreenBtn" class="choiceBtn" type="button" aria-label="Tree is evergreen">Tree is evergreen</button>
@@ -478,7 +478,7 @@
     const ORIGINAL_IMAGE_FOLDER = "treeid";
 
     function fastImageSrc(src) {
-      const match = String(src || "").match(/^treeid\/(.+)\.(png|jpe?g)$/i);
+      const match = String(src || "").match(/^treeid\/(.+\.(?:png|jpe?g))$/i);
       return match ? `${FAST_IMAGE_FOLDER}/${match[1]}.webp` : src;
     }
 

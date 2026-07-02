@@ -9,7 +9,7 @@
   "files": [
     {
       "source": "treeid/Q.png",
-      "output": "treeid_fast/Q.webp",
+      "output": "treeid_fast/Q.png.webp",
       "sourceBytes": 1490914,
       "outputBytes": 71442,
       "sourceMode": "RGBA",
@@ -17,7 +17,7 @@
     },
     {
       "source": "treeid/Screenshot 2026-06-17 at 3.38.12\u202fPM.png",
-      "output": "treeid_fast/Screenshot 2026-06-17 at 3.38.12\u202fPM.webp",
+      "output": "treeid_fast/Screenshot 2026-06-17 at 3.38.12\u202fPM.png.webp",
       "sourceBytes": 1197973,
       "outputBytes": 64458,
       "sourceMode": "RGBA",
@@ -25,7 +25,7 @@
     },
     {
       "source": "treeid/alternate_compound.png",
-      "output": "treeid_fast/alternate_compound.webp",
+      "output": "treeid_fast/alternate_compound.png.webp",
       "sourceBytes": 2252548,
       "outputBytes": 158574,
       "sourceMode": "RGB",
@@ -33,7 +33,7 @@
     },
     {
       "source": "treeid/alternate_leaves.png",
-      "output": "treeid_fast/alternate_leaves.webp",
+      "output": "treeid_fast/alternate_leaves.png.webp",
       "sourceBytes": 1661103,
       "outputBytes": 100170,
       "sourceMode": "RGBA",
@@ -41,7 +41,7 @@
     },
     {
       "source": "treeid/alternateleaf_dogwood.jpg",
-      "output": "treeid_fast/alternateleaf_dogwood.webp",
+      "output": "treeid_fast/alternateleaf_dogwood.jpg.webp",
       "sourceBytes": 2297786,
       "outputBytes": 154686,
       "sourceMode": "RGB",
@@ -49,7 +49,7 @@
     },
     {
       "source": "treeid/alternateleaf_dogwood.png",
-      "output": "treeid_fast/alternateleaf_dogwood.webp",
+      "output": "treeid_fast/alternateleaf_dogwood.png.webp",
       "sourceBytes": 377411,
       "outputBytes": 33920,
       "sourceMode": "RGBA",
@@ -57,7 +57,7 @@
     },
     {
       "source": "treeid/ashes.png",
-      "output": "treeid_fast/ashes.webp",
+      "output": "treeid_fast/ashes.png.webp",
       "sourceBytes": 1789943,
       "outputBytes": 80458,
       "sourceMode": "RGBA",
@@ -65,7 +65,7 @@
     },
     {
       "source": "treeid/background.png",
-      "output": "treeid_fast/background.webp",
+      "output": "treeid_fast/background.png.webp",
       "sourceBytes": 1389070,
       "outputBytes": 45218,
       "sourceMode": "RGBA",
@@ -73,7 +73,7 @@
     },
     {
       "source": "treeid/bitternut_hickory.jpg",
-      "output": "treeid_fast/bitternut_hickory.webp",
+      "output": "treeid_fast/bitternut_hickory.jpg.webp",
       "sourceBytes": 2337632,
       "outputBytes": 162440,
       "sourceMode": "RGB",
@@ -81,7 +81,7 @@
     },
     {
       "source": "treeid/bitternut_hickory.png",
-      "output": "treeid_fast/bitternut_hickory.webp",
+      "output": "treeid_fast/bitternut_hickory.png.webp",
       "sourceBytes": 576807,
       "outputBytes": 43048,
       "sourceMode": "RGBA",
@@ -89,7 +89,7 @@
     },
     {
       "source": "treeid/bottlebrush_b uckeye.png",
-      "output": "treeid_fast/bottlebrush_b uckeye.webp",
+      "output": "treeid_fast/bottlebrush_b uckeye.png.webp",
       "sourceBytes": 493366,
       "outputBytes": 43698,
       "sourceMode": "RGBA",
@@ -97,7 +97,7 @@
     },
     {
       "source": "treeid/bottlebrush_buckeye.jpg",
-      "output": "treeid_fast/bottlebrush_buckeye.webp",
+      "output": "treeid_fast/bottlebrush_buckeye.jpg.webp",
       "sourceBytes": 2296621,
       "outputBytes": 160062,
       "sourceMode": "RGB",
@@ -105,7 +105,7 @@
     },
     {
       "source": "treeid/boxelder_maple.jpg",
-      "output": "treeid_fast/boxelder_maple.webp",
+      "output": "treeid_fast/boxelder_maple.jpg.webp",
       "sourceBytes": 2221272,
       "outputBytes": 150112,
       "sourceMode": "RGB",
@@ -113,7 +113,7 @@
     },
     {
       "source": "treeid/boxelder_maple_pix.png",
-      "output": "treeid_fast/boxelder_maple_pix.webp",
+      "output": "treeid_fast/boxelder_maple_pix.png.webp",
       "sourceBytes": 551768,
       "outputBytes": 38662,
       "sourceMode": "RGBA",
@@ -121,7 +121,7 @@
     },
     {
       "source": "treeid/broadleaf_evergreen.png",
-      "output": "treeid_fast/broadleaf_evergreen.webp",
+      "output": "treeid_fast/broadleaf_evergreen.png.webp",
       "sourceBytes": 1432658,
       "outputBytes": 47362,
       "sourceMode": "RGBA",
@@ -129,7 +129,7 @@
     },
     {
       "source": "treeid/buckeyes.png",
-      "output": "treeid_fast/buckeyes.webp",
+      "output": "treeid_fast/buckeyes.png.webp",
       "sourceBytes": 1771578,
       "outputBytes": 87480,
       "sourceMode": "RGBA",
@@ -137,7 +137,7 @@
     },
     {
       "source": "treeid/carolina_laurelcherry.jpg",
-      "output": "treeid_fast/carolina_laurelcherry.webp",
+      "output": "treeid_fast/carolina_laurelcherry.jpg.webp",
       "sourceBytes": 2253827,
       "outputBytes": 156544,
       "sourceMode": "RGB",
@@ -145,7 +145,7 @@
     },
     {
       "source": "treeid/carolina_laurelcherry_pix.png",
-      "output": "treeid_fast/carolina_laurelcherry_pix.webp",
+      "output": "treeid_fast/carolina_laurelcherry_pix.png.webp",
       "sourceBytes": 577775,
       "outputBytes": 42400,
       "sourceMode": "RGBA",
@@ -153,7 +153,7 @@
     },
     {
       "source": "treeid/chalk_maple.jpg",
-      "output": "treeid_fast/chalk_maple.webp",
+      "output": "treeid_fast/chalk_maple.jpg.webp",
       "sourceBytes": 2220298,
       "outputBytes": 157730,
       "sourceMode": "RGB",
@@ -161,7 +161,7 @@
     },
     {
       "source": "treeid/chalk_maple_pix.png",
-      "output": "treeid_fast/chalk_maple_pix.webp",
+      "output": "treeid_fast/chalk_maple_pix.png.webp",
       "sourceBytes": 564034,
       "outputBytes": 39120,
       "sourceMode": "RGBA",
@@ -169,7 +169,7 @@
     },
     {
       "source": "treeid/compound_list.png",
-      "output": "treeid_fast/compound_list.webp",
+      "output": "treeid_fast/compound_list.png.webp",
       "sourceBytes": 1807729,
       "outputBytes": 97402,
       "sourceMode": "RGBA",
@@ -177,7 +177,7 @@
     },
     {
       "source": "treeid/dogwoods.jpg",
-      "output": "treeid_fast/dogwoods.webp",
+      "output": "treeid_fast/dogwoods.jpg.webp",
       "sourceBytes": 1980573,
       "outputBytes": 118810,
       "sourceMode": "RGB",
@@ -185,7 +185,7 @@
     },
     {
       "source": "treeid/eastern_hemlock.jpg",
-      "output": "treeid_fast/eastern_hemlock.webp",
+      "output": "treeid_fast/eastern_hemlock.jpg.webp",
       "sourceBytes": 2229434,
       "outputBytes": 150602,
       "sourceMode": "RGB",
@@ -193,7 +193,7 @@
     },
     {
       "source": "treeid/eastern_hemlock_pix.png",
-      "output": "treeid_fast/eastern_hemlock_pix.webp",
+      "output": "treeid_fast/eastern_hemlock_pix.png.webp",
       "sourceBytes": 589796,
       "outputBytes": 50660,
       "sourceMode": "RGBA",
@@ -201,7 +201,7 @@
     },
     {
       "source": "treeid/eastern_white_pine.jpg",
-      "output": "treeid_fast/eastern_white_pine.webp",
+      "output": "treeid_fast/eastern_white_pine.jpg.webp",
       "sourceBytes": 2239577,
       "outputBytes": 151468,
       "sourceMode": "RGB",
@@ -209,7 +209,7 @@
     },
     {
       "source": "treeid/eastern_white_pine_pix.png",
-      "output": "treeid_fast/eastern_white_pine_pix.webp",
+      "output": "treeid_fast/eastern_white_pine_pix.png.webp",
       "sourceBytes": 587218,
       "outputBytes": 58786,
       "sourceMode": "RGBA",
@@ -217,7 +217,7 @@
     },
     {
       "source": "treeid/evergreen.png",
-      "output": "treeid_fast/evergreen.webp",
+      "output": "treeid_fast/evergreen.png.webp",
       "sourceBytes": 1350800,
       "outputBytes": 40194,
       "sourceMode": "RGBA",
@@ -225,7 +225,7 @@
     },
     {
       "source": "treeid/flowering_dogwood.jpg",
-      "output": "treeid_fast/flowering_dogwood.webp",
+      "output": "treeid_fast/flowering_dogwood.jpg.webp",
       "sourceBytes": 2247241,
       "outputBytes": 149022,
       "sourceMode": "RGB",
@@ -233,7 +233,7 @@
     },
     {
       "source": "treeid/flowering_dogwood_pix.png",
-      "output": "treeid_fast/flowering_dogwood_pix.webp",
+      "output": "treeid_fast/flowering_dogwood_pix.png.webp",
       "sourceBytes": 443435,
       "outputBytes": 23300,
       "sourceMode": "RGBA",
@@ -241,7 +241,7 @@
     },
     {
       "source": "treeid/fraser_fir.jpg",
-      "output": "treeid_fast/fraser_fir.webp",
+      "output": "treeid_fast/fraser_fir.jpg.webp",
       "sourceBytes": 2359609,
       "outputBytes": 162246,
       "sourceMode": "RGB",
@@ -249,7 +249,7 @@
     },
     {
       "source": "treeid/fraser_fir_pix.png",
-      "output": "treeid_fast/fraser_fir_pix.webp",
+      "output": "treeid_fast/fraser_fir_pix.png.webp",
       "sourceBytes": 628464,
       "outputBytes": 59908,
       "sourceMode": "RGBA",
@@ -257,7 +257,7 @@
     },
     {
       "source": "treeid/fringetree.jpg",
-      "output": "treeid_fast/fringetree.webp",
+      "output": "treeid_fast/fringetree.jpg.webp",
       "sourceBytes": 2351045,
       "outputBytes": 163472,
       "sourceMode": "RGB",
@@ -265,7 +265,7 @@
     },
     {
       "source": "treeid/fringetree.png",
-      "output": "treeid_fast/fringetree.webp",
+      "output": "treeid_fast/fringetree.png.webp",
       "sourceBytes": 396419,
       "outputBytes": 33386,
       "sourceMode": "RGBA",
@@ -273,7 +273,7 @@
     },
     {
       "source": "treeid/green_ash.jpg",
-      "output": "treeid_fast/green_ash.webp",
+      "output": "treeid_fast/green_ash.jpg.webp",
       "sourceBytes": 2377541,
       "outputBytes": 164112,
       "sourceMode": "RGB",
@@ -281,7 +281,7 @@
     },
     {
       "source": "treeid/green_ashPix.png.png",
-      "output": "treeid_fast/green_ashPix.png.webp",
+      "output": "treeid_fast/green_ashPix.png.png.webp",
       "sourceBytes": 551037,
       "outputBytes": 36808,
       "sourceMode": "RGBA",
@@ -289,7 +289,7 @@
     },
     {
       "source": "treeid/hickories.png",
-      "output": "treeid_fast/hickories.webp",
+      "output": "treeid_fast/hickories.png.webp",
       "sourceBytes": 1812958,
       "outputBytes": 91550,
       "sourceMode": "RGBA",
@@ -297,7 +297,7 @@
     },
     {
       "source": "treeid/live_oak.jpg",
-      "output": "treeid_fast/live_oak.webp",
+      "output": "treeid_fast/live_oak.jpg.webp",
       "sourceBytes": 2268958,
       "outputBytes": 156482,
       "sourceMode": "RGB",
@@ -305,7 +305,7 @@
     },
     {
       "source": "treeid/live_oak_pix.png",
-      "output": "treeid_fast/live_oak_pix.webp",
+      "output": "treeid_fast/live_oak_pix.png.webp",
       "sourceBytes": 520061,
       "outputBytes": 31874,
       "sourceMode": "RGBA",
@@ -313,7 +313,7 @@
     },
     {
       "source": "treeid/loblolly_bay.png",
-      "output": "treeid_fast/loblolly_bay.webp",
+      "output": "treeid_fast/loblolly_bay.png.webp",
       "sourceBytes": 293582,
       "outputBytes": 18660,
       "sourceMode": "RGB",
@@ -321,7 +321,7 @@
     },
     {
       "source": "treeid/loblolly_pine.jpg",
-      "output": "treeid_fast/loblolly_pine.webp",
+      "output": "treeid_fast/loblolly_pine.jpg.webp",
       "sourceBytes": 2102929,
       "outputBytes": 138186,
       "sourceMode": "RGB",
@@ -329,7 +329,7 @@
     },
     {
       "source": "treeid/loblolly_pine_pix.png",
-      "output": "treeid_fast/loblolly_pine_pix.webp",
+      "output": "treeid_fast/loblolly_pine_pix.png.webp",
       "sourceBytes": 552164,
       "outputBytes": 43232,
       "sourceMode": "RGBA",
@@ -337,7 +337,7 @@
     },
     {
       "source": "treeid/longleaf_pine.jpg",
-      "output": "treeid_fast/longleaf_pine.webp",
+      "output": "treeid_fast/longleaf_pine.jpg.webp",
       "sourceBytes": 2280314,
       "outputBytes": 154536,
       "sourceMode": "RGB",
@@ -345,7 +345,7 @@
     },
     {
       "source": "treeid/longleaf_pine_pix.png",
-      "output": "treeid_fast/longleaf_pine_pix.webp",
+      "output": "treeid_fast/longleaf_pine_pix.png.webp",
       "sourceBytes": 599525,
       "outputBytes": 54644,
       "sourceMode": "RGBA",
@@ -353,7 +353,7 @@
     },
     {
       "source": "treeid/maples.png",
-      "output": "treeid_fast/maples.webp",
+      "output": "treeid_fast/maples.png.webp",
       "sourceBytes": 1747288,
       "outputBytes": 94996,
       "sourceMode": "RGBA",
@@ -361,7 +361,7 @@
     },
     {
       "source": "treeid/mockernut_hickory.jpg",
-      "output": "treeid_fast/mockernut_hickory.webp",
+      "output": "treeid_fast/mockernut_hickory.jpg.webp",
       "sourceBytes": 1874766,
       "outputBytes": 152604,
       "sourceMode": "RGB",
@@ -369,7 +369,7 @@
     },
     {
       "source": "treeid/mockernut_pix.png",
-      "output": "treeid_fast/mockernut_pix.webp",
+      "output": "treeid_fast/mockernut_pix.png.webp",
       "sourceBytes": 4825998,
       "outputBytes": 141696,
       "sourceMode": "RGBA",
@@ -377,7 +377,7 @@
     },
     {
       "source": "treeid/mountain_maple.jpg",
-      "output": "treeid_fast/mountain_maple.webp",
+      "output": "treeid_fast/mountain_maple.jpg.webp",
       "sourceBytes": 2239932,
       "outputBytes": 150686,
       "sourceMode": "RGB",
@@ -385,7 +385,7 @@
     },
     {
       "source": "treeid/mountain_maple_pix.png",
-      "output": "treeid_fast/mountain_maple_pix.webp",
+      "output": "treeid_fast/mountain_maple_pix.png.webp",
       "sourceBytes": 427485,
       "outputBytes": 32966,
       "sourceMode": "RGBA",
@@ -393,7 +393,7 @@
     },
     {
       "source": "treeid/opposite_leaves.png",
-      "output": "treeid_fast/opposite_leaves.webp",
+      "output": "treeid_fast/opposite_leaves.png.webp",
       "sourceBytes": 1774350,
       "outputBytes": 107124,
       "sourceMode": "RGBA",
@@ -401,7 +401,7 @@
     },
     {
       "source": "treeid/page1.png",
-      "output": "treeid_fast/page1.webp",
+      "output": "treeid_fast/page1.png.webp",
       "sourceBytes": 1599416,
       "outputBytes": 87526,
       "sourceMode": "RGBA",
@@ -409,7 +409,7 @@
     },
     {
       "source": "treeid/page2.png",
-      "output": "treeid_fast/page2.webp",
+      "output": "treeid_fast/page2.png.webp",
       "sourceBytes": 1304219,
       "outputBytes": 66758,
       "sourceMode": "RGBA",
@@ -417,7 +417,7 @@
     },
     {
       "source": "treeid/page3.png",
-      "output": "treeid_fast/page3.webp",
+      "output": "treeid_fast/page3.png.webp",
       "sourceBytes": 1758597,
       "outputBytes": 122172,
       "sourceMode": "RGBA",
@@ -425,7 +425,7 @@
     },
     {
       "source": "treeid/painted_buckeye.jpg",
-      "output": "treeid_fast/painted_buckeye.webp",
+      "output": "treeid_fast/painted_buckeye.jpg.webp",
       "sourceBytes": 2271474,
       "outputBytes": 156590,
       "sourceMode": "RGB",
@@ -433,7 +433,7 @@
     },
     {
       "source": "treeid/painted_buckeye.png",
-      "output": "treeid_fast/painted_buckeye.webp",
+      "output": "treeid_fast/painted_buckeye.png.webp",
       "sourceBytes": 469656,
       "outputBytes": 30814,
       "sourceMode": "RGBA",
@@ -441,7 +441,7 @@
     },
     {
       "source": "treeid/pignut_hickory.jpg",
-      "output": "treeid_fast/pignut_hickory.webp",
+      "output": "treeid_fast/pignut_hickory.jpg.webp",
       "sourceBytes": 2242788,
       "outputBytes": 152500,
       "sourceMode": "RGB",
@@ -449,7 +449,7 @@
     },
     {
       "source": "treeid/pignut_hickory.png",
-      "output": "treeid_fast/pignut_hickory.webp",
+      "output": "treeid_fast/pignut_hickory.png.webp",
       "sourceBytes": 465770,
       "outputBytes": 41948,
       "sourceMode": "RGB",
@@ -457,7 +457,7 @@
     },
     {
       "source": "treeid/pines.png",
-      "output": "treeid_fast/pines.webp",
+      "output": "treeid_fast/pines.png.webp",
       "sourceBytes": 1395063,
       "outputBytes": 57580,
       "sourceMode": "RGBA",
@@ -465,7 +465,7 @@
     },
     {
       "source": "treeid/pitch_pine.jpg",
-      "output": "treeid_fast/pitch_pine.webp",
+      "output": "treeid_fast/pitch_pine.jpg.webp",
       "sourceBytes": 2231850,
       "outputBytes": 151426,
       "sourceMode": "RGB",
@@ -473,7 +473,7 @@
     },
     {
       "source": "treeid/pitch_pine_pix.png",
-      "output": "treeid_fast/pitch_pine_pix.webp",
+      "output": "treeid_fast/pitch_pine_pix.png.webp",
       "sourceBytes": 535270,
       "outputBytes": 33556,
       "sourceMode": "RGBA",
@@ -481,7 +481,7 @@
     },
     {
       "source": "treeid/place_holder.png",
-      "output": "treeid_fast/place_holder.webp",
+      "output": "treeid_fast/place_holder.png.webp",
       "sourceBytes": 7243427,
       "outputBytes": 84314,
       "sourceMode": "RGBA",
@@ -489,7 +489,7 @@
     },
     {
       "source": "treeid/pond_pine.jpg",
-      "output": "treeid_fast/pond_pine.webp",
+      "output": "treeid_fast/pond_pine.jpg.webp",
       "sourceBytes": 2261891,
       "outputBytes": 152700,
       "sourceMode": "RGB",
@@ -497,7 +497,7 @@
     },
     {
       "source": "treeid/pond_pine_pix.png",
-      "output": "treeid_fast/pond_pine_pix.webp",
+      "output": "treeid_fast/pond_pine_pix.png.webp",
       "sourceBytes": 529033,
       "outputBytes": 30470,
       "sourceMode": "RGBA",
@@ -505,7 +505,7 @@
     },
     {
       "source": "treeid/red_buckeye.jpg",
-      "output": "treeid_fast/red_buckeye.webp",
+      "output": "treeid_fast/red_buckeye.jpg.webp",
       "sourceBytes": 2317576,
       "outputBytes": 159876,
       "sourceMode": "RGB",
@@ -513,7 +513,7 @@
     },
     {
       "source": "treeid/red_buckeye.png",
-      "output": "treeid_fast/red_buckeye.webp",
+      "output": "treeid_fast/red_buckeye.png.webp",
       "sourceBytes": 559526,
       "outputBytes": 41076,
       "sourceMode": "RGBA",
@@ -521,7 +521,7 @@
     },
     {
       "source": "treeid/red_hickory.jpg",
-      "output": "treeid_fast/red_hickory.webp",
+      "output": "treeid_fast/red_hickory.jpg.webp",
       "sourceBytes": 2300119,
       "outputBytes": 156764,
       "sourceMode": "RGB",
@@ -529,7 +529,7 @@
     },
     {
       "source": "treeid/red_hickory.png",
-      "output": "treeid_fast/red_hickory.webp",
+      "output": "treeid_fast/red_hickory.png.webp",
       "sourceBytes": 582599,
       "outputBytes": 46822,
       "sourceMode": "RGBA",
@@ -537,7 +537,7 @@
     },
     {
       "source": "treeid/red_maple.jpg",
-      "output": "treeid_fast/red_maple.webp",
+      "output": "treeid_fast/red_maple.jpg.webp",
       "sourceBytes": 2300744,
       "outputBytes": 161446,
       "sourceMode": "RGB",
@@ -545,7 +545,7 @@
     },
     {
       "source": "treeid/red_maple_pix.png",
-      "output": "treeid_fast/red_maple_pix.webp",
+      "output": "treeid_fast/red_maple_pix.png.webp",
       "sourceBytes": 492849,
       "outputBytes": 27564,
       "sourceMode": "RGBA",
@@ -553,7 +553,7 @@
     },
     {
       "source": "treeid/red_spruce.jpg",
-      "output": "treeid_fast/red_spruce.webp",
+      "output": "treeid_fast/red_spruce.jpg.webp",
       "sourceBytes": 2249966,
       "outputBytes": 156418,
       "sourceMode": "RGB",
@@ -561,7 +561,7 @@
     },
     {
       "source": "treeid/red_spruce_pix.png",
-      "output": "treeid_fast/red_spruce_pix.webp",
+      "output": "treeid_fast/red_spruce_pix.png.webp",
       "sourceBytes": 603115,
       "outputBytes": 52140,
       "sourceMode": "RGBA",
@@ -569,7 +569,7 @@
     },
     {
       "source": "treeid/redbay.jpg",
-      "output": "treeid_fast/redbay.webp",
+      "output": "treeid_fast/redbay.jpg.webp",
       "sourceBytes": 2254486,
       "outputBytes": 157648,
       "sourceMode": "RGB",
@@ -577,7 +577,7 @@
     },
     {
       "source": "treeid/redbay_pix.png",
-      "output": "treeid_fast/redbay_pix.webp",
+      "output": "treeid_fast/redbay_pix.png.webp",
       "sourceBytes": 447371,
       "outputBytes": 20208,
       "sourceMode": "RGBA",
@@ -585,7 +585,7 @@
     },
     {
       "source": "treeid/redcedar.jpg",
-      "output": "treeid_fast/redcedar.webp",
+      "output": "treeid_fast/redcedar.jpg.webp",
       "sourceBytes": 2158751,
       "outputBytes": 148114,
       "sourceMode": "RGB",
@@ -593,7 +593,7 @@
     },
     {
       "source": "treeid/redcedar_pix.png",
-      "output": "treeid_fast/redcedar_pix.webp",
+      "output": "treeid_fast/redcedar_pix.png.webp",
       "sourceBytes": 525897,
       "outputBytes": 40168,
       "sourceMode": "RGBA",
@@ -601,7 +601,7 @@
     },
     {
       "source": "treeid/rusty_blackhaw.jpg",
-      "output": "treeid_fast/rusty_blackhaw.webp",
+      "output": "treeid_fast/rusty_blackhaw.jpg.webp",
       "sourceBytes": 2236251,
       "outputBytes": 153154,
       "sourceMode": "RGB",
@@ -609,7 +609,7 @@
     },
     {
       "source": "treeid/rusty_blackhaw.png",
-      "output": "treeid_fast/rusty_blackhaw.webp",
+      "output": "treeid_fast/rusty_blackhaw.png.webp",
       "sourceBytes": 477296,
       "outputBytes": 39486,
       "sourceMode": "RGBA",
@@ -617,7 +617,7 @@
     },
     {
       "source": "treeid/sand_hickory.jpg",
-      "output": "treeid_fast/sand_hickory.webp",
+      "output": "treeid_fast/sand_hickory.jpg.webp",
       "sourceBytes": 2432628,
       "outputBytes": 172798,
       "sourceMode": "RGB",
@@ -625,7 +625,7 @@
     },
     {
       "source": "treeid/sand_hickory.png",
-      "output": "treeid_fast/sand_hickory.webp",
+      "output": "treeid_fast/sand_hickory.png.webp",
       "sourceBytes": 2478727,
       "outputBytes": 100326,
       "sourceMode": "RGBA",
@@ -633,7 +633,7 @@
     },
     {
       "source": "treeid/shagbark_hickory.jpg",
-      "output": "treeid_fast/shagbark_hickory.webp",
+      "output": "treeid_fast/shagbark_hickory.jpg.webp",
       "sourceBytes": 2359992,
       "outputBytes": 160940,
       "sourceMode": "RGB",
@@ -641,7 +641,7 @@
     },
     {
       "source": "treeid/shagbark_hickory.png",
-      "output": "treeid_fast/shagbark_hickory.webp",
+      "output": "treeid_fast/shagbark_hickory.png.webp",
       "sourceBytes": 3002584,
       "outputBytes": 103426,
       "sourceMode": "RGBA",
@@ -649,7 +649,7 @@
     },
     {
       "source": "treeid/shortleaf_pine.jpg",
-      "output": "treeid_fast/shortleaf_pine.webp",
+      "output": "treeid_fast/shortleaf_pine.jpg.webp",
       "sourceBytes": 2273997,
       "outputBytes": 156116,
       "sourceMode": "RGB",
@@ -657,7 +657,7 @@
     },
     {
       "source": "treeid/shortleaf_pine_pix.png",
-      "output": "treeid_fast/shortleaf_pine_pix.webp",
+      "output": "treeid_fast/shortleaf_pine_pix.png.webp",
       "sourceBytes": 543987,
       "outputBytes": 52462,
       "sourceMode": "RGBA",
@@ -665,7 +665,7 @@
     },
     {
       "source": "treeid/silver_maple.jpg",
-      "output": "treeid_fast/silver_maple.webp",
+      "output": "treeid_fast/silver_maple.jpg.webp",
       "sourceBytes": 2167672,
       "outputBytes": 147752,
       "sourceMode": "RGB",
@@ -673,7 +673,7 @@
     },
     {
       "source": "treeid/silver_maple_pix.png",
-      "output": "treeid_fast/silver_maple_pix.webp",
+      "output": "treeid_fast/silver_maple_pix.png.webp",
       "sourceBytes": 556235,
       "outputBytes": 38666,
       "sourceMode": "RGBA",
@@ -681,7 +681,7 @@
     },
     {
       "source": "treeid/slash_pine.jpg",
-      "output": "treeid_fast/slash_pine.webp",
+      "output": "treeid_fast/slash_pine.jpg.webp",
       "sourceBytes": 2262257,
       "outputBytes": 156920,
       "sourceMode": "RGB",
@@ -689,7 +689,7 @@
     },
     {
       "source": "treeid/slash_pinePix.png",
-      "output": "treeid_fast/slash_pinePix.webp",
+      "output": "treeid_fast/slash_pinePix.png.webp",
       "sourceBytes": 546512,
       "outputBytes": 40644,
       "sourceMode": "RGBA",
@@ -697,7 +697,7 @@
     },
     {
       "source": "treeid/southern_magnolia.jpg",
-      "output": "treeid_fast/southern_magnolia.webp",
+      "output": "treeid_fast/southern_magnolia.jpg.webp",
       "sourceBytes": 2256758,
       "outputBytes": 162672,
       "sourceMode": "RGB",
@@ -705,7 +705,7 @@
     },
     {
       "source": "treeid/southern_magnolia_pix.png",
-      "output": "treeid_fast/southern_magnolia_pix.webp",
+      "output": "treeid_fast/southern_magnolia_pix.png.webp",
       "sourceBytes": 518867,
       "outputBytes": 32102,
       "sourceMode": "RGBA",
@@ -713,7 +713,7 @@
     },
     {
       "source": "treeid/southern_sugar_maple.jpg",
-      "output": "treeid_fast/southern_sugar_maple.webp",
+      "output": "treeid_fast/southern_sugar_maple.jpg.webp",
       "sourceBytes": 2255860,
       "outputBytes": 153660,
       "sourceMode": "RGB",
@@ -721,7 +721,7 @@
     },
     {
       "source": "treeid/southern_sugar_maple_pix.png",
-      "output": "treeid_fast/southern_sugar_maple_pix.webp",
+      "output": "treeid_fast/southern_sugar_maple_pix.png.webp",
       "sourceBytes": 580385,
       "outputBytes": 48044,
       "sourceMode": "RGBA",
@@ -729,7 +729,7 @@
     },
     {
       "source": "treeid/spruce_pine.jpg",
-      "output": "treeid_fast/spruce_pine.webp",
+      "output": "treeid_fast/spruce_pine.jpg.webp",
       "sourceBytes": 2200831,
       "outputBytes": 147010,
       "sourceMode": "RGB",
@@ -737,7 +737,7 @@
     },
     {
       "source": "treeid/spruce_pine_pix.png",
-      "output": "treeid_fast/spruce_pine_pix.webp",
+      "output": "treeid_fast/spruce_pine_pix.png.webp",
       "sourceBytes": 503064,
       "outputBytes": 27514,
       "sourceMode": "RGBA",
@@ -745,7 +745,7 @@
     },
     {
       "source": "treeid/striped_maple.jpg",
-      "output": "treeid_fast/striped_maple.webp",
+      "output": "treeid_fast/striped_maple.jpg.webp",
       "sourceBytes": 2365226,
       "outputBytes": 162242,
       "sourceMode": "RGB",
@@ -753,7 +753,7 @@
     },
     {
       "source": "treeid/striped_maple_pix.png",
-      "output": "treeid_fast/striped_maple_pix.webp",
+      "output": "treeid_fast/striped_maple_pix.png.webp",
       "sourceBytes": 335370,
       "outputBytes": 19408,
       "sourceMode": "RGBA",
@@ -761,7 +761,7 @@
     },
     {
       "source": "treeid/sugar_maple.jpg",
-      "output": "treeid_fast/sugar_maple.webp",
+      "output": "treeid_fast/sugar_maple.jpg.webp",
       "sourceBytes": 2348082,
       "outputBytes": 161514,
       "sourceMode": "RGB",
@@ -769,7 +769,7 @@
     },
     {
       "source": "treeid/sugar_maple_pix.png",
-      "output": "treeid_fast/sugar_maple_pix.webp",
+      "output": "treeid_fast/sugar_maple_pix.png.webp",
       "sourceBytes": 497237,
       "outputBytes": 29786,
       "sourceMode": "RGBA",
@@ -777,7 +777,7 @@
     },
     {
       "source": "treeid/swamp_dogwood.jpg",
-      "output": "treeid_fast/swamp_dogwood.webp",
+      "output": "treeid_fast/swamp_dogwood.jpg.webp",
       "sourceBytes": 2236297,
       "outputBytes": 155906,
       "sourceMode": "RGB",
@@ -785,7 +785,7 @@
     },
     {
       "source": "treeid/swamp_dogwood.png",
-      "output": "treeid_fast/swamp_dogwood.webp",
+      "output": "treeid_fast/swamp_dogwood.png.webp",
       "sourceBytes": 372042,
       "outputBytes": 29542,
       "sourceMode": "RGBA",
@@ -793,7 +793,7 @@
     },
     {
       "source": "treeid/sweetbay_magnolia.jpg",
-      "output": "treeid_fast/sweetbay_magnolia.webp",
+      "output": "treeid_fast/sweetbay_magnolia.jpg.webp",
       "sourceBytes": 2342021,
       "outputBytes": 163274,
       "sourceMode": "RGB",
@@ -801,7 +801,7 @@
     },
     {
       "source": "treeid/sweetbay_magnolia_pix.png",
-      "output": "treeid_fast/sweetbay_magnolia_pix.webp",
+      "output": "treeid_fast/sweetbay_magnolia_pix.png.webp",
       "sourceBytes": 505996,
       "outputBytes": 28644,
       "sourceMode": "RGBA",
@@ -809,7 +809,7 @@
     },
     {
       "source": "treeid/table_mountain_pine.jpg",
-      "output": "treeid_fast/table_mountain_pine.webp",
+      "output": "treeid_fast/table_mountain_pine.jpg.webp",
       "sourceBytes": 2321253,
       "outputBytes": 159212,
       "sourceMode": "RGB",
@@ -817,7 +817,7 @@
     },
     {
       "source": "treeid/table_mountain_pine_pix.png",
-      "output": "treeid_fast/table_mountain_pine_pix.webp",
+      "output": "treeid_fast/table_mountain_pine_pix.png.webp",
       "sourceBytes": 507565,
       "outputBytes": 29188,
       "sourceMode": "RGBA",
@@ -825,7 +825,7 @@
     },
     {
       "source": "treeid/virginia_pine.jpg",
-      "output": "treeid_fast/virginia_pine.webp",
+      "output": "treeid_fast/virginia_pine.jpg.webp",
       "sourceBytes": 2223161,
       "outputBytes": 148402,
       "sourceMode": "RGB",
@@ -833,7 +833,7 @@
     },
     {
       "source": "treeid/virginia_pine_pix.png",
-      "output": "treeid_fast/virginia_pine_pix.webp",
+      "output": "treeid_fast/virginia_pine_pix.png.webp",
       "sourceBytes": 501346,
       "outputBytes": 32682,
       "sourceMode": "RGBA",
@@ -841,7 +841,7 @@
     },
     {
       "source": "treeid/white_ash.jpg",
-      "output": "treeid_fast/white_ash.webp",
+      "output": "treeid_fast/white_ash.jpg.webp",
       "sourceBytes": 2282902,
       "outputBytes": 159184,
       "sourceMode": "RGB",
@@ -849,7 +849,7 @@
     },
     {
       "source": "treeid/white_ash_pix.png",
-      "output": "treeid_fast/white_ash_pix.webp",
+      "output": "treeid_fast/white_ash_pix.png.webp",
       "sourceBytes": 419781,
       "outputBytes": 38208,
       "sourceMode": "RGBA",
@@ -857,7 +857,7 @@
     },
     {
       "source": "treeid/yellow_buckeye.jpg",
-      "output": "treeid_fast/yellow_buckeye.webp",
+      "output": "treeid_fast/yellow_buckeye.jpg.webp",
       "sourceBytes": 2334639,
       "outputBytes": 165514,
       "sourceMode": "RGB",
@@ -865,7 +865,7 @@
     },
     {
       "source": "treeid/yellow_buckeye.png",
-      "output": "treeid_fast/yellow_buckeye.webp",
+      "output": "treeid_fast/yellow_buckeye.png.webp",
       "sourceBytes": 480457,
       "outputBytes": 29020,
       "sourceMode": "RGBA",

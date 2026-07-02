@@ -88,6 +88,38 @@
       "maxLongEdge": 1800
     },
     {
+      "source": "treeid/black_locust.jpg",
+      "output": "treeid_fast/black_locust.jpg.webp",
+      "sourceBytes": 2109098,
+      "outputBytes": 141386,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/black_locust.png",
+      "output": "treeid_fast/black_locust.png.webp",
+      "sourceBytes": 4121452,
+      "outputBytes": 118050,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/black_walnut.jpg",
+      "output": "treeid_fast/black_walnut.jpg.webp",
+      "sourceBytes": 2198681,
+      "outputBytes": 147186,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/black_walnut.png",
+      "output": "treeid_fast/black_walnut.png.webp",
+      "sourceBytes": 5967759,
+      "outputBytes": 181906,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
       "source": "treeid/bottlebrush_b uckeye.png",
       "output": "treeid_fast/bottlebrush_b uckeye.png.webp",
       "sourceBytes": 493366,
@@ -152,6 +184,22 @@
       "maxLongEdge": 1800
     },
     {
+      "source": "treeid/catalpa.jpg",
+      "output": "treeid_fast/catalpa.jpg.webp",
+      "sourceBytes": 2305690,
+      "outputBytes": 161414,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/catalpa.png",
+      "output": "treeid_fast/catalpa.png.webp",
+      "sourceBytes": 3166416,
+      "outputBytes": 155736,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
       "source": "treeid/chalk_maple.jpg",
       "output": "treeid_fast/chalk_maple.jpg.webp",
       "sourceBytes": 2220298,
@@ -170,8 +218,8 @@
     {
       "source": "treeid/compound_list.png",
       "output": "treeid_fast/compound_list.png.webp",
-      "sourceBytes": 1807729,
-      "outputBytes": 97402,
+      "sourceBytes": 1793634,
+      "outputBytes": 101816,
       "sourceMode": "RGBA",
       "maxLongEdge": 1800
     },
@@ -292,6 +340,22 @@
       "output": "treeid_fast/hickories.png.webp",
       "sourceBytes": 1812958,
       "outputBytes": 91550,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/honeylocust.jpg",
+      "output": "treeid_fast/honeylocust.jpg.webp",
+      "sourceBytes": 2288369,
+      "outputBytes": 158106,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/honeylocust.png",
+      "output": "treeid_fast/honeylocust.png.webp",
+      "sourceBytes": 5153647,
+      "outputBytes": 145984,
       "sourceMode": "RGBA",
       "maxLongEdge": 1800
     },
@@ -436,6 +500,38 @@
       "output": "treeid_fast/painted_buckeye.png.webp",
       "sourceBytes": 469656,
       "outputBytes": 30814,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/paulownia.jpg",
+      "output": "treeid_fast/paulownia.jpg.webp",
+      "sourceBytes": 2303950,
+      "outputBytes": 158828,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/paulownia.png",
+      "output": "treeid_fast/paulownia.png.webp",
+      "sourceBytes": 4397872,
+      "outputBytes": 108122,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/pecan.jpg",
+      "output": "treeid_fast/pecan.jpg.webp",
+      "sourceBytes": 2275101,
+      "outputBytes": 153552,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/pecan.png",
+      "output": "treeid_fast/pecan.png.webp",
+      "sourceBytes": 5522355,
+      "outputBytes": 172740,
       "sourceMode": "RGBA",
       "maxLongEdge": 1800
     },
@@ -696,6 +792,22 @@
       "maxLongEdge": 1800
     },
     {
+      "source": "treeid/southern_catalpa.jpg",
+      "output": "treeid_fast/southern_catalpa.jpg.webp",
+      "sourceBytes": 2305690,
+      "outputBytes": 161414,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/southern_catalpa.png",
+      "output": "treeid_fast/southern_catalpa.png.webp",
+      "sourceBytes": 3166416,
+      "outputBytes": 155736,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
       "source": "treeid/southern_magnolia.jpg",
       "output": "treeid_fast/southern_magnolia.jpg.webp",
       "sourceBytes": 2256758,
@@ -872,8 +984,8 @@
       "maxLongEdge": 1800
     }
   ],
-  "sourceBytes": 168043343,
-  "outputBytes": 10409012,
-  "savedBytes": 157634331,
-  "reductionPercent": 93.8
+  "sourceBytes": 215311744,
+  "outputBytes": 12533586,
+  "savedBytes": 202778158,
+  "reductionPercent": 94.2
 }

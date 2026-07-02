@@ -372,6 +372,9 @@ body.map-only #stage {
   const GITHUB_OWNER = "RockPapa";
   const GITHUB_REPO = "Rock-Image-ID-Key";
   const GITHUB_BRANCH = "main";
+  const GITHUB_FAST_PROJECT_FOLDER = "PROJECT_FILES_FAST";
+  const GITHUB_FAST_MAP_PATH = "PROJECT_FILES_FAST/map.webp";
+  const GITHUB_FAST_BUNDLE_PATH = "PROJECT_FILES_FAST/all_polygons.json";
   const GITHUB_PROJECT_FOLDER = "PROJECT_FILES";
   const GITHUB_MAP_PATH = "PROJECT_FILES/map.webp";
   const PROJECT_CACHE_DB = "ga-geo-map-cache-v1";
@@ -380,10 +383,12 @@ body.map-only #stage {
     GITHUB_OWNER,
     GITHUB_REPO,
     GITHUB_BRANCH,
-    GITHUB_PROJECT_FOLDER,
-    GITHUB_MAP_PATH
+    GITHUB_FAST_PROJECT_FOLDER,
+    GITHUB_FAST_MAP_PATH,
+    "dedupe-and-simplify-v1"
   ].join("|");
   const VIEW_STATE_KEY = "gaGeoMapViewState";
+  const POLYGON_SIMPLIFY_TOLERANCE_PX = 1.5;
 
   // ===== OPTIONAL: GEO INFO LOOKUP (EDIT ME LATER) =====
   // key is unitId (filename-derived), values are whatever you want.
@@ -675,6 +680,52 @@ function enterMapOnlyMode(options = {}){
     return hit;
   }
 
+  function pointLineDistanceSq(p, a, b){
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    if (dx === 0 && dy === 0) return (p.x - a.x) ** 2 + (p.y - a.y) ** 2;
+
+    let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy);
+    t = Math.max(0, Math.min(1, t));
+
+    const x = a.x + t * dx;
+    const y = a.y + t * dy;
+    return (p.x - x) ** 2 + (p.y - y) ** 2;
+  }
+
+  function simplifyDPStep(pts, first, last, toleranceSq, keep){
+    let maxDistanceSq = toleranceSq;
+    let index = -1;
+
+    for (let i = first + 1; i < last; i++){
+      const distanceSq = pointLineDistanceSq(pts[i], pts[first], pts[last]);
+      if (distanceSq > maxDistanceSq){
+        index = i;
+        maxDistanceSq = distanceSq;
+      }
+    }
+
+    if (index >= 0){
+      keep[index] = true;
+      simplifyDPStep(pts, first, index, toleranceSq, keep);
+      simplifyDPStep(pts, index, last, toleranceSq, keep);
+    }
+  }
+
+  function simplifyPolygonPts(pts, tolerancePx = POLYGON_SIMPLIFY_TOLERANCE_PX){
+    if (!Number.isFinite(tolerancePx) || tolerancePx <= 0 || pts.length <= 8) return pts;
+
+    const toleranceSq = tolerancePx * tolerancePx;
+    const keep = new Array(pts.length).fill(false);
+    keep[0] = true;
+    keep[pts.length - 1] = true;
+
+    simplifyDPStep(pts, 0, pts.length - 1, toleranceSq, keep);
+
+    const simplified = pts.filter((_pt, index) => keep[index]);
+    return simplified.length >= 3 ? simplified : pts;
+  }
+
   function clearCanvas(ctx){
     ctx.setTransform(1,0,0,1,0,0);
     ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
@@ -938,9 +989,9 @@ function resetView(){
   }
 
 
-  async function listProjectJsonEntriesFromGitHub(){
+  async function listProjectJsonEntriesFromGitHub(projectFolder = GITHUB_PROJECT_FOLDER){
     const base = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}`;
-    const contentsUrl = `${base}/contents/${encodeURIComponent(GITHUB_PROJECT_FOLDER)}?ref=${encodeURIComponent(GITHUB_BRANCH)}`;
+    const contentsUrl = `${base}/contents/${encodeURIComponent(projectFolder)}?ref=${encodeURIComponent(GITHUB_BRANCH)}`;
 
     // Try contents API first
     try{
@@ -949,8 +1000,11 @@ function resetView(){
       const entries = await resp.json();
       if (Array.isArray(entries)){
         const jsonEntries = entries
-          .filter(e => e && e.type === "file" && String(e.name || "").toLowerCase().endsWith(".json") && e.download_url)
-          .map(e => ({ name: e.name, download_url: e.download_url }));
+          .filter(e => {
+            const name = String(e?.name || "").toLowerCase();
+            return e && e.type === "file" && name.endsWith(".json") && name !== "manifest.json" && name !== "all_polygons.json" && e.download_url;
+          })
+          .map(e => ({ name: e.name, download_url: e.download_url, sha: e.sha || "", size: e.size || 0 }));
         if (jsonEntries.length) return jsonEntries;
       }
     }catch(_e){
@@ -964,19 +1018,98 @@ function resetView(){
     const td = await tr.json();
     const tree = Array.isArray(td?.tree) ? td.tree : [];
 
-    const prefix = `${GITHUB_PROJECT_FOLDER}/`.toLowerCase();
+    const prefix = `${projectFolder}/`.toLowerCase();
     const jsonEntries = tree
-      .filter(n => n && n.type === "blob" && String(n.path || "").toLowerCase().startsWith(prefix) && String(n.path || "").toLowerCase().endsWith(".json"))
+      .filter(n => {
+        const path = String(n?.path || "").toLowerCase();
+        const name = path.split("/").pop() || "";
+        return n && n.type === "blob" && path.startsWith(prefix) && path.endsWith(".json") && name !== "manifest.json" && name !== "all_polygons.json";
+      })
       .map(n => {
         const path = String(n.path);
         const parts = path.split('/');
         const name = parts[parts.length - 1] || path;
         const encodedPath = path.split('/').map(encodeURIComponent).join('/');
         const download_url = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${encodedPath}`;
-        return { name, download_url };
+        return { name, download_url, sha: n.sha || "", size: n.size || 0 };
       });
 
     return jsonEntries;
+  }
+
+  async function loadBundledPolygonsFromGitHub(bundlePath){
+    const bundleUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${bundlePath.split("/").map(encodeURIComponent).join("/")}`;
+    const response = await fetch(bundleUrl);
+    if (!response.ok) throw new Error(`Bundle HTTP ${response.status}`);
+
+    const data = await response.json();
+    if (!data || !Array.isArray(data.polys)) throw new Error("Bundle missing polys array");
+
+    polygons = [];
+    for (let i = 0; i < data.polys.length; i++){
+      const poly = data.polys[i];
+      if (!poly || !Array.isArray(poly.pts) || poly.pts.length < 3) continue;
+
+      const rawPts = poly.pts
+        .map(pt => Array.isArray(pt) ? ({ x: +pt[0], y: +pt[1] }) : ({ x: +pt.x, y: +pt.y }))
+        .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.y));
+
+      if (rawPts.length < 3) continue;
+
+      const pts = simplifyPolygonPts(rawPts);
+      const fileName = poly.fileName || "all_polygons.json";
+      const unitId = unitFromFile(fileName);
+
+      polygons.push({
+        unitId,
+        name: poly.unitName || pretty(unitId),
+        pts,
+        box: bbox(pts),
+        fileName,
+        polyIndexInFile: Number.isFinite(poly.polyIndexInFile) ? poly.polyIndexInFile : i
+      });
+    }
+
+    return polygons.length;
+  }
+
+  function dedupeJsonEntries(entries){
+    const bySha = new Map();
+    const unique = [];
+
+    for (const entry of entries){
+      const sha = String(entry.sha || "");
+      if (!sha){
+        unique.push(entry);
+        continue;
+      }
+
+      const existing = bySha.get(sha);
+      if (!existing){
+        bySha.set(sha, entry);
+        unique.push(entry);
+        continue;
+      }
+
+      const existingScore = canonicalFileNameScore(existing.name);
+      const entryScore = canonicalFileNameScore(entry.name);
+      if (entryScore > existingScore){
+        const index = unique.indexOf(existing);
+        if (index >= 0) unique[index] = entry;
+        bySha.set(sha, entry);
+      }
+    }
+
+    return unique;
+  }
+
+  function canonicalFileNameScore(name){
+    const s = String(name || "");
+    let score = 0;
+    if (s === s.toLowerCase()) score += 2;
+    if (!/\s/.test(s)) score += 2;
+    if (!/fofrmation|hasthorn|vormation|twrrane|yerrane|caroliona|caroloina|westyern|coasgtal|bleridge/i.test(s)) score += 3;
+    return score;
   }
 
     async function loadProjectFilesFromGitHub(options = {}){
@@ -995,7 +1128,8 @@ function resetView(){
         return;
       }
 
-      const mapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${GITHUB_MAP_PATH.split("/").map(encodeURIComponent).join("/")}`;
+      let activeProjectFolder = GITHUB_FAST_PROJECT_FOLDER;
+      let activeMapPath = GITHUB_FAST_MAP_PATH;
 
       if (preferCache) {
         setStatus("Checking saved map data...", "Looking for previously loaded PROJECT_FILES in this browser.");
@@ -1004,7 +1138,9 @@ function resetView(){
         const cached = await readProjectCache();
         if (cached && Array.isArray(cached.polygons) && cached.polygons.length) {
           try {
-            img = await loadImageFromUrl(mapUrl);
+            const cachedMapPath = cached.mapPath || activeMapPath;
+            const cachedMapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${cachedMapPath.split("/").map(encodeURIComponent).join("/")}`;
+            img = await loadImageFromUrl(cachedMapUrl);
             polygons = cached.polygons;
             setCanvasSizes();
             rebuildSampler();
@@ -1027,32 +1163,84 @@ function resetView(){
       }
 
       setStatus("Loading PROJECT_FILES from GitHub...", "Fetching JSON list from GitHub");
-      setProgress(0, 0, "Listing JSON files from GitHub...");
-
-      let jsonEntries = [];
-      try{
-        jsonEntries = await listProjectJsonEntriesFromGitHub();
-      }catch(err){
-        setStatus("Failed to read PROJECT_FILES from GitHub.", String(err && err.message || err));
-        setProgress(0, 0, "Could not list files from GitHub.");
-        return;
-      }
-
-      jsonEntries.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-
-      setStatus("Loading map from GitHub...", `${GITHUB_MAP_PATH} + ${jsonEntries.length} JSON files`);
-      setProgress(0, jsonEntries.length, "Loading map image...");
+      setStatus("Loading map from GitHub...", `${activeMapPath} + bundled polygons`);
+      setProgress(0, 1, "Loading map image...");
 
       try{
+        const mapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${activeMapPath.split("/").map(encodeURIComponent).join("/")}`;
         img = await loadImageFromUrl(mapUrl);
       }catch(err){
-        setStatus("Failed to load map image from GitHub.", `${String(err && err.message || err)} | URL: ${mapUrl}`);
-        setProgress(0, jsonEntries.length, "Map image failed to load.");
-        return;
+        activeProjectFolder = GITHUB_PROJECT_FOLDER;
+        activeMapPath = GITHUB_MAP_PATH;
+        try {
+          const fallbackMapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${activeMapPath.split("/").map(encodeURIComponent).join("/")}`;
+          img = await loadImageFromUrl(fallbackMapUrl);
+        } catch(fallbackErr) {
+          setStatus("Failed to load map image from GitHub.", String(fallbackErr && fallbackErr.message || fallbackErr));
+          setProgress(0, 1, "Map image failed to load.");
+          return;
+        }
       }
 
       setCanvasSizes();
       rebuildSampler();
+
+      if (activeProjectFolder === GITHUB_FAST_PROJECT_FOLDER) try {
+        setProgress(0, 1, "Loading bundled polygons...");
+        const polyCount = await loadBundledPolygonsFromGitHub(GITHUB_FAST_BUNDLE_PATH);
+
+        await writeProjectCache({
+          createdAt: Date.now(),
+          polygons,
+          okCount: 1,
+          failCount: 0,
+          totalJson: 1,
+          projectFolder: activeProjectFolder,
+          mapPath: activeMapPath,
+          bundlePath: GITHUB_FAST_BUNDLE_PATH,
+          mapWidth: img.width,
+          mapHeight: img.height
+        });
+
+        const restoredView = restoreViewState();
+        if (!restoredView) resetView();
+
+        setStatus(
+          `Loaded from GitHub: map (${img.width}x${img.height}) | bundled polygons | ${polyCount} polys`,
+          MAP_CONTROL_HINT
+        );
+        setProgress(1, 1, "Load complete.");
+        enterMapOnlyMode({ preserveView: restoredView });
+        restorePopupState();
+        stage.focus();
+        return;
+      } catch(bundleErr) {
+        console.warn("Bundled polygons unavailable, falling back to JSON list:", bundleErr);
+      }
+
+      setProgress(0, 0, "Listing JSON files from GitHub...");
+
+      let jsonEntries = [];
+      try{
+        jsonEntries = await listProjectJsonEntriesFromGitHub(activeProjectFolder);
+      }catch(err){
+        try {
+          activeProjectFolder = GITHUB_PROJECT_FOLDER;
+          activeMapPath = GITHUB_MAP_PATH;
+          jsonEntries = await listProjectJsonEntriesFromGitHub(activeProjectFolder);
+        } catch(fallbackErr) {
+          setStatus("Failed to read PROJECT_FILES from GitHub.", String(fallbackErr && fallbackErr.message || fallbackErr));
+          setProgress(0, 0, "Could not list files from GitHub.");
+          return;
+        }
+      }
+
+      jsonEntries.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+      const originalJsonCount = jsonEntries.length;
+      jsonEntries = dedupeJsonEntries(jsonEntries);
+
+      setStatus("Loading polygons from GitHub...", `${activeProjectFolder}: ${jsonEntries.length} JSON files (${originalJsonCount - jsonEntries.length} duplicates skipped)`);
+      setProgress(0, jsonEntries.length, "Loading polygon JSON files...");
 
       if (!jsonEntries.length) {
         resetView();
@@ -1087,11 +1275,13 @@ function resetView(){
           const poly = data.polys[i];
           if (!poly || !Array.isArray(poly.pts) || poly.pts.length < 3) continue;
 
-          const pts = poly.pts
+          const rawPts = poly.pts
             .map(pt => ({ x: +pt.x, y: +pt.y }))
             .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.y));
 
-          if (pts.length < 3) continue;
+          if (rawPts.length < 3) continue;
+
+          const pts = simplifyPolygonPts(rawPts);
 
           polygons.push({
             unitId,
@@ -1148,6 +1338,8 @@ function resetView(){
         okCount,
         failCount,
         totalJson: jsonEntries.length,
+        projectFolder: activeProjectFolder,
+        mapPath: activeMapPath,
         mapWidth: img.width,
         mapHeight: img.height
       });

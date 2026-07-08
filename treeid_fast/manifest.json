@@ -40,6 +40,30 @@
       "maxLongEdge": 1800
     },
     {
+      "source": "treeid/alternate_simple.jpg",
+      "output": "treeid_fast/alternate_simple.jpg.webp",
+      "sourceBytes": 2051348,
+      "outputBytes": 138578,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/alternate_simple_toothless copy.jpg",
+      "output": "treeid_fast/alternate_simple_toothless copy.jpg.webp",
+      "sourceBytes": 2136773,
+      "outputBytes": 141062,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/alternate_simple_toothless.jpg",
+      "output": "treeid_fast/alternate_simple_toothless.jpg.webp",
+      "sourceBytes": 2136773,
+      "outputBytes": 141062,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
       "source": "treeid/alternateleaf_dogwood.jpg",
       "output": "treeid_fast/alternateleaf_dogwood.jpg.webp",
       "sourceBytes": 2297786,
@@ -69,6 +93,30 @@
       "sourceBytes": 1389070,
       "outputBytes": 45218,
       "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/bigleaf_magnolia copy.png",
+      "output": "treeid_fast/bigleaf_magnolia copy.png.webp",
+      "sourceBytes": 437736,
+      "outputBytes": 34108,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/bigleaf_magnolia.jpg",
+      "output": "treeid_fast/bigleaf_magnolia.jpg.webp",
+      "sourceBytes": 2400329,
+      "outputBytes": 167012,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/bigleaf_magnolia.png",
+      "output": "treeid_fast/bigleaf_magnolia.png.webp",
+      "sourceBytes": 437736,
+      "outputBytes": 34108,
+      "sourceMode": "RGB",
       "maxLongEdge": 1800
     },
     {
@@ -224,6 +272,22 @@
       "maxLongEdge": 1800
     },
     {
+      "source": "treeid/cucumbertree.jpg",
+      "output": "treeid_fast/cucumbertree.jpg.webp",
+      "sourceBytes": 2391275,
+      "outputBytes": 170668,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/cucumbertree.png",
+      "output": "treeid_fast/cucumbertree.png.webp",
+      "sourceBytes": 3973033,
+      "outputBytes": 107172,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
       "source": "treeid/dogwoods.jpg",
       "output": "treeid_fast/dogwoods.jpg.webp",
       "sourceBytes": 1980573,
@@ -301,6 +365,22 @@
       "sourceBytes": 628464,
       "outputBytes": 59908,
       "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/fraser_magnolia.jpg",
+      "output": "treeid_fast/fraser_magnolia.jpg.webp",
+      "sourceBytes": 2340611,
+      "outputBytes": 165318,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/fraser_magnolia.png",
+      "output": "treeid_fast/fraser_magnolia.png.webp",
+      "sourceBytes": 434887,
+      "outputBytes": 34296,
+      "sourceMode": "RGB",
       "maxLongEdge": 1800
     },
     {
@@ -416,6 +496,14 @@
       "maxLongEdge": 1800
     },
     {
+      "source": "treeid/magnolias.jpg",
+      "output": "treeid_fast/magnolias.jpg.webp",
+      "sourceBytes": 2031380,
+      "outputBytes": 124932,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
       "source": "treeid/maples.png",
       "output": "treeid_fast/maples.png.webp",
       "sourceBytes": 1747288,
@@ -516,6 +604,38 @@
       "output": "treeid_fast/paulownia.png.webp",
       "sourceBytes": 4397872,
       "outputBytes": 108122,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/pawpaw copy.jpg",
+      "output": "treeid_fast/pawpaw copy.jpg.webp",
+      "sourceBytes": 2240000,
+      "outputBytes": 154418,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/pawpaw copy.png",
+      "output": "treeid_fast/pawpaw copy.png.webp",
+      "sourceBytes": 3186766,
+      "outputBytes": 127880,
+      "sourceMode": "RGBA",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/pawpaw.jpg",
+      "output": "treeid_fast/pawpaw.jpg.webp",
+      "sourceBytes": 2240000,
+      "outputBytes": 154418,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/pawpaw.png",
+      "output": "treeid_fast/pawpaw.png.webp",
+      "sourceBytes": 3186766,
+      "outputBytes": 127880,
       "sourceMode": "RGBA",
       "maxLongEdge": 1800
     },
@@ -936,6 +1056,22 @@
       "maxLongEdge": 1800
     },
     {
+      "source": "treeid/umbrella_magnolia.jpg",
+      "output": "treeid_fast/umbrella_magnolia.jpg.webp",
+      "sourceBytes": 2305984,
+      "outputBytes": 158676,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
+      "source": "treeid/umbrella_magnolia.png",
+      "output": "treeid_fast/umbrella_magnolia.png.webp",
+      "sourceBytes": 452391,
+      "outputBytes": 38846,
+      "sourceMode": "RGB",
+      "maxLongEdge": 1800
+    },
+    {
       "source": "treeid/virginia_pine.jpg",
       "output": "treeid_fast/virginia_pine.jpg.webp",
       "sourceBytes": 2223161,
@@ -984,8 +1120,8 @@
       "maxLongEdge": 1800
     }
   ],
-  "sourceBytes": 215311744,
-  "outputBytes": 12533586,
-  "savedBytes": 202778158,
+  "sourceBytes": 249695532,
+  "outputBytes": 14554020,
+  "savedBytes": 235141512,
   "reductionPercent": 94.2
 }

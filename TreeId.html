@@ -403,7 +403,13 @@
     <button id="alternateSimpleToothlessBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple toothless leaves">Trees with alternate simple toothless leaves</button>
     <button id="pawpawBtn" class="choiceBtn" type="button" aria-label="Pawpaw">Pawpaw</button>
     <button id="magnoliasBtn" class="choiceBtn" type="button" aria-label="Magnolias">Magnolias</button>
+    <button id="redbudBtn" class="choiceBtn" type="button" aria-label="Redbud">Redbud</button>
+    <button id="persimmonBtn" class="choiceBtn" type="button" aria-label="Persimmon">Persimmon</button>
+    <button id="blackgumBtn" class="choiceBtn" type="button" aria-label="Blackgum">Blackgum</button>
     <button id="pawpawImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open pawpaw detail image">Open pawpaw detail image</button>
+    <button id="redbudImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open redbud detail image">Open redbud detail image</button>
+    <button id="persimmonImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open persimmon detail image">Open persimmon detail image</button>
+    <button id="blackgumImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open blackgum detail image">Open blackgum detail image</button>
     <button id="bigleafMagnoliaImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open bigleaf magnolia detail image">Open bigleaf magnolia detail image</button>
     <button id="fraserMagnoliaImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open Fraser magnolia detail image">Open Fraser magnolia detail image</button>
     <button id="umbrellaMagnoliaImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open umbrella magnolia detail image">Open umbrella magnolia detail image</button>
@@ -591,7 +597,13 @@
       document.getElementById("alternateSimpleToothlessBtn"),
       document.getElementById("pawpawBtn"),
       document.getElementById("magnoliasBtn"),
+      document.getElementById("redbudBtn"),
+      document.getElementById("persimmonBtn"),
+      document.getElementById("blackgumBtn"),
       document.getElementById("pawpawImageBtn"),
+      document.getElementById("redbudImageBtn"),
+      document.getElementById("persimmonImageBtn"),
+      document.getElementById("blackgumImageBtn"),
       document.getElementById("bigleafMagnoliaImageBtn"),
       document.getElementById("fraserMagnoliaImageBtn"),
       document.getElementById("umbrellaMagnoliaImageBtn"),
@@ -729,6 +741,9 @@
       stripedMaple: "https://en.wikipedia.org/wiki/Acer_pensylvanicum",
       mountainMaple: "https://en.wikipedia.org/wiki/Acer_spicatum",
       pawpaw: "https://en.wikipedia.org/wiki/Asimina_triloba",
+      redbud: "https://en.wikipedia.org/wiki/Cercis_canadensis",
+      persimmon: "https://en.wikipedia.org/wiki/Diospyros_virginiana",
+      blackgum: "https://en.wikipedia.org/wiki/Nyssa_sylvatica",
       bigleafMagnolia: "https://en.wikipedia.org/wiki/Magnolia_macrophylla",
       fraserMagnolia: "https://en.wikipedia.org/wiki/Magnolia_fraseri",
       umbrellaMagnolia: "https://en.wikipedia.org/wiki/Magnolia_tripetala",
@@ -827,7 +842,10 @@
       alternateSimpleToothless: [
         { btn: document.getElementById("pawpawBtn"), x: 0.33, y: 0.30, width: 0.34, height: 0.06 },
         { btn: document.getElementById("magnoliasBtn"), x: 0.26, y: 0.43, width: 0.48, height: 0.06 },
-        { btn: document.getElementById("redbayBtn"), x: 0.33, y: 0.66, width: 0.34, height: 0.06 }
+        { btn: document.getElementById("redbudBtn"), x: 0.30, y: 0.56, width: 0.40, height: 0.06 },
+        { btn: document.getElementById("redbayBtn"), x: 0.31, y: 0.68, width: 0.38, height: 0.06 },
+        { btn: document.getElementById("persimmonBtn"), x: 0.24, y: 0.80, width: 0.52, height: 0.06 },
+        { btn: document.getElementById("blackgumBtn"), x: 0.26, y: 0.92, width: 0.48, height: 0.06 }
       ],
       magnolias: [
         { btn: document.getElementById("southernMagnoliaBtn"), x: 0.20, y: 0.20, width: 0.60, height: 0.07 },
@@ -839,6 +857,15 @@
       ],
       pawpaw: [
         { btn: document.getElementById("pawpawImageBtn"), x: 0.14, y: 0.85, width: 0.72, height: 0.10 }
+      ],
+      redbud: [
+        { btn: document.getElementById("redbudImageBtn"), x: 0.14, y: 0.85, width: 0.72, height: 0.10 }
+      ],
+      persimmon: [
+        { btn: document.getElementById("persimmonImageBtn"), x: 0.14, y: 0.85, width: 0.72, height: 0.10 }
+      ],
+      blackgum: [
+        { btn: document.getElementById("blackgumImageBtn"), x: 0.14, y: 0.85, width: 0.72, height: 0.10 }
       ],
       bigleafMagnolia: [
         { btn: document.getElementById("bigleafMagnoliaImageBtn"), x: 0.14, y: 0.85, width: 0.72, height: 0.10 }
@@ -1215,7 +1242,13 @@
       document.getElementById("alternateSimpleToothlessBtn").style.display = pageKey === "alternateSimple" ? "block" : "none";
       document.getElementById("pawpawBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
       document.getElementById("magnoliasBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
+      document.getElementById("redbudBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
+      document.getElementById("persimmonBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
+      document.getElementById("blackgumBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
       document.getElementById("pawpawImageBtn").style.display = pageKey === "pawpaw" ? "block" : "none";
+      document.getElementById("redbudImageBtn").style.display = pageKey === "redbud" ? "block" : "none";
+      document.getElementById("persimmonImageBtn").style.display = pageKey === "persimmon" ? "block" : "none";
+      document.getElementById("blackgumImageBtn").style.display = pageKey === "blackgum" ? "block" : "none";
       document.getElementById("bigleafMagnoliaBtn").style.display = pageKey === "magnolias" ? "block" : "none";
       document.getElementById("fraserMagnoliaBtn").style.display = pageKey === "magnolias" ? "block" : "none";
       document.getElementById("umbrellaMagnoliaBtn").style.display = pageKey === "magnolias" ? "block" : "none";
@@ -1334,6 +1367,12 @@
         showIntroImage("mountainMaple", "treeid/mountain_maple.jpg", "Mountain maple");
       } else if (currentIntroPage === "pawpawImage") {
         showIntroImage("pawpaw", "treeid/pawpaw.jpg", "Pawpaw");
+      } else if (currentIntroPage === "redbudImage") {
+        showIntroImage("redbud", "treeid/redbud.jpg", "Redbud");
+      } else if (currentIntroPage === "persimmonImage") {
+        showIntroImage("persimmon", "treeid/persimmon.jpg", "Persimmon");
+      } else if (currentIntroPage === "blackgumImage") {
+        showIntroImage("blackgum", "treeid/blackgum.jpg", "Blackgum");
       } else if (currentIntroPage === "bigleafMagnoliaImage") {
         showIntroImage("bigleafMagnolia", "treeid/bigleaf_magnolia.jpg", "Bigleaf magnolia");
       } else if (currentIntroPage === "fraserMagnoliaImage") {
@@ -1410,7 +1449,7 @@
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "dogwoods") {
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
-      } else if (currentIntroPage === "pawpaw") {
+      } else if (currentIntroPage === "pawpaw" || currentIntroPage === "redbud" || currentIntroPage === "persimmon" || currentIntroPage === "blackgum") {
         showIntroImage("alternateSimpleToothless", "treeid/alternate_simple_toothless.jpg", "Trees with alternate simple toothless leaves");
       } else if (currentIntroPage === "magnolias") {
         showIntroImage("alternateSimpleToothless", "treeid/alternate_simple_toothless.jpg", "Trees with alternate simple toothless leaves");
@@ -1652,12 +1691,36 @@
       showIntroImage("pawpaw", "treeid/pawpaw.jpg", "Pawpaw");
     });
 
+    document.getElementById("redbudBtn").addEventListener("click", () => {
+      showIntroImage("redbud", "treeid/redbud.jpg", "Redbud");
+    });
+
+    document.getElementById("persimmonBtn").addEventListener("click", () => {
+      showIntroImage("persimmon", "treeid/persimmon.jpg", "Persimmon");
+    });
+
+    document.getElementById("blackgumBtn").addEventListener("click", () => {
+      showIntroImage("blackgum", "treeid/blackgum.jpg", "Blackgum");
+    });
+
     document.getElementById("magnoliasBtn").addEventListener("click", () => {
       showIntroImage("magnolias", "treeid/magnolias.jpg", "Magnolias");
     });
 
     document.getElementById("pawpawImageBtn").addEventListener("click", () => {
       showIntroImage("pawpawImage", "treeid/pawpaw.png", "Pawpaw detail image");
+    });
+
+    document.getElementById("redbudImageBtn").addEventListener("click", () => {
+      showIntroImage("redbudImage", "treeid/redbud.png", "Redbud detail image");
+    });
+
+    document.getElementById("persimmonImageBtn").addEventListener("click", () => {
+      showIntroImage("persimmonImage", "treeid/persimmon.png", "Persimmon detail image");
+    });
+
+    document.getElementById("blackgumImageBtn").addEventListener("click", () => {
+      showIntroImage("blackgumImage", "treeid/blackgum.png", "Blackgum detail image");
     });
 
     document.getElementById("bigleafMagnoliaBtn").addEventListener("click", () => {

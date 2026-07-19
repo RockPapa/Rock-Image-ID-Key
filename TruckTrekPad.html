@@ -563,7 +563,7 @@ THREE.TextureLoader.prototype.load = function(url, onLoad, onProgress, onError){
 const HIGH_ZONE_TEX_FILE = "rock_albedo.png";
 const HIGH_ZONE_TEX_REPEAT = 14;
 const HIGH_ZONE_BLEND_BAND = 2.0;
-const LOW_ZONE_TEX_FILE = "grass_albedo.jpg";
+const LOW_ZONE_TEX_FILE = "grass_albedo.webp";
 const LOW_ZONE_TEX_REPEAT = 22;
 const LOW_ZONE_BLEND_BAND = 1.5;
 const LOW_ZONE_END_FRAC = 0.55;
@@ -574,9 +574,9 @@ const LOW_ZONE_RESTICK_GRACE_SEC = 5.0;
 const LOW_ZONE_STUCK_ENABLE = false; // paused for later reinstatement
 
 const TEX_DIR = ASSET_BASE_DIR;
-const CAVE_EXTERIOR_TEXTURE_FILE = "Cave_art.png";
-const CAVE_INTERIOR_TEXTURE_FILE = "Cave_art.png";
-const CAVE_INTERIOR_TEXTURE_ASPECT = 1414.0 / 799.0; // Cave_art.png width / height
+const CAVE_EXTERIOR_TEXTURE_FILE = "Cave_art.webp";
+const CAVE_INTERIOR_TEXTURE_FILE = "Cave_art.webp";
+const CAVE_INTERIOR_TEXTURE_ASPECT = 1414.0 / 799.0; // Cave_art.webp width / height
 const CAVE_INTERIOR_TILE_WIDTH_FT = 8.0; // tile more often to prevent blur
 
 
@@ -618,7 +618,7 @@ const PLAZA_TRUCK_RESTRICT_COOLDOWN_MS = 1200;
 
 // ----- TRUCK AVATAR (Phase 1) -----
 const TRUCK_AVATAR_ENABLE = true;
-const TRUCK_FILE = "blue_truck.png";
+const TRUCK_FILE = "blue_truck.webp";
 const TRUCK_AVATAR_CACHE_BUST = Date.now();
 const TRUCK_LEFT_FILE = TRUCK_FILE;
 const TRUCK_RIGHT_FILE = TRUCK_FILE;
@@ -626,12 +626,12 @@ const priorityTruckPreloadImage = new Image();
 priorityTruckPreloadImage.decoding = "async";
 priorityTruckPreloadImage.fetchPriority = "high";
 priorityTruckPreloadImage.src = resolveAssetUrl(TEX_DIR + TRUCK_FILE + "?v=" + TRUCK_AVATAR_CACHE_BUST);
-const LEGGOMAN_SPRITESHEET_FILE = "boy.jpg";
+const LEGGOMAN_SPRITESHEET_FILE = "boy.webp";
 const LEGGOMAN_SPRITESHEET_COLS = 5;
 const LEGGOMAN_SPRITESHEET_ROWS = 3;
-const LEGGOMAN_FILES = ["lg1.png", "lg2.png", "lg3.png", "lg4.png", "lg5.png", "lg6.png", "lg7.png", "lg8.png", "lg9.png"]; // fallback only
+const LEGGOMAN_FILES = ["lg1.webp", "lg2.webp", "lg3.webp", "lg4.webp", "lg5.webp", "lg6.webp", "lg7.webp", "lg8.webp", "lg9.webp"]; // fallback only
 const LEGGOMAN_IDLE_FRAME_IDX = 11; // row 3, second frame (front-facing)
-const LEGGOMAN_IDLE_STAND_FILE = "boy copy.jpg"; // custom still frame when avatar is not moving
+const LEGGOMAN_IDLE_STAND_FILE = "boy copy.webp"; // custom still frame when avatar is not moving
 const LEGGOMAN_USE_IDLE_STAND_FILE = false;
 const LEGGOMAN_RUN_UP_SEQ = [0, 1, 2, 3, 4];
 const LEGGOMAN_RUN_SIDE_SEQ = [5, 6, 7, 8, 9];
@@ -642,30 +642,30 @@ const LEGGOMAN_KEY_SAT_MAX = 0.20;  // keep colorful avatar pixels intact
 const LEGGOMAN_FRAME_SEC = 0.09;
 const LEGGOMAN_HEIGHT_SCALE = 1.375; // +25% from 1.10 for larger sprite-sheet animation
 const LEGGOMAN_WIDTH_SCALE = 0.596288; // +25% from 0.4770304 for larger sprite-sheet animation
-const TRUCK2_FILE = "truck2.png";
+const TRUCK2_FILE = "truck2.webp";
 const TRUCK2_LEFT_FILE = TRUCK2_FILE;
 const TRUCK2_RIGHT_FILE = TRUCK2_FILE;
 const TRUCK3_FILE = "truck3.png";
-const CYBER_TRUCK_FILE = "cyber.png";
+const CYBER_TRUCK_FILE = "cyber.webp";
 const CYBER_TRUCK_LEFT_FILE = CYBER_TRUCK_FILE;
 const CYBER_TRUCK_RIGHT_FILE = CYBER_TRUCK_FILE;
-const MAZ_VEHICLE_BASE_FILE = "maz_back.png";
+const MAZ_VEHICLE_BASE_FILE = "maz_back.webp";
 const MAZ_VEHICLE_LEFT_FILE = MAZ_VEHICLE_BASE_FILE;
 const MAZ_VEHICLE_RIGHT_FILE = MAZ_VEHICLE_BASE_FILE;
 const POST_ALIEN_TRANSPORT_FILE = MAZ_VEHICLE_BASE_FILE;
-const ORANGE_TRUCK_BASE_FILE = "orange_truck.png";
+const ORANGE_TRUCK_BASE_FILE = "orange_truck.webp";
 const ORANGE_TRUCK_LEFT_FILE = ORANGE_TRUCK_BASE_FILE;
 const ORANGE_TRUCK_RIGHT_FILE = ORANGE_TRUCK_BASE_FILE;
 const ORANGE_TRUCK_HALF_LEFT_FILE = ORANGE_TRUCK_BASE_FILE;
 const ORANGE_TRUCK_HALF_RIGHT_FILE = ORANGE_TRUCK_BASE_FILE;
 const ORANGE_TRUCK_LEGACY_FILE = "orange_truck 2.png";
-const WHITE_TRUCK_BASE_FILE = "white_truck.png";
+const WHITE_TRUCK_BASE_FILE = "white_truck.webp";
 const WHITE_TRUCK_LEFT_FILE = WHITE_TRUCK_BASE_FILE;
 const WHITE_TRUCK_RIGHT_FILE = WHITE_TRUCK_BASE_FILE;
-const BIGFOOT_BASE_FILE = "bigfoot.png";
+const BIGFOOT_BASE_FILE = "bigfoot.webp";
 const BIGFOOT_LEFT_FILE = BIGFOOT_BASE_FILE;
 const BIGFOOT_RIGHT_FILE = BIGFOOT_BASE_FILE;
-const BIG_TRUCK_BASE_FILE = "big_truck.png";
+const BIG_TRUCK_BASE_FILE = "big_truck.webp";
 const BIG_TRUCK_LEFT_FILE = BIG_TRUCK_BASE_FILE;
 const BIG_TRUCK_RIGHT_FILE = BIG_TRUCK_BASE_FILE;
 const BIG_TRUCK_SCALE_MULT = 0.95; // reduce Big Truck avatar size by 5%
@@ -703,7 +703,7 @@ const PUEBLO_TEST_CUBE_HEIGHT_TRUCK_LENGTHS = 15; // total height set to 50ft (1
 const PUEBLO_TEST_CUBE_W = TRUCK_W * PUEBLO_TEST_CUBE_WIDTH_TRUCK_LENGTHS;
 const PUEBLO_TEST_CUBE_D = TRUCK_W * PUEBLO_TEST_CUBE_DEPTH_TRUCK_LENGTHS;
 const PUEBLO_TEST_CUBE_H = TRUCK_W * PUEBLO_TEST_CUBE_HEIGHT_TRUCK_LENGTHS;
-const PUEBLO_CUBE_GATE_FILE = "gate.png";
+const PUEBLO_CUBE_GATE_FILE = "gate.webp";
 const PUEBLO_CUBE_GATE_PANEL_WIDTH_PCT = 0.30;
 const PUEBLO_CUBE_GATE_PANEL_HEIGHT_PCT = 0.44;
 const PUEBLO_CUBE_GATE_PANEL_LIFT_FT = 24.0;
@@ -729,7 +729,7 @@ const PUEBLO_PLAN_WALL_HALF_SIDE_FT = PUEBLO_PLAN_WALL_SQUARE_SIDE_FT * 0.5;
 const PUEBLO_PLAN_WALL_ENTRANCE_WIDTH_FT = 16.0;
 const PUEBLO_PLAN_WALL_ENTRANCE_HALF_FT = PUEBLO_PLAN_WALL_ENTRANCE_WIDTH_FT * 0.5;
 const PUEBLO_PLAN_WALL_OPPOSITE_ENTRANCE_SEGMENT_INDEX = 0;
-const PUEBLO_PLAN_WALL_OPPOSITE_TEXTURE_FILE = "fountain.png";
+const PUEBLO_PLAN_WALL_OPPOSITE_TEXTURE_FILE = "fountain.webp";
 const PUEBLO_CENTER_FOUNTAIN_ENABLE = true;
 const PUEBLO_CENTER_FOUNTAIN_BACK_OFFSET_FT = 30.0;
 const PUEBLO_FOUNTAIN_CASCADE_RADIUS_FT = 0.60; // +100% from 0.30ft
@@ -763,7 +763,7 @@ const PUEBLO_GUIDE_GODDESS_OFFSET_FT = 9.0;
 const PUEBLO_GUIDE_GODDESS_LIFT_FT = 12.0;
 const PUEBLO_GUIDE_GODDESS_DURATION_SEC = 8.0;
 const PUEBLO_ENTRANCE_POPLARS_ENABLE = false;
-const PUEBLO_ENTRANCE_POPLAR_FILE = "poplar.png";
+const PUEBLO_ENTRANCE_POPLAR_FILE = "poplar.webp";
 const PUEBLO_ENTRANCE_POPLAR_WIDTH_FT = 12.5; // +25%
 const PUEBLO_ENTRANCE_POPLAR_HEIGHT_FT = 30.0; // +25%
 const PUEBLO_ENTRANCE_POPLAR_SIDE_OFFSET_FT = 3.0;
@@ -773,14 +773,14 @@ const PUEBLO_PLAZA_TREE_CLEAR_MARGIN_FT = 4.0;
 const PUEBLO_ROMAN_STATUE_ENABLE = false; // replaced by perimeter statue sprites
 const PUEBLO_ROMAN_STATUE_WALL_OFFSET_FT = 6.0;
 const PUEBLO_PLAZA_STATUES_ENABLE = true;
-const PUEBLO_PLAZA_STATUE_FILE = "statue.png";
+const PUEBLO_PLAZA_STATUE_FILE = "statue.webp";
 const PUEBLO_PLAZA_STATUE_WIDTH_FT = 8.0;
 const PUEBLO_PLAZA_STATUE_HEIGHT_FT = 18.0;
 const PUEBLO_PLAZA_STATUE_INTERVAL_FT = 18.0;
 const PUEBLO_PLAZA_STATUE_INSET_FT = 4.0;
 const PUEBLO_GUIDE_WARRIOR_TINT_HEX = 0xffffff;
 const PUEBLO_CORNER_CRYSTALS_ENABLE = true;
-const PUEBLO_CORNER_GODDESS_FILE = "goddess.png";
+const PUEBLO_CORNER_GODDESS_FILE = "goddess.webp";
 const PUEBLO_CORNER_GODDESS_WIDTH_FT = 7.0; // -50%
 const PUEBLO_CORNER_GODDESS_HEIGHT_FT = 13.0; // -50%
 const PUEBLO_PLAN_WALL_SEGMENTS_FT = [
@@ -889,7 +889,7 @@ const TRUCK_CHROMAKEY_ENABLE = true;
 const TRUCK_KEY_COLOR = { r: 0.76, g: 0.89, b: 0.74 }; // pickup.png green-screen background
 const TRUCK_KEY_TOL = 0.32;   // tuned to remove pickup.png green background cleanly
 const TRUCK_KEY_SOFT = 0.08;  // edge softness (0.02–0.12)
-const BUFF_MARKER_FILE = "tree7.png";
+const BUFF_MARKER_FILE = "tree7.webp";
 const BUFF_MARKER_ENABLE = false; // debug marker system (set true only when testing)
 const BUFF_MARKER_OFFSETS = [
   { x: -14.0, z: -42.0 },
@@ -898,21 +898,21 @@ const BUFF_MARKER_OFFSETS = [
 ];
 const BUFF_MARKER_SIZE = { w: 30.0, h: 42.0 };
 const BUFF_MARKER_LIFT = 0.0;
-const LAKE_BUSH_FILE = "bush.png";
+const LAKE_BUSH_FILE = "bush.webp";
 const LAKE_BUSH_COUNT = IPAD_SKIP_LAKE_BUSHES ? 0 : 1500;
 const LAKE_BUSH_SIZE = { w: 6.5, h: 7.8 };
 const LAKE_BUSH_LIFT = 0.16128;
-const LOW_TREE_FILE = "tree1.png";
+const LOW_TREE_FILE = "tree1.webp";
 const LOW_TREE_COUNT = 0;
 const LOW_TREE_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE_LIFT = -0.06;
 const LOW_TREE_DROP_PCT = 0.05;
-const LOW_TREE3_FILE = "tree3.png";
+const LOW_TREE3_FILE = "tree3.webp";
 const LOW_TREE3_COUNT = 0;
 const LOW_TREE3_SIZE = { w: 14.0, h: 22.0 };
 const LOW_TREE3_LIFT = -0.06;
 const LOW_TREE3_DROP_PCT = 0.10;
-const MID_TREE7_FILE = "tree7.png";
+const MID_TREE7_FILE = "tree7.webp";
 const MID_TREE7_COUNT = 0;
 const MID_TREE7_SIZE = { w: 16.0, h: 24.0 };
 const MID_TREE7_LIFT = -0.06;
@@ -974,19 +974,19 @@ const TUNNEL_INTERIOR_FLOOR_LENGTH_SEGMENT_FT = 2.0;
 const TUNNEL_INTERIOR_FLOOR_THICKNESS_FT = 2.0;
 const TUNNEL_INTERIOR_FLOOR_OVERHANG_FT = 0.5;
 const TUNNEL_MOUTH_BOULDERS_ENABLE = true;
-const TUNNEL_MOUTH_BOULDER_FILE = "boulder.png";
+const TUNNEL_MOUTH_BOULDER_FILE = "boulder.webp";
 const TUNNEL_MOUTH_BOULDER_BASE_SIZE_FT = 9.0;
-const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.png";
+const TUNNEL_MOUTH_BOULDER2_FILE = "boulder2.webp";
 const TUNNEL_MOUTH_BOULDER2_COUNT = 8;
 const TUNNEL_MOUTH_TREES_ENABLE = false;
 const TUNNEL_MOUTH_TREE1_COUNT = 0;
 const TUNNEL_MOUTH_TREE3_COUNT = 0;
 const TUNNEL_MOUTH_SIGN_ENABLE = true;
-const TUNNEL_MOUTH_SIGN_FILE = "sign.png";
+const TUNNEL_MOUTH_SIGN_FILE = "sign.webp";
 const TUNNEL_MOUTH_SIGN_WIDTH_FT = 14.0;
 const TUNNEL_MOUTH_SIGN_HEIGHT_FT = 8.0;
 const TUNNEL_EXIT_GODDESS_ENABLE = false;
-const TUNNEL_EXIT_GODDESS_FILE = "copter.png";
+const TUNNEL_EXIT_GODDESS_FILE = "copter.webp";
 const TUNNEL_EXIT_GODDESS_WIDTH_FT = 18.0;
 const TUNNEL_EXIT_GODDESS_HEIGHT_FT = 7.744;
 const TUNNEL_EXIT_GODDESS_DEPTH_FROM_ENTRANCE_FT = 50.0;
@@ -998,7 +998,7 @@ const TUNNEL_EXIT_GODDESS_VOICE_GAIN = 2.0; // +100% boost via WebAudio gain sta
 const TUNNEL_EXIT_GODDESS_VOICE_TAIL_TRIM_SEC = 2.5; // trim trailing silence
 const GODDESS_TO_COPTER_MARKER_DIST_FT = 0.0;
 const TUNNEL_EXIT_COPTER_MARKER_OUTSIDE_FT = 28.0;
-const GODDESS_COPTER_MARKER_FILE = "copter.png";
+const GODDESS_COPTER_MARKER_FILE = "copter.webp";
 const GODDESS_COPTER_MARKER_WIDTH_FT = 18.0;
 const GODDESS_COPTER_MARKER_HEIGHT_FT = 7.744;
 const GODDESS_COPTER_MARKER_COLLISION_RADIUS_FT = 12.0;
@@ -1010,7 +1010,7 @@ const GODDESS_COPTER_BEACON_ARROW_SIZE_FT = 28.0;
 const GODDESS_COPTER_BEACON_BOB_FT = 5.0;
 
 const TUNNEL_REAPER_ENABLE = true;
-const TUNNEL_REAPER_FILE = "reaper.png";
+const TUNNEL_REAPER_FILE = "reaper.webp";
 const TUNNEL_REAPER_START_FT = 200.0;
 const TUNNEL_REAPER_SPACING_FT = 25.0;
 const TUNNEL_REAPER_SPAN_FT = 100.0;
@@ -1026,11 +1026,11 @@ const TUNNEL_REAPER_MAD_AUDIO_FILE = "reaper_mad.mp3";
 const TUNNEL_REAPER_MAD_AUDIO_VOL = 0.85;
 const CAVE_WALL_SKID_AUDIO_FILE = "skid.mp3";
 const CAVE_WALL_SKID_AUDIO_VOL = 0.85;
-const TUNNEL_REAPER_BOSS_FILE = "reaper2.png";
+const TUNNEL_REAPER_BOSS_FILE = "reaper2.webp";
 const TUNNEL_REAPER_BOSS_2_ENABLE = false;
-const TUNNEL_REAPER_BOSS_2_FILE = "reaper3.png";
-const TUNNEL_REAPER_BOSS_3_FILE = "reaper4.png";
-const TUNNEL_REAPER_BOSS_4_FILE = "reaper5.png";
+const TUNNEL_REAPER_BOSS_2_FILE = "reaper3.webp";
+const TUNNEL_REAPER_BOSS_3_FILE = "reaper4.webp";
+const TUNNEL_REAPER_BOSS_4_FILE = "reaper5.webp";
 const TUNNEL_REAPER_BOSS_WIDTH_FT = 10.0;
 const TUNNEL_REAPER_BOSS_HEIGHT_FT = 12.0;
 const TUNNEL_REAPER_BOSS_HITS_TO_KILL = 4;
@@ -1219,16 +1219,16 @@ const GREEN_FIRE_RING_FLAME_WIDTH_FT = 16.0;
 const GREEN_FIRE_RING_FLAME_HEIGHT_FT = 24.0;
 const GREEN_FIRE_RING_FLAME_LIFT_FT = 0.0;
 const GREEN_BIGFOOT_RING_ENABLE = true;
-const GREEN_BIGFOOT_RING_FILE = "yeti.png";
-const GREEN_BIGFOOT_PASS_THROUGH_FILE = "goddess2.png";
+const GREEN_BIGFOOT_RING_FILE = "yeti.webp";
+const GREEN_BIGFOOT_PASS_THROUGH_FILE = "goddess2.webp";
 const GREEN_BIGFOOT_RING_COUNT = 20;
 const GREEN_BIGFOOT_RING_DIAMETER_FT = 190.0;
 const GREEN_BIGFOOT_RING_WIDTH_FT = 25.2;
 const GREEN_BIGFOOT_RING_HEIGHT_FT = 30.6;
 const GREEN_BIGFOOT_RING_LIFT_FT = 0.0;
 const GREEN_FIRE_GATE_ENABLE = false;// removed small lit gate box per request
-const GREEN_FIRE_GATE_FILE = "gate.png";
-const GREEN_FIRE_GATE_STONE_FILE = "stone_wall.png";
+const GREEN_FIRE_GATE_FILE = "gate.webp";
+const GREEN_FIRE_GATE_STONE_FILE = "stone_wall.webp";
 const GREEN_FIRE_GATE_WIDTH_FT = 12.5;
 const GREEN_FIRE_GATE_DEPTH_FT = 10.0;
 const GREEN_FIRE_GATE_HEIGHT_FT = 18.75;
@@ -1257,7 +1257,7 @@ const GREEN_BRIDE_CHAMBER_DEPTH_FT = 25.0;
 const GREEN_BRIDE_CHAMBER_HEIGHT_FT = 18.75; // +50%
 const GREEN_BRIDE_CHAMBER_WALL_THICKNESS_FT = 1.2;
 const GREEN_BRIDE_CHAMBER_SINK_FT = 6.2; // sink chamber 3ft deeper
-const GREEN_BRIDE_CHAMBER_WALL_FILE = "stone_wall.png";
+const GREEN_BRIDE_CHAMBER_WALL_FILE = "stone_wall.webp";
 const GREEN_BRIDE_CHAMBER_LIGHT_INTENSITY = 40.0;
 const GREEN_BRIDE_CHAMBER_EXTERIOR_LIGHT_INTENSITY = 92.0;
 const GREEN_BRIDE_CHAMBER_EXTERIOR_LIGHT_RANGE_FT = 190.0;
@@ -1271,13 +1271,13 @@ const GREEN_BRIDE_CHAMBER_ACCENT_FIRE_WIDTH_FT = 18.0;
 const GREEN_BRIDE_CHAMBER_ACCENT_FIRE_HEIGHT_FT = 22.0;
 const BLUE_ORANGE_ROUTE_FIGURES_ENABLE = true;
 const BLUE_ORANGE_ROUTE_FIGURE_FILES = [
-  "dwarf.png",
-  "chip_and_dale.png",
-  "lg1.png",
-  "pig_bride.png",
-  "raponsal.png",
-  "snow_white.png",
-  "tom_and_jerrt.png"
+  "dwarf.webp",
+  "chip_and_dale.webp",
+  "lg1.webp",
+  "pig_bride.webp",
+  "raponsal.webp",
+  "snow_white.webp",
+  "tom_and_jerrt.webp"
 ];
 const BLUE_ORANGE_ROUTE_FIGURE_SPACING_FT = 180.0;
 const BLUE_ORANGE_ROUTE_FIGURE_SIDE_OFFSET_MIN_FT = 60.0;
@@ -1286,8 +1286,8 @@ const BLUE_ORANGE_ROUTE_FIGURE_HEIGHT_MIN_FT = 18.0;
 const BLUE_ORANGE_ROUTE_FIGURE_HEIGHT_MAX_FT = 30.0;
 const BLUE_ORANGE_ROUTE_FIGURE_GROUND_LIFT_FT = 0.4;
 
-const GREEN_BRIDE_FILE = "pig_bride.png";
-const GREEN_BRIDE_FALLBACK_FILE = "goddess2.png";
+const GREEN_BRIDE_FILE = "pig_bride.webp";
+const GREEN_BRIDE_FALLBACK_FILE = "goddess2.webp";
 const GREEN_BRIDE_WIDTH_FT = 14.0;
 const GREEN_BRIDE_HEIGHT_FT = 20.0;
 const GREEN_BRIDE_ENTRY_PIG_FILE = "";
@@ -3008,7 +3008,7 @@ function placePuebloTestCubeNearSpawn(spawnX, spawnZ){
   if(!puebloTestCube){    const geo = new THREE.BoxGeometry(PUEBLO_TEST_CUBE_W, PUEBLO_TEST_CUBE_H, PUEBLO_TEST_CUBE_D);
 
     const stoneTex = texLoader.load(
-      TEX_DIR + "stone_wall.png",
+      TEX_DIR + "stone_wall.webp",
       (t)=>{
         t.colorSpace = THREE.SRGBColorSpace;
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -3018,7 +3018,7 @@ function placePuebloTestCubeNearSpawn(spawnX, spawnZ){
       },
       undefined,
       ()=>{
-        hudLine("⚠️ Missing cube wall texture: <code>stone_wall.png</code> (using fallback color).");
+        hudLine("⚠️ Missing cube wall texture: <code>stone_wall.webp</code> (using fallback color).");
       }
     );
     stoneTex.colorSpace = THREE.SRGBColorSpace;
@@ -6248,7 +6248,7 @@ function ensurePuebloPlanWalls(){
 
     if(!puebloPlanWallTexBase){
       puebloPlanWallTexBase = texLoader.load(
-        TEX_DIR + "facade1.png",
+        TEX_DIR + "facade1.webp",
         (t)=>{
           t.colorSpace = THREE.SRGBColorSpace;
           t.wrapS = t.wrapT = THREE.RepeatWrapping;
@@ -6256,7 +6256,7 @@ function ensurePuebloPlanWalls(){
         undefined,
         ()=>{
           if(!puebloPlanWallTexWarned){
-            hudLine("⚠️ Missing wall texture: <code>facade1.png</code> (using fallback color).");
+            hudLine("⚠️ Missing wall texture: <code>facade1.webp</code> (using fallback color).");
             puebloPlanWallTexWarned = true;
           }
         }
@@ -7519,12 +7519,12 @@ function createTargets(){
     pts.push({x,z});
   }
 
-// build invisible hitbox cubes and attach alein.png visual to each
+// build invisible hitbox cubes and attach alein.webp visual to each
 const targetTex = new THREE.TextureLoader().load(
-  TEX_DIR + "alein.png",
+  TEX_DIR + "alein.webp",
   (t)=>{ t.colorSpace = THREE.SRGBColorSpace; },
   undefined,
-  ()=> hudLine("❌ Missing <code>alein.png</code>")
+  ()=> hudLine("❌ Missing <code>alein.webp</code>")
 );
 
 const targetHitboxSize = TARGET_SIZE * TARGET_HITBOX_SCALE;
@@ -7824,10 +7824,10 @@ function registerTargetHit(targetIndex){
 /* =========================================================
    😈 PASSIVE BAD GUY (NO AI, NO SHOOTING)
    - Billboard sprite that just stands there
-   - Uses images/bad_guy.png
+   - Uses images/bad_guy.webp
    ========================================================= */
 const BAD_GUY_ENABLE = true;
-const BAD_GUY_FILE = "bad_guy.png";
+const BAD_GUY_FILE = "bad_guy.webp";
 const BAD_GUY_SCALE = 3.6;
 const BAD_GUY_TURN_SPEED = 1.2; // radians/sec (smaller = slower turn)
 const BAD_GUY_POS = { x: 10, z: -70 };
@@ -7858,7 +7858,7 @@ const TANK_ATTACK_DURATION_SEC = 18.0;
 const TANK_PASSED_KILL_LENGTHS = 50.0;
 
 const FIREBALL_ENABLE = false;
-const FIREBALL_FILE = "fireball.png";
+const FIREBALL_FILE = "fireball.webp";
 const FIREBALL_SCALE = 3.4;
 const FIREBALL_MOVE_SPEED = 11.76; // +12% speed
 const FIREBALL_CRASH_RADIUS = 1.1;
@@ -7889,10 +7889,10 @@ let fireballSideSign = 1;
 /* =========================================================
    🚁 RANDOM FLYING COPTER
    - Billboard sprite that wanders around the player
-   - Uses images/copter.png
+   - Uses images/copter.webp
    ========================================================= */
 const COPTER_ENABLE = false;
-const COPTER_FILE = "copter.png";
+const COPTER_FILE = "copter.webp";
 const COPTER_SCALE = 3.848; // +30%
 const COPTER_ATTACK_ABOVE_TRUCK = 6.0; // maintain attack height above pickup/truck
 const COPTER_VIEW_FWD = 6.0; // slightly ahead so it stays visible while flying over pickup
@@ -7938,7 +7938,7 @@ const COPTER_SHOT_DAMAGE_PCT = 5.0;
 const COPTER_HIT_STREAK_FOR_FIRE = 2; // reduced hit streak needed for burn trigger
 const TRUCK_FIRE_FRAME_SEC = 0.10;
 const TRUCK_FIRE_DURATION_SEC = 6.0;
-const TRUCK_FIRE_FILES = ["fire1.png", "fire2.png", "fire3.png", "fire4.png", "fire5.png"];
+const TRUCK_FIRE_FILES = ["fire1.webp", "fire2.webp", "fire3.webp", "fire4.webp", "fire5.webp"];
 let copterInViewPrev = false;
 let copterShotsLeft = 0;
 let copterShotTimer = 0.0;
@@ -11826,7 +11826,7 @@ function preloadLeggomanTextures(){
       const frameW = Math.floor((img?.width || 0) / cols);
       const frameH = Math.floor((img?.height || 0) / rows);
       if(!img || frameW < 2 || frameH < 2){
-        hudLine("⚠️ Invalid leggoman sprite sheet. Falling back to <code>lg1.png-lg9.png</code>.");
+        hudLine("⚠️ Invalid leggoman sprite sheet. Falling back to <code>lg1.webp-lg9.webp</code>.");
         fallbackLoad();
         return;
       }
@@ -11880,7 +11880,7 @@ function preloadLeggomanTextures(){
     },
     undefined,
     ()=>{
-      hudLine("⚠️ Missing leggoman sprite sheet (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code>). Falling back to <code>lg1.png-lg9.png</code>.");
+      hudLine("⚠️ Missing leggoman sprite sheet (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code>). Falling back to <code>lg1.webp-lg9.webp</code>.");
       fallbackLoad();
     }
   );
@@ -12142,7 +12142,7 @@ function detachBurningTruckAndSwitchToLeggoman(){
   if(!truckPlane) return false;
   const first = leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX] || leggomanTextures[0];
   if(!first){
-    hudLine("⚠️ Leggoman frames missing/loading (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code> fallback <code>lg1.png-lg9.png</code>). Staying on pickup.");
+    hudLine("⚠️ Leggoman frames missing/loading (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code> fallback <code>lg1.webp-lg9.webp</code>). Staying on pickup.");
     return false;
   }
 
@@ -12186,7 +12186,7 @@ function toggleAvatarMode(){
   const switchToLeggomanAnytime = ()=>{
     const first = leggomanTextures[LEGGOMAN_IDLE_FRAME_IDX] || leggomanTextures[0];
     if(!first){
-      hudLine("⚠️ Leggoman frames missing/loading (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code> fallback <code>lg1.png-lg9.png</code>). Staying on pickup.");
+      hudLine("⚠️ Leggoman frames missing/loading (<code>" + LEGGOMAN_SPRITESHEET_FILE + "</code> fallback <code>lg1.webp-lg9.webp</code>). Staying on pickup.");
       return false;
     }
     avatarMode = "leggoman";

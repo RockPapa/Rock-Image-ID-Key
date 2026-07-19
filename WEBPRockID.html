@@ -26,9 +26,51 @@ html, body {
   background: #000;
 }
 
+#introScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+
+#introScreen[hidden] {
+  display: none;
+}
+
+#introStart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+#introStart img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
   </style>
 </head>
 <body>
+  <div id="introScreen">
+    <button id="introStart" type="button" aria-label="Let's go to the Rock Image ID Key">
+      <img src="images/intro-image.webp" alt="Welcome to the Rock Image ID Key. Tap Let's Go to begin.">
+    </button>
+  </div>
   <iframe id="pageFrame" title="Rock Image ID Key" allow="fullscreen"></iframe>
   <noscript>This application requires JavaScript.</noscript>
   <script>
@@ -42,6 +84,8 @@ window.ROCK_PAGES = {"Amphibolite.html":"<!DOCTYPE html>\n<html lang=\"en\">\n<h
   const START_PAGE = "FourChoices.html";
   const pages = window.ROCK_PAGES;
   const frame = document.getElementById("pageFrame");
+  const introScreen = document.getElementById("introScreen");
+  const introStart = document.getElementById("introStart");
   let currentPage = null;
 
   function normalizePage(value) {
@@ -100,8 +144,19 @@ window.ROCK_PAGES = {"Amphibolite.html":"<!DOCTYPE html>\n<html lang=\"en\">\n<h
     }
   });
 
-  window.addEventListener("popstate", () => displayPage(pageFromHash(), "none"));
-  displayPage(pageFromHash(), location.hash ? "none" : "replace");
+  function startApp() {
+    introScreen.hidden = true;
+    displayPage(START_PAGE, "replace");
+  }
+
+  introStart.addEventListener("click", startApp);
+
+  window.addEventListener("popstate", () => {
+    introScreen.hidden = true;
+    displayPage(pageFromHash(), "none");
+  });
+
+  document.title = "Rock Image ID Key";
 })();
 
   </script>

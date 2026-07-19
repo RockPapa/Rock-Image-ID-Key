@@ -13897,23 +13897,30 @@ if(joyWrap){
   };
   const start = (ev)=>{
     if(!touchOn || !isLandscape()) return;
-    if(ev.pointerId != null && ev.pointerType && ev.pointerType !== "touch" && ev.pointerType !== "pen") return;
+    if(ev.pointerId != null && ev.isPrimary === false) return;
     unlockGameAudioFromGesture();
     joyActive = true;
-    if(ev.pointerId != null) joyPointerId = ev.pointerId;
-    const t = (ev.changedTouches && ev.changedTouches[0])
-      ? ev.changedTouches[0]
-      : ((ev.touches && ev.touches[0]) ? ev.touches[0] : ev);
-    if(t && t.identifier != null) joyTouchId = t.identifier;
+    const isTouchEvent = !!(ev.changedTouches || ev.touches);
+    if(!isTouchEvent && ev.pointerId != null){
+      joyPointerId = ev.pointerId;
+      joyTouchId = null;
+      try{ joyWrap.setPointerCapture(ev.pointerId); }catch(_e){}
+    }
+    const t = isTouchEvent
+      ? ((ev.changedTouches && ev.changedTouches[0]) || (ev.touches && ev.touches[0]))
+      : ev;
+    if(isTouchEvent && t && t.identifier != null) joyTouchId = t.identifier;
+    if(!t) return;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
   };
   const move = (ev)=>{
     if(!joyActive) return;
-    if(ev.pointerId != null && joyPointerId != null && ev.pointerId !== joyPointerId) return;
-    const t = (joyTouchId != null)
-      ? findJoyTouch(ev.touches)
-      : ((ev.touches && ev.touches[0]) ? ev.touches[0] : ev);
+    const isTouchEvent = !!ev.touches;
+    if(!isTouchEvent && ev.pointerId != null && joyPointerId != null && ev.pointerId !== joyPointerId) return;
+    const t = isTouchEvent
+      ? ((joyTouchId != null) ? findJoyTouch(ev.touches) : ev.touches[0])
+      : ev;
     if(!t) return;
     updateJoystickFromClient(t.clientX, t.clientY);
     ev.preventDefault();
@@ -13921,8 +13928,9 @@ if(joyWrap){
   const end = (ev)=>{
     if(ev){
       ev.preventDefault();
-      if(ev.pointerId != null && joyPointerId != null && ev.pointerId !== joyPointerId) return;
-      if(joyTouchId != null){
+      const isTouchEvent = !!(ev.changedTouches || ev.touches);
+      if(!isTouchEvent && ev.pointerId != null && joyPointerId != null && ev.pointerId !== joyPointerId) return;
+      if(isTouchEvent && joyTouchId != null){
         let endedJoyTouch = false;
         if(ev.changedTouches){
           for(const t of ev.changedTouches){
@@ -13930,6 +13938,9 @@ if(joyWrap){
           }
         }
         if(!endedJoyTouch) return;
+      }
+      if(!isTouchEvent && ev.pointerId != null){
+        try{ joyWrap.releasePointerCapture(ev.pointerId); }catch(_e){}
       }
     }
     resetJoystick();

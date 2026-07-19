@@ -821,7 +821,7 @@ function releaseStartGate(){
    ========================= */
 const FIX = {
   HEIGHTMAP: "ipad_height_map.jpg",
-  ALBEDO: "grass_albedo.jpg",
+  ALBEDO: "grass_albedo.webp",
   NORMAL: "rock_normal.png",
   ROUGH:  "rock_roughness.png"
 };
@@ -832,7 +832,7 @@ const FIX = {
 // =========================
 // Copter avatar (2D overlay)
 // =========================
-const COPTER_FILE = "copter.png"; // must be inside the preloaded images folder
+const COPTER_FILE = "copter.webp"; // must be inside the preloaded images folder
 
 const COPTER_UI = {
   ENABLE: true,
@@ -1428,7 +1428,7 @@ const FIRE_COLLISION_RADIUS = FIRE.RADIUS * 0.88; // 12% smaller hit radius
 /* =========================
    SKY FIREBALL RAIN (after UFO dies)
    - Spawns images/fireball.png sprites high above the terrain that fall straight down
-   - Starts only after the mothership (ufo.png) is destroyed
+   - Starts only after the mothership (ufo.webp) is destroyed
    ========================= */
 const SKY_RAIN = {
   ENABLE: false,          // starts when UFO dies
@@ -1661,7 +1661,7 @@ const ALIEN_ATTACK = {
   RADIUS: 16.5,
   LIFE_SEC: 3.2,
   SPRITE_HIT_INSET_PX: 2,
-  // Use only the lower-middle body zone of copter.png (ignores transparent/top rotor area).
+  // Use only the lower-middle body zone of copter.webp (ignores transparent/top rotor area).
   SPRITE_HIT_LEFT_FRAC: 0.30,
   SPRITE_HIT_RIGHT_FRAC: 0.70,
   SPRITE_HIT_TOP_FRAC: 0.58,
@@ -1849,7 +1849,7 @@ function updateFireballs(dt){
       }
     }
 
-    // --- Fireball -> Rovers (fight.png) collision ---
+    // --- Fireball -> Rovers (fight.webp) collision ---
     // Locked until UFO objective is complete.
     if (ROVERS.ENABLE && _missionFlags.ufoDone && rovers.length){
       let hitRover = false;
@@ -1889,7 +1889,7 @@ function updateFireballs(dt){
 
         const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
 
-        // Big, forgiving hit radius (fight.png is huge compared to the ball)
+        // Big, forgiving hit radius (fight.webp is huge compared to the ball)
         const hitRR = FIRE_COLLISION_RADIUS + (ROVERS.HIT_RADIUS ?? 650);
 
         if(dist < hitRR){
@@ -1916,7 +1916,7 @@ function updateFireballs(dt){
       if(hitRover) continue; // fireball already removed, skip the rest of this tick
     }
 
-    // --- Fireball -> bad_guy.png collision (final boss) ---
+    // --- Fireball -> bad_guy.webp collision (final boss) ---
     if (_missionFlags.ufoDone && _missionFlags.roversDone && !_missionFlags.badGuyDone && badGuy && badGuy.mesh){
       const segA = b.prev || b.mesh.position;   // start of this frame
       const segB = b.mesh.position;             // end of this frame
@@ -2921,7 +2921,7 @@ function terrainMaxHeight(){
 }
 
 const AMO = {
-  FILE: "amo.png",
+  FILE: "amo.webp",
   CLEARANCE: 6,
   SPRITE_HEIGHT: 420,
   SCALE: 2.0,
@@ -2963,12 +2963,12 @@ function removeAmoSprite(){
 
 
 /* =========================
-   Random Rover (fight.png)
-   - Loads fight.png from the picked folder
+   Random Rover (fight.webp)
+   - Loads fight.webp from the picked folder
    - Spawns 1 (or more) rovers on the terrain
    - Moves slowly across the ground and respawns if it leaves bounds
    ========================= */
-const ROVER_FILE = "fight.png";
+const ROVER_FILE = "fight.webp";
 const ROVERS = {
   ENABLE: true,
   COUNT: 5,                 // how many rovers to keep alive
@@ -2981,7 +2981,7 @@ const ROVERS = {
   MIN_SPAWN_DIST: 2400,     // keep away from starting camera a bit
 
   // 🔴 TWEAK ZONE: rover combat
-  HP: 3,                    // 3 hits to kill each fight.png
+  HP: 3,                    // 3 hits to kill each fight.webp
   HIT_RADIUS: 897.6,         // +20% collision zone
   HIT_VERTICAL: 1610,       // vertical tolerance (bigger = easier hits)
   RESPAWN_DELAY: 2.5        // seconds a killed rover stays gone before respawn
@@ -3022,7 +3022,7 @@ let fireballAttackCooldownSec = 0;
 let fireballsDisabledAfterUfo = false;
 let fireballHitsOnPlayer = 0;
 
-const BAD_GUY_FILE = "bad_guy.png";
+const BAD_GUY_FILE = "bad_guy.webp";
 const BAD_GUY = {
   ENABLE: true,
   HP: 3,
@@ -3144,7 +3144,7 @@ function spawnBadGuyFromFolder(){
   if(!BAD_GUY.ENABLE || badGuy || badGuySpawning || !terrain || !hm01 || !camera) return;
   const f = findExact(BAD_GUY_FILE);
   if(!f){
-    setStatus("bad_guy.png missing; skipping final boss.");
+    setStatus("bad_guy.webp missing; skipping final boss.");
     _missionFlags.badGuyDone = 1;
     maybeCompleteAllObjectives();
     return;
@@ -3195,7 +3195,7 @@ function spawnBadGuyFromFolder(){
       flashMsg("KILL BAD GUY", 5);
     },
     undefined,
-    ()=>{ badGuySpawning = false; setStatus("Failed to load bad_guy.png."); }
+    ()=>{ badGuySpawning = false; setStatus("Failed to load bad_guy.webp."); }
   );
 }
 
@@ -3337,7 +3337,7 @@ function initRoversFromFolder(){
 
   const f = findExact(ROVER_FILE);
   if(!f){
-    console.warn("fight.png not found in picked folder");
+    console.warn("fight.webp not found in picked folder");
     return;
   }
   if(!terrain || !hm01) return;
@@ -3915,7 +3915,7 @@ function captureAmoSpotFromCamera(){
   const spot = clampToTerrainBounds({ x: gx, z: gz });
   amoManualTarget = { x: spot.x, z: spot.z, manualY: gy };
   updateAmoSpritePlacement();
-  setStatus("📍 amo.png locked to copter location", "Fly to another spot and press P again if you want to move it.");
+  setStatus("📍 amo.webp locked to copter location", "Fly to another spot and press P again if you want to move it.");
 }
 
 function updateAmmoPadPlacement(){
@@ -4072,12 +4072,12 @@ function toggleRough(){
 
 /* =========================
    ALIENS (multiple)
-   - Loads alein.png from the PICKED folder (folder-safe)
+   - Loads alein.webp from the PICKED folder (folder-safe)
    - Spawns 6 anchored alien sprites (1 original + 5 more) at random positions on the terrain
    - Each alien uses an invisible anchor block (stays put)
    - Fireball collision: boom.mp3 + remove just that alien
    ========================= */
-const ALIEN_FILE = "alein.png"; // (spelling per Dan) must be inside the picked images folder
+const ALIEN_FILE = "alein.webp"; // (spelling per Dan) must be inside the picked images folder
 
 const ALIENS = {
   ENABLE: true,
@@ -4269,7 +4269,7 @@ function initAliensFromFolder(){
     f.url,
     (tex)=>{
       tex.colorSpace = THREE.SRGBColorSpace;
-      tex.flipY = true;  // keeps alein.png upright on PlaneGeometry
+      tex.flipY = true;  // keeps alein.webp upright on PlaneGeometry
       tex.needsUpdate = true;
       aliensTexture = tex;
 
@@ -4299,10 +4299,10 @@ function updateAliensBillboard(){
 
 /* =========================
    UFO chaser
-   - Loads ufo.png from the picked images folder
+   - Loads ufo.webp from the picked images folder
    - Chases copter and plays buzz.mp3 on collision
    ========================= ********************************************************/
-const UFO_FILE = "ufo.png";
+const UFO_FILE = "ufo.webp";
 const UFO = {
   ENABLE: true,
   PLANE_W: 3267.0,          // +50% size
@@ -4314,7 +4314,7 @@ const UFO = {
   COLLIDE_DIST_XZ: 484,      // +10%
   COLLIDE_DIST_Y: 242,       // +10%
   COLLIDE_COOLDOWN_SEC: 0.40,
-  FRAME_SEC: 999999.0        // animation disabled: use ufo.png only
+  FRAME_SEC: 999999.0        // animation disabled: use ufo.webp only
 };
 
 let ufoRoamer = null; // { mesh, target, texA, hitCooldownSec }
@@ -4394,7 +4394,7 @@ function initUfoRoamerFromFolder(){
   if(!terrain || !hm01) return;
 
   loadUfoTexByName(UFO_FILE).then((texA)=>{
-    if(!texA) return; // ufo.png required
+    if(!texA) return; // ufo.webp required
 
     const geo = new THREE.PlaneGeometry(UFO.PLANE_W, UFO.PLANE_H);
     const matU = new THREE.MeshStandardMaterial({
@@ -4428,7 +4428,7 @@ function initUfoRoamerFromFolder(){
 function updateUfoRoamer(dt){
   if(!ufoRoamer || !terrain || !hm01) return;
   const isNight = _daylightFactor < 0.25;
-  // UFO animation disabled: using ufo.png only.
+  // UFO animation disabled: using ufo.webp only.
 
   if(isNight){
     return;

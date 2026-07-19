@@ -192,17 +192,17 @@
 <body>
 
 <div id="game">
-  <img id="scene" src="images/road.png" alt="scene">
+  <img id="scene" src="images/road.webp" alt="scene">
 
   <!-- Player car (color set after selection) -->
-  <img id="car" src="images/car.png" alt="car">
+  <img id="car" src="images/car.webp" alt="car">
 
   <!-- Random-moving blue cars -->
-  <img id="npcCar1" src="images/blue_car.png" alt="blue car 1">
-  <img id="npcCar2" src="images/blue_car.png" alt="blue car 2">
-  <img id="npcCar3" src="images/blue_car.png" alt="blue car 3">
-  <img id="npcCar4" src="images/blue_car.png" alt="blue car 4">
-  <img id="npcCar5" src="images/blue_car.png" alt="blue car 5">
+  <img id="npcCar1" src="images/blue_car.webp" alt="blue car 1">
+  <img id="npcCar2" src="images/blue_car.webp" alt="blue car 2">
+  <img id="npcCar3" src="images/blue_car.webp" alt="blue car 3">
+  <img id="npcCar4" src="images/blue_car.webp" alt="blue car 4">
+  <img id="npcCar5" src="images/blue_car.webp" alt="blue car 5">
 
   <!-- UI sliders + hide-buttons toggle -->
   <div id="ui">
@@ -309,11 +309,11 @@
 
   // Color options for player car (use your filenames)
   const carColors = {
-    red:    "images/car.png",
-    blue:   "images/blue_car.png",
-    yellow: "images/car_yellow.png",
-    orange: "images/car_orange.png",
-    green:  "images/car_greed.png"
+    red:    "images/car.webp",
+    blue:   "images/blue_car.webp",
+    yellow: "images/car_yellow.webp",
+    orange: "images/car_orange.webp",
+    green:  "images/car_greed.webp"
   };
 
   const engineSound = new Audio("images/car_sound.mp3");
@@ -470,7 +470,7 @@
     crashSound.currentTime = 0;
     crashSound.play().catch(() => {});
 
-    car.src = "images/crash.png";
+    car.src = "images/crash.webp";
 
     setTimeout(() => {
       const src = carColors[lastColorKey] || carColors.red;

@@ -348,7 +348,7 @@
   <h1>Avatar Terrain · folder auto-load (H hides HUD) · Build A</h1>
   <div class="tiny">
     Auto-loads assets from the local <code>images/</code> folder:
-    <span class="ok"><b>chatmont.png</b></span> as heightmap and <span class="ok"><b>grass_albedo.jpg</b></span> as albedo, plus optional <span class="ok"><b>rock_normal.png</b></span> + <span class="ok"><b>rock_roughness.png</b></span> + <span class="ok"><b>lake_albedo.png</b></span>.
+    <span class="ok"><b>chatmont.png</b></span> as heightmap and <span class="ok"><b>grass_albedo.webp</b></span> as albedo, plus optional <span class="ok"><b>rock_normal.png</b></span> + <span class="ok"><b>rock_roughness.png</b></span> + <span class="ok"><b>lake_albedo.webp</b></span>.
   </div>
 
   <div class="row">
@@ -460,10 +460,10 @@ const TERRAIN_SMOOTHING_FIXED = 5;      // smoothing passes: bigger = softer / m
 // Put these files in the images folder you load.
 // =====================================================================
 const TEX_HEIGHTMAP   = "chatmont.png";        // grayscale heightmap that shapes the terrain
-const TEX_ALBEDO      = "grass_albedo.jpg";    // main ground color texture
+const TEX_ALBEDO      = "grass_albedo.webp";    // main ground color texture
 const TEX_NORMAL      = "rock_normal.png";     // fake small bumps for lighting
 const TEX_ROUGHNESS   = "rock_roughness.png";  // shininess / roughness control
-const TEX_LAKE_ALBEDO = "lake_albedo.png";     // optional water texture for the lake basin
+const TEX_LAKE_ALBEDO = "lake_albedo.webp";     // optional water texture for the lake basin
 
 // =====================================================================
 // 3) LAKE SETTINGS
@@ -491,11 +491,11 @@ const SHORE_GRASS_ANIM_ENABLED = false;
 // 4) DISTANT MOUNTAINS / HORIZON SYSTEM
 // This is the far background mountain ring.
 // =====================================================================
-const HORIZON_TEXTURE          = "mountains.png"; // background mountain strip image
+const HORIZON_TEXTURE          = "mountains.webp"; // background mountain strip image
 const HORIZON_RADIUS           = 36000;  // bigger = farther away
 const HORIZON_HEIGHT           = 5000;   // visual height of the mountain cylinder
 const HORIZON_Y                = 1000;   // legacy value; kept for compatibility
-const HORIZON_REPEAT           = 10;     // how many times mountains.png wraps around ring
+const HORIZON_REPEAT           = 10;     // how many times mountains.webp wraps around ring
 const HORIZON_WORLD_BASE_Y     = -920;   // lower = buries mountain bases more deeply
 const HORIZON_Y_FOLLOW         = 0.03;   // how much mountains follow camera up/down
 const HORIZON_FOOTHILL_HEIGHT  = 1700;   // lower dark transition band below mountains
@@ -510,9 +510,9 @@ const HORIZON_HAZE_OPACITY     = 0.30;   // lower = less mist, higher = more mis
 // Avatar sprite image source.
 // =====================================================================
 const AVATAR_IDLE    = ["forward1.PNG"];
-const AVATAR_FORWARD = ["forward1.PNG", "forward2.PNG", "forward3.PNG", "forward4.PNG", "forward5.PNG", "forward6.PNG", "forward7.PNG"];
+const AVATAR_FORWARD = ["forward1.PNG", "forward2.PNG", "forward3.PNG", "forward4.PNG", "forward5.PNG", "forward6.webp", "forward7.webp"];
 const AVATAR_BACK    = ["back1.PNG", "back2.PNG", "back3.PNG", "back4.PNG", "back5.PNG"];
-const AVATAR_LEFT    = ["left1.PNG", "left2.PNG", "left3.PNG", "left4.PNG", "left5.PNG"];
+const AVATAR_LEFT    = ["left1.webp", "left2.webp", "left3.webp", "left4.webp", "left5.webp"];
 const AVATAR_RIGHT   = ["right1.PNG", "right2.PNG", "right3.PNG", "right4.PNG", "right5.PNG"];
 
 // =====================================================================
@@ -647,8 +647,8 @@ const LOG_PLACEMENT = {
   MAX_TRIES: 8000
 };
 const FIRE_MIN_LOGS = 5;
-const FIRE_IMAGE_NAME = "fire.png";
-const FIRE_FRAME_NAMES = ["fire1.png", "fire2.png", "fire3.png", "fire4.png", "fire5.png"];
+const FIRE_IMAGE_NAME = "fire.webp";
+const FIRE_FRAME_NAMES = ["fire1.webp", "fire2.webp", "fire3.webp", "fire4.webp", "fire5.webp"];
 const FIRE_ANIM_FPS = 12;
 const FIRE_FRAME_DURATION = 1 / FIRE_ANIM_FPS;
 const FIRE_LIFE_HOURS = 4;
@@ -683,8 +683,8 @@ const HUNT_GUN_SIGHT_Y_OFFSET_MIN = -40; // lower floor so D can angle down furt
 const HUNT_GUN_SIGHT_Y_OFFSET_MAX = 320; // higher ceiling so E can angle up further while hunting
 const FISH_SIGHT_AIM_Y_OFFSET = -24; // lower fish shot origin so it aligns with the center circle of bow sight
 const HUNT_GUN_SIGHT_ADJUST_SPEED = 170;
-const GUN_SIGHT_IMAGE_NAME = "gun_sight.png";
-const BOW_IMAGE_NAME = "bow.png";
+const GUN_SIGHT_IMAGE_NAME = "gun_sight.webp";
+const BOW_IMAGE_NAME = "bow.webp";
 const MISSILE_SOUND_FILE = "images/missle.mp3";
 const MISSILE_SOUND_VOLUME = 0.72;
 const TWANG_SOUND_NAME = "twang.mp3";
@@ -693,10 +693,10 @@ const HUNT_BULLET_SPEED = 3200;
 const HUNT_BULLET_LIFE_SECONDS = 1.9;
 const HUNT_BULLET_RADIUS = 6;
 const FISH_BULLET_RADIUS = 16;
-const BUFFALO_LEFT_IMAGE_NAME = "buffalo_left.png";
-const BUFFALO_RIGHT_IMAGE_NAME = "buffalo_right.png";
-const NEW_BUFFALO_LEFT_IMAGE_NAME = "new_buffalo_left.png";
-const NEW_BUFFALO_RIGHT_IMAGE_NAME = "new_buffalo_right.png";
+const BUFFALO_LEFT_IMAGE_NAME = "buffalo_left.webp";
+const BUFFALO_RIGHT_IMAGE_NAME = "buffalo_right.webp";
+const NEW_BUFFALO_LEFT_IMAGE_NAME = "new_buffalo_left.webp";
+const NEW_BUFFALO_RIGHT_IMAGE_NAME = "new_buffalo_right.webp";
 const BUFFALO_COUNT = 4;
 const BUFFALO_MIN_FRAC = 0.18;
 const BUFFALO_MAX_FRAC = 0.65;
@@ -768,7 +768,7 @@ const lakeState = {
   waterEndFrac: 0,
   startFrac: 0
 };
-const CABIN_IMAGE_NAME = "cabin.png";
+const CABIN_IMAGE_NAME = "cabin.webp";
 const CABIN_SCALE = { x: 1200, y: 1100 };
 const CABIN_OFFSET_Y = 40;
 const CABIN_POSITION = new THREE.Vector3(600, 0, -900);
@@ -780,14 +780,14 @@ const RED_WALL_HEIGHT = 10 * FOOT_U;
 const RED_PANELS_PER_SIDE = 11;
 const RED_SQUARE_SIZE = RED_WALL_LEN * RED_PANELS_PER_SIDE;
 const RED_SQUARE_OFFSET_FROM_CABIN = 300 * FOOT_U;
-const RED_WALL_DOOR_IMAGE = "door.png";
-const RED_WALL_PANEL_IMAGE = "wall.png";
-const RED_ROOF_TIN_IMAGE = "tin.png";
-const RED_CHEST_IMAGE = "chest.png";
-const RED_GRIZ_IMAGE = "griz.png";
-const RED_HAM_IMAGE = "ham.png";
-const RED_TOMAHAWK_IMAGE = "tomahawk.png";
-const RED_PAPER_IMAGE = "paper.png";
+const RED_WALL_DOOR_IMAGE = "door.webp";
+const RED_WALL_PANEL_IMAGE = "wall.webp";
+const RED_ROOF_TIN_IMAGE = "tin.webp";
+const RED_CHEST_IMAGE = "chest.webp";
+const RED_GRIZ_IMAGE = "griz.webp";
+const RED_HAM_IMAGE = "ham.webp";
+const RED_TOMAHAWK_IMAGE = "tomahawk.webp";
+const RED_PAPER_IMAGE = "paper.webp";
 const RED_WALL_COLLISION_RADIUS = 32;
 const RED_DOORWAY_WIDTH_MULT = 1.25;
 const RED_ROOF_PANEL_THICK = 1 * FOOT_U;
@@ -844,7 +844,7 @@ let redCabinModeBeforeEntry = "walk";
 let cubeCabinVisible = true;
 let cubeCabinHiddenPlaySeconds = 0;
 let cubeCabinPlaytimeSaveAccum = 0;
-const CAVE_IMAGE_NAME = "cave.png";
+const CAVE_IMAGE_NAME = "cave.webp";
 const CAVE_SCALE = { x: 2100, y: 1470 };
 const CAVE_OFFSET_Y = 20;
 const CAVE_ROT_Y = 0;
@@ -915,19 +915,19 @@ const TREASURE_CAVE_LENGTH_BASE = AVATAR_HEIGHT_U * 20;
 const TREASURE_CAVE_LENGTH = TREASURE_CAVE_LENGTH_BASE * 1.5;
 const TREASURE_CAVE_LENGTH_ONE_SIDE_SHIFT = (TREASURE_CAVE_LENGTH - TREASURE_CAVE_LENGTH_BASE) * 0.5;
 const TREASURE_CAVE_Y_RAISE = TREASURE_CAVE_DIAMETER * 0.25;
-const TREASURE_CAVE_OUTER_TEXTURE = "grass_albedo.jpg";
-const TREASURE_CAVE_BOULDER_IMAGE = "boulder.png";
-const TREASURE_CAVE_WIN_IMAGE = "win.png";
+const TREASURE_CAVE_OUTER_TEXTURE = "grass_albedo.webp";
+const TREASURE_CAVE_BOULDER_IMAGE = "boulder.webp";
+const TREASURE_CAVE_WIN_IMAGE = "win.webp";
 const TREASURE_CAVE_BOULDERS_PER_SIDE = 50;
 const TREASURE_CAVE_ENTRANCE_BOULDER_COUNT = 6;
-const TREASURE_CAVE_TREE_IMAGE = "tree5.png";
+const TREASURE_CAVE_TREE_IMAGE = "tree5.webp";
 const TREASURE_CAVE_TREES_PER_SIDE = 38;
 const TRACKED_CONE_X = -6771.8;
 const TRACKED_CONE_Y = 695.3;
 const TRACKED_CONE_RIGHT_SHIFT_X = 0;
 const TRACKED_CONE_HEIGHT = AVATAR_HEIGHT_U * 3 * 1.4 * 1.25;
 const TRACKED_CONE_RADIUS = AVATAR_HEIGHT_U * 0.95 * 1.12 * 1.4 * 1.5 * 1.25;
-const TRACKED_CONE_COMPASS_IMAGE = "compass.png";
+const TRACKED_CONE_COMPASS_IMAGE = "compass.webp";
 const TRACKED_CONE_COMPASS_HIT_RADIUS = AVATAR_HEIGHT_U * 0.55;
 const GUIDE_COMPASS_DIST = 185;
 const GUIDE_COMPASS_UP_OFFSET = 0;
@@ -987,8 +987,8 @@ const _treasureWorld = new THREE.Vector3();
 const _tubeEndWorldA = new THREE.Vector3();
 const _tubeEndWorldB = new THREE.Vector3();
 const WOLF_FRAMES_NAMES = [
-  "wolf1.png", "wolf2.png", "wolf3.png", "wolf4.png",
-  "wolf5.png", "wolf6.png", "wolf7.png", "wolf8.png"
+  "wolf1.webp", "wolf2.webp", "wolf3.webp", "wolf4.webp",
+  "wolf5.webp", "wolf6.webp", "wolf7.webp", "wolf8.webp"
 ];
 const WOLF_FRAMES_ANIM_FPS = 8;
 const WOLF_FRAMES_FRAME_DURATION = 1 / WOLF_FRAMES_ANIM_FPS;
@@ -1647,18 +1647,18 @@ const SKY_RADIUS     = LOOK_SKY_RADIUS;
    ============================================================ */
 const IMAGES_BASE_PATH = "images/";
 const KNOWN_ASSET_FILES = [
-  "chatmont.png","grass_albedo.jpg","rock_normal.png","rock_roughness.png","lake_albedo.png",
-  "mountains.png","forward1.PNG","forward2.PNG","forward3.PNG","forward4.PNG","forward5.PNG","forward6.PNG","forward7.PNG",
+  "chatmont.png","grass_albedo.webp","rock_normal.png","rock_roughness.png","lake_albedo.webp",
+  "mountains.webp","forward1.PNG","forward2.PNG","forward3.PNG","forward4.PNG","forward5.PNG","forward6.webp","forward7.webp",
   "back1.PNG","back2.PNG","back3.PNG","back4.PNG","back5.PNG",
-  "left1.PNG","left2.PNG","left3.PNG","left4.PNG","left5.PNG",
+  "left1.webp","left2.webp","left3.webp","left4.webp","left5.webp",
   "right1.PNG","right2.PNG","right3.PNG","right4.PNG","right5.PNG",
   "day_sounds.mp3","crickets.mp3","wind.mp3","wolf_howl.mp3","splash.mp3","hiss.mp3","banjo.mp3",
-  "fire.png","fire1.png","fire2.png","fire3.png","fire4.png","fire5.png","fire.mp3",
-  "walking_sound.mp3","gun_sight.png","bow.png","log.png","girl.png","gold.png","boulder.png","spider.png",
-  "bush.png","cactus.png","tree1.png","tree3.png","tree5.png","compass.png",
-  "cabin.png","cave.png","door.png","wall.png","tin.png","chest.png","griz.png","ham.png","tomahawk.png","paper.png",
-  "bear_sound.mp3","rich.png","win.png","wolf1.png","wolf2.png","wolf3.png","wolf4.png","wolf5.png","wolf6.png","wolf7.png","wolf8.png",
-  "wolf_attack.mp3","wolf_sound.mp3","twang.mp3","trout.png","buffalo1.png","buffalo2.png","buffalo3.png"
+  "fire.webp","fire1.webp","fire2.webp","fire3.webp","fire4.webp","fire5.webp","fire.mp3",
+  "walking_sound.mp3","gun_sight.webp","bow.webp","log.webp","girl.webp","gold.webp","boulder.webp","spider.webp",
+  "bush.webp","cactus.webp","tree1.webp","tree3.webp","tree5.webp","compass.webp",
+  "cabin.webp","cave.webp","door.webp","wall.webp","tin.webp","chest.webp","griz.webp","ham.webp","tomahawk.webp","paper.webp",
+  "bear_sound.mp3","rich.png","win.webp","wolf1.webp","wolf2.webp","wolf3.webp","wolf4.webp","wolf5.webp","wolf6.webp","wolf7.webp","wolf8.webp",
+  "wolf_attack.mp3","wolf_sound.mp3","twang.mp3","trout.webp","buffalo1.png","buffalo2.png","buffalo3.png"
 ];
 let folderFiles = KNOWN_ASSET_FILES.map((name)=>({ name, url: `${IMAGES_BASE_PATH}${name}`, type:"", size:0 }));
 const statusEl = document.getElementById("status");
@@ -3405,7 +3405,7 @@ async function buildMountainRing(){
     horizonHaze = null;
   }
 
-  // Build a processed texture so the blue sky in mountains.png becomes transparent.
+  // Build a processed texture so the blue sky in mountains.webp becomes transparent.
   // That way you see your scene sky behind the mountains instead of a blue cylinder band.
   const src = await loadImage(mf.url);
   const cropTop = Math.floor(src.height * 0.02);
@@ -3915,7 +3915,7 @@ const CACTUS_HIGH_ELEV = {
   COUNT: 100,
   MAX_TRIES: 12000
 };
-const TROUT_IMAGE_NAME = "trout.png";
+const TROUT_IMAGE_NAME = "trout.webp";
 const TROUT_COUNT = 18;
 const TROUT_MAX_TRIES = 9000;
 const TROUT_SPEED_MIN = 28;
@@ -3924,8 +3924,8 @@ const TROUT_TURN_INTERVAL_MIN = 0.8;
 const TROUT_TURN_INTERVAL_MAX = 2.4;
 const TROUT_SURFACE_LIFT = 0.8;
 async function placeBushLowBand(){
-  const bf = findExact("bush.png");
-  if(!bf){ console.warn("bush.png not found"); return; }
+  const bf = findExact("bush.webp");
+  if(!bf){ console.warn("bush.webp not found"); return; }
 
   const tex = await loadTex(bf.url,{srgb:true});
   const mat = new THREE.SpriteMaterial({
@@ -3965,8 +3965,8 @@ async function placeBushLowBand(){
 }
 
 async function placeCactusHighBand(){
-  const cf = findExact("cactus.png");
-  if(!cf){ console.warn("cactus.png not found"); return; }
+  const cf = findExact("cactus.webp");
+  if(!cf){ console.warn("cactus.webp not found"); return; }
 
   const tex = await loadTex(cf.url,{srgb:true});
   const mat = new THREE.SpriteMaterial({
@@ -4005,8 +4005,8 @@ async function placeCactusHighBand(){
 }
 
 async function placeTrees1LowBand(){
-  const tf = findExact("tree1.png");
-  if(!tf){ console.warn("tree1.png not found"); return; }
+  const tf = findExact("tree1.webp");
+  if(!tf){ console.warn("tree1.webp not found"); return; }
 
   const tex = await loadTex(tf.url,{srgb:true});
   const mat = new THREE.SpriteMaterial({
@@ -4045,8 +4045,8 @@ async function placeTrees1LowBand(){
 }
 
 async function placeTrees3LowBand(){
-  const tf = findExact("tree3.png");
-  if(!tf){ console.warn("tree3.png not found"); return; }
+  const tf = findExact("tree3.webp");
+  if(!tf){ console.warn("tree3.webp not found"); return; }
   const tex = await loadTex(tf.url,{srgb:true});
   const mat = new THREE.SpriteMaterial({
     map: tex,
@@ -4085,8 +4085,8 @@ async function placeTrees3LowBand(){
 }
 
 async function placeTrees5MidBand(){
-  const tf = findExact("tree5.png");
-  if(!tf){ console.warn("tree5.png not found"); return; }
+  const tf = findExact("tree5.webp");
+  if(!tf){ console.warn("tree5.webp not found"); return; }
 
   const tex = await loadTex(tf.url,{srgb:true});
   const mat = new THREE.SpriteMaterial({
@@ -4138,8 +4138,8 @@ async function placeLogsScatter(){
   logsAvailable = logs;
   updateLogHUD();
 
-  const lf = findExact("log.png");
-  if(!lf){ console.warn("log.png not found"); return; }
+  const lf = findExact("log.webp");
+  if(!lf){ console.warn("log.webp not found"); return; }
 
   const tex = await loadTex(lf.url,{srgb:true});
   const mat = new THREE.SpriteMaterial({
@@ -4180,7 +4180,7 @@ async function placeLogsScatter(){
 }
 
 async function placeGirlPickup(){
-  const ff = findExact("girl.png") || findExact("images/girl.png");
+  const ff = findExact("girl.webp") || findExact("images/girl.webp");
   if(!ff) return;
   const tex = await loadTex(ff.url, { srgb:true });
   const mat = new THREE.SpriteMaterial({
@@ -4202,7 +4202,7 @@ async function placeGirlPickup(){
 }
 
 async function placeGoldAtTarget(){
-  const ff = findExact("gold.png") || findExact("images/gold.png");
+  const ff = findExact("gold.webp") || findExact("images/gold.webp");
   if(!ff) return;
   const tex = await loadTex(ff.url, { srgb:true });
   const mat = new THREE.SpriteMaterial({
@@ -4230,7 +4230,7 @@ async function placeGoldAtTarget(){
 }
 
 async function placeFixedBoulder(){
-  const ff = findExact("boulder.png") || findExact("images/boulder.png");
+  const ff = findExact("boulder.webp") || findExact("images/boulder.webp");
   if(!ff) return;
   const tex = await loadTex(ff.url, { srgb:true });
   const mat = new THREE.SpriteMaterial({
@@ -4389,7 +4389,7 @@ function makeRandomTubeSpiderVelocity(){
 
 async function placeTubeSpider(){
   if(!treasureCaveTube) return;
-  const ff = findExact("spider.png") || findExact("images/spider.png");
+  const ff = findExact("spider.webp") || findExact("images/spider.webp");
   if(!ff) return;
   const tex = await loadTex(ff.url, { srgb:true });
   const mat = new THREE.SpriteMaterial({
@@ -6669,7 +6669,7 @@ float computeRayOcclusion(vec3 worldPos){
   await placeTubeSpider();
   removeTreesInsideTreasureCaveTube();
   setLoadingProgress(96, "Finishing");
-  setStatus(`✅ Built terrain with lowest-basin lake${lakeTex ? " using lake_albedo.png" : " using fallback lake color"}. Shore grass flipbook is parked for later. Day/night cycle is active. Tank controls: ArrowLeft/ArrowRight turn, ArrowUp/ArrowDown (or W/S) drive, A/D strafe (disabled in hunt/fish). E/D aim offset in hunt/fish. Fixed terrain dimensions active. Mountain ring loaded if ${HORIZON_TEXTURE} is present. (Height=${height}, Size=${size}, Seg=${seg})`);
+  setStatus(`✅ Built terrain with lowest-basin lake${lakeTex ? " using lake_albedo.webp" : " using fallback lake color"}. Shore grass flipbook is parked for later. Day/night cycle is active. Tank controls: ArrowLeft/ArrowRight turn, ArrowUp/ArrowDown (or W/S) drive, A/D strafe (disabled in hunt/fish). E/D aim offset in hunt/fish. Fixed terrain dimensions active. Mountain ring loaded if ${HORIZON_TEXTURE} is present. (Height=${height}, Size=${size}, Seg=${seg})`);
 }
 
 /* ============================================================

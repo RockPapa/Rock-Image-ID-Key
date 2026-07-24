@@ -63,6 +63,25 @@
       pointer-events: none;
     }
 
+    #startPage.scrollablePage {
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    #startPage.scrollablePage img {
+      width: min(100%, calc(var(--visible-height) * 0.575));
+      height: auto;
+      margin: 0 auto;
+      object-fit: fill;
+      object-position: top center;
+    }
+
+    #startPage.scrollablePage #backBtn {
+      position: fixed;
+    }
+
     body.computer-platform #startPage img {
       object-fit: contain;
     }
@@ -401,6 +420,43 @@
     <button id="alternateCompoundBtn" class="choiceBtn" type="button" aria-label="Trees with alternate compound leaves">Trees with alternate compound leaves</button>
     <button id="alternateSimpleBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple leaves">Trees with alternate simple leaves</button>
     <button id="alternateSimpleToothlessBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple toothless leaves">Trees with alternate simple toothless leaves</button>
+    <button id="alternateSimpleToothedBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple toothed leaves">Trees with alternate simple toothed leaves</button>
+    <button id="elmsBtn" class="choiceBtn" type="button" aria-label="Elms">Elms</button>
+    <button id="wingedElmBtn" class="choiceBtn" type="button" aria-label="Winged elm">Winged elm</button>
+    <button id="slipperyElmBtn" class="choiceBtn" type="button" aria-label="Slippery elm">Slippery elm</button>
+    <button id="americanElmBtn" class="choiceBtn" type="button" aria-label="American elm">American elm</button>
+    <button id="wingedElmImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open winged elm detail image">Open winged elm detail image</button>
+    <button id="slipperyElmImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open slippery elm detail image">Open slippery elm detail image</button>
+    <button id="americanElmImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open American elm detail image">Open American elm detail image</button>
+    <button id="birchesBtn" class="choiceBtn" type="button" aria-label="Birches">Birches</button>
+    <button id="riverBirchBtn" class="choiceBtn" type="button" aria-label="River birch">River birch</button>
+    <button id="blackBirchBtn" class="choiceBtn" type="button" aria-label="Black birch">Black birch</button>
+    <button id="yellowBirchBtn" class="choiceBtn" type="button" aria-label="Yellow birch">Yellow birch</button>
+    <button id="paperBirchBtn" class="choiceBtn" type="button" aria-label="Paper birch">Paper birch</button>
+    <button id="grayBirchBtn" class="choiceBtn" type="button" aria-label="Gray birch">Gray birch</button>
+    <button id="riverBirchImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open river birch detail image">Open river birch detail image</button>
+    <button id="blackBirchImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open black birch detail image">Open black birch detail image</button>
+    <button id="yellowBirchImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open yellow birch detail image">Open yellow birch detail image</button>
+    <button id="paperBirchImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open paper birch detail image">Open paper birch detail image</button>
+    <button id="grayBirchImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open gray birch detail image">Open gray birch detail image</button>
+    <button id="hackberriesBtn" class="choiceBtn" type="button" aria-label="Hackberries">Hackberries</button>
+    <button id="hackberryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open hackberry detail image">Open hackberry detail image</button>
+    <button id="sugarberryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open sugarberry detail image">Open sugarberry detail image</button>
+    <button id="georgiaHackberryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open Georgia hackberry detail image">Open Georgia hackberry detail image</button>
+    <button id="hackberryBtn" class="choiceBtn" type="button" aria-label="Hackberry">Hackberry</button>
+    <button id="sugarberryBtn" class="choiceBtn" type="button" aria-label="Sugarberry">Sugarberry</button>
+    <button id="georgiaHackberryBtn" class="choiceBtn" type="button" aria-label="Georgia hackberry">Georgia hackberry</button>
+    <button id="hornbeamsBtn" class="choiceBtn" type="button" aria-label="Hornbeams">Hornbeams</button>
+    <button id="americanHornbeamBtn" class="choiceBtn" type="button" aria-label="American hornbeam">American hornbeam</button>
+    <button id="easternHophornbeamBtn" class="choiceBtn" type="button" aria-label="Eastern hophornbeam">Eastern hophornbeam</button>
+    <button id="americanHornbeamImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open American hornbeam detail image">Open American hornbeam detail image</button>
+    <button id="easternHophornbeamImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open eastern hophornbeam detail image">Open eastern hophornbeam detail image</button>
+    <button id="buckthornBtn" class="choiceBtn" type="button" aria-label="Carolina buckthorn">Carolina buckthorn</button>
+    <button id="silverbellBtn" class="choiceBtn" type="button" aria-label="Carolina silverbell">Carolina silverbell</button>
+    <button id="serviceberryBtn" class="choiceBtn" type="button" aria-label="Downy serviceberry">Downy serviceberry</button>
+    <button id="buckthornImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open Carolina buckthorn detail image">Open Carolina buckthorn detail image</button>
+    <button id="silverbellImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open Carolina silverbell detail image">Open Carolina silverbell detail image</button>
+    <button id="serviceberryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open downy serviceberry detail image">Open downy serviceberry detail image</button>
     <button id="pawpawBtn" class="choiceBtn" type="button" aria-label="Pawpaw">Pawpaw</button>
     <button id="magnoliasBtn" class="choiceBtn" type="button" aria-label="Magnolias">Magnolias</button>
     <button id="redbudBtn" class="choiceBtn" type="button" aria-label="Redbud">Redbud</button>
@@ -595,6 +651,43 @@
       document.getElementById("alternateCompoundBtn"),
       document.getElementById("alternateSimpleBtn"),
       document.getElementById("alternateSimpleToothlessBtn"),
+      document.getElementById("alternateSimpleToothedBtn"),
+      document.getElementById("elmsBtn"),
+      document.getElementById("wingedElmBtn"),
+      document.getElementById("slipperyElmBtn"),
+      document.getElementById("americanElmBtn"),
+      document.getElementById("wingedElmImageBtn"),
+      document.getElementById("slipperyElmImageBtn"),
+      document.getElementById("americanElmImageBtn"),
+      document.getElementById("birchesBtn"),
+      document.getElementById("riverBirchBtn"),
+      document.getElementById("blackBirchBtn"),
+      document.getElementById("yellowBirchBtn"),
+      document.getElementById("paperBirchBtn"),
+      document.getElementById("grayBirchBtn"),
+      document.getElementById("riverBirchImageBtn"),
+      document.getElementById("blackBirchImageBtn"),
+      document.getElementById("yellowBirchImageBtn"),
+      document.getElementById("paperBirchImageBtn"),
+      document.getElementById("grayBirchImageBtn"),
+      document.getElementById("hackberriesBtn"),
+      document.getElementById("hackberryBtn"),
+      document.getElementById("sugarberryBtn"),
+      document.getElementById("georgiaHackberryBtn"),
+      document.getElementById("hackberryImageBtn"),
+      document.getElementById("sugarberryImageBtn"),
+      document.getElementById("georgiaHackberryImageBtn"),
+      document.getElementById("hornbeamsBtn"),
+      document.getElementById("americanHornbeamBtn"),
+      document.getElementById("easternHophornbeamBtn"),
+      document.getElementById("americanHornbeamImageBtn"),
+      document.getElementById("easternHophornbeamImageBtn"),
+      document.getElementById("buckthornBtn"),
+      document.getElementById("silverbellBtn"),
+      document.getElementById("serviceberryBtn"),
+      document.getElementById("buckthornImageBtn"),
+      document.getElementById("silverbellImageBtn"),
+      document.getElementById("serviceberryImageBtn"),
       document.getElementById("pawpawBtn"),
       document.getElementById("magnoliasBtn"),
       document.getElementById("redbudBtn"),
@@ -744,6 +837,22 @@
       redbud: "https://en.wikipedia.org/wiki/Cercis_canadensis",
       persimmon: "https://en.wikipedia.org/wiki/Diospyros_virginiana",
       blackgum: "https://en.wikipedia.org/wiki/Nyssa_sylvatica",
+      wingedElm: "https://en.wikipedia.org/wiki/Ulmus_alata",
+      slipperyElm: "https://en.wikipedia.org/wiki/Ulmus_rubra",
+      americanElm: "https://en.wikipedia.org/wiki/Ulmus_americana",
+      riverBirch: "https://en.wikipedia.org/wiki/Betula_nigra",
+      blackBirch: "https://en.wikipedia.org/wiki/Betula_lenta",
+      yellowBirch: "https://en.wikipedia.org/wiki/Betula_alleghaniensis",
+      paperBirch: "https://en.wikipedia.org/wiki/Betula_papyrifera",
+      grayBirch: "https://en.wikipedia.org/wiki/Betula_populifolia",
+      hackberry: "https://en.wikipedia.org/wiki/Celtis_occidentalis",
+      sugarberry: "https://en.wikipedia.org/wiki/Celtis_laevigata",
+      georgiaHackberry: "https://en.wikipedia.org/wiki/Celtis_tenuifolia",
+      americanHornbeam: "https://en.wikipedia.org/wiki/Carpinus_caroliniana",
+      easternHophornbeam: "https://en.wikipedia.org/wiki/Ostrya_virginiana",
+      buckthorn: "https://en.wikipedia.org/wiki/Frangula_caroliniana",
+      silverbell: "https://en.wikipedia.org/wiki/Halesia_carolina",
+      serviceberry: "https://en.wikipedia.org/wiki/Amelanchier_arborea",
       bigleafMagnolia: "https://en.wikipedia.org/wiki/Magnolia_macrophylla",
       fraserMagnolia: "https://en.wikipedia.org/wiki/Magnolia_fraseri",
       umbrellaMagnolia: "https://en.wikipedia.org/wiki/Magnolia_tripetala",
@@ -837,7 +946,86 @@
         { btn: document.getElementById("alternateSimpleBtn"), x: 0.12, y: 0.60, width: 0.76, height: 0.26 }
       ],
       alternateSimple: [
-        { btn: document.getElementById("alternateSimpleToothlessBtn"), x: 0.12, y: 0.32, width: 0.76, height: 0.09 }
+        { btn: document.getElementById("alternateSimpleToothlessBtn"), x: 0.12, y: 0.32, width: 0.76, height: 0.18 },
+        { btn: document.getElementById("alternateSimpleToothedBtn"), x: 0.12, y: 0.52, width: 0.76, height: 0.16 }
+      ],
+      alternateSimpleToothed: [
+        { btn: document.getElementById("elmsBtn"), x: 0.24, y: 0.20, width: 0.52, height: 0.055 },
+        { btn: document.getElementById("birchesBtn"), x: 0.20, y: 0.255, width: 0.60, height: 0.055 },
+        { btn: document.getElementById("hackberriesBtn"), x: 0.13, y: 0.31, width: 0.74, height: 0.055 },
+        { btn: document.getElementById("hornbeamsBtn"), x: 0.16, y: 0.365, width: 0.68, height: 0.055 },
+        { btn: document.getElementById("buckthornBtn"), x: 0.17, y: 0.42, width: 0.66, height: 0.055 },
+        { btn: document.getElementById("silverbellBtn"), x: 0.18, y: 0.475, width: 0.64, height: 0.055 },
+        { btn: document.getElementById("serviceberryBtn"), x: 0.13, y: 0.53, width: 0.74, height: 0.055 }
+      ],
+      elms: [
+        { btn: document.getElementById("wingedElmBtn"), x: 0.18, y: 0.21, width: 0.64, height: 0.09 },
+        { btn: document.getElementById("slipperyElmBtn"), x: 0.11, y: 0.34, width: 0.78, height: 0.09 },
+        { btn: document.getElementById("americanElmBtn"), x: 0.16, y: 0.47, width: 0.68, height: 0.09 }
+      ],
+      wingedElm: [
+        { btn: document.getElementById("wingedElmImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      slipperyElm: [
+        { btn: document.getElementById("slipperyElmImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      americanElm: [
+        { btn: document.getElementById("americanElmImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.11 }
+      ],
+      birches: [
+        { btn: document.getElementById("riverBirchBtn"), x: 0.17, y: 0.20, width: 0.66, height: 0.09 },
+        { btn: document.getElementById("blackBirchBtn"), x: 0.17, y: 0.32, width: 0.66, height: 0.09 },
+        { btn: document.getElementById("yellowBirchBtn"), x: 0.14, y: 0.44, width: 0.72, height: 0.09 },
+        { btn: document.getElementById("paperBirchBtn"), x: 0.17, y: 0.56, width: 0.66, height: 0.09 },
+        { btn: document.getElementById("grayBirchBtn"), x: 0.17, y: 0.68, width: 0.66, height: 0.09 }
+      ],
+      riverBirch: [
+        { btn: document.getElementById("riverBirchImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      blackBirch: [
+        { btn: document.getElementById("blackBirchImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      yellowBirch: [
+        { btn: document.getElementById("yellowBirchImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      paperBirch: [
+        { btn: document.getElementById("paperBirchImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      grayBirch: [
+        { btn: document.getElementById("grayBirchImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      hackberry: [
+        { btn: document.getElementById("hackberryImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      sugarberry: [
+        { btn: document.getElementById("sugarberryImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      georgiaHackberry: [
+        { btn: document.getElementById("georgiaHackberryImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      hackberries: [
+        { btn: document.getElementById("hackberryBtn"), x: 0.20, y: 0.22, width: 0.60, height: 0.09 },
+        { btn: document.getElementById("georgiaHackberryBtn"), x: 0.10, y: 0.32, width: 0.80, height: 0.09 },
+        { btn: document.getElementById("sugarberryBtn"), x: 0.20, y: 0.42, width: 0.60, height: 0.09 }
+      ],
+      hornbeams: [
+        { btn: document.getElementById("americanHornbeamBtn"), x: 0.10, y: 0.23, width: 0.80, height: 0.10 },
+        { btn: document.getElementById("easternHophornbeamBtn"), x: 0.07, y: 0.35, width: 0.86, height: 0.10 }
+      ],
+      americanHornbeam: [
+        { btn: document.getElementById("americanHornbeamImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      easternHophornbeam: [
+        { btn: document.getElementById("easternHophornbeamImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      buckthorn: [
+        { btn: document.getElementById("buckthornImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      silverbell: [
+        { btn: document.getElementById("silverbellImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
+      ],
+      serviceberry: [
+        { btn: document.getElementById("serviceberryImageBtn"), x: 0.14, y: 0.84, width: 0.72, height: 0.11 }
       ],
       alternateSimpleToothless: [
         { btn: document.getElementById("pawpawBtn"), x: 0.33, y: 0.30, width: 0.34, height: 0.06 },
@@ -1168,6 +1356,8 @@
     function showIntroPage(pageNumber, altText) {
       currentIntroPage = pageNumber;
       startPage.classList.remove("placeholderPage");
+      startPage.classList.remove("scrollablePage");
+      startPage.scrollTop = 0;
       setTreeImage(`treeid/page${pageNumber}.png`, altText);
       beginBtn.style.display = pageNumber === 1 ? "block" : "none";
       backBtn.style.display = pageNumber === 1 ? "none" : "block";
@@ -1201,6 +1391,8 @@
     function showIntroImage(pageKey, imageSrc, altText) {
       currentIntroPage = pageKey;
       startPage.classList.toggle("placeholderPage", imageSrc === "treeid/place_holder.png");
+      startPage.classList.toggle("scrollablePage", pageKey === "alternateSimpleToothed");
+      startPage.scrollTop = 0;
       setTreeImage(imageSrc, altText);
       beginBtn.style.display = "none";
       backBtn.style.display = "block";
@@ -1240,6 +1432,43 @@
       document.getElementById("alternateCompoundBtn").style.display = pageKey === "alternateLeaves" ? "block" : "none";
       document.getElementById("alternateSimpleBtn").style.display = pageKey === "alternateLeaves" ? "block" : "none";
       document.getElementById("alternateSimpleToothlessBtn").style.display = pageKey === "alternateSimple" ? "block" : "none";
+      document.getElementById("alternateSimpleToothedBtn").style.display = pageKey === "alternateSimple" ? "block" : "none";
+      document.getElementById("elmsBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
+      document.getElementById("wingedElmBtn").style.display = pageKey === "elms" ? "block" : "none";
+      document.getElementById("slipperyElmBtn").style.display = pageKey === "elms" ? "block" : "none";
+      document.getElementById("americanElmBtn").style.display = pageKey === "elms" ? "block" : "none";
+      document.getElementById("wingedElmImageBtn").style.display = pageKey === "wingedElm" ? "block" : "none";
+      document.getElementById("slipperyElmImageBtn").style.display = pageKey === "slipperyElm" ? "block" : "none";
+      document.getElementById("americanElmImageBtn").style.display = pageKey === "americanElm" ? "block" : "none";
+      document.getElementById("birchesBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
+      document.getElementById("riverBirchBtn").style.display = pageKey === "birches" ? "block" : "none";
+      document.getElementById("blackBirchBtn").style.display = pageKey === "birches" ? "block" : "none";
+      document.getElementById("yellowBirchBtn").style.display = pageKey === "birches" ? "block" : "none";
+      document.getElementById("paperBirchBtn").style.display = pageKey === "birches" ? "block" : "none";
+      document.getElementById("grayBirchBtn").style.display = pageKey === "birches" ? "block" : "none";
+      document.getElementById("riverBirchImageBtn").style.display = pageKey === "riverBirch" ? "block" : "none";
+      document.getElementById("blackBirchImageBtn").style.display = pageKey === "blackBirch" ? "block" : "none";
+      document.getElementById("yellowBirchImageBtn").style.display = pageKey === "yellowBirch" ? "block" : "none";
+      document.getElementById("paperBirchImageBtn").style.display = pageKey === "paperBirch" ? "block" : "none";
+      document.getElementById("grayBirchImageBtn").style.display = pageKey === "grayBirch" ? "block" : "none";
+      document.getElementById("hackberriesBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
+      document.getElementById("hackberryBtn").style.display = pageKey === "hackberries" ? "block" : "none";
+      document.getElementById("sugarberryBtn").style.display = pageKey === "hackberries" ? "block" : "none";
+      document.getElementById("georgiaHackberryBtn").style.display = pageKey === "hackberries" ? "block" : "none";
+      document.getElementById("hackberryImageBtn").style.display = pageKey === "hackberry" ? "block" : "none";
+      document.getElementById("sugarberryImageBtn").style.display = pageKey === "sugarberry" ? "block" : "none";
+      document.getElementById("georgiaHackberryImageBtn").style.display = pageKey === "georgiaHackberry" ? "block" : "none";
+      document.getElementById("hornbeamsBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
+      document.getElementById("americanHornbeamBtn").style.display = pageKey === "hornbeams" ? "block" : "none";
+      document.getElementById("easternHophornbeamBtn").style.display = pageKey === "hornbeams" ? "block" : "none";
+      document.getElementById("americanHornbeamImageBtn").style.display = pageKey === "americanHornbeam" ? "block" : "none";
+      document.getElementById("easternHophornbeamImageBtn").style.display = pageKey === "easternHophornbeam" ? "block" : "none";
+      document.getElementById("buckthornBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
+      document.getElementById("silverbellBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
+      document.getElementById("serviceberryBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
+      document.getElementById("buckthornImageBtn").style.display = pageKey === "buckthorn" ? "block" : "none";
+      document.getElementById("silverbellImageBtn").style.display = pageKey === "silverbell" ? "block" : "none";
+      document.getElementById("serviceberryImageBtn").style.display = pageKey === "serviceberry" ? "block" : "none";
       document.getElementById("pawpawBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
       document.getElementById("magnoliasBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
       document.getElementById("redbudBtn").style.display = pageKey === "alternateSimpleToothless" ? "block" : "none";
@@ -1373,6 +1602,38 @@
         showIntroImage("persimmon", "treeid/persimmon.jpg", "Persimmon");
       } else if (currentIntroPage === "blackgumImage") {
         showIntroImage("blackgum", "treeid/blackgum.jpg", "Blackgum");
+      } else if (currentIntroPage === "wingedElmImage") {
+        showIntroImage("wingedElm", "treeid/winged_elm.jpg", "Winged elm");
+      } else if (currentIntroPage === "slipperyElmImage") {
+        showIntroImage("slipperyElm", "treeid/slippery_elm.png", "Slippery elm");
+      } else if (currentIntroPage === "americanElmImage") {
+        showIntroImage("americanElm", "treeid/american_elm.png", "American elm");
+      } else if (currentIntroPage === "riverBirchImage") {
+        showIntroImage("riverBirch", "treeid/river_birch.png", "River birch");
+      } else if (currentIntroPage === "blackBirchImage") {
+        showIntroImage("blackBirch", "treeid/black_birch.png", "Black birch");
+      } else if (currentIntroPage === "yellowBirchImage") {
+        showIntroImage("yellowBirch", "treeid/yellow_birch.png", "Yellow birch");
+      } else if (currentIntroPage === "paperBirchImage") {
+        showIntroImage("paperBirch", "treeid/paper_birch.png", "Paper birch");
+      } else if (currentIntroPage === "grayBirchImage") {
+        showIntroImage("grayBirch", "treeid/gray_birch.png", "Gray birch");
+      } else if (currentIntroPage === "hackberryImage") {
+        showIntroImage("hackberry", "treeid/hackberry.png", "Hackberry");
+      } else if (currentIntroPage === "sugarberryImage") {
+        showIntroImage("sugarberry", "treeid/sugarberry.png", "Sugarberry");
+      } else if (currentIntroPage === "georgiaHackberryImage") {
+        showIntroImage("georgiaHackberry", "treeid/georgia_hackberry.png", "Georgia hackberry");
+      } else if (currentIntroPage === "americanHornbeamImage") {
+        showIntroImage("americanHornbeam", "treeid_fast/hornbeam.png.webp", "American hornbeam");
+      } else if (currentIntroPage === "easternHophornbeamImage") {
+        showIntroImage("easternHophornbeam", "treeid_fast/hophornbeam.png.webp", "Eastern hophornbeam");
+      } else if (currentIntroPage === "buckthornImage") {
+        showIntroImage("buckthorn", "treeid_fast/buckthorn.png.webp", "Carolina buckthorn");
+      } else if (currentIntroPage === "silverbellImage") {
+        showIntroImage("silverbell", "treeid_fast/silverbell.png.webp", "Carolina silverbell");
+      } else if (currentIntroPage === "serviceberryImage") {
+        showIntroImage("serviceberry", "treeid_fast/serviceberry.png.webp", "Downy serviceberry");
       } else if (currentIntroPage === "bigleafMagnoliaImage") {
         showIntroImage("bigleafMagnolia", "treeid/bigleaf_magnolia.jpg", "Bigleaf magnolia");
       } else if (currentIntroPage === "fraserMagnoliaImage") {
@@ -1449,6 +1710,24 @@
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
       } else if (currentIntroPage === "dogwoods") {
         showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
+      } else if (currentIntroPage === "wingedElm" || currentIntroPage === "slipperyElm" || currentIntroPage === "americanElm") {
+        showIntroImage("elms", "treeid/elms.png", "Elms");
+      } else if (currentIntroPage === "elms") {
+        showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
+      } else if (currentIntroPage === "riverBirch" || currentIntroPage === "blackBirch" || currentIntroPage === "yellowBirch" || currentIntroPage === "paperBirch" || currentIntroPage === "grayBirch") {
+        showIntroImage("birches", "treeid/birches.png", "Birches");
+      } else if (currentIntroPage === "birches") {
+        showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
+      } else if (currentIntroPage === "hackberry" || currentIntroPage === "sugarberry" || currentIntroPage === "georgiaHackberry") {
+        showIntroImage("hackberries", "treeid/hackberries.png", "Hackberries");
+      } else if (currentIntroPage === "hackberries") {
+        showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
+      } else if (currentIntroPage === "americanHornbeam" || currentIntroPage === "easternHophornbeam") {
+        showIntroImage("hornbeams", "treeid_fast/hornbeams.png.webp", "Hornbeams");
+      } else if (currentIntroPage === "hornbeams") {
+        showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
+      } else if (currentIntroPage === "buckthorn" || currentIntroPage === "silverbell" || currentIntroPage === "serviceberry") {
+        showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
       } else if (currentIntroPage === "pawpaw" || currentIntroPage === "redbud" || currentIntroPage === "persimmon" || currentIntroPage === "blackgum") {
         showIntroImage("alternateSimpleToothless", "treeid/alternate_simple_toothless.jpg", "Trees with alternate simple toothless leaves");
       } else if (currentIntroPage === "magnolias") {
@@ -1456,6 +1735,8 @@
       } else if (currentIntroPage === "bigleafMagnolia" || currentIntroPage === "fraserMagnolia" || currentIntroPage === "umbrellaMagnolia" || currentIntroPage === "cucumbertree") {
         showIntroImage("magnolias", "treeid/magnolias.jpg", "Magnolias");
       } else if (currentIntroPage === "alternateSimpleToothless") {
+        showIntroImage("alternateSimple", "treeid/alternate_simple.jpg", "Trees with alternate simple leaves");
+      } else if (currentIntroPage === "alternateSimpleToothed") {
         showIntroImage("alternateSimple", "treeid/alternate_simple.jpg", "Trees with alternate simple leaves");
       } else if (currentIntroPage === "alternateSimple") {
         showIntroImage("alternateLeaves", "treeid/alternate_leaves.png", "Trees with alternate leaves and branches");
@@ -1687,6 +1968,154 @@
       showIntroImage("alternateSimpleToothless", "treeid/alternate_simple_toothless.jpg", "Trees with alternate simple toothless leaves");
     });
 
+    document.getElementById("alternateSimpleToothedBtn").addEventListener("click", () => {
+      showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
+    });
+
+    document.getElementById("elmsBtn").addEventListener("click", () => {
+      showIntroImage("elms", "treeid/elms.png", "Elms");
+    });
+
+    document.getElementById("wingedElmBtn").addEventListener("click", () => {
+      showIntroImage("wingedElm", "treeid/winged_elm.jpg", "Winged elm");
+    });
+
+    document.getElementById("slipperyElmBtn").addEventListener("click", () => {
+      showIntroImage("slipperyElm", "treeid/slippery_elm.png", "Slippery elm");
+    });
+
+    document.getElementById("americanElmBtn").addEventListener("click", () => {
+      showIntroImage("americanElm", "treeid/american_elm.png", "American elm");
+    });
+
+    document.getElementById("wingedElmImageBtn").addEventListener("click", () => {
+      showIntroImage("wingedElmImage", "treeid/winged_elm_pix.png", "Winged elm detail image");
+    });
+
+    document.getElementById("slipperyElmImageBtn").addEventListener("click", () => {
+      showIntroImage("slipperyElmImage", "treeid/slippery_elm_pix.png", "Slippery elm detail image");
+    });
+
+    document.getElementById("americanElmImageBtn").addEventListener("click", () => {
+      showIntroImage("americanElmImage", "treeid/american_elm_pix.png", "American elm detail image");
+    });
+
+    document.getElementById("birchesBtn").addEventListener("click", () => {
+      showIntroImage("birches", "treeid/birches.png", "Birches");
+    });
+
+    document.getElementById("riverBirchBtn").addEventListener("click", () => {
+      showIntroImage("riverBirch", "treeid/river_birch.png", "River birch");
+    });
+
+    document.getElementById("blackBirchBtn").addEventListener("click", () => {
+      showIntroImage("blackBirch", "treeid/black_birch.png", "Black birch");
+    });
+
+    document.getElementById("yellowBirchBtn").addEventListener("click", () => {
+      showIntroImage("yellowBirch", "treeid/yellow_birch.png", "Yellow birch");
+    });
+
+    document.getElementById("paperBirchBtn").addEventListener("click", () => {
+      showIntroImage("paperBirch", "treeid/paper_birch.png", "Paper birch");
+    });
+
+    document.getElementById("grayBirchBtn").addEventListener("click", () => {
+      showIntroImage("grayBirch", "treeid/gray_birch.png", "Gray birch");
+    });
+
+    document.getElementById("riverBirchImageBtn").addEventListener("click", () => {
+      showIntroImage("riverBirchImage", "treeid/river_birch_pix.jpg", "River birch detail image");
+    });
+
+    document.getElementById("blackBirchImageBtn").addEventListener("click", () => {
+      showIntroImage("blackBirchImage", "treeid/black_birch_pix.jpg", "Black birch detail image");
+    });
+
+    document.getElementById("yellowBirchImageBtn").addEventListener("click", () => {
+      showIntroImage("yellowBirchImage", "treeid/yellow_birch_pix.jpg", "Yellow birch detail image");
+    });
+
+    document.getElementById("paperBirchImageBtn").addEventListener("click", () => {
+      showIntroImage("paperBirchImage", "treeid/paper_birch_pix.jpg", "Paper birch detail image");
+    });
+
+    document.getElementById("grayBirchImageBtn").addEventListener("click", () => {
+      showIntroImage("grayBirchImage", "treeid/gray_birch_pix.jpg", "Gray birch detail image");
+    });
+
+    document.getElementById("hackberriesBtn").addEventListener("click", () => {
+      showIntroImage("hackberries", "treeid/hackberries.png", "Hackberries");
+    });
+
+    document.getElementById("hackberryBtn").addEventListener("click", () => {
+      showIntroImage("hackberry", "treeid/hackberry.png", "Hackberry");
+    });
+
+    document.getElementById("sugarberryBtn").addEventListener("click", () => {
+      showIntroImage("sugarberry", "treeid/sugarberry.png", "Sugarberry");
+    });
+
+    document.getElementById("georgiaHackberryBtn").addEventListener("click", () => {
+      showIntroImage("georgiaHackberry", "treeid/georgia_hackberry.png", "Georgia hackberry");
+    });
+
+    document.getElementById("hackberryImageBtn").addEventListener("click", () => {
+      showIntroImage("hackberryImage", "treeid/hackberry_pix.jpg", "Hackberry detail image");
+    });
+
+    document.getElementById("sugarberryImageBtn").addEventListener("click", () => {
+      showIntroImage("sugarberryImage", "treeid/sugarberry_pix.jpg", "Sugarberry detail image");
+    });
+
+    document.getElementById("georgiaHackberryImageBtn").addEventListener("click", () => {
+      showIntroImage("georgiaHackberryImage", "treeid/georgia_hackberry_pix.jpg", "Georgia hackberry detail image");
+    });
+
+    document.getElementById("hornbeamsBtn").addEventListener("click", () => {
+      showIntroImage("hornbeams", "treeid_fast/hornbeams.png.webp", "Hornbeams");
+    });
+
+    document.getElementById("americanHornbeamBtn").addEventListener("click", () => {
+      showIntroImage("americanHornbeam", "treeid_fast/hornbeam.png.webp", "American hornbeam");
+    });
+
+    document.getElementById("easternHophornbeamBtn").addEventListener("click", () => {
+      showIntroImage("easternHophornbeam", "treeid_fast/hophornbeam.png.webp", "Eastern hophornbeam");
+    });
+
+    document.getElementById("americanHornbeamImageBtn").addEventListener("click", () => {
+      showIntroImage("americanHornbeamImage", "treeid_fast/hornbeam.jpg.webp", "American hornbeam detail image");
+    });
+
+    document.getElementById("easternHophornbeamImageBtn").addEventListener("click", () => {
+      showIntroImage("easternHophornbeamImage", "treeid_fast/hophornbeam.jpg.webp", "Eastern hophornbeam detail image");
+    });
+
+    document.getElementById("buckthornBtn").addEventListener("click", () => {
+      showIntroImage("buckthorn", "treeid_fast/buckthorn.png.webp", "Carolina buckthorn");
+    });
+
+    document.getElementById("silverbellBtn").addEventListener("click", () => {
+      showIntroImage("silverbell", "treeid_fast/silverbell.png.webp", "Carolina silverbell");
+    });
+
+    document.getElementById("serviceberryBtn").addEventListener("click", () => {
+      showIntroImage("serviceberry", "treeid_fast/serviceberry.png.webp", "Downy serviceberry");
+    });
+
+    document.getElementById("buckthornImageBtn").addEventListener("click", () => {
+      showIntroImage("buckthornImage", "treeid_fast/buckthorn.jpg.webp", "Carolina buckthorn detail image");
+    });
+
+    document.getElementById("silverbellImageBtn").addEventListener("click", () => {
+      showIntroImage("silverbellImage", "treeid_fast/silverbell.jpg.webp", "Carolina silverbell detail image");
+    });
+
+    document.getElementById("serviceberryImageBtn").addEventListener("click", () => {
+      showIntroImage("serviceberryImage", "treeid_fast/serviceberry.jpg.webp", "Downy serviceberry detail image");
+    });
+
     document.getElementById("pawpawBtn").addEventListener("click", () => {
       showIntroImage("pawpaw", "treeid/pawpaw.jpg", "Pawpaw");
     });
@@ -1907,5 +2336,30 @@
       result.textContent = "Starter app ready. Next step: add a tree database and matching rules.";
     });
   </script>
+<script>
+(() => {
+  const treeImageLinks = {
+    "blackgum.jpg": "blackgum.png",
+    "persimmon.jpg": "persimmon.png",
+    "redbud.jpg": "redbud.png"
+  };
+
+  for (const img of document.querySelectorAll("img")) {
+    const src = img.getAttribute("src") || "";
+    const fileName = src.split("/").pop();
+    const target = treeImageLinks[fileName];
+
+    if (!target || img.closest("a")) {
+      continue;
+    }
+
+    const link = document.createElement("a");
+    link.href = target;
+    link.setAttribute("aria-label", `Open ${target.replace(".png", "")} image plate`);
+    img.parentNode.insertBefore(link, img);
+    link.appendChild(img);
+  }
+})();
+</script>
 </body>
 </html>

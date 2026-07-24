@@ -301,6 +301,28 @@ body.map-only #stage {
     border-radius: 999px;
     background: rgba(255,255,255,0.13);
   }
+  #loadingTrack::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 42%;
+    border-radius: inherit;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(69,214,255,0.35) 18%,
+      #45d6ff 38%,
+      #48ff9b 56%,
+      #ffe45c 74%,
+      rgba(255,228,92,0.3) 88%,
+      transparent 100%
+    );
+    filter: saturate(1.25);
+    box-shadow: 0 0 20px rgba(72,255,155,0.8);
+    transform: translateX(-130%);
+    animation: loadingSwath 1.35s ease-in-out infinite;
+    pointer-events: none;
+  }
   #loadingFill {
     width: 0%;
     height: 100%;
@@ -308,6 +330,21 @@ body.map-only #stage {
     background: linear-gradient(90deg, #45d6ff 0%, #48ff9b 52%, #ffe45c 100%);
     box-shadow: 0 0 18px rgba(72,255,155,0.55);
     transition: width 180ms ease;
+  }
+  @keyframes loadingSwath {
+    from { transform: translateX(-130%); }
+    to { transform: translateX(340%); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #loadingTrack::after {
+      width: 100%;
+      transform: none;
+      animation: loadingPulse 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes loadingPulse {
+      from { opacity: 0.35; }
+      to { opacity: 0.9; }
+    }
   }
   #loadingPercent {
     margin-top: 10px;
@@ -324,10 +361,10 @@ body.map-only #stage {
 <div id="loadingOverlay" role="status" aria-live="polite" aria-label="Map loading progress">
   <div class="loadingCard">
     <h2 id="loadingTitle">LOADING PLEASE WAIT</h2>
-    <div id="loadingTrack" role="progressbar" aria-labelledby="loadingTitle" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+    <div id="loadingTrack" role="progressbar" aria-labelledby="loadingTitle" aria-valuemin="0" aria-valuemax="100">
       <div id="loadingFill"></div>
     </div>
-    <div id="loadingPercent">0%</div>
+    <div id="loadingPercent"></div>
   </div>
 </div>
 <div id="topBar">
@@ -701,8 +738,13 @@ function enterMapOnlyMode(options = {}){
     const pct = all > 0 ? Math.max(0, Math.min(100, Math.round((done / all) * 100))) : 0;
     progressFillEl.style.width = pct + "%";
     loadingFill.style.width = pct + "%";
-    loadingPercent.textContent = pct + "%";
-    loadingTrack.setAttribute("aria-valuenow", String(pct));
+    const hasMeasuredProgress = all > 0 && done > 0;
+    loadingPercent.textContent = hasMeasuredProgress ? pct + "%" : "";
+    if (hasMeasuredProgress) {
+      loadingTrack.setAttribute("aria-valuenow", String(pct));
+    } else {
+      loadingTrack.removeAttribute("aria-valuenow");
+    }
     loadProgressMetaEl.textContent = done + " / " + all + " files (" + pct + "%)";
     if (typeof text === "string" && text) loadProgressTextEl.textContent = text;
 

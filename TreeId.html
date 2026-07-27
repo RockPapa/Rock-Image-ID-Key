@@ -421,6 +421,24 @@
     <button id="alternateSimpleBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple leaves">Trees with alternate simple leaves</button>
     <button id="alternateSimpleToothlessBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple toothless leaves">Trees with alternate simple toothless leaves</button>
     <button id="alternateSimpleToothedBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple toothed leaves">Trees with alternate simple toothed leaves</button>
+    <button id="lobedLeavesBtn" class="choiceBtn" type="button" aria-label="Trees with alternate simple lobed leaves">Trees with alternate simple lobed leaves</button>
+    <button id="lobedMaplesBtn" class="choiceBtn" type="button" aria-label="Maples">Maples</button>
+    <button id="sweetgumBtn" class="choiceBtn" type="button" aria-label="Sweetgum">Sweetgum</button>
+    <button id="sassafrasBtn" class="choiceBtn" type="button" aria-label="Sassafras">Sassafras</button>
+    <button id="yellowPoplarBtn" class="choiceBtn" type="button" aria-label="Yellow poplar">Yellow poplar</button>
+    <button id="mulberriesBtn" class="choiceBtn" type="button" aria-label="Mulberries">Mulberries</button>
+    <button id="americanSycamoreBtn" class="choiceBtn" type="button" aria-label="American sycamore">American sycamore</button>
+    <button id="oaksBtn" class="choiceBtn" type="button" aria-label="Oaks">Oaks</button>
+    <button id="redMulberryBtn" class="choiceBtn" type="button" aria-label="Red mulberry">Red mulberry</button>
+    <button id="whiteMulberryBtn" class="choiceBtn" type="button" aria-label="White mulberry">White mulberry</button>
+    <button id="paperMulberryBtn" class="choiceBtn" type="button" aria-label="Paper mulberry">Paper mulberry</button>
+    <button id="sweetgumImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open sweetgum detail image">Open sweetgum detail image</button>
+    <button id="sassafrasImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open sassafras detail image">Open sassafras detail image</button>
+    <button id="yellowPoplarImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open yellow poplar detail image">Open yellow poplar detail image</button>
+    <button id="americanSycamoreImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open American sycamore detail image">Open American sycamore detail image</button>
+    <button id="redMulberryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open red mulberry detail image">Open red mulberry detail image</button>
+    <button id="whiteMulberryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open white mulberry detail image">Open white mulberry detail image</button>
+    <button id="paperMulberryImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open paper mulberry detail image">Open paper mulberry detail image</button>
     <button id="elmsBtn" class="choiceBtn" type="button" aria-label="Elms">Elms</button>
     <button id="wingedElmBtn" class="choiceBtn" type="button" aria-label="Winged elm">Winged elm</button>
     <button id="slipperyElmBtn" class="choiceBtn" type="button" aria-label="Slippery elm">Slippery elm</button>
@@ -684,6 +702,24 @@
       document.getElementById("alternateSimpleBtn"),
       document.getElementById("alternateSimpleToothlessBtn"),
       document.getElementById("alternateSimpleToothedBtn"),
+      document.getElementById("lobedLeavesBtn"),
+      document.getElementById("lobedMaplesBtn"),
+      document.getElementById("sweetgumBtn"),
+      document.getElementById("sassafrasBtn"),
+      document.getElementById("yellowPoplarBtn"),
+      document.getElementById("mulberriesBtn"),
+      document.getElementById("americanSycamoreBtn"),
+      document.getElementById("oaksBtn"),
+      document.getElementById("redMulberryBtn"),
+      document.getElementById("whiteMulberryBtn"),
+      document.getElementById("paperMulberryBtn"),
+      document.getElementById("sweetgumImageBtn"),
+      document.getElementById("sassafrasImageBtn"),
+      document.getElementById("yellowPoplarImageBtn"),
+      document.getElementById("americanSycamoreImageBtn"),
+      document.getElementById("redMulberryImageBtn"),
+      document.getElementById("whiteMulberryImageBtn"),
+      document.getElementById("paperMulberryImageBtn"),
       document.getElementById("elmsBtn"),
       document.getElementById("wingedElmBtn"),
       document.getElementById("slipperyElmBtn"),
@@ -897,6 +933,13 @@
       silverMaple: "https://en.wikipedia.org/wiki/Acer_saccharinum",
       stripedMaple: "https://en.wikipedia.org/wiki/Acer_pensylvanicum",
       mountainMaple: "https://en.wikipedia.org/wiki/Acer_spicatum",
+      sweetgum: "https://en.wikipedia.org/wiki/Liquidambar_styraciflua",
+      sassafras: "https://en.wikipedia.org/wiki/Sassafras_albidum",
+      yellowPoplar: "https://en.wikipedia.org/wiki/Liriodendron_tulipifera",
+      americanSycamore: "https://en.wikipedia.org/wiki/Platanus_occidentalis",
+      redMulberry: "https://en.wikipedia.org/wiki/Morus_rubra",
+      whiteMulberry: "https://en.wikipedia.org/wiki/Morus_alba",
+      paperMulberry: "https://en.wikipedia.org/wiki/Broussonetia_papyrifera",
       pawpaw: "https://en.wikipedia.org/wiki/Asimina_triloba",
       redbud: "https://en.wikipedia.org/wiki/Cercis_canadensis",
       persimmon: "https://en.wikipedia.org/wiki/Diospyros_virginiana",
@@ -1020,8 +1063,30 @@
       ],
       alternateSimple: [
         { btn: document.getElementById("alternateSimpleToothlessBtn"), x: 0.10, y: 0.35, width: 0.80, height: 0.11 },
-        { btn: document.getElementById("alternateSimpleToothedBtn"), x: 0.10, y: 0.49, width: 0.80, height: 0.11 }
+        { btn: document.getElementById("alternateSimpleToothedBtn"), x: 0.10, y: 0.49, width: 0.80, height: 0.11 },
+        { btn: document.getElementById("lobedLeavesBtn"), x: 0.10, y: 0.63, width: 0.80, height: 0.11 }
       ],
+      lobedLeaves: [
+        { btn: document.getElementById("lobedMaplesBtn"), x: 0.25, y: 0.28, width: 0.50, height: 0.055 },
+        { btn: document.getElementById("sweetgumBtn"), x: 0.25, y: 0.36, width: 0.50, height: 0.055 },
+        { btn: document.getElementById("sassafrasBtn"), x: 0.25, y: 0.44, width: 0.50, height: 0.055 },
+        { btn: document.getElementById("yellowPoplarBtn"), x: 0.20, y: 0.52, width: 0.60, height: 0.055 },
+        { btn: document.getElementById("mulberriesBtn"), x: 0.22, y: 0.60, width: 0.56, height: 0.055 },
+        { btn: document.getElementById("americanSycamoreBtn"), x: 0.13, y: 0.68, width: 0.74, height: 0.055 },
+        { btn: document.getElementById("oaksBtn"), x: 0.30, y: 0.76, width: 0.40, height: 0.055 }
+      ],
+      mulberries: [
+        { btn: document.getElementById("redMulberryBtn"), x: 0.20, y: 0.27, width: 0.60, height: 0.08 },
+        { btn: document.getElementById("whiteMulberryBtn"), x: 0.18, y: 0.40, width: 0.64, height: 0.08 },
+        { btn: document.getElementById("paperMulberryBtn"), x: 0.16, y: 0.53, width: 0.68, height: 0.08 }
+      ],
+      sweetgum: [{ btn: document.getElementById("sweetgumImageBtn"), x: 0.13, y: 0.83, width: 0.74, height: 0.11 }],
+      sassafras: [{ btn: document.getElementById("sassafrasImageBtn"), x: 0.13, y: 0.83, width: 0.74, height: 0.11 }],
+      yellowPoplar: [{ btn: document.getElementById("yellowPoplarImageBtn"), x: 0.13, y: 0.83, width: 0.74, height: 0.11 }],
+      americanSycamore: [{ btn: document.getElementById("americanSycamoreImageBtn"), x: 0.13, y: 0.83, width: 0.74, height: 0.11 }],
+      redMulberry: [{ btn: document.getElementById("redMulberryImageBtn"), x: 0.13, y: 0.83, width: 0.74, height: 0.11 }],
+      whiteMulberry: [{ btn: document.getElementById("whiteMulberryImageBtn"), x: 0.13, y: 0.83, width: 0.74, height: 0.11 }],
+      paperMulberry: [{ btn: document.getElementById("paperMulberryImageBtn"), x: 0.13, y: 0.83, width: 0.74, height: 0.11 }],
       alternateSimpleToothed: [
         { btn: document.getElementById("elmsBtn"), x: 0.24, y: 0.190, width: 0.52, height: 0.035 },
         { btn: document.getElementById("birchesBtn"), x: 0.20, y: 0.237, width: 0.60, height: 0.035 },
@@ -1501,7 +1566,7 @@
     function showIntroImage(pageKey, imageSrc, altText) {
       currentIntroPage = pageKey;
       startPage.classList.toggle("placeholderPage", imageSrc === "treeid/place_holder.png");
-      startPage.classList.toggle("scrollablePage", pageKey === "alternateSimpleToothed");
+      startPage.classList.toggle("scrollablePage", pageKey === "alternateSimpleToothed" || pageKey === "oaks");
       startPage.scrollTop = 0;
       setTreeImage(imageSrc, altText);
       beginBtn.style.display = "none";
@@ -1543,6 +1608,24 @@
       document.getElementById("alternateSimpleBtn").style.display = pageKey === "alternateLeaves" ? "block" : "none";
       document.getElementById("alternateSimpleToothlessBtn").style.display = pageKey === "alternateSimple" ? "block" : "none";
       document.getElementById("alternateSimpleToothedBtn").style.display = pageKey === "alternateSimple" ? "block" : "none";
+      document.getElementById("lobedLeavesBtn").style.display = pageKey === "alternateSimple" ? "block" : "none";
+      document.getElementById("lobedMaplesBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("sweetgumBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("sassafrasBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("yellowPoplarBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("mulberriesBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("americanSycamoreBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("oaksBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("redMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
+      document.getElementById("whiteMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
+      document.getElementById("paperMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
+      document.getElementById("sweetgumImageBtn").style.display = pageKey === "sweetgum" ? "block" : "none";
+      document.getElementById("sassafrasImageBtn").style.display = pageKey === "sassafras" ? "block" : "none";
+      document.getElementById("yellowPoplarImageBtn").style.display = pageKey === "yellowPoplar" ? "block" : "none";
+      document.getElementById("americanSycamoreImageBtn").style.display = pageKey === "americanSycamore" ? "block" : "none";
+      document.getElementById("redMulberryImageBtn").style.display = pageKey === "redMulberry" ? "block" : "none";
+      document.getElementById("whiteMulberryImageBtn").style.display = pageKey === "whiteMulberry" ? "block" : "none";
+      document.getElementById("paperMulberryImageBtn").style.display = pageKey === "paperMulberry" ? "block" : "none";
       document.getElementById("elmsBtn").style.display = pageKey === "alternateSimpleToothed" ? "block" : "none";
       document.getElementById("wingedElmBtn").style.display = pageKey === "elms" ? "block" : "none";
       document.getElementById("slipperyElmBtn").style.display = pageKey === "elms" ? "block" : "none";
@@ -1699,6 +1782,20 @@
         showIntroImage(lastPineSpeciesPage.pageKey, lastPineSpeciesPage.imageSrc, lastPineSpeciesPage.altText);
       } else if (currentIntroPage === "broadleafBlueSquare" && lastBroadleafSpeciesPage) {
         showIntroImage(lastBroadleafSpeciesPage.pageKey, lastBroadleafSpeciesPage.imageSrc, lastBroadleafSpeciesPage.altText);
+      } else if (currentIntroPage === "sweetgumImage") {
+        showIntroImage("sweetgum", "treeid_fast/sweetgum.png.webp", "Sweetgum");
+      } else if (currentIntroPage === "sassafrasImage") {
+        showIntroImage("sassafras", "treeid_fast/sassafras.png.webp", "Sassafras");
+      } else if (currentIntroPage === "yellowPoplarImage") {
+        showIntroImage("yellowPoplar", "treeid_fast/yellow-poplar.png.webp", "Yellow poplar");
+      } else if (currentIntroPage === "americanSycamoreImage") {
+        showIntroImage("americanSycamore", "treeid_fast/sycamore.png.webp", "American sycamore");
+      } else if (currentIntroPage === "redMulberryImage") {
+        showIntroImage("redMulberry", "treeid_fast/red-mulberry.png.webp", "Red mulberry");
+      } else if (currentIntroPage === "whiteMulberryImage") {
+        showIntroImage("whiteMulberry", "treeid_fast/white-mulberry.png.webp", "White mulberry");
+      } else if (currentIntroPage === "paperMulberryImage") {
+        showIntroImage("paperMulberry", "treeid_fast/paper-mulberry.png.webp", "Paper mulberry");
       } else if (currentIntroPage === "redMapleImage") {
         showIntroImage("redMaple", "treeid/red_maple.jpg", "Red maple");
       } else if (currentIntroPage === "greenAshImage") {
@@ -1854,7 +1951,11 @@
       } else if (currentIntroPage === "redMaple" || currentIntroPage === "sugarMaple" || currentIntroPage === "chalkMaple" || currentIntroPage === "southernSugarMaple" || currentIntroPage === "silverMaple" || currentIntroPage === "stripedMaple" || currentIntroPage === "mountainMaple") {
         showIntroImage("maples", "treeid/maples.png", "Maples");
       } else if (currentIntroPage === "maples") {
-        showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
+        if (preferredBackPage.maples === "lobedLeaves") {
+          showIntroImage("lobedLeaves", "treeid_fast/trees-with-lobed-leaves.png.webp", "Trees with lobed leaves");
+        } else {
+          showIntroImage("oppositeLeaves", "treeid/opposite_leaves.png", "Trees with opposite leaves and branches");
+        }
       } else if (currentIntroPage === "greenAsh") {
         goBackToRemembered("ashes", "ashes", "treeid/ashes.png", "Ashes");
       } else if (currentIntroPage === "whiteAsh") {
@@ -1919,6 +2020,14 @@
         showIntroImage("alternateSimple", "treeid/alternate_simple.png", "Trees with alternate simple leaves");
       } else if (currentIntroPage === "alternateSimpleToothed") {
         showIntroImage("alternateSimple", "treeid/alternate_simple.png", "Trees with alternate simple leaves");
+      } else if (["sweetgum", "sassafras", "yellowPoplar", "americanSycamore", "oaks"].includes(currentIntroPage)) {
+        showIntroImage("lobedLeaves", "treeid_fast/trees-with-lobed-leaves.png.webp", "Trees with lobed leaves");
+      } else if (["redMulberry", "whiteMulberry", "paperMulberry"].includes(currentIntroPage)) {
+        showIntroImage("mulberries", "treeid_fast/mulberries.png.webp", "Mulberries");
+      } else if (currentIntroPage === "mulberries") {
+        showIntroImage("lobedLeaves", "treeid_fast/trees-with-lobed-leaves.png.webp", "Trees with lobed leaves");
+      } else if (currentIntroPage === "lobedLeaves") {
+        showIntroImage("alternateSimple", "treeid/alternate_simple.png", "Trees with alternate simple leaves");
       } else if (currentIntroPage === "alternateSimple") {
         showIntroImage("alternateLeaves", "treeid/alternate_leaves.png", "Trees with alternate leaves and branches");
       } else if (currentIntroPage === "alternateCompound") {
@@ -1946,6 +2055,7 @@
 
     document.getElementById("redMapleBtn").addEventListener("click", () => {
       if (currentIntroPage === "oppositeLeaves") {
+        delete preferredBackPage.maples;
         showIntroImage("maples", "treeid/maples.png", "Maples");
       } else {
         showIntroImage("redMaple", "treeid/red_maple.jpg", "Red maple");
@@ -2152,6 +2262,58 @@
     document.getElementById("alternateSimpleToothedBtn").addEventListener("click", () => {
       showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
     });
+
+    document.getElementById("lobedLeavesBtn").addEventListener("click", () => {
+      showIntroImage("lobedLeaves", "treeid_fast/trees-with-lobed-leaves.png.webp", "Trees with lobed leaves");
+    });
+
+    document.getElementById("lobedMaplesBtn").addEventListener("click", () => {
+      rememberBackPage("maples", "lobedLeaves");
+      showIntroImage("maples", "treeid/maples.png", "Maples");
+    });
+
+    const lobedLeafPages = [
+      ["sweetgumBtn", "sweetgum", "sweetgum.png.webp", "Sweetgum"],
+      ["sassafrasBtn", "sassafras", "sassafras.png.webp", "Sassafras"],
+      ["yellowPoplarBtn", "yellowPoplar", "yellow-poplar.png.webp", "Yellow poplar"],
+      ["americanSycamoreBtn", "americanSycamore", "sycamore.png.webp", "American sycamore"],
+      ["oaksBtn", "oaks", "oaks.png.webp", "Oaks"]
+    ];
+    for (const [buttonId, pageKey, fileName, altText] of lobedLeafPages) {
+      document.getElementById(buttonId).addEventListener("click", () => {
+        showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
+      });
+    }
+
+    document.getElementById("mulberriesBtn").addEventListener("click", () => {
+      showIntroImage("mulberries", "treeid_fast/mulberries.png.webp", "Mulberries");
+    });
+
+    const mulberryPages = [
+      ["redMulberryBtn", "redMulberry", "red-mulberry.png.webp", "Red mulberry"],
+      ["whiteMulberryBtn", "whiteMulberry", "white-mulberry.png.webp", "White mulberry"],
+      ["paperMulberryBtn", "paperMulberry", "paper-mulberry.png.webp", "Paper mulberry"]
+    ];
+    for (const [buttonId, pageKey, fileName, altText] of mulberryPages) {
+      document.getElementById(buttonId).addEventListener("click", () => {
+        showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
+      });
+    }
+
+    const lobedDetailPages = [
+      ["sweetgumImageBtn", "sweetgumImage", "sweetgum.jpg.webp", "Sweetgum detail image"],
+      ["sassafrasImageBtn", "sassafrasImage", "sassafras.jpg.webp", "Sassafras detail image"],
+      ["yellowPoplarImageBtn", "yellowPoplarImage", "yellow-poplar.jpg.webp", "Yellow poplar detail image"],
+      ["americanSycamoreImageBtn", "americanSycamoreImage", "sycamore.jpg.webp", "American sycamore detail image"],
+      ["redMulberryImageBtn", "redMulberryImage", "red-mulberry.jpg.webp", "Red mulberry detail image"],
+      ["whiteMulberryImageBtn", "whiteMulberryImage", "white-mulberry.jpg.webp", "White mulberry detail image"],
+      ["paperMulberryImageBtn", "paperMulberryImage", "paper-mulberry.jpg.webp", "Paper mulberry detail image"]
+    ];
+    for (const [buttonId, pageKey, fileName, altText] of lobedDetailPages) {
+      document.getElementById(buttonId).addEventListener("click", () => {
+        showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
+      });
+    }
 
     document.getElementById("elmsBtn").addEventListener("click", () => {
       showIntroImage("elms", "treeid/elms.png", "Elms");

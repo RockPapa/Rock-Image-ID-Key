@@ -441,6 +441,16 @@
     <button id="chestnutOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open chestnut oak detail image">Open chestnut oak detail image</button>
     <button id="liveOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open live oak detail image">Open live oak detail image</button>
     <button id="overcupOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open overcup oak detail image">Open overcup oak detail image</button>
+    <button id="northernRedOakBtn" class="choiceBtn" type="button" aria-label="Northern red oak">Northern red oak</button>
+    <button id="southernRedOakBtn" class="choiceBtn" type="button" aria-label="Southern red oak">Southern red oak</button>
+    <button id="blackOakBtn" class="choiceBtn" type="button" aria-label="Black oak">Black oak</button>
+    <button id="scarletOakBtn" class="choiceBtn" type="button" aria-label="Scarlet oak">Scarlet oak</button>
+    <button id="waterOakBtn" class="choiceBtn" type="button" aria-label="Water oak">Water oak</button>
+    <button id="northernRedOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open northern red oak detail image">Open northern red oak detail image</button>
+    <button id="southernRedOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open southern red oak detail image">Open southern red oak detail image</button>
+    <button id="blackOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open black oak detail image">Open black oak detail image</button>
+    <button id="scarletOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open scarlet oak detail image">Open scarlet oak detail image</button>
+    <button id="waterOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open water oak detail image">Open water oak detail image</button>
     <button id="redMulberryBtn" class="choiceBtn" type="button" aria-label="Red mulberry">Red mulberry</button>
     <button id="whiteMulberryBtn" class="choiceBtn" type="button" aria-label="White mulberry">White mulberry</button>
     <button id="paperMulberryBtn" class="choiceBtn" type="button" aria-label="Paper mulberry">Paper mulberry</button>
@@ -734,6 +744,16 @@
       document.getElementById("chestnutOakImageBtn"),
       document.getElementById("liveOakImageBtn"),
       document.getElementById("overcupOakImageBtn"),
+      document.getElementById("northernRedOakBtn"),
+      document.getElementById("southernRedOakBtn"),
+      document.getElementById("blackOakBtn"),
+      document.getElementById("scarletOakBtn"),
+      document.getElementById("waterOakBtn"),
+      document.getElementById("northernRedOakImageBtn"),
+      document.getElementById("southernRedOakImageBtn"),
+      document.getElementById("blackOakImageBtn"),
+      document.getElementById("scarletOakImageBtn"),
+      document.getElementById("waterOakImageBtn"),
       document.getElementById("redMulberryBtn"),
       document.getElementById("whiteMulberryBtn"),
       document.getElementById("paperMulberryBtn"),
@@ -941,6 +961,11 @@
       postOak: "https://en.wikipedia.org/wiki/Quercus_stellata",
       chestnutOak: "https://en.wikipedia.org/wiki/Quercus_montana",
       overcupOak: "https://en.wikipedia.org/wiki/Quercus_lyrata",
+      northernRedOak: "https://en.wikipedia.org/wiki/Quercus_rubra",
+      southernRedOak: "https://en.wikipedia.org/wiki/Quercus_falcata",
+      blackOak: "https://en.wikipedia.org/wiki/Quercus_velutina",
+      scarletOak: "https://en.wikipedia.org/wiki/Quercus_coccinea",
+      waterOak: "https://en.wikipedia.org/wiki/Quercus_nigra",
       redMaple: "https://en.wikipedia.org/wiki/Acer_rubrum",
       greenAsh: "https://en.wikipedia.org/wiki/Fraxinus_pennsylvanica",
       whiteAsh: "https://en.wikipedia.org/wiki/Fraxinus_americana",
@@ -1120,6 +1145,18 @@
       chestnutOak: [{ btn: document.getElementById("chestnutOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
       liveOakOakPage: [{ btn: document.getElementById("liveOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
       overcupOak: [{ btn: document.getElementById("overcupOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      redOaks: [
+        { btn: document.getElementById("northernRedOakBtn"), x: 0.10, y: 0.11, width: 0.80, height: 0.07 },
+        { btn: document.getElementById("southernRedOakBtn"), x: 0.10, y: 0.20, width: 0.80, height: 0.07 },
+        { btn: document.getElementById("blackOakBtn"), x: 0.24, y: 0.29, width: 0.52, height: 0.07 },
+        { btn: document.getElementById("scarletOakBtn"), x: 0.19, y: 0.38, width: 0.62, height: 0.07 },
+        { btn: document.getElementById("waterOakBtn"), x: 0.23, y: 0.47, width: 0.54, height: 0.07 }
+      ],
+      northernRedOak: [{ btn: document.getElementById("northernRedOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      southernRedOak: [{ btn: document.getElementById("southernRedOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      blackOak: [{ btn: document.getElementById("blackOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      scarletOak: [{ btn: document.getElementById("scarletOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      waterOak: [{ btn: document.getElementById("waterOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
       mulberries: [
         { btn: document.getElementById("redMulberryBtn"), x: 0.20, y: 0.27, width: 0.60, height: 0.08 },
         { btn: document.getElementById("whiteMulberryBtn"), x: 0.18, y: 0.40, width: 0.64, height: 0.08 },
@@ -1673,6 +1710,16 @@
       document.getElementById("chestnutOakImageBtn").style.display = pageKey === "chestnutOak" ? "block" : "none";
       document.getElementById("liveOakImageBtn").style.display = pageKey === "liveOakOakPage" ? "block" : "none";
       document.getElementById("overcupOakImageBtn").style.display = pageKey === "overcupOak" ? "block" : "none";
+      document.getElementById("northernRedOakBtn").style.display = pageKey === "redOaks" ? "block" : "none";
+      document.getElementById("southernRedOakBtn").style.display = pageKey === "redOaks" ? "block" : "none";
+      document.getElementById("blackOakBtn").style.display = pageKey === "redOaks" ? "block" : "none";
+      document.getElementById("scarletOakBtn").style.display = pageKey === "redOaks" ? "block" : "none";
+      document.getElementById("waterOakBtn").style.display = pageKey === "redOaks" ? "block" : "none";
+      document.getElementById("northernRedOakImageBtn").style.display = pageKey === "northernRedOak" ? "block" : "none";
+      document.getElementById("southernRedOakImageBtn").style.display = pageKey === "southernRedOak" ? "block" : "none";
+      document.getElementById("blackOakImageBtn").style.display = pageKey === "blackOak" ? "block" : "none";
+      document.getElementById("scarletOakImageBtn").style.display = pageKey === "scarletOak" ? "block" : "none";
+      document.getElementById("waterOakImageBtn").style.display = pageKey === "waterOak" ? "block" : "none";
       document.getElementById("redMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
       document.getElementById("whiteMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
       document.getElementById("paperMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
@@ -2090,6 +2137,19 @@
         showIntroImage(speciesPage, `treeid_fast/${fileName}`, altText);
       } else if (["whiteOak", "postOak", "chestnutOak", "liveOakOakPage", "overcupOak"].includes(currentIntroPage)) {
         showIntroImage("whiteOaks", "treeid_fast/white-oaks.png.webp", "White oaks");
+      } else if (["northernRedOakImage", "southernRedOakImage", "blackOakImage", "scarletOakImage", "waterOakImage"].includes(currentIntroPage)) {
+        const speciesPage = currentIntroPage.replace(/Image$/, "");
+        const speciesImages = {
+          northernRedOak: ["northern-red-oak.png.webp", "Northern red oak"],
+          southernRedOak: ["southern-red-oak.png.webp", "Southern red oak"],
+          blackOak: ["black-oak.png.webp", "Black oak"],
+          scarletOak: ["scarlet-oak.png.webp", "Scarlet oak"],
+          waterOak: ["water-oak.png.webp", "Water oak"]
+        };
+        const [fileName, altText] = speciesImages[speciesPage];
+        showIntroImage(speciesPage, `treeid_fast/${fileName}`, altText);
+      } else if (["northernRedOak", "southernRedOak", "blackOak", "scarletOak", "waterOak"].includes(currentIntroPage)) {
+        showIntroImage("redOaks", "treeid_fast/red-oaks.png.webp", "Red oaks");
       } else if (currentIntroPage === "whiteOaks" || currentIntroPage === "redOaks") {
         showIntroImage("oaks", "treeid_fast/oaks.png.webp", "Oak characteristics");
       } else if (["sweetgum", "sassafras", "yellowPoplar", "americanSycamore", "oaks"].includes(currentIntroPage)) {
@@ -2386,6 +2446,32 @@
       ["overcupOakImageBtn", "overcupOakImage", "overcup-oak.jpg.webp", "Overcup oak detail image"]
     ];
     for (const [buttonId, pageKey, fileName, altText] of whiteOakDetailPages) {
+      document.getElementById(buttonId).addEventListener("click", () => {
+        showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
+      });
+    }
+
+    const redOakPages = [
+      ["northernRedOakBtn", "northernRedOak", "northern-red-oak.png.webp", "Northern red oak"],
+      ["southernRedOakBtn", "southernRedOak", "southern-red-oak.png.webp", "Southern red oak"],
+      ["blackOakBtn", "blackOak", "black-oak.png.webp", "Black oak"],
+      ["scarletOakBtn", "scarletOak", "scarlet-oak.png.webp", "Scarlet oak"],
+      ["waterOakBtn", "waterOak", "water-oak.png.webp", "Water oak"]
+    ];
+    for (const [buttonId, pageKey, fileName, altText] of redOakPages) {
+      document.getElementById(buttonId).addEventListener("click", () => {
+        showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
+      });
+    }
+
+    const redOakDetailPages = [
+      ["northernRedOakImageBtn", "northernRedOakImage", "northern-red-oak.jpg.webp", "Northern red oak detail image"],
+      ["southernRedOakImageBtn", "southernRedOakImage", "southern-red-oak.jpg.webp", "Southern red oak detail image"],
+      ["blackOakImageBtn", "blackOakImage", "black-oak.jpg.webp", "Black oak detail image"],
+      ["scarletOakImageBtn", "scarletOakImage", "scarlet-oak.jpg.webp", "Scarlet oak detail image"],
+      ["waterOakImageBtn", "waterOakImage", "water-oak.jpg.webp", "Water oak detail image"]
+    ];
+    for (const [buttonId, pageKey, fileName, altText] of redOakDetailPages) {
       document.getElementById(buttonId).addEventListener("click", () => {
         showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
       });

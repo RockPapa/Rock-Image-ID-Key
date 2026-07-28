@@ -429,6 +429,18 @@
     <button id="mulberriesBtn" class="choiceBtn" type="button" aria-label="Mulberries">Mulberries</button>
     <button id="americanSycamoreBtn" class="choiceBtn" type="button" aria-label="American sycamore">American sycamore</button>
     <button id="oaksBtn" class="choiceBtn" type="button" aria-label="Oaks">Oaks</button>
+    <button id="whiteOaksBtn" class="choiceBtn" type="button" aria-label="White oaks">White oaks</button>
+    <button id="redOaksBtn" class="choiceBtn" type="button" aria-label="Red oaks">Red oaks</button>
+    <button id="whiteOakBtn" class="choiceBtn" type="button" aria-label="White oak">White oak</button>
+    <button id="postOakBtn" class="choiceBtn" type="button" aria-label="Post oak">Post oak</button>
+    <button id="chestnutOakBtn" class="choiceBtn" type="button" aria-label="Chestnut oak">Chestnut oak</button>
+    <button id="liveOakBtn" class="choiceBtn" type="button" aria-label="Live oak">Live oak</button>
+    <button id="overcupOakBtn" class="choiceBtn" type="button" aria-label="Overcup oak">Overcup oak</button>
+    <button id="whiteOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open white oak detail image">Open white oak detail image</button>
+    <button id="postOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open post oak detail image">Open post oak detail image</button>
+    <button id="chestnutOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open chestnut oak detail image">Open chestnut oak detail image</button>
+    <button id="liveOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open live oak detail image">Open live oak detail image</button>
+    <button id="overcupOakImageBtn" class="choiceBtn specimenOverlayBtn" type="button" aria-label="Open overcup oak detail image">Open overcup oak detail image</button>
     <button id="redMulberryBtn" class="choiceBtn" type="button" aria-label="Red mulberry">Red mulberry</button>
     <button id="whiteMulberryBtn" class="choiceBtn" type="button" aria-label="White mulberry">White mulberry</button>
     <button id="paperMulberryBtn" class="choiceBtn" type="button" aria-label="Paper mulberry">Paper mulberry</button>
@@ -710,6 +722,18 @@
       document.getElementById("mulberriesBtn"),
       document.getElementById("americanSycamoreBtn"),
       document.getElementById("oaksBtn"),
+      document.getElementById("whiteOaksBtn"),
+      document.getElementById("redOaksBtn"),
+      document.getElementById("whiteOakBtn"),
+      document.getElementById("postOakBtn"),
+      document.getElementById("chestnutOakBtn"),
+      document.getElementById("liveOakBtn"),
+      document.getElementById("overcupOakBtn"),
+      document.getElementById("whiteOakImageBtn"),
+      document.getElementById("postOakImageBtn"),
+      document.getElementById("chestnutOakImageBtn"),
+      document.getElementById("liveOakImageBtn"),
+      document.getElementById("overcupOakImageBtn"),
       document.getElementById("redMulberryBtn"),
       document.getElementById("whiteMulberryBtn"),
       document.getElementById("paperMulberryBtn"),
@@ -912,6 +936,11 @@
       sweetbayMagnolia: "https://en.wikipedia.org/wiki/Magnolia_virginiana",
       redbay: "https://en.wikipedia.org/wiki/Persea_borbonia",
       liveOak: "https://en.wikipedia.org/wiki/Quercus_virginiana",
+      liveOakOakPage: "https://en.wikipedia.org/wiki/Quercus_virginiana",
+      whiteOak: "https://en.wikipedia.org/wiki/Quercus_alba",
+      postOak: "https://en.wikipedia.org/wiki/Quercus_stellata",
+      chestnutOak: "https://en.wikipedia.org/wiki/Quercus_montana",
+      overcupOak: "https://en.wikipedia.org/wiki/Quercus_lyrata",
       redMaple: "https://en.wikipedia.org/wiki/Acer_rubrum",
       greenAsh: "https://en.wikipedia.org/wiki/Fraxinus_pennsylvanica",
       whiteAsh: "https://en.wikipedia.org/wiki/Fraxinus_americana",
@@ -1075,6 +1104,22 @@
         { btn: document.getElementById("americanSycamoreBtn"), x: 0.13, y: 0.68, width: 0.74, height: 0.055 },
         { btn: document.getElementById("oaksBtn"), x: 0.30, y: 0.76, width: 0.40, height: 0.055 }
       ],
+      oaks: [
+        { btn: document.getElementById("whiteOaksBtn"), x: 0.08, y: 0.43, width: 0.84, height: 0.18 },
+        { btn: document.getElementById("redOaksBtn"), x: 0.08, y: 0.66, width: 0.84, height: 0.20 }
+      ],
+      whiteOaks: [
+        { btn: document.getElementById("whiteOakBtn"), x: 0.24, y: 0.22, width: 0.52, height: 0.07 },
+        { btn: document.getElementById("postOakBtn"), x: 0.24, y: 0.31, width: 0.52, height: 0.07 },
+        { btn: document.getElementById("chestnutOakBtn"), x: 0.13, y: 0.40, width: 0.74, height: 0.07 },
+        { btn: document.getElementById("liveOakBtn"), x: 0.27, y: 0.58, width: 0.46, height: 0.07 },
+        { btn: document.getElementById("overcupOakBtn"), x: 0.20, y: 0.67, width: 0.60, height: 0.07 }
+      ],
+      whiteOak: [{ btn: document.getElementById("whiteOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      postOak: [{ btn: document.getElementById("postOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      chestnutOak: [{ btn: document.getElementById("chestnutOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      liveOakOakPage: [{ btn: document.getElementById("liveOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
+      overcupOak: [{ btn: document.getElementById("overcupOakImageBtn"), x: 0.14, y: 0.83, width: 0.72, height: 0.10 }],
       mulberries: [
         { btn: document.getElementById("redMulberryBtn"), x: 0.20, y: 0.27, width: 0.60, height: 0.08 },
         { btn: document.getElementById("whiteMulberryBtn"), x: 0.18, y: 0.40, width: 0.64, height: 0.08 },
@@ -1566,7 +1611,7 @@
     function showIntroImage(pageKey, imageSrc, altText) {
       currentIntroPage = pageKey;
       startPage.classList.toggle("placeholderPage", imageSrc === "treeid/place_holder.png");
-      startPage.classList.toggle("scrollablePage", pageKey === "alternateSimpleToothed" || pageKey === "oaks");
+      startPage.classList.toggle("scrollablePage", pageKey === "alternateSimpleToothed" || ["oaks", "whiteOaks", "redOaks"].includes(pageKey));
       startPage.scrollTop = 0;
       setTreeImage(imageSrc, altText);
       beginBtn.style.display = "none";
@@ -1616,6 +1661,18 @@
       document.getElementById("mulberriesBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
       document.getElementById("americanSycamoreBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
       document.getElementById("oaksBtn").style.display = pageKey === "lobedLeaves" ? "block" : "none";
+      document.getElementById("whiteOaksBtn").style.display = pageKey === "oaks" ? "block" : "none";
+      document.getElementById("redOaksBtn").style.display = pageKey === "oaks" ? "block" : "none";
+      document.getElementById("whiteOakBtn").style.display = pageKey === "whiteOaks" ? "block" : "none";
+      document.getElementById("postOakBtn").style.display = pageKey === "whiteOaks" ? "block" : "none";
+      document.getElementById("chestnutOakBtn").style.display = pageKey === "whiteOaks" ? "block" : "none";
+      document.getElementById("liveOakBtn").style.display = pageKey === "whiteOaks" ? "block" : "none";
+      document.getElementById("overcupOakBtn").style.display = pageKey === "whiteOaks" ? "block" : "none";
+      document.getElementById("whiteOakImageBtn").style.display = pageKey === "whiteOak" ? "block" : "none";
+      document.getElementById("postOakImageBtn").style.display = pageKey === "postOak" ? "block" : "none";
+      document.getElementById("chestnutOakImageBtn").style.display = pageKey === "chestnutOak" ? "block" : "none";
+      document.getElementById("liveOakImageBtn").style.display = pageKey === "liveOakOakPage" ? "block" : "none";
+      document.getElementById("overcupOakImageBtn").style.display = pageKey === "overcupOak" ? "block" : "none";
       document.getElementById("redMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
       document.getElementById("whiteMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
       document.getElementById("paperMulberryBtn").style.display = pageKey === "mulberries" ? "block" : "none";
@@ -2020,6 +2077,21 @@
         showIntroImage("alternateSimple", "treeid/alternate_simple.png", "Trees with alternate simple leaves");
       } else if (currentIntroPage === "alternateSimpleToothed") {
         showIntroImage("alternateSimple", "treeid/alternate_simple.png", "Trees with alternate simple leaves");
+      } else if (["whiteOakImage", "postOakImage", "chestnutOakImage", "liveOakOakPageImage", "overcupOakImage"].includes(currentIntroPage)) {
+        const speciesPage = currentIntroPage.replace(/Image$/, "");
+        const speciesImages = {
+          whiteOak: ["white-oak.png.webp", "White oak"],
+          postOak: ["post-oak.png.webp", "Post oak"],
+          chestnutOak: ["chestnut-oak.png.webp", "Chestnut oak"],
+          liveOakOakPage: ["live-oak.png.webp", "Live oak"],
+          overcupOak: ["overcup-oak.png.webp", "Overcup oak"]
+        };
+        const [fileName, altText] = speciesImages[speciesPage];
+        showIntroImage(speciesPage, `treeid_fast/${fileName}`, altText);
+      } else if (["whiteOak", "postOak", "chestnutOak", "liveOakOakPage", "overcupOak"].includes(currentIntroPage)) {
+        showIntroImage("whiteOaks", "treeid_fast/white-oaks.png.webp", "White oaks");
+      } else if (currentIntroPage === "whiteOaks" || currentIntroPage === "redOaks") {
+        showIntroImage("oaks", "treeid_fast/oaks.png.webp", "Oak characteristics");
       } else if (["sweetgum", "sassafras", "yellowPoplar", "americanSycamore", "oaks"].includes(currentIntroPage)) {
         showIntroImage("lobedLeaves", "treeid_fast/trees-with-lobed-leaves.png.webp", "Trees with lobed leaves");
       } else if (["redMulberry", "whiteMulberry", "paperMulberry"].includes(currentIntroPage)) {
@@ -2280,6 +2352,40 @@
       ["oaksBtn", "oaks", "oaks.png.webp", "Oaks"]
     ];
     for (const [buttonId, pageKey, fileName, altText] of lobedLeafPages) {
+      document.getElementById(buttonId).addEventListener("click", () => {
+        showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
+      });
+    }
+
+    document.getElementById("whiteOaksBtn").addEventListener("click", () => {
+      showIntroImage("whiteOaks", "treeid_fast/white-oaks.png.webp", "White oaks");
+    });
+
+    document.getElementById("redOaksBtn").addEventListener("click", () => {
+      showIntroImage("redOaks", "treeid_fast/red-oaks.png.webp", "Red oaks");
+    });
+
+    const whiteOakPages = [
+      ["whiteOakBtn", "whiteOak", "white-oak.png.webp", "White oak"],
+      ["postOakBtn", "postOak", "post-oak.png.webp", "Post oak"],
+      ["chestnutOakBtn", "chestnutOak", "chestnut-oak.png.webp", "Chestnut oak"],
+      ["liveOakBtn", "liveOakOakPage", "live-oak.png.webp", "Live oak"],
+      ["overcupOakBtn", "overcupOak", "overcup-oak.png.webp", "Overcup oak"]
+    ];
+    for (const [buttonId, pageKey, fileName, altText] of whiteOakPages) {
+      document.getElementById(buttonId).addEventListener("click", () => {
+        showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
+      });
+    }
+
+    const whiteOakDetailPages = [
+      ["whiteOakImageBtn", "whiteOakImage", "white-oak.jpg.webp", "White oak detail image"],
+      ["postOakImageBtn", "postOakImage", "post-oak.jpg.webp", "Post oak detail image"],
+      ["chestnutOakImageBtn", "chestnutOakImage", "chestnut-oak.jpg.webp", "Chestnut oak detail image"],
+      ["liveOakImageBtn", "liveOakOakPageImage", "live-oak.jpg.webp", "Live oak detail image"],
+      ["overcupOakImageBtn", "overcupOakImage", "overcup-oak.jpg.webp", "Overcup oak detail image"]
+    ];
+    for (const [buttonId, pageKey, fileName, altText] of whiteOakDetailPages) {
       document.getElementById(buttonId).addEventListener("click", () => {
         showIntroImage(pageKey, `treeid_fast/${fileName}`, altText);
       });

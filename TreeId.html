@@ -364,7 +364,7 @@
     <img id="startPageImage" src="treeid_fast/page1.png.webp" data-original-src="treeid/page1.png" alt="Tree ID introduction">
     <button id="beginBtn" type="button" aria-label="Let's begin">Let's begin</button>
     <button id="backBtn" type="button" aria-label="Back">‹</button>
-    <button id="evergreenBtn" class="choiceBtn" type="button" aria-label="Tree is evergreen">Tree is evergreen</button>
+    <button id="evergreenBtn" class="choiceBtn" type="button" aria-label="Tree is evergreen or a deciduous conifer">Tree is evergreen or a deciduous conifer</button>
     <button id="oppositeBtn" class="choiceBtn" type="button" aria-label="Leaves and twigs are opposite">Leaves and twigs are opposite</button>
     <button id="alternateBtn" class="choiceBtn" type="button" aria-label="Leaves and twigs are alternate">Leaves and twigs are alternate</button>
     <button id="needleEvergreenBtn" class="choiceBtn" type="button" aria-label="Trees with needles or scale-like leaves">Trees with needles or scale-like leaves</button>
@@ -1085,23 +1085,23 @@
 
     const overlayPositions = {
       1: [
-        { btn: beginBtn, x: 0.12, y: 0.55, width: 0.76, height: 0.09 }
+        { btn: beginBtn, x: 0.12, y: 0.19, width: 0.76, height: 0.07 }
       ],
       2: [
-        { btn: document.getElementById("evergreenBtn"), x: 0.06, y: 0.17, width: 0.88, height: 0.13 },
-        { btn: document.getElementById("oppositeBtn"), x: 0.06, y: 0.31, width: 0.88, height: 0.22 },
-        { btn: document.getElementById("alternateBtn"), x: 0.06, y: 0.62, width: 0.88, height: 0.19 }
+        { btn: document.getElementById("evergreenBtn"), x: 0.06, y: 0.08, width: 0.88, height: 0.09 },
+        { btn: document.getElementById("oppositeBtn"), x: 0.06, y: 0.19, width: 0.88, height: 0.34 },
+        { btn: document.getElementById("alternateBtn"), x: 0.06, y: 0.57, width: 0.88, height: 0.32 }
       ],
       3: [
-        { btn: document.getElementById("needleEvergreenBtn"), x: 0.06, y: 0.22, width: 0.88, height: 0.36 },
-        { btn: document.getElementById("broadEvergreenBtn"), x: 0.06, y: 0.62, width: 0.88, height: 0.28 }
+        { btn: document.getElementById("needleEvergreenBtn"), x: 0.06, y: 0.10, width: 0.88, height: 0.45 },
+        { btn: document.getElementById("broadEvergreenBtn"), x: 0.06, y: 0.59, width: 0.88, height: 0.38 }
       ],
       evergreen: [
-        { btn: document.getElementById("pinesBtn"), x: 0.06, y: 0.10, width: 0.88, height: 0.11 },
-        { btn: document.getElementById("redcedarBtn"), x: 0.06, y: 0.24, width: 0.88, height: 0.12 },
-        { btn: document.getElementById("spruceBtn"), x: 0.06, y: 0.39, width: 0.88, height: 0.12 },
-        { btn: document.getElementById("firBtn"), x: 0.06, y: 0.52, width: 0.88, height: 0.12 },
-        { btn: document.getElementById("hemlockBtn"), x: 0.06, y: 0.67, width: 0.88, height: 0.12 }
+        { btn: document.getElementById("pinesBtn"), x: 0.20, y: 0.04, width: 0.60, height: 0.07 },
+        { btn: document.getElementById("redcedarBtn"), x: 0.06, y: 0.17, width: 0.88, height: 0.08 },
+        { btn: document.getElementById("spruceBtn"), x: 0.20, y: 0.30, width: 0.60, height: 0.08 },
+        { btn: document.getElementById("firBtn"), x: 0.28, y: 0.44, width: 0.44, height: 0.08 },
+        { btn: document.getElementById("hemlockBtn"), x: 0.17, y: 0.57, width: 0.66, height: 0.08 }
       ],
       pines: [
         { btn: document.getElementById("virginiaPineBtn"), x: 0.35, y: 0.17, width: 0.30, height: 0.04 },

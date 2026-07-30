@@ -388,12 +388,15 @@
     <button id="carolinaLaurelcherryBtn" class="choiceBtn" type="button" aria-label="Carolina laurel-cherry">Carolina laurel-cherry</button>
     <button id="southernMagnoliaBtn" class="choiceBtn" type="button" aria-label="Southern magnolia">Southern magnolia</button>
     <button id="sweetbayMagnoliaBtn" class="choiceBtn" type="button" aria-label="Sweetbay magnolia">Sweetbay magnolia</button>
+    <button id="broadleafHolliesBtn" class="choiceBtn" type="button" aria-label="Hollies">Hollies</button>
     <button id="bigleafMagnoliaBtn" class="choiceBtn" type="button" aria-label="Bigleaf magnolia">Bigleaf magnolia</button>
     <button id="fraserMagnoliaBtn" class="choiceBtn" type="button" aria-label="Fraser magnolia">Fraser magnolia</button>
     <button id="umbrellaMagnoliaBtn" class="choiceBtn" type="button" aria-label="Umbrella magnolia">Umbrella magnolia</button>
     <button id="cucumbertreeBtn" class="choiceBtn" type="button" aria-label="Cucumbertree">Cucumbertree</button>
     <button id="redbayBtn" class="choiceBtn" type="button" aria-label="Red bay">Red bay</button>
-    <button id="loblollyBayBtn" class="choiceBtn" type="button" aria-label="Live oak">Live oak</button>
+    <button id="liveOakEvergreenBtn" class="choiceBtn" type="button" aria-label="Live oak">Live oak</button>
+    <button id="loblollyBayBtn" class="choiceBtn" type="button" aria-label="Loblolly bay">Loblolly bay</button>
+    <button id="buckwheatTreeBtn" class="choiceBtn" type="button" aria-label="Buckwheat tree">Buckwheat tree</button>
     <button id="redMapleBtn" class="choiceBtn" type="button" aria-label="Red maple">Red maple</button>
     <button id="greenAshBtn" class="choiceBtn" type="button" aria-label="Green ash">Green ash</button>
     <button id="whiteAshBtn" class="choiceBtn" type="button" aria-label="White ash">White ash</button>
@@ -701,12 +704,15 @@
       document.getElementById("carolinaLaurelcherryBtn"),
       document.getElementById("southernMagnoliaBtn"),
       document.getElementById("sweetbayMagnoliaBtn"),
+      document.getElementById("broadleafHolliesBtn"),
       document.getElementById("bigleafMagnoliaBtn"),
       document.getElementById("fraserMagnoliaBtn"),
       document.getElementById("umbrellaMagnoliaBtn"),
       document.getElementById("cucumbertreeBtn"),
       document.getElementById("redbayBtn"),
+      document.getElementById("liveOakEvergreenBtn"),
       document.getElementById("loblollyBayBtn"),
+      document.getElementById("buckwheatTreeBtn"),
       document.getElementById("redMapleBtn"),
       document.getElementById("greenAshBtn"),
       document.getElementById("whiteAshBtn"),
@@ -940,7 +946,9 @@
       { btn: document.getElementById("southernMagnoliaBtn"), pageKey: "southernMagnolia", imageSrc: "treeid/southern_magnolia.jpg", altText: "Southern magnolia" },
       { btn: document.getElementById("sweetbayMagnoliaBtn"), pageKey: "sweetbayMagnolia", imageSrc: "treeid/sweetbay_magnolia.jpg", altText: "Sweetbay magnolia" },
       { btn: document.getElementById("redbayBtn"), pageKey: "redbay", imageSrc: "treeid/redbay.jpg", altText: "Red bay" },
-      { btn: document.getElementById("loblollyBayBtn"), pageKey: "liveOak", imageSrc: "treeid/live_oak.jpg", altText: "Live oak" }
+      { btn: document.getElementById("liveOakEvergreenBtn"), pageKey: "liveOak", imageSrc: "treeid/live_oak.jpg", altText: "Live oak" },
+      { btn: document.getElementById("loblollyBayBtn"), pageKey: "loblollyBay", imageSrc: "treeid/loblolly_bay.png", altText: "Loblolly bay", hasDetail: false },
+      { btn: document.getElementById("buckwheatTreeBtn"), pageKey: "buckwheatTree", imageSrc: "treeid/place_holder.png", altText: "Buckwheat tree image unavailable", hasDetail: false }
     ];
     const hickorySpecies = [
       { btn: document.getElementById("mockernutHickoryBtn"), pageKey: "mockernutHickory", imageSrc: "treeid/mockernut_hickory.jpg", detailSrc: "treeid/mockernut_pix.png", altText: "Mockernut hickory", detailAltText: "Mockernut hickory detail image" },
@@ -976,6 +984,8 @@
       sweetbayMagnolia: "https://en.wikipedia.org/wiki/Magnolia_virginiana",
       redbay: "https://en.wikipedia.org/wiki/Persea_borbonia",
       liveOak: "https://en.wikipedia.org/wiki/Quercus_virginiana",
+      loblollyBay: "https://en.wikipedia.org/wiki/Gordonia_lasianthus",
+      buckwheatTree: "https://en.wikipedia.org/wiki/Cliftonia_monophylla",
       liveOakOakPage: "https://en.wikipedia.org/wiki/Quercus_virginiana",
       whiteOak: "https://en.wikipedia.org/wiki/Quercus_alba",
       postOak: "https://en.wikipedia.org/wiki/Quercus_stellata",
@@ -1116,11 +1126,14 @@
         { btn: document.getElementById("easternWhitePineBtn"), x: 0.29, y: 0.83, width: 0.42, height: 0.04 }
       ],
       broadleafEvergreen: [
-        { btn: document.getElementById("carolinaLaurelcherryBtn"), x: 0.03, y: 0.14, width: 0.94, height: 0.08 },
-        { btn: document.getElementById("southernMagnoliaBtn"), x: 0.12, y: 0.29, width: 0.76, height: 0.08 },
-        { btn: document.getElementById("sweetbayMagnoliaBtn"), x: 0.12, y: 0.43, width: 0.76, height: 0.08 },
-        { btn: document.getElementById("redbayBtn"), x: 0.32, y: 0.56, width: 0.36, height: 0.08 },
-        { btn: document.getElementById("loblollyBayBtn"), x: 0.22, y: 0.72, width: 0.56, height: 0.08 }
+        { btn: document.getElementById("carolinaLaurelcherryBtn"), x: 0.02, y: 0.16, width: 0.96, height: 0.07 },
+        { btn: document.getElementById("southernMagnoliaBtn"), x: 0.10, y: 0.25, width: 0.80, height: 0.07 },
+        { btn: document.getElementById("sweetbayMagnoliaBtn"), x: 0.10, y: 0.34, width: 0.80, height: 0.07 },
+        { btn: document.getElementById("broadleafHolliesBtn"), x: 0.25, y: 0.43, width: 0.50, height: 0.07 },
+        { btn: document.getElementById("redbayBtn"), x: 0.28, y: 0.52, width: 0.44, height: 0.07 },
+        { btn: document.getElementById("liveOakEvergreenBtn"), x: 0.24, y: 0.61, width: 0.52, height: 0.07 },
+        { btn: document.getElementById("loblollyBayBtn"), x: 0.18, y: 0.70, width: 0.64, height: 0.07 },
+        { btn: document.getElementById("buckwheatTreeBtn"), x: 0.14, y: 0.79, width: 0.72, height: 0.07 }
       ],
       oppositeLeaves: [
         { btn: document.getElementById("redMapleBtn"), x: 0.27, y: 0.28, width: 0.46, height: 0.07 },
@@ -1877,8 +1890,9 @@
         const showFromCherries = pageKey === "cherries" && broadleafPageKey === "carolinaLaurelcherry";
         btn.style.display = pageKey === "broadleafEvergreen" || showFromToothless || showFromMagnolias || showFromCherries ? "block" : "none";
       }
+      document.getElementById("broadleafHolliesBtn").style.display = pageKey === "broadleafEvergreen" ? "block" : "none";
       document.getElementById("pineBlueSquareBtn").style.display = pineSpecies.some(({ pageKey: pinePageKey }) => pinePageKey === pageKey) ? "block" : "none";
-      document.getElementById("broadleafBlueSquareBtn").style.display = broadleafSpecies.some(({ pageKey: broadleafPageKey }) => broadleafPageKey === pageKey) ? "block" : "none";
+      document.getElementById("broadleafBlueSquareBtn").style.display = broadleafSpecies.some(({ pageKey: broadleafPageKey, hasDetail }) => broadleafPageKey === pageKey && hasDetail !== false) ? "block" : "none";
       document.getElementById("redMapleImageBtn").style.display = pageKey === "redMaple" ? "block" : "none";
       document.getElementById("greenAshImageBtn").style.display = pageKey === "greenAsh" ? "block" : "none";
       document.getElementById("whiteAshImageBtn").style.display = pageKey === "whiteAsh" ? "block" : "none";
@@ -2157,6 +2171,9 @@
         showIntroImage("holly", "treeid_fast/hollys.png.webp", "Hollies");
       } else if (currentIntroPage === "blackCherry" || currentIntroPage === "pinCherry") {
         showIntroImage("cherries", "treeid_fast/cherries.png.webp", "Cherries");
+      } else if (currentIntroPage === "holly" && preferredBackPage.holly === "broadleafEvergreen") {
+        showIntroImage("broadleafEvergreen", "treeid/broadleaf_evergreen.png", "Broadleaf evergreen choices");
+        delete preferredBackPage.holly;
       } else if (["willow", "alder", "holly", "sourwood", "cherries", "cottonwood", "basswood", "beech", "chestnut", "chinkapin"].includes(currentIntroPage)) {
         showIntroImage("alternateSimpleToothed", "treeid_fast/alternate-simple-toothed.png.webp", "Trees with alternate simple toothed leaves");
       } else if (currentIntroPage === "pawpaw" || currentIntroPage === "redbud" || currentIntroPage === "persimmon" || currentIntroPage === "blackgum") {
@@ -2728,6 +2745,7 @@
     });
 
     document.getElementById("hollyBtn").addEventListener("click", () => {
+      delete preferredBackPage.holly;
       showIntroImage("holly", "treeid_fast/hollys.png.webp", "Hollies");
     });
 
@@ -2994,6 +3012,11 @@
         showIntroImage(pageKey, imageSrc, altText);
       });
     }
+
+    document.getElementById("broadleafHolliesBtn").addEventListener("click", () => {
+      rememberBackPage("holly", "broadleafEvergreen");
+      showIntroImage("holly", "treeid_fast/hollys.png.webp", "Hollies");
+    });
 
     document.getElementById("broadleafBlueSquareBtn").addEventListener("click", () => {
       lastBroadleafSpeciesPage = broadleafSpecies.find(({ pageKey }) => pageKey === currentIntroPage) || lastBroadleafSpeciesPage;

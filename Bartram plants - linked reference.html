@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bartram's Plants — Linked Georgia Reference</title>
+<style>
+:root{--ink:#172019;--paper:#f5f1e6;--green:#244f35;--pale:#e5ecdf;--gold:#b68a32;--muted:#5d665e}
+*{box-sizing:border-box} body{margin:0;background:var(--paper);color:var(--ink);font:19px/1.55 Georgia,serif}
+header{background:linear-gradient(135deg,#173b28,#326342);color:white;padding:2.4rem max(5vw,1rem)}
+header h1{margin:0;font-size:clamp(2rem,5vw,3.6rem);line-height:1.05} header p{max-width:850px;margin:.8rem 0 0}
+main{max-width:1100px;margin:auto;padding:1.5rem max(3vw,1rem) 4rem}
+.controls{position:sticky;top:0;background:rgba(245,241,230,.96);padding:1rem 0;z-index:2;border-bottom:2px solid #d8d1bd}
+input{width:100%;font:inherit;padding:.75rem 1rem;border:2px solid #7a8b78;border-radius:.5rem;background:white}
+.key,.note{color:var(--muted);font-size:.92rem}.key{margin:.65rem 0 0}.count{font-weight:bold;color:var(--green)}
+.entry{background:#fffdf7;border-left:6px solid var(--green);padding:1rem 1.15rem;margin:1rem 0;border-radius:.25rem;box-shadow:0 2px 8px #23301f18}
+.entry h2{font-size:1.3rem;margin:0 0 .35rem;color:var(--green)} .entry p{margin:.35rem 0}
+.province{display:inline-block;background:var(--pale);border:1px solid #9aad96;border-radius:99px;padding:.12rem .55rem;margin:.12rem .2rem .12rem 0;font:700 .82rem system-ui,sans-serif}
+.uncertain{border-left-color:var(--gold)} .links{font:700 .86rem system-ui,sans-serif;margin-top:.65rem!important}
+a{color:#175b74} a:hover{color:#8b4d13}.links a{margin-right:1rem}
+footer{border-top:1px solid #cfc7b3;margin-top:2rem;padding-top:1rem;color:var(--muted)}
+@media print{.controls{position:static}.entry{break-inside:avoid;box-shadow:none}body{font-size:12pt}}
+</style>
+</head>
+<body>
+<header><h1>Bartram's Plants</h1><p>An alphabetical, linked working reference for William Bartram's plant names and their likely modern identities in Georgia.</p></header>
+<main>
+<div class="controls"><input id="search" type="search" placeholder="Search Bartram name, modern name, common name, or province…"><p class="key"><span id="count" class="count"></span> entries · Province labels describe broad occurrence in Georgia, not every county or habitat.</p></div>
+<div id="list"></div>
+<footer><p><strong>Distribution note:</strong> Mountains includes Georgia's Blue Ridge, Ridge and Valley, and Appalachian Plateau for this simplified working list. A gold border marks a historically uncertain identification. Province assignments are provisional where Bartram's name is uncertain.</p><p>Useful authorities: <a href="https://www.georgiaherbaria.org/" target="_blank">Atlas of Georgia Plants</a> · <a href="https://extension.uga.edu/publications/detail.html?number=B987" target="_blank">UGA Native Plants for Georgia</a></p></footer>
+</main>
+<script>
+const plants = [
+['Acer glaucum','Florida maple or silver maple (Acer saccharinum)','Mountains, Piedmont, Coastal Plain','Two proposed identifications remain in the notes.',1],
+['Aesculus parva','Red buckeye (Aesculus pavia)','Piedmont, Coastal Plain','Almost certainly red buckeye.',1],
+['Andromeda arborea','Sourwood (Oxydendrum arboreum)','Mountains, Piedmont, Coastal Plain',''],
+['Andromeda ferruginia','Fetterbush (Lyonia ferruginea)','Coastal Plain',''],
+['Andromeda formosissima','Florida hobblebush or pipestemwood (Agarista populifolia)','Piedmont, Coastal Plain','Most frequent in the Coastal Plain; extends locally into the Piedmont.',1],
+['Andromeda nitida','Shiny lyonia, fetterbush, or shiny staggerbush (Lyonia lucida)','Coastal Plain',''],
+['Anona','Woolly or flag pawpaw (Asimina incana)','Coastal Plain','Likely identity of the plant with large, fragrant white flowers.',1],
+['Anona pigmya','Dwarf pawpaw (Asimina parviflora)','Piedmont, Coastal Plain',''],
+['Azalea flammea','Flame azalea (Rhododendron flammeum)','Piedmont, Coastal Plain',''],
+['Azalea nuda','Pinxterbloom azalea (Rhododendron periclymenoides)','Mountains, Piedmont',''],
+['Azalea viscosa','Swamp azalea (Rhododendron viscosum)','Mountains, Piedmont, Coastal Plain',''],
+['Betula nigra (Bartram)','Sweet or black birch (Betula lenta)','Mountains, Piedmont','Bartram was in the mountains; this identification is provisional.',1],
+['Cephalanthos','Common buttonbush (Cephalanthus occidentalis)','Mountains, Piedmont, Coastal Plain',''],
+['Cliftonia monophylla','Buckwheat tree','Coastal Plain','Bartram’s “new shrub of great beauty and singularity.”'],
+['Cornus alba','Swamp dogwood (Cornus foemina)','Piedmont, Coastal Plain',''],
+['Cornus sanquinea','Silky dogwood (Cornus amomum)','Mountains, Piedmont, Coastal Plain','Historical identification is probable rather than certain.',1],
+['Corypha palma','Cabbage palmetto (Sabal palmetto)','Coastal Plain',''],
+['Corypha pumila','Dwarf palmetto (Sabal minor)','Piedmont, Coastal Plain','Primarily Coastal Plain, with scattered inland occurrences.'],
+['Corypha repens','Saw palmetto (Serenoa repens)','Coastal Plain',''],
+['Dirca palustris','Eastern leatherwood','Mountains, Piedmont','Rare and localized in Georgia.'],
+['Fagus castanea','American chestnut (Castanea dentata)','Mountains, Piedmont',''],
+['Fagus pumila','Chinkapin (Castanea pumila)','Mountains, Piedmont, Coastal Plain',''],
+['Fagus sylvatica','American beech (Fagus grandifolia)','Mountains, Piedmont, Coastal Plain',''],
+['Fothergilla gardini','Dwarf fothergilla or dwarf witch-alder (Fothergilla gardenii)','Coastal Plain',''],
+['Franklinia altamaha','Franklin tree','Coastal Plain','Native population is extinct in the wild; surviving plants descend from cultivated material.'],
+['Fraxinus aquatica','Carolina ash (Fraxinus caroliniana) or pumpkin ash (Fraxinus profunda)','Coastal Plain','The historical name is uncertain; both candidates are wetland Coastal Plain trees.',1],
+['Fraxinus excelcior','Green ash (Fraxinus pennsylvanica)','Mountains, Piedmont, Coastal Plain','Historical identification is probable.',1],
+['Georgia plume','Elliottia racemosa','Piedmont, Coastal Plain','Rare Georgia endemic concentrated near the Fall Line and Coastal Plain.'],
+['Gleditsia monosperma','Water locust (Gleditsia aquatica)','Coastal Plain',''],
+['Halesia diptera','Two-winged silverbell','Coastal Plain',''],
+['Halesia taetraptera','Carolina silverbell (Halesia carolina)','Mountains, Piedmont, Coastal Plain','Most characteristic of the mountains and Piedmont.'],
+['Hopea tinctoria','Sweetleaf or horsesugar (Symplocos tinctoria)','Piedmont, Coastal Plain',''],
+['Ilex angustifolium','Dahoon holly (Ilex cassine)','Coastal Plain',''],
+['Itea Virginia','Virginia sweetspire (Itea virginica)','Piedmont, Coastal Plain','The spelling in the working notes has been retained as Bartram’s heading.'],
+['Juglans acuminata','Pignut hickory (Carya glabra)','Mountains, Piedmont, Coastal Plain','Most likely “some kind of hickory”; identification remains provisional.',1],
+['Juglans alba','Butternut or white walnut (Juglans cinerea)','Mountains','Historical identification is uncertain.',1],
+['Juglans exaltata','Shagbark hickory (Carya ovata)','Mountains, Piedmont','Localized in Georgia, especially on richer soils.'],
+['Juglans rustica','Mockernut hickory (Carya tomentosa)','Mountains, Piedmont, Coastal Plain','Probable but uncertain identification.',1],
+['Kalmia angustifolia','Sheep-laurel (Kalmia angustifolia)','Mountains','Rare or doubtful as a naturally occurring Georgia plant; historical interpretation needs care.',1],
+['Kalmia ciliata','Hairy wicky (Kalmia hirsuta)','Coastal Plain',''],
+['Laurus benzoin','Northern spicebush (Lindera benzoin)','Mountains, Piedmont, Coastal Plain','Most frequent in mountains and rich Piedmont sites.'],
+['Laurus borbonia','Redbay (Persea borbonia)','Piedmont, Coastal Plain','Primarily Coastal Plain.'],
+['Laurus indica','Swampbay (Persea palustris), possibly redbay (Persea borbonia)','Coastal Plain','Provisional identification.',1],
+['Laurus sassafras','Sassafras (Sassafras albidum)','Mountains, Piedmont, Coastal Plain',''],
+['Magnolia auriculata','Fraser magnolia (Magnolia fraseri) or bigleaf magnolia (Magnolia macrophylla)','Mountains; possibly Piedmont','Bartram may have applied the name to more than one species.',1],
+['Magnolia pyramidata','Pyramid magnolia (Magnolia pyramidata)','Coastal Plain','Rare in Georgia.'],
+['Magnolia tripetala','Umbrella magnolia','Mountains, Piedmont','Rare or local in the Coastal Plain.'],
+['Nyssa aquatica','Water tupelo','Coastal Plain',''],
+['Nyssa ogechee','Ogeechee tupelo','Coastal Plain',''],
+['Nyssa sylvatica','Black tupelo or blackgum','Mountains, Piedmont, Coastal Plain',''],
+['Olea americana','Devilwood or American olive (Cartrema americanum; formerly Osmanthus americanus)','Piedmont, Coastal Plain','Primarily Coastal Plain.'],
+['Physic-nut or Indian olive','Nestronia umbellula','Mountains, Piedmont, Coastal Plain','Scattered and uncommon; Bartram noted opposite leaves.'],
+['Pinus abies','Eastern hemlock (Tsuga canadensis)','Mountains','Historical identification.',1],
+['Pinus lutea / Pinus taeda','Loblolly pine (Pinus taeda)','Piedmont, Coastal Plain','Historical interpretation.',1],
+['Pinus squarosa / Pinus echinata','Shortleaf pine (Pinus echinata)','Mountains, Piedmont, Coastal Plain','Provisional historical interpretation.',1],
+['Pinus sylvestris','Pitch pine (Pinus rigida)','Mountains, Piedmont','Historical identification.',1],
+['Populus heterophylla','Swamp cottonwood','Piedmont, Coastal Plain','Primarily Coastal Plain floodplains.'],
+['Populus tremula (Bartram)','Bigtooth aspen (Populus grandidentata)','Mountains, Piedmont','Probable identification; uncommon and localized in Georgia.',1],
+['Prunus indica','Chickasaw plum (Prunus angustifolia)','Piedmont, Coastal Plain','Probable identification.',1],
+['Prunus laura cerpa','Carolina laurel cherry (Prunus caroliniana)','Piedmont, Coastal Plain',''],
+['Ptelea trifoliata','Common hoptree or wafer-ash','Mountains, Piedmont, Coastal Plain','Localized, usually on rich or calcareous sites.'],
+['Quercus castanea','Chinkapin oak (Quercus muehlenbergii)','Mountains, Piedmont, Coastal Plain','Localized on base-rich soils; chiefly mountains and Piedmont.'],
+['Quercus dentata / Quercus hemisphaerica','Darlington oak (Quercus hemisphaerica)','Coastal Plain','Historical name pairing remains provisional.',1],
+['Quercus humila / Quercus incana','Bluejack oak (Quercus incana)','Piedmont, Coastal Plain','Primarily Coastal Plain.'],
+['Quercus laciniata','Scarlet oak (Quercus coccinea)','Mountains, Piedmont','Probably scarlet oak; not “lasciniata.”',1],
+['Quercus prinos','Swamp chestnut oak (Quercus michauxii)','Piedmont, Coastal Plain',''],
+['Quercus sempervirens','Live oak (Quercus virginiana)','Coastal Plain',''],
+['Quercus tinctoria','Black oak (Quercus velutina)','Mountains, Piedmont, Coastal Plain',''],
+['Rhamnus frangula','Carolina buckthorn (Frangula caroliniana; formerly Rhamnus caroliniana)','Mountains, Piedmont, Coastal Plain','Scattered, usually on rich soils.'],
+['Rhododendron ferrugineum','Piedmont or minus rhododendron (Rhododendron minus)','Mountains, Piedmont','Historical identification.',1],
+['Robinia viscosa','Clammy or rose-flowering locust','Mountains, Piedmont',''],
+['Sambricus','Elderberry (Sambucus canadensis)','Mountains, Piedmont, Coastal Plain','Almost certainly a misspelling or printing error for Sambucus.',1],
+['Spiraea opulifolia','Ninebark (Physocarpus opulifolius)','Mountains, Piedmont','Localized in Georgia.'],
+['Staphylea trifoliata','American bladdernut','Mountains, Piedmont',''],
+['Stewartia','Silky camellia (Stewartia malacodendron)','Piedmont, Coastal Plain','Probable historical identification.',1],
+['Stewartia montana','Mountain stewartia or mountain camellia (Stewartia ovata)','Mountains, Piedmont',''],
+['Styrax latifolia','Bigleaf snowbell (Styrax grandifolius)','Piedmont, Coastal Plain','Almost certainly this species.',1],
+['Ulmus campestris','American elm (Ulmus americana)','Mountains, Piedmont, Coastal Plain','Historical identification.',1],
+['Ulmus subifer / subiser','Winged elm (Ulmus alata)','Mountains, Piedmont, Coastal Plain',''],
+['Ulmus sylvatica','American elm (Ulmus americana), probably a southern form','Mountains, Piedmont, Coastal Plain','Provisional historical interpretation.',1],
+['Viburnum dentatum','Southern arrowwood (Viburnum dentatum complex)','Mountains, Piedmont, Coastal Plain',''],
+['Yucca gloriosa','Spanish dagger, moundlily yucca, or tree yucca','Coastal Plain','Bartram’s “palmetto royal”; not a true palmetto.'],
+['Zamia pumila','Coontie (Zamia integrifolia)','Coastal Plain','Native status in Georgia requires careful interpretation.',1],
+['Zanthoxylum clava-Herculis','Hercules’-club (Zanthoxylum clava-herculis)','Piedmont, Coastal Plain','Primarily Coastal Plain.']
+];
+const list=document.getElementById('list'), search=document.getElementById('search'), count=document.getElementById('count');
+function render(q=''){
+ const needle=q.trim().toLowerCase();
+ const shown=plants.filter(x=>x.join(' ').toLowerCase().includes(needle));
+ count.textContent=shown.length;
+ list.innerHTML=shown.map(([old,modern,regions,note,uncertain])=>{
+  const query=modern.replace(/\([^)]*formerly[^)]*\)/gi,'').replace(/\bor\b.*$/i,'').trim();
+  const wiki='https://en.wikipedia.org/w/index.php?search='+encodeURIComponent(query);
+  const web='https://www.google.com/search?q='+encodeURIComponent(old+' '+modern+' Georgia plant');
+  const atlas='https://www.google.com/search?q='+encodeURIComponent('site:georgiaherbaria.org '+query);
+  return `<article class="entry ${uncertain?'uncertain':''}"><h2>${old}</h2><p><strong>Modern identification:</strong> ${modern}</p><p><strong>Georgia province:</strong> ${regions.split(', ').map(r=>`<span class="province">${r}</span>`).join('')}</p>${note?`<p class="note">${note}</p>`:''}<p class="links"><a target="_blank" href="${wiki}">Wikipedia</a><a target="_blank" href="${web}">Web search</a><a target="_blank" href="${atlas}">Georgia specimens</a></p></article>`
+ }).join('');
+}
+search.addEventListener('input',e=>render(e.target.value)); render();
+</script>
+</body>
+</html>

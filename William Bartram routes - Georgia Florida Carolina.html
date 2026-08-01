@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>William Bartram's Routes — Georgia, North Florida & Western Carolina</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--ink:#17231a;--paper:#f4f0e4;--green:#28563a;--blue:#286f9b;--red:#a94835;--gold:#b07b22;--muted:#667067}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.45 Georgia,serif}
+header{padding:1.1rem max(2vw,1rem);background:#183d29;color:white}h1{font-size:clamp(1.55rem,3vw,2.35rem);margin:0}.subtitle{margin:.3rem 0 0;color:#e7eee8}
+.layout{display:grid;grid-template-columns:minmax(240px,320px) 1fr;height:calc(100vh - 92px);min-height:620px}.panel{padding:1rem;overflow:auto;border-right:1px solid #aaa;background:#faf7ee}.map{height:100%;min-height:620px}
+h2{font-size:1.08rem;margin:1rem 0 .4rem;color:var(--green)}label{display:block;margin:.45rem 0;cursor:pointer}.swatch{display:inline-block;width:25px;height:4px;vertical-align:middle;margin-right:.45rem}.dash{border-top:3px dashed var(--muted);height:1px}.dot{border-top:3px dotted var(--muted);height:1px}
+.small{font:14px/1.4 system-ui,sans-serif;color:var(--muted)}.warning{padding:.65rem;background:#eee7d4;border-left:4px solid var(--gold)}button{font:inherit;padding:.4rem .65rem;border:1px solid #6f7d70;border-radius:.35rem;background:white;cursor:pointer}button:hover{background:#edf2ec}
+.leaflet-popup-content{font:15px/1.4 Georgia,serif;max-width:290px}.leaflet-popup-content h3{font-size:17px;margin:0 0 .35rem;color:#214e34}.confidence{font:700 11px system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em}.documented{color:#24633c}.probable{color:#9a6114}.conjectural{color:#9a3e32}.number-marker{background:#fff;border:2px solid #254d33;border-radius:50%;color:#173d27;font:bold 12px system-ui;text-align:center;line-height:22px;box-shadow:0 1px 4px #0008}
+@media(max-width:760px){header{padding:.75rem 1rem}.layout{display:block;height:auto}.panel{border-right:0}.map{height:68vh;min-height:480px}}
+@media print{header,.panel{display:none}.layout{display:block;height:100vh}.map{height:100vh}}
+</style>
+</head>
+<body>
+<header><h1>William Bartram's Routes</h1><p class="subtitle">Georgia · North Florida · Western South Carolina · 1773–1776</p></header>
+<div class="layout">
+<aside class="panel">
+  <div class="warning small"><strong>Working historical reconstruction.</strong> Lines connect known or likely places; they do not claim that Bartram followed modern roads or straight lines. Click any numbered stop for notes.</div>
+  <h2>Journeys</h2>
+  <label><input type="checkbox" data-layer="coast" checked> <span class="swatch" style="background:var(--blue)"></span>1773 Georgia coast & interior</label>
+  <label><input type="checkbox" data-layer="florida" checked> <span class="swatch" style="background:var(--red)"></span>1774 East Florida</label>
+  <label><input type="checkbox" data-layer="mountains" checked> <span class="swatch" style="background:var(--green)"></span>1775 northern journey</label>
+  <h2>Confidence</h2>
+  <p class="small"><span class="swatch" style="background:#555"></span>Documented place or water route<br><span class="swatch dash"></span>Probable corridor<br><span class="swatch dot"></span>Conjectural connection</p>
+  <button id="fit">Show all routes</button>
+  <h2>Interpretive basis</h2>
+  <p class="small">Initial route assembled from Bartram's <em>Travels</em>, Francis Harper's <em>Naturalist's Edition</em>, Bartram Trail Conference materials, the Florida Museum, federal Bartram Trail documentation, and the geographic notes collected in this project.</p>
+  <p class="small"><a href="https://bartramtrail.org/" target="_blank">Bartram Trail Conference</a><br><a href="https://www.floridamuseum.ufl.edu/naturalists/bartram/" target="_blank">Florida Museum account</a><br><a href="https://www.nps.gov/parkhistory/online_books/trails/bartram_trail.pdf" target="_blank">Federal Bartram Trail report</a><br><a href="https://www.gutenberg.org/files/63678/63678-h/63678-h.htm" target="_blank">Searchable <em>Travels</em></a></p>
+</aside>
+<div id="map" class="map" aria-label="Interactive map of William Bartram's routes"></div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map',{zoomControl:true}).setView([31.9,-82.0],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(map);
+const groups={coast:L.layerGroup().addTo(map),florida:L.layerGroup().addTo(map),mountains:L.layerGroup().addTo(map)};
+const colors={coast:'#286f9b',florida:'#a94835',mountains:'#28563a'};
+const journeys={
+coast:{label:'1773 Georgia coast & interior',segments:[
+ {confidence:'documented',points:[[32.7765,-79.9311],[32.0809,-81.0912]]},
+ {confidence:'probable',points:[[32.0809,-81.0912],[31.7667,-81.2800],[31.3702,-81.4330],[31.359,-81.610]]},
+ {confidence:'conjectural',points:[[31.359,-81.610],[32.0809,-81.0912],[32.45,-81.70],[33.4735,-82.0105]]}
+],stops:[
+ ['Charleston',32.7765,-79.9311,'April 1773 arrival from Philadelphia; starting point for the southern expedition.','documented'],
+ ['Savannah',32.0809,-81.0912,'Bartram’s principal Georgia base and repeated point of departure.','documented'],
+ ['Sunbury',31.7667,-81.2800,'Colonial port visited during the Georgia coastal travels.','probable'],
+ ['Darien',31.3702,-81.4330,'Lower Altamaha settlement and gateway to the coastal river country.','probable'],
+ ['Fort Barrington / lower Altamaha',31.359,-81.610,'Approximate historic location near the Altamaha; exact route placement needs refinement.','probable'],
+ ['Augusta',33.4735,-82.0105,'Interior center repeatedly used by Bartram during his Georgia journeys.','documented']
+]},
+florida:{label:'1774 East Florida',segments:[
+ {confidence:'documented',points:[[31.135,-81.394],[30.852,-81.449],[30.669,-81.462],[30.332,-81.656]]},
+ {confidence:'documented',points:[[30.332,-81.656],[30.081,-81.646],[29.649,-81.638],[29.477,-81.671],[29.291,-81.573]]},
+ {confidence:'probable',points:[[29.649,-81.638],[29.505,-81.946],[29.504,-82.280],[29.575,-82.321]]}
+],stops:[
+ ['St. Simons Island',31.135,-81.394,'In March 1774 Bartram departed from James Spalding’s circle for East Florida.','documented'],
+ ['Cumberland Island',30.852,-81.449,'Put ashore after the vessel initially turned back because of reports of raids.','documented'],
+ ['Amelia Island',30.669,-81.462,'Visited Lord Egmont’s plantation and traveled with agent Stephen Egan.','documented'],
+ ['Cow Ford — Jacksonville',30.332,-81.656,'Crossing and settlement at the future site of Jacksonville; Bartram obtained a small boat.','documented'],
+ ['Fatio plantation — Switzerland',30.081,-81.646,'Francis Philip Fatio’s plantation on the St. Johns River.','documented'],
+ ['Spalding’s Lower Store — Palatka',29.649,-81.638,'Trading-store base on the St. Johns; modern placement is approximate.','probable'],
+ ['Welaka / St. Johns–Ocklawaha vicinity',29.477,-81.671,'Important river junction in Bartram’s exploration.','probable'],
+ ['Lake George',29.291,-81.573,'Reached by boat on the St. Johns River.','documented'],
+ ['Orange Springs corridor',29.505,-81.946,'Approximate overland corridor toward the Alachua country.','probable'],
+ ['Cuscowilla — Micanopy vicinity',29.504,-82.280,'Seminole town associated with Cowkeeper; exact eighteenth-century site is approximate.','probable'],
+ ['Alachua Savanna — Paynes Prairie',29.575,-82.321,'Bartram’s celebrated Alachua Savanna.','documented']
+]},
+mountains:{label:'1775 northern journey',segments:[
+ {confidence:'documented',points:[[32.7765,-79.9311],[33.4735,-82.0105]]},
+ {confidence:'probable',points:[[33.4735,-82.0105],[33.468,-82.599],[33.694,-82.886],[33.93,-82.58]]},
+ {confidence:'probable',points:[[33.93,-82.58],[34.50,-82.65],[34.684,-82.837],[34.950,-82.898],[34.963,-82.943]]},
+ {confidence:'conjectural',points:[[34.963,-82.943],[34.822,-83.300],[34.878,-83.401],[35.181,-83.381],[35.263,-83.406]]}
+],stops:[
+ ['Charleston departure',32.7765,-79.9311,'Bartram set out for the southern Appalachians and Cherokee country in spring 1775.','documented'],
+ ['Augusta',33.4735,-82.0105,'Major staging point for the northern and western Georgia travels.','documented'],
+ ['Wrightsborough',33.468,-82.599,'Quaker settlement west of Augusta.','probable'],
+ ['Kettle Creek / Little River country',33.694,-82.886,'Project notes associate this calcium-rich watershed with shagbark hickory, pawpaw, Florida maple, and Bartram’s great oak forest.','probable'],
+ ['Fort James / Dartmouth — later Petersburg',33.93,-82.58,'Fort James was the stockade at the Broad–Savannah confluence. Dartmouth was the planned town around it; after the Revolution, Petersburg arose at the same site. The area is now partly inundated by J. Strom Thurmond Lake.','probable'],
+ ['Keowee country',34.684,-82.837,'Cherokee-country approach near present Clemson and the Keowee River.','probable'],
+ ['Fort Prince George',34.950,-82.898,'Historic fort opposite Keowee town; the landscape is now affected by Lake Keowee.','documented'],
+ ['Jocassee / mountain gateway',34.963,-82.943,'Approximate corridor into the mountains.','probable'],
+ ['Tugaloo–Chattooga corridor',34.822,-83.300,'The precise eighteenth-century path through this rugged country is debated.','conjectural'],
+ ['Clayton / Falling Creek vicinity',34.878,-83.401,'Approximate location for the northeast Georgia mountain observations discussed in this project.','conjectural'],
+ ['Tessentee / Otto vicinity',35.181,-83.381,'Probable approach to the Cherokee valley north of Georgia.','probable'],
+ ['Cowee',35.263,-83.406,'Cherokee town on the Little Tennessee River; included to show the northern continuation.','documented']
+]}
+};
+let markerNumber=1;
+const occupiedMarkerSites={};
+for(const [key,j] of Object.entries(journeys)){
+ j.segments.forEach(s=>L.polyline(s.points,{color:colors[key],weight:s.confidence==='documented'?5:4,opacity:.9,dashArray:s.confidence==='probable'?'10 8':s.confidence==='conjectural'?'2 9':null,lineCap:'round'}).addTo(groups[key]));
+ j.stops.forEach(([name,lat,lng,description,confidence])=>{
+   const siteKey=`${lat.toFixed(4)},${lng.toFixed(4)}`;
+   const overlap=occupiedMarkerSites[siteKey]||0;
+   occupiedMarkerSites[siteKey]=overlap+1;
+   const anchor=overlap?[39,13]:[13,13];
+   const icon=L.divIcon({className:'',html:`<div class="number-marker" style="border-color:${colors[key]}">${markerNumber++}</div>`,iconSize:[26,26],iconAnchor:anchor});
+   L.marker([lat,lng],{icon}).bindPopup(`<h3>${name}</h3><div class="confidence ${confidence}">${confidence}</div><p>${description}</p><p><strong>${j.label}</strong></p>`).addTo(groups[key]);
+ });
+}
+document.querySelectorAll('[data-layer]').forEach(box=>box.addEventListener('change',()=>box.checked?groups[box.dataset.layer].addTo(map):map.removeLayer(groups[box.dataset.layer])));
+const allRoutePoints=[];Object.values(journeys).forEach(j=>j.segments.forEach(s=>allRoutePoints.push(...s.points)));
+document.getElementById('fit').addEventListener('click',()=>map.fitBounds(allRoutePoints,{padding:[25,25]}));
+L.control.scale({imperial:true,metric:false}).addTo(map);
+setTimeout(()=>{map.invalidateSize();map.fitBounds(allRoutePoints,{padding:[25,25]})},100);
+</script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#173f91">
+  <meta name="description" content="A visual Georgia key for identifying trees and shrubs by region, foliage, and leaf characteristics.">
+  <title>Tree ID Maestro</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app" class="app" aria-label="Tree ID application">
+    <header class="app-header" id="appHeader">
+      <button class="utility-button" id="backButton" type="button" aria-label="Go back" hidden>Back</button>
+      <button class="utility-button home-button" id="homeButton" type="button" aria-label="Return to the main key" hidden>Key</button>
+      <button class="utility-button region-button" id="regionButton" type="button" aria-label="Change Georgia region" hidden>Region</button>
+      <button class="utility-button habitat-button" id="habitatButton" type="button" aria-label="Change site type" hidden>Site</button>
+      <button class="utility-button skip-button" id="skipButton" type="button" hidden>Skip</button>
+    </header>
+    <div id="view" class="view" aria-live="polite"></div>
+    <button class="scroll-hint" id="scrollHint" type="button" aria-label="Scroll down to see more" hidden>
+      <span>SCROLL FOR MORE</span>
+      <span class="scroll-arrow" aria-hidden="true">⌄</span>
+    </button>
+  </main>
+
+  <noscript>This Tree ID key requires JavaScript to display its linked pages.</noscript>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

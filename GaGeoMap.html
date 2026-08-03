@@ -292,6 +292,14 @@ body.map-only #stage {
     letter-spacing: 0.07em;
     font-weight: 900;
   }
+  #loadingNotice {
+    margin: 14px 0 0;
+    font-size: clamp(15px, 3vw, 19px);
+    line-height: 1.35;
+    letter-spacing: 0.035em;
+    font-weight: 800;
+    color: #ffe45c;
+  }
   #loadingTrack {
     position: relative;
     height: 22px;
@@ -361,6 +369,7 @@ body.map-only #stage {
 <div id="loadingOverlay" role="status" aria-live="polite" aria-label="Map loading progress">
   <div class="loadingCard">
     <h2 id="loadingTitle">LOADING PLEASE WAIT</h2>
+    <p id="loadingNotice">THE MAP MAY TAKE A FULL MINUTE TO LOAD</p>
     <div id="loadingTrack" role="progressbar" aria-labelledby="loadingTitle" aria-valuemin="0" aria-valuemax="100">
       <div id="loadingFill"></div>
     </div>

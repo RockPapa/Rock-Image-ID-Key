@@ -369,7 +369,7 @@ body.map-only #stage {
 <div id="loadingOverlay" role="status" aria-live="polite" aria-label="Map loading progress">
   <div class="loadingCard">
     <h2 id="loadingTitle">LOADING PLEASE WAIT</h2>
-    <p id="loadingNotice">THE MAP MAY TAKE A FULL MINUTE TO LOAD</p>
+    <p id="loadingNotice">THE MAP LOADS FIRST; ROCK DETAILS LOAD WHEN SELECTED</p>
     <div id="loadingTrack" role="progressbar" aria-labelledby="loadingTitle" aria-valuemin="0" aria-valuemax="100">
       <div id="loadingFill"></div>
     </div>
@@ -1243,7 +1243,10 @@ function resetView(){
 
     async function loadProjectFilesFromGitHub(options = {}){
     if (githubLoadInFlight) return;
-    const preferCache = options.preferCache !== false;
+    // Progressive-loading mode: do not restore or download the full polygon set.
+    // The map's embedded color index identifies a tapped unit immediately, and
+    // the Rock Index/detail page is fetched only when the visitor opens it.
+    const preferCache = false;
     githubLoadInFlight = true;
     loadBtn.disabled = true;
     loadingOverlay.classList.remove("is-hidden");
@@ -1314,6 +1317,18 @@ function resetView(){
 
       setCanvasSizes();
       rebuildSampler();
+
+      const initialViewRestored = restoreViewState();
+      if (!initialViewRestored) resetView();
+      setStatus(
+        `Map ready (${img.width}x${img.height})`,
+        "Tap the map to identify a rock unit; its index and details load only when opened."
+      );
+      setProgress(1, 1, "Map ready. Rock details load on demand.");
+      enterMapOnlyMode({ preserveView: initialViewRestored });
+      restorePopupState();
+      stage.focus();
+      return;
 
       if (activeProjectFolder === GITHUB_FAST_PROJECT_FOLDER) try {
         setProgress(0, 1, "Loading bundled polygons...");

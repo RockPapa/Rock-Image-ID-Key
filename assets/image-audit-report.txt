@@ -1,0 +1,49 @@
+Species audited: 148
+Local image matched: 114
+Old-app species without a matched image: 2
+OLD	buckwheat-tree	Buckwheat tree
+OLD	loblolly-bay	Loblolly bay
+Bartram additions without a matched image: 31
+BARTRAM	devilwood-american-olive	Devilwood / American olive
+BARTRAM	pond-apple	Pond apple
+BARTRAM	georgia-plume	Georgia plume
+BARTRAM	sweetleaf-horsesugar	Sweetleaf / horsesugar
+BARTRAM	swampbay	Swampbay
+BARTRAM	pyramid-magnolia	Pyramid magnolia
+BARTRAM	wax-myrtle	Wax myrtle
+BARTRAM	water-tupelo	Water tupelo
+BARTRAM	swamp-tupelo	Swamp tupelo
+BARTRAM	ogeechee-tupelo	Ogeechee tupelo
+BARTRAM	darlington-oak	Darlington oak
+BARTRAM	bluejack-oak	Bluejack oak
+BARTRAM	franklin-tree	Franklin tree
+BARTRAM	swamp-cottonwood	Swamp cottonwood
+BARTRAM	bigtooth-aspen	Bigtooth aspen
+BARTRAM	chickasaw-plum	Chickasaw plum
+BARTRAM	american-crabapple-sweet-crabapple	American crabapple / sweet crabapple
+BARTRAM	chinkapin-oak	Chinkapin oak
+BARTRAM	silky-camellia	Silky camellia
+BARTRAM	mountain-stewartia	Mountain stewartia
+BARTRAM	bigleaf-snowbell	Bigleaf snowbell
+BARTRAM	carolina-ash-pumpkin-ash	Carolina ash / pumpkin ash
+BARTRAM	american-bladdernut	American bladdernut
+BARTRAM	water-locust	Water locust
+BARTRAM	common-hoptree	Common hoptree
+BARTRAM	clammy-locust	Clammy locust
+BARTRAM	butternut	Butternut
+BARTRAM	hercules-club	Hercules'-club
+BARTRAM	baldcypress	Baldcypress
+BARTRAM	cabbage-palmetto	Cabbage palmetto
+BARTRAM	spanish-dagger-tree-yucca	Spanish dagger / tree yucca
+New additions without a matched image: 1
+ADDED	atlantic-white-cedar	Atlantic white cedar
+Old-app species without a description panel: 5
+OLD-DESCRIPTION	buckwheat-tree	Buckwheat tree
+OLD-DESCRIPTION	eastern-redbud	Eastern redbud
+OLD-DESCRIPTION	persimmon	Persimmon
+OLD-DESCRIPTION	blackgum	Blackgum
+OLD-DESCRIPTION	loblolly-bay	Loblolly bay
+Old-app species without an identification plate: 2
+OLD-DETAIL	buckwheat-tree	Buckwheat tree
+OLD-DETAIL	loblolly-bay	Loblolly bay
+Species with reversed or misclassified image roles: 0

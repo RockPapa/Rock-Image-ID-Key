@@ -1,0 +1,1845 @@
+{
+  "torreya taxifolia": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Decatur County, Georgia"
+  },
+  "pinus echinata": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont and Coastal Plain"
+  },
+  "pinus elliottii": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "pinus glabra": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "pinus palustris": {
+    "regions": [
+      "mountains",
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain, Ridge and Valley Province"
+  },
+  "pinus pungens": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Upper Piedmont, Blue Ridge Mountains"
+  },
+  "pinus rigida": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Blue Ridge Mountains"
+  },
+  "pinus serotina": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "pinus strobus": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains"
+  },
+  "pinus taeda": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "pinus virginiana": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Upper Piedmont, Ridge and Valley Province, Blue Ridge Mountains"
+  },
+  "tsuga canadensis": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Ridge and Valley Province, Blue Ridge Mountains"
+  },
+  "tsuga caroliniana": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Rabun County, Georgia, Habersham County, Georgia"
+  },
+  "taxodium ascendens": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "taxodium distichum": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "chamaecyparis thyoides": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Southwest Coastal Plain"
+  },
+  "juniperus virginiana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "sabal palmetto": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Outer Coastal Plain"
+  },
+  "populus deltoides": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "populus heterophylla": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Infrequently along Savannah River and coastal area"
+  },
+  "salix caroliniana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "salix floridana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Early County and Pulaski County"
+  },
+  "salix nigra": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "salix sericea": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "A few counties in the Blue Ridge Mountains"
+  },
+  "myrica cerifera": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain, lower Piedmont"
+  },
+  "myrica caroliniensis": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "myrica inodora": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Infrequently in pine lowlands in southwest Georgia"
+  },
+  "leitneria floridana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Lower Coastal Plain"
+  },
+  "carya aquatica": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Lower Coastal Plain"
+  },
+  "carya cordiformis": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "carya glabra": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "carya laciniosa": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Infrequently in northwest Georgia"
+  },
+  "carya ovalis": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "carya ovata": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont to south-west Coastal Plain"
+  },
+  "carya pallida": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide, more often in highlands or Piedmont"
+  },
+  "carya tomentosa": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "juglans cinerea": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains."
+  },
+  "juglans nigra": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "alnus serrulata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "betula alleghaniensis": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountain slopes above 3–4500 feet elevation"
+  },
+  "betula lenta": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountainous areas of Ridge and Valley Province and Blue Ridge Mountains"
+  },
+  "betula nigra": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "carpinus caroliniana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "ostrya virginiana": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Piedmont and mountains"
+  },
+  "castanea dentata": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Before Chestnut blight, mountains and Piedmont"
+  },
+  "castanea pumila": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Sporadically state-wide"
+  },
+  "fagus grandifolia": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common in mountains and Piedmont, less common in Coastal Plain"
+  },
+  "quercus alba": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "quercus arkansana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Small, local stands in southwest Georgia"
+  },
+  "quercus austrina": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Scattered in lower Coastal Plain"
+  },
+  "quercus chapmanii": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Uncommon, appears in lower Coastal Plain"
+  },
+  "quercus coccinea": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains and Piedmont"
+  },
+  "quercus falcata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "quercus geminata": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Lower Coastal Plain"
+  },
+  "quercus georgiana": {
+    "regions": [
+      "piedmont"
+    ],
+    "range": "Granite outcrops in the Piedmont"
+  },
+  "quercus hemisphaerica": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Common throughout the Coastal Plain"
+  },
+  "quercus incana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Common throughout the Coastal Plain"
+  },
+  "quercus laevis": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Common throughout the Coastal Plain"
+  },
+  "quercus laurifolia": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common in the Coastal Plain and occasionally in the Piedmont"
+  },
+  "quercus lyrata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common in the Coastal Plain and occasionally in the Piedmont and Ridge and Valley Province"
+  },
+  "quercus margaretta": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain and Georgia Sandhills"
+  },
+  "quercus marilandica": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "quercus michauxii": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered throughout state, particularly Coastal Plain and Piedmont"
+  },
+  "quercus muehlenbergii": {
+    "regions": [
+      "mountains",
+      "coastal-plain"
+    ],
+    "range": "Uncommon, appearing in localities in northwest and southwest Georgia."
+  },
+  "quercus myrtifolia": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Occasional along outer Coastal Plain"
+  },
+  "quercus nigra": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide, more common in Coastal Plain and Piedmont"
+  },
+  "quercus oglethorpensis": {
+    "regions": [
+      "piedmont"
+    ],
+    "range": "Restricted to a few counties in the Piedmont near South Carolina"
+  },
+  "quercus pagoda": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain and Piedmont"
+  },
+  "quercus phellos": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "quercus montana": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains and upper Piedmont"
+  },
+  "quercus rubra": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Common in Piedmont and mountains"
+  },
+  "quercus shumardii": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Most common in Coastal Plain, but also found in Piedmont and Ridge and Valley Province"
+  },
+  "quercus stellata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "quercus velutina": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "quercus virginiana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "celtis laevigata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "celtis occidentalis": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Northwest Georgia and Piedmont"
+  },
+  "celtis tenuifolia": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Rocky sites throughout the state"
+  },
+  "planera aquatica": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "ulmus alata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide at lower elevations"
+  },
+  "ulmus americana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "ulmus rubra": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Primarily Piedmont and Coastal Plain"
+  },
+  "ulmus serotina": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Floyd County, Georgia"
+  },
+  "morus rubra": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Statewide"
+  },
+  "liriodendron tulipifera": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "magnolia acuminata": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Blue Ridge Mountains and occasionally Piedmont"
+  },
+  "magnolia fraseri": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Blue Ridge Mountains"
+  },
+  "magnolia grandiflora": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Native to Coastal Plain, but planted throughout the state"
+  },
+  "magnolia macrophylla": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Uncommon, found in upper Piedmont and southwestern counties of the Coastal Plain"
+  },
+  "magnolia pyramidata": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "magnolia tripetala": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Occasionally appears in Piedmont and lower mountains"
+  },
+  "magnolia virginiana": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain and Piedmont"
+  },
+  "illicium floridanum": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Decatur County"
+  },
+  "asimina triloba": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains and Piedmont"
+  },
+  "persea borbonia": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "sassafras albidum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "hamamelis virginiana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "liquidambar styraciflua": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "platanus occidentalis": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "amelanchier arborea": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains and Piedmont"
+  },
+  "malus angustifolia": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide but less common in Coastal Plain"
+  },
+  "malus coronaria": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Blue Ridge Mountains"
+  },
+  "prunus americana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Sporadically in Blue Ridge Mountains, Ridge and Valley, Piedmont, and sometimes in southwestern Coastal Plain"
+  },
+  "prunus angustifolia": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "prunus caroliniana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "prunus pensylvanica": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Higher elevations in the Blue Ridge Mountains"
+  },
+  "prunus serotina": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "prunus umbellata": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont and Coastal Plain"
+  },
+  "sorbus americana": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Higher elevations in the Blue Ridge Mountains"
+  },
+  "cercis canadensis": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "cladrastis kentukea": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Rarely, in Ridge and Valley and Blue Ridge Mountains"
+  },
+  "gleditsia aquatica": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Confined to swamps of the Coastal Plain"
+  },
+  "gleditsia triacanthos": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "robinia pseudoacacia": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Originally limited to mountains, but has been cultivated elsewhere in the state"
+  },
+  "ptelea trifoliata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered throughout the state"
+  },
+  "zanthoxylum americanum": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Limited to a few counties in the Piedmont and upper Coastal Plain"
+  },
+  "zanthoxylum clava-herculis": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Restricted to coastal counties and Southwest Georgia."
+  },
+  "cotinus obovatus": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Known from a single location on Pigeon Mountain"
+  },
+  "rhus copallinum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "rhus glabra": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains and Piedmont"
+  },
+  "rhus typhina": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Known from a single location on Yonah Mountain"
+  },
+  "toxicodendron vernix": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered throughout the state"
+  },
+  "cliftonia monophylla": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Lower Coastal Plain"
+  },
+  "cyrilla racemiflora": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Wet areas of the Coastal Plain"
+  },
+  "ilex ambigua": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "ilex amelanchier": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Found in a few Coastal Plain counties"
+  },
+  "ilex cassine": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "ilex coriacea": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Scattered throughout the Coastal Plain"
+  },
+  "ilex decidua": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "ilex longipes": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Uncommonly appears in Ridge and Valley"
+  },
+  "ilex montana": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains"
+  },
+  "ilex myrtifolia": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Frequently in Coastal Plain"
+  },
+  "ilex opaca": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "ilex verticillata": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Blue Ridge Mountains and Piedmont"
+  },
+  "ilex vomitoria": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Outer Coastal Plain"
+  },
+  "euonymus atropurpureus": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains, Piedmont"
+  },
+  "staphylea trifolia": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Scattered in Ridge and Valley, Piedmont, and Cumberland Plateau"
+  },
+  "acer floridanum": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Occasionally in Ridge and Valley and Piedmont"
+  },
+  "acer leucoderme": {
+    "regions": [
+      "piedmont"
+    ],
+    "range": "Piedmont"
+  },
+  "acer negundo": {
+    "regions": [
+      "piedmont"
+    ],
+    "range": "Piedmont"
+  },
+  "acer nigrum": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Dade County, Georgia and Walker County, Georgia"
+  },
+  "acer pensylvanicum": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Higher elevations of the Blue Ridge Mountains"
+  },
+  "acer rubrum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "acer saccharinum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Infrequently state-wide"
+  },
+  "acer saccharum": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Blue Ridge Mountains, Ridge and Valley, and upper Piedmont"
+  },
+  "acer spicatum": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Towns County, Georgia and Union County, Georgia at higher elevations"
+  },
+  "aesculus flava": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Higher elevations in the mountains"
+  },
+  "aesculus glabra": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Walker County, Georgia"
+  },
+  "aesculus parviflora": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Southwestern Coastal Plain"
+  },
+  "aesculus pavia": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Common in the Coastal Plain"
+  },
+  "aesculus sylvatica": {
+    "regions": [
+      "piedmont"
+    ],
+    "range": "Piedmont"
+  },
+  "sapindus marginatus": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Rarely on the islands of Liberty County, Georgia"
+  },
+  "frangula caroliniana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered throughout the state, mostly in Ridge and Valley and Piedmont"
+  },
+  "tilia americana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide, but mostly the mountains and Piedmont"
+  },
+  "franklinia alatamaha": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Extinct in the wild for about 200 years. Cultivated in the Coastal Plain"
+  },
+  "gordonia lasianthus": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "stewartia malacodendron": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Uncommon, scattered in the Coastal Plain and Piedmont"
+  },
+  "stewartia ovata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "aralia spinosa": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "nyssa aquatica": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Wetlands of the Coastal Plain"
+  },
+  "nyssa ogeche": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Rivers of the lower Coastal Plain"
+  },
+  "nyssa sylvatica": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "nyssa biflora": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Swamps of the Coastal Plain"
+  },
+  "cornus alternifolia": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains and Piedmont"
+  },
+  "cornus drummondii": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Dade County, Georgia"
+  },
+  "cornus florida": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "cornus foemina": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont and Coastal Plain"
+  },
+  "clethra acuminata": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "White County, Georgia, Union County, Georgia, Towns County, Georgia, and Rabun County, Georgia"
+  },
+  "elliottia racemosa": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain; naturally known from Tattnall County"
+  },
+  "kalmia latifolia": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Common in mountains"
+  },
+  "lyonia ferruginea": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coast and flatwoods of lower Coastal Plain"
+  },
+  "oxydendrum arboreum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "rhododendron catawbiense": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Blue Ridge Mountains"
+  },
+  "rhododendron maximum": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains"
+  },
+  "vaccinium arboreum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "sideroxylon lanuginosum": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "sideroxylon lycioides": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Ridge and Valley and Piedmont"
+  },
+  "sideroxylon tenax": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal counties"
+  },
+  "diospyros virginiana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "halesia carolina": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Sporadically in Coastal Plain"
+  },
+  "halesia diptera": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "styrax americanus": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont and Coastal Plain"
+  },
+  "styrax grandifolius": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "symplocos tinctoria": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "chionanthus virginicus": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Occasional throughout the state"
+  },
+  "forestiera acuminata": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Scattered localities in the Coastal Plain"
+  },
+  "fraxinus americana": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains and Piedmont"
+  },
+  "fraxinus caroliniana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "fraxinus pennsylvanica": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "fraxinus profunda": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Infrequently along the coast"
+  },
+  "fraxinus quadrangulata": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Northwest Georgia"
+  },
+  "cartrema americana": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "catalpa bignonioides": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Native to southwest Georgia, now found state-wide"
+  },
+  "cephalanthus occidentalis": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "State-wide"
+  },
+  "pinckneya bracteata": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Wet areas of the Coastal Plain"
+  },
+  "sambucus canadensis": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Common state-wide"
+  },
+  "viburnum nudum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "viburnum obovatum": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "viburnum prunifolium": {
+    "regions": [
+      "piedmont"
+    ],
+    "range": "Scattered in the Piedmont"
+  },
+  "viburnum rufidulum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Scattered state-wide"
+  },
+  "picea rubens": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains; high elevations"
+  },
+  "abies fraseri": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains; highest elevations"
+  },
+  "metasequoia glyptostroboides": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Planted ornamental: Mountains and Piedmont"
+  },
+  "pinckneya pubens": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Wet areas of the Coastal Plain"
+  },
+  "magnolia fraseri var. pyramidata": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "taxodium distichum var. imbricarium": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "viburnum cassinoides": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains"
+  },
+  "viburnum lantanoides": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains"
+  },
+  "maclura pomifera": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized statewide"
+  },
+  "lagerstroemia indica": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Commonly planted statewide"
+  },
+  "ginkgo biloba": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Planted statewide"
+  },
+  "quercus imbricaria": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Rare in Georgia; Mountains and northern Piedmont"
+  },
+  "photinia × fraseri": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Commonly planted statewide"
+  },
+  "pyrularia pubera": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Common in the Mountains; also occurs in the northern Piedmont"
+  },
+  "albizia julibrissin": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized statewide"
+  },
+  "paulownia tomentosa": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or planted statewide"
+  },
+  "annona glabra": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "persea palustris": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "morella cerifera": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont and Coastal Plain"
+  },
+  "quercus acutissima": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or planted statewide"
+  },
+  "morus alba": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or planted statewide"
+  },
+  "broussonetia papyrifera": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or planted statewide"
+  },
+  "betula papyrifera": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Occasionally planted; most suitable in the Mountains"
+  },
+  "betula populifolia": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Occasionally planted; most suitable in the Mountains"
+  },
+  "populus grandidentata": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains"
+  },
+  "quercus palustris": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Primarily planted in Mountains and Piedmont"
+  },
+  "robinia viscosa": {
+    "regions": [
+      "mountains"
+    ],
+    "range": "Mountains"
+  },
+  "melia azedarach": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized statewide"
+  },
+  "carya illinoinensis": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Primarily Piedmont and Coastal Plain; widely planted"
+  },
+  "yucca gloriosa": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "calycanthus floridus": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains, Piedmont"
+  },
+  "callicarpa americana": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "viburnum dentatum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Mountains, Piedmont, Coastal Plain"
+  },
+  "clinopodium carolinianum": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "viburnum acerifolium": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains, Piedmont"
+  },
+  "hydrangea quercifolia": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "clinopodium coccineum": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "euonymus americanus": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Mountains, Piedmont, Coastal Plain"
+  },
+  "vaccinium darrowii": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "vaccinium stamineum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Mountains, Piedmont, Coastal Plain"
+  },
+  "agarista populifolia": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "lyonia lucida": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "vaccinium virgatum": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "illicium parviflorum": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "lindera benzoin": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Mountains, Piedmont, Coastal Plain"
+  },
+  "leucothoe fontanesiana": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains, Piedmont"
+  },
+  "fothergilla gardenii": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "ilex glabra": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "baccharis halimifolia": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "vaccinium pallidum": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains, Piedmont"
+  },
+  "zenobia pulverulenta": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "crataegus spathulata": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "vaccinium elliottii": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "vaccinium corymbosum": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Mountains, Piedmont, Coastal Plain"
+  },
+  "clethra alnifolia": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Mountains, Piedmont, Coastal Plain"
+  },
+  "itea virginica": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Mountains, Piedmont, Coastal Plain"
+  },
+  "xanthorhiza simplicissima": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Mountains, Piedmont"
+  },
+  "yucca filamentosa": {
+    "regions": [
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Piedmont, Coastal Plain"
+  },
+  "sabal minor": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "rhapidophyllum hystrix": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "serenoa repens": {
+    "regions": [
+      "coastal-plain"
+    ],
+    "range": "Coastal Plain"
+  },
+  "ilex cornuta": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or commonly planted: Mountains, Piedmont, Coastal Plain"
+  },
+  "elaeagnus umbellata": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or commonly planted: Mountains, Piedmont, Coastal Plain"
+  },
+  "ligustrum spp.": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or commonly planted: Mountains, Piedmont, Coastal Plain"
+  },
+  "lonicera tatarica": {
+    "regions": [
+      "mountains",
+      "piedmont"
+    ],
+    "range": "Naturalized or commonly planted: Mountains, Piedmont"
+  },
+  "berberis bealei": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or commonly planted: Mountains, Piedmont, Coastal Plain"
+  },
+  "nandina domestica": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or commonly planted: Mountains, Piedmont, Coastal Plain"
+  },
+  "pyrus calleryana": {
+    "regions": [
+      "mountains",
+      "piedmont",
+      "coastal-plain"
+    ],
+    "range": "Naturalized or commonly planted: Mountains, Piedmont, Coastal Plain"
+  }
+}

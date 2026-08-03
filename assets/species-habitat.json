@@ -1,0 +1,1088 @@
+{
+  "common-crape-myrtle": [
+    "dry",
+    "moist"
+  ],
+  "privets": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "tatarian-honeysuckle-bush-honeysuckle": [
+    "dry",
+    "moist"
+  ],
+  "buttonbush": [
+    "wet"
+  ],
+  "pinckneya-fever-tree": [
+    "wet"
+  ],
+  "roughleaf-dogwood": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "swamp-privet": [
+    "wet"
+  ],
+  "sweetshrub": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "flowering-dogwood": [
+    "dry",
+    "moist"
+  ],
+  "swamp-dogwood": [
+    "moist",
+    "wet"
+  ],
+  "rusty-blackhaw": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "fringetree": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "southern-catalpa": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "princess-tree-paulownia": [
+    "dry",
+    "moist"
+  ],
+  "devilwood-american-olive": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "american-beautyberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "arrowwood-viburnum": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "blackhaw": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "eastern-wahoo-burningbush": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "georgia-basil-georgia-calamint": [
+    "dry"
+  ],
+  "hobblebush-witch-hobble": [
+    "moist",
+    "wet"
+  ],
+  "northern-wild-raisin": [
+    "moist",
+    "wet"
+  ],
+  "possumhaw-viburnum": [
+    "moist",
+    "wet"
+  ],
+  "red-basil-scarlet-calamint": [
+    "dry"
+  ],
+  "strawberry-bush": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "small-leaf-viburnum": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "mapleleaf-viburnum": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "oakleaf-hydrangea": [
+    "moist"
+  ],
+  "black-maple": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "red-maple": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "sugar-maple": [
+    "moist"
+  ],
+  "chalk-maple": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "southern-sugar-maple-florida-maple": [
+    "moist"
+  ],
+  "silver-maple": [
+    "moist",
+    "wet"
+  ],
+  "striped-maple": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "mountain-maple": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "osage-orange-hedge-apple": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "buffalo-nut-oil-nut": [
+    "moist"
+  ],
+  "autumn-olive": [
+    "dry",
+    "moist"
+  ],
+  "anise-tree": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "buckthorn-bumelia": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "corkwood": [
+    "wet"
+  ],
+  "darrow-s-blueberry-or-glaucous-blueberry": [
+    "dry",
+    "moist"
+  ],
+  "deerberry": [
+    "dry",
+    "moist"
+  ],
+  "fetterbush-or-pipestem": [
+    "moist",
+    "wet"
+  ],
+  "fetterbush": [
+    "moist",
+    "wet"
+  ],
+  "gum-bumelia": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "huckleberry-sparkleberry": [
+    "dry",
+    "moist"
+  ],
+  "mountain-laurel": [
+    "moist"
+  ],
+  "shingle-oak": [
+    "moist",
+    "wet"
+  ],
+  "myrtle-oak": [
+    "dry"
+  ],
+  "purple-rhododendron": [
+    "moist"
+  ],
+  "rabbiteye-blueberry": [
+    "dry",
+    "moist"
+  ],
+  "rosebay-rhododendron": [
+    "moist"
+  ],
+  "sand-live-oak": [
+    "dry"
+  ],
+  "small-anise-tree-or-yellow-anise-tree": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "smoketree": [
+    "dry"
+  ],
+  "spice-bush": [
+    "moist"
+  ],
+  "swamp-cyrilla-red-titi": [
+    "moist",
+    "wet"
+  ],
+  "tough-bumelia": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "tree-lyonia-staggerbush": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "carolina-laurel-cherry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "southern-magnolia": [
+    "moist"
+  ],
+  "sweetbay-magnolia": [
+    "moist",
+    "wet"
+  ],
+  "bigleaf-magnolia": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "fraser-magnolia": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "umbrella-magnolia": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "cucumbertree": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "redbay": [
+    "moist",
+    "wet"
+  ],
+  "live-oak": [
+    "dry",
+    "moist"
+  ],
+  "buckwheat-tree": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "alternate-leaf-dogwood": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "pawpaw": [
+    "moist"
+  ],
+  "eastern-redbud": [
+    "dry",
+    "moist"
+  ],
+  "persimmon": [
+    "dry",
+    "moist"
+  ],
+  "blackgum": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "water-oak": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "willow-oak": [
+    "moist",
+    "wet"
+  ],
+  "laurel-oak": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "pond-apple": [
+    "wet"
+  ],
+  "georgia-plume": [
+    "dry",
+    "moist"
+  ],
+  "sweetleaf-horsesugar": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "swampbay": [
+    "moist",
+    "wet"
+  ],
+  "pyramid-magnolia": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "wax-myrtle": [
+    "moist",
+    "wet"
+  ],
+  "water-tupelo": [
+    "wet"
+  ],
+  "swamp-tupelo": [
+    "moist",
+    "wet"
+  ],
+  "ogeechee-tupelo": [
+    "wet"
+  ],
+  "darlington-oak": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "bluejack-oak": [
+    "dry"
+  ],
+  "red-tip-photinia": [
+    "dry",
+    "moist"
+  ],
+  "bradford-pear-callery-pear": [
+    "dry",
+    "moist"
+  ],
+  "burford-holly": [
+    "dry",
+    "moist"
+  ],
+  "american-plum": [
+    "dry",
+    "moist"
+  ],
+  "american-snowbell": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "arkansas-oak": [
+    "moist"
+  ],
+  "carolina-holly": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "cinnamon-clethra-sweet-pepperbush": [
+    "moist",
+    "wet"
+  ],
+  "coastal-plain-willow": [
+    "wet"
+  ],
+  "common-winterberry": [
+    "moist",
+    "wet"
+  ],
+  "drooping-leucothoe": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "dwarf-fothergilla": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "evergreen-bayberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "flatwoods-plum-hog-plum": [
+    "dry",
+    "moist"
+  ],
+  "florida-willow": [
+    "wet"
+  ],
+  "gallberry-or-inkberry": [
+    "moist",
+    "wet"
+  ],
+  "georgia-holly": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "groundsel-bush": [
+    "moist",
+    "wet"
+  ],
+  "hillside-blueberry-or-blue-ridge-blueberry": [
+    "dry",
+    "moist"
+  ],
+  "honeycup": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "large-gallberry": [
+    "moist",
+    "wet"
+  ],
+  "littlehip-hawthorn": [
+    "dry",
+    "moist"
+  ],
+  "mayberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "mountain-winterberry": [
+    "moist",
+    "wet"
+  ],
+  "myrtle-leaved-holly": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "odorless-bayberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "sarvis-holly": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "september-elm": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "silky-willow": [
+    "moist",
+    "wet"
+  ],
+  "southern-crab-apple": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "southern-highbush-blueberry": [
+    "dry",
+    "moist"
+  ],
+  "summersweet-clethra-sweet-pepperbush": [
+    "moist",
+    "wet"
+  ],
+  "virginia-sweetspire": [
+    "moist",
+    "wet"
+  ],
+  "water-elm-planer-tree": [
+    "wet"
+  ],
+  "witch-hazel": [
+    "moist"
+  ],
+  "sawtooth-oak": [
+    "dry",
+    "moist"
+  ],
+  "loblolly-bay": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "red-mulberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "white-mulberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "paper-mulberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "winged-elm": [
+    "dry",
+    "moist"
+  ],
+  "slippery-elm": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "american-elm": [
+    "moist",
+    "wet"
+  ],
+  "river-birch": [
+    "moist",
+    "wet"
+  ],
+  "black-birch": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "yellow-birch": [
+    "moist"
+  ],
+  "paper-birch": [
+    "moist"
+  ],
+  "gray-birch": [
+    "dry",
+    "moist"
+  ],
+  "hackberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "sugarberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "georgia-hackberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "american-hornbeam": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "eastern-hophornbeam": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "carolina-buckthorn": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "carolina-silverbell": [
+    "moist"
+  ],
+  "downy-serviceberry": [
+    "dry",
+    "moist"
+  ],
+  "black-willow": [
+    "moist",
+    "wet"
+  ],
+  "hazel-alder": [
+    "moist",
+    "wet"
+  ],
+  "american-holly": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "yaupon-holly": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "dahoon-holly": [
+    "moist",
+    "wet"
+  ],
+  "possumhaw": [
+    "moist",
+    "wet"
+  ],
+  "sourwood": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "black-cherry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "fire-cherry-pin-cherry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "eastern-cottonwood": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "american-basswood": [
+    "moist"
+  ],
+  "american-beech": [
+    "moist"
+  ],
+  "american-chestnut": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "allegheny-chinkapin": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "chestnut-oak": [
+    "dry",
+    "moist"
+  ],
+  "franklin-tree": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "two-winged-silverbell": [
+    "moist"
+  ],
+  "swamp-cottonwood": [
+    "wet"
+  ],
+  "bigtooth-aspen": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "chickasaw-plum": [
+    "dry",
+    "moist"
+  ],
+  "american-crabapple-sweet-crabapple": [
+    "dry",
+    "moist"
+  ],
+  "chinkapin-oak": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "swamp-chestnut-oak": [
+    "moist",
+    "wet"
+  ],
+  "silky-camellia": [
+    "moist"
+  ],
+  "mountain-stewartia": [
+    "moist"
+  ],
+  "bigleaf-snowbell": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "bluff-oak-bastard-white-oak": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "chapman-oak": [
+    "dry"
+  ],
+  "cherrybark-oak": [
+    "moist",
+    "wet"
+  ],
+  "georgia-oak": [
+    "dry"
+  ],
+  "oglethorpe-oak": [
+    "moist",
+    "wet"
+  ],
+  "sand-post-oak-scrub-post-oak": [
+    "dry"
+  ],
+  "shumard-oak": [
+    "moist",
+    "wet"
+  ],
+  "sweetgum": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "sassafras": [
+    "dry",
+    "moist"
+  ],
+  "yellow-poplar-tuliptree": [
+    "moist"
+  ],
+  "american-sycamore": [
+    "moist",
+    "wet"
+  ],
+  "white-oak": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "post-oak": [
+    "dry",
+    "moist"
+  ],
+  "overcup-oak": [
+    "moist",
+    "wet"
+  ],
+  "northern-red-oak": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "southern-red-oak": [
+    "dry",
+    "moist"
+  ],
+  "black-oak": [
+    "dry",
+    "moist"
+  ],
+  "scarlet-oak": [
+    "dry",
+    "moist"
+  ],
+  "pin-oak": [
+    "moist",
+    "wet"
+  ],
+  "turkey-oak": [
+    "dry"
+  ],
+  "blackjack-oak": [
+    "dry",
+    "moist"
+  ],
+  "white-ash": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "blue-ash": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "elderberry-american-elder": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "ohio-buckeye-fetid-buckeye": [
+    "moist"
+  ],
+  "pumpkin-ash": [
+    "moist",
+    "wet"
+  ],
+  "green-ash": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "yellow-buckeye": [
+    "moist"
+  ],
+  "painted-buckeye": [
+    "moist"
+  ],
+  "red-buckeye": [
+    "moist"
+  ],
+  "bottlebrush-buckeye": [
+    "moist"
+  ],
+  "boxelder": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "carolina-ash-pumpkin-ash": [
+    "moist",
+    "wet"
+  ],
+  "american-bladdernut": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "mimosa-silk-tree": [
+    "dry",
+    "moist"
+  ],
+  "nandina-heavenly-bamboo": [
+    "dry",
+    "moist"
+  ],
+  "florida-soapberry": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "poison-sumac-thunderwood": [
+    "wet"
+  ],
+  "yellowwood": [
+    "moist"
+  ],
+  "black-locust": [
+    "dry",
+    "moist"
+  ],
+  "honeylocust": [
+    "dry",
+    "moist"
+  ],
+  "water-locust": [
+    "wet"
+  ],
+  "common-hoptree": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "clammy-locust": [
+    "dry",
+    "moist"
+  ],
+  "leatherleaf-mahonia-oregon-grape": [
+    "moist"
+  ],
+  "american-mountain-ash-rowan": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "devil-s-walkingstick": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "prickly-ash-toothache-tree": [
+    "dry",
+    "moist"
+  ],
+  "shellbark-hickory": [
+    "dry",
+    "moist"
+  ],
+  "smooth-sumac": [
+    "dry",
+    "moist"
+  ],
+  "staghorn-sumac": [
+    "dry",
+    "moist"
+  ],
+  "water-hickory": [
+    "moist",
+    "wet"
+  ],
+  "winged-sumac-dwarf-sumac-shining-sumac": [
+    "dry"
+  ],
+  "chinaberry": [
+    "dry",
+    "moist"
+  ],
+  "black-walnut": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "pecan": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "mockernut-hickory": [
+    "dry",
+    "moist"
+  ],
+  "pignut-hickory": [
+    "dry",
+    "moist"
+  ],
+  "red-hickory": [
+    "dry",
+    "moist"
+  ],
+  "shagbark-hickory": [
+    "dry",
+    "moist"
+  ],
+  "bitternut-hickory": [
+    "dry",
+    "moist"
+  ],
+  "sand-hickory": [
+    "dry",
+    "moist"
+  ],
+  "butternut": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "hercules-club": [
+    "dry",
+    "moist"
+  ],
+  "yellow-root": [
+    "moist"
+  ],
+  "carolina-hemlock": [
+    "moist"
+  ],
+  "florida-torreya-stinking-cedar": [
+    "moist"
+  ],
+  "atlantic-white-cedar": [
+    "wet"
+  ],
+  "eastern-redcedar": [
+    "dry",
+    "moist"
+  ],
+  "red-spruce": [
+    "moist"
+  ],
+  "fraser-fir": [
+    "moist"
+  ],
+  "eastern-hemlock": [
+    "moist"
+  ],
+  "virginia-pine": [
+    "dry",
+    "moist"
+  ],
+  "spruce-pine": [
+    "moist",
+    "wet"
+  ],
+  "slash-pine": [
+    "moist",
+    "wet"
+  ],
+  "table-mountain-pine": [
+    "dry"
+  ],
+  "shortleaf-pine": [
+    "dry",
+    "moist"
+  ],
+  "loblolly-pine": [
+    "dry",
+    "moist",
+    "wet"
+  ],
+  "longleaf-pine": [
+    "dry"
+  ],
+  "pitch-pine": [
+    "dry",
+    "moist"
+  ],
+  "pond-pine": [
+    "moist",
+    "wet"
+  ],
+  "eastern-white-pine": [
+    "dry",
+    "moist"
+  ],
+  "pond-cypress": [
+    "wet"
+  ],
+  "dawn-redwood": [
+    "moist",
+    "wet"
+  ],
+  "baldcypress": [
+    "moist",
+    "wet"
+  ],
+  "ginkgo-maidenhair-tree": [
+    "dry",
+    "moist"
+  ],
+  "adam-s-needle-beargrass-spanish-bayonet-curly-leaf-yucca": [
+    "dry"
+  ],
+  "dwarf-palmetto-bluestem-palmetto": [
+    "moist",
+    "wet"
+  ],
+  "needle-palm": [
+    "moist",
+    "wet"
+  ],
+  "saw-palmetto": [
+    "dry",
+    "moist"
+  ],
+  "cabbage-palmetto": [
+    "dry",
+    "moist"
+  ],
+  "spanish-dagger-tree-yucca": [
+    "dry"
+  ]
+}

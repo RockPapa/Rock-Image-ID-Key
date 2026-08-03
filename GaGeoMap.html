@@ -463,6 +463,7 @@ body.map-only #stage {
   let polygonLoadGeneration = 0;
   let polygonFilesLoaded = 0;
   let polygonFilesTotal = 0;
+  let polygonBundleReady = false;
   const pendingPolygonPriorities = [];
 
   let githubLoadInFlight = false;
@@ -1275,6 +1276,14 @@ function resetView(){
 
   function prioritizeRockPolygon(rockName){
     if (!rockName) return;
+    if (polygonBundleReady) return;
+    if (polygonFilesTotal === 1) {
+      setStatus(
+        `Loading precise boundary for ${displayRockName(rockName)}…`,
+        "RGB identification is active while the small polygon bundle finishes loading."
+      );
+      return;
+    }
     if (!polygonQueueReady) {
       pendingPolygonPriorities.unshift(rockName);
       pendingPolygonPriorities.length = Math.min(pendingPolygonPriorities.length, 8);
@@ -1336,33 +1345,28 @@ function resetView(){
     polygonQueueReady = false;
     polygonQueue = [];
     polygonFilesLoaded = 0;
-    polygonFilesTotal = 0;
+    polygonFilesTotal = 1;
+    polygonBundleReady = false;
 
     try {
-      let entries = await listProjectJsonEntriesFromGitHub(GITHUB_PROJECT_FOLDER);
-      if (generation !== polygonLoadGeneration) return;
-      entries.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
-      polygonQueue = dedupeJsonEntries(entries);
-      polygonFilesTotal = polygonQueue.length;
-      polygonQueueReady = true;
-
-      for (let i = pendingPolygonPriorities.length - 1; i >= 0; i--) {
-        applyPolygonPriority(pendingPolygonPriorities[i]);
-      }
-      pendingPolygonPriorities.length = 0;
-
       setStatus(
-        `Map ready; polygons loading in background`,
-        `Tap priority is active · 0/${polygonFilesTotal} polygon files loaded.`
+        "Map ready; precise polygons loading in background",
+        "RGB identification is available now. The optimized polygon bundle is only about 422 KB."
       );
-      await Promise.all([
-        progressivePolygonWorker(generation),
-        progressivePolygonWorker(generation)
-      ]);
+      const polyCount = await loadBundledPolygonsFromGitHub(GITHUB_FAST_BUNDLE_PATH);
+      if (generation !== polygonLoadGeneration) return;
+      polygonFilesLoaded = 1;
+      polygonBundleReady = true;
+      pendingPolygonPriorities.length = 0;
+      setStatus(
+        `Map and polygons ready (${polyCount} polygons)`,
+        MAP_CONTROL_HINT
+      );
+      redraw();
     } catch (err) {
       polygonQueueReady = false;
       console.warn("Could not start background polygon loading:", err);
-      setStatus("Map ready with RGB identification.", "Background polygons could not be listed; tap identification still works.");
+      setStatus("Map ready with RGB identification.", "Background polygon bundle could not load; RGB tap identification still works.");
     }
   }
 

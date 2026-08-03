@@ -458,6 +458,12 @@ body.map-only #stage {
 
   // polygons: { unitId, name, pts:[{x,y}], box:{minX,maxX,minY,maxY} }
   let polygons = [];
+  let polygonQueue = [];
+  let polygonQueueReady = false;
+  let polygonLoadGeneration = 0;
+  let polygonFilesLoaded = 0;
+  let polygonFilesTotal = 0;
+  const pendingPolygonPriorities = [];
 
   let githubLoadInFlight = false;
 
@@ -988,6 +994,7 @@ polygons loaded: ${polygons.length}`);
       return;
     }
     const match = forcedRockNameNearPoint(wx, wy) || forcedRockNameFromColor(pix.r, pix.g, pix.b) || identifyRock(pix.r, pix.g, pix.b);
+    prioritizeRockPolygon(match);
 
     popupTitle.textContent = displayRockName(match);
     popupMeta.textContent = "";
@@ -1232,6 +1239,133 @@ function resetView(){
     return unique;
   }
 
+  function normalizedRockWords(value){
+    return displayRockName(value)
+      .toLowerCase()
+      .replace(/\b(and|the|of|its|undifferentiated)\b/g, " ")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .filter(word => word.length > 1);
+  }
+
+  function polygonEntryPriority(entry, rockName){
+    const wanted = normalizedRockWords(rockName);
+    const candidateName = pretty(unitFromFile(entry.name));
+    const candidate = normalizedRockWords(candidateName);
+    if (!wanted.length || !candidate.length) return 0;
+
+    const wantedKey = wanted.join(" ");
+    const candidateKey = candidate.join(" ");
+    if (candidateKey === wantedKey) return 10000;
+    if (candidateKey.includes(wantedKey) || wantedKey.includes(candidateKey)) return 5000;
+
+    const candidateSet = new Set(candidate);
+    const shared = wanted.filter(word => candidateSet.has(word)).length;
+    return shared * 100 - Math.abs(candidate.length - wanted.length);
+  }
+
+  function applyPolygonPriority(rockName){
+    if (!polygonQueue.length) return;
+    polygonQueue = polygonQueue
+      .map((entry, index) => ({ entry, index, score: polygonEntryPriority(entry, rockName) }))
+      .sort((a, b) => b.score - a.score || a.index - b.index)
+      .map(item => item.entry);
+  }
+
+  function prioritizeRockPolygon(rockName){
+    if (!rockName) return;
+    if (!polygonQueueReady) {
+      pendingPolygonPriorities.unshift(rockName);
+      pendingPolygonPriorities.length = Math.min(pendingPolygonPriorities.length, 8);
+      return;
+    }
+    applyPolygonPriority(rockName);
+    setStatus(
+      `Prioritizing ${displayRockName(rockName)} polygon…`,
+      `Map remains usable while ${polygonFilesLoaded}/${polygonFilesTotal} polygon files load in the background.`
+    );
+  }
+
+  async function loadProgressivePolygonEntry(entry){
+    const response = await fetch(entry.download_url);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    if (!data || !Array.isArray(data.polys)) return 0;
+
+    const unitId = unitFromFile(entry.name);
+    const name = pretty(unitId);
+    let added = 0;
+    for (let i = 0; i < data.polys.length; i++){
+      const poly = data.polys[i];
+      if (!poly || !Array.isArray(poly.pts) || poly.pts.length < 3) continue;
+      const rawPts = poly.pts
+        .map(pt => ({ x: +pt.x, y: +pt.y }))
+        .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.y));
+      if (rawPts.length < 3) continue;
+      const pts = simplifyPolygonPts(rawPts);
+      polygons.push({ unitId, name, pts, box: bbox(pts), fileName: entry.name, polyIndexInFile: i });
+      added++;
+    }
+    return added;
+  }
+
+  async function progressivePolygonWorker(generation){
+    while (generation === polygonLoadGeneration){
+      const entry = polygonQueue.shift();
+      if (!entry) return;
+      try {
+        await loadProgressivePolygonEntry(entry);
+      } catch (err) {
+        console.warn("Background polygon load failed:", entry.name, err);
+      } finally {
+        polygonFilesLoaded++;
+        redraw();
+        if (polygonFilesLoaded === polygonFilesTotal) {
+          setStatus(
+            `Map and polygons ready (${polygons.length} polygons)`,
+            MAP_CONTROL_HINT
+          );
+        }
+      }
+    }
+  }
+
+  async function startProgressivePolygonLoading(){
+    const generation = ++polygonLoadGeneration;
+    polygonQueueReady = false;
+    polygonQueue = [];
+    polygonFilesLoaded = 0;
+    polygonFilesTotal = 0;
+
+    try {
+      let entries = await listProjectJsonEntriesFromGitHub(GITHUB_PROJECT_FOLDER);
+      if (generation !== polygonLoadGeneration) return;
+      entries.sort((a, b) => String(a.name || "").localeCompare(String(b.name || "")));
+      polygonQueue = dedupeJsonEntries(entries);
+      polygonFilesTotal = polygonQueue.length;
+      polygonQueueReady = true;
+
+      for (let i = pendingPolygonPriorities.length - 1; i >= 0; i--) {
+        applyPolygonPriority(pendingPolygonPriorities[i]);
+      }
+      pendingPolygonPriorities.length = 0;
+
+      setStatus(
+        `Map ready; polygons loading in background`,
+        `Tap priority is active · 0/${polygonFilesTotal} polygon files loaded.`
+      );
+      await Promise.all([
+        progressivePolygonWorker(generation),
+        progressivePolygonWorker(generation)
+      ]);
+    } catch (err) {
+      polygonQueueReady = false;
+      console.warn("Could not start background polygon loading:", err);
+      setStatus("Map ready with RGB identification.", "Background polygons could not be listed; tap identification still works.");
+    }
+  }
+
   function canonicalFileNameScore(name){
     const s = String(name || "");
     let score = 0;
@@ -1328,6 +1462,7 @@ function resetView(){
       enterMapOnlyMode({ preserveView: initialViewRestored });
       restorePopupState();
       stage.focus();
+      setTimeout(() => startProgressivePolygonLoading(), 0);
       return;
 
       if (activeProjectFolder === GITHUB_FAST_PROJECT_FOLDER) try {

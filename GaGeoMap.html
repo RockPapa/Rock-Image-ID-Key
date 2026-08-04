@@ -212,6 +212,28 @@ body.map-only #stage {
   max-width: none;
   max-height: none;
 }
+  #mapKeyHint {
+    display: none;
+  }
+  body.map-only #mapKeyHint {
+    position: absolute;
+    left: 50%;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 5;
+    display: block;
+    box-sizing: border-box;
+    max-width: calc(100% - 24px);
+    padding: 7px 12px;
+    transform: translateX(-50%);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #fff;
+    font-size: clamp(12px, 2.5vw, 16px);
+    font-weight: 800;
+    text-align: center;
+    white-space: nowrap;
+    pointer-events: none;
+  }
 
   #rockIndexOverlay {
     position: fixed;
@@ -412,6 +434,7 @@ body.map-only #stage {
 <div id="stage" tabindex="0">
   <canvas id="map"></canvas>
   <canvas id="overlay"></canvas>
+  <div id="mapKeyHint">F KEY=ZOOM IN; R KEY=ZOOM OUT</div>
 
   <!-- Popup lives INSIDE stage so it moves/clips nicely -->
   <div id="popup">

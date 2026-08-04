@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>William Bartram's Routes — Georgia, North Florida & Western Carolina</title>
+<title>William Bartram's Routes — The American Southeast</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
 :root{--ink:#17231a;--paper:#f4f0e4;--green:#28563a;--blue:#286f9b;--red:#a94835;--gold:#b07b22;--muted:#667067}
@@ -18,7 +18,7 @@ h2{font-size:1.08rem;margin:1rem 0 .4rem;color:var(--green)}label{display:block;
 </style>
 </head>
 <body>
-<header><h1>William Bartram's Routes</h1><p class="subtitle">Georgia · North Florida · Western South Carolina · 1773–1776</p></header>
+<header><h1>William Bartram's Routes</h1><p class="subtitle">The Carolinas · Georgia · Florida · Alabama · Mississippi · Louisiana · 1773–1776</p></header>
 <div class="layout">
 <aside class="panel">
   <div class="warning small"><strong>Working historical reconstruction.</strong> Lines connect known or likely places; they do not claim that Bartram followed modern roads or straight lines. Click any numbered stop for notes.</div>
@@ -26,7 +26,7 @@ h2{font-size:1.08rem;margin:1rem 0 .4rem;color:var(--green)}label{display:block;
   <label><input type="checkbox" data-layer="coast" checked> <span class="swatch" style="background:var(--blue)"></span>1773 Georgia coast & interior</label>
   <label><input type="checkbox" data-layer="florida" checked> <span class="swatch" style="background:var(--red)"></span>1774 East Florida</label>
   <label><input type="checkbox" data-layer="mountains" checked> <span class="swatch" style="background:var(--green)"></span>1775 northern journey</label>
-  <label><input type="checkbox" data-layer="west" checked> <span class="swatch" style="background:var(--gold)"></span>1775 westward Creek journey</label>
+  <label><input type="checkbox" data-layer="west" checked> <span class="swatch" style="background:var(--gold)"></span>1775 Creek & Gulf journey</label>
   <h2>Confidence</h2>
   <p class="small"><span class="swatch" style="background:#555"></span>Documented place or water route<br><span class="swatch dash"></span>Probable corridor<br><span class="swatch dot"></span>Conjectural connection</p>
   <button id="fit">Show all routes</button>
@@ -91,10 +91,18 @@ mountains:{label:'1775 northern journey',segments:[
  ['Tessentee / Otto vicinity',35.181,-83.381,'Probable approach to the Cherokee valley north of Georgia.','probable'],
  ['Cowee',35.263,-83.406,'Cherokee town on the Little Tennessee River; included to show the northern continuation.','documented']
 ]},
-west:{label:'1775 westward Creek journey',segments:[
+west:{label:'1775 Creek and Gulf journey',segments:[
  {confidence:'probable',points:[[33.93,-82.58],[33.72,-82.43],[33.55,-82.48],[33.407,-82.662],[33.33,-82.78],[33.19,-82.98],[33.04,-83.20]]},
  {confidence:'probable',points:[[33.04,-83.20],[32.98,-83.33],[32.90,-83.47],[32.838,-83.602]]},
- {confidence:'probable',points:[[32.838,-83.602],[32.80,-83.72],[32.72,-83.88],[32.66,-84.13],[32.58,-84.24],[32.48,-84.55],[32.38,-84.80],[32.33,-85.02]]}
+ {confidence:'probable',points:[[32.838,-83.602],[32.80,-83.72],[32.72,-83.88],[32.66,-84.13],[32.58,-84.24],[32.48,-84.55],[32.38,-84.80],[32.33,-85.02]]},
+ {confidence:'probable',points:[[32.33,-85.02],[32.43,-85.35],[32.54,-85.89],[32.38,-86.10],[32.27,-86.27],[31.98,-86.58],[31.55,-87.17],[31.15,-87.80],[30.695,-88.039]]},
+ {confidence:'documented',points:[[30.695,-88.039],[30.88,-87.93],[31.04,-87.94],[31.18,-87.98],[31.23,-87.99]]},
+ {confidence:'documented',points:[[31.23,-87.99],[31.12,-87.94],[30.98,-87.90],[30.88,-87.93],[30.695,-88.039]]},
+ {confidence:'documented',points:[[30.695,-88.039],[30.55,-87.90],[30.42,-87.55],[30.421,-87.216],[30.55,-87.70],[30.695,-88.039]]},
+ {confidence:'probable',points:[[30.695,-88.039],[30.25,-88.08],[30.35,-88.56],[30.39,-88.89],[30.40,-89.08],[30.31,-89.33],[30.18,-89.59],[30.17,-89.74]]},
+ {confidence:'documented',points:[[30.17,-89.74],[30.28,-89.70],[30.37,-89.67],[30.45,-89.65],[30.35,-90.02],[30.20,-90.13],[30.15,-90.38],[30.32,-90.56],[30.44,-90.72],[30.55,-90.78],[30.48,-90.99]]},
+ {confidence:'documented',points:[[30.48,-90.99],[30.39,-91.02],[30.27,-91.03],[30.17,-91.03],[30.08,-90.99],[30.00,-90.99]]},
+ {confidence:'documented',points:[[30.00,-90.99],[30.15,-91.00],[30.30,-91.03],[30.45,-91.12],[30.55,-91.17],[30.70,-91.27],[30.82,-91.22]]}
 ],stops:[
  ['Fort Charlotte / Fort James rendezvous',33.93,-82.58,'Bartram joined the West Florida caravan at Fort Charlotte opposite Fort James and Dartmouth, setting out on June 22, 1775.','documented'],
  ['Lower Creek Trading Path',33.55,-82.48,'After crossing back into Georgia, the caravan entered the great trading path from Augusta to the Creek Nation. This connecting point is approximate.','probable'],
@@ -104,7 +112,25 @@ west:{label:'1775 westward Creek journey',segments:[
  ['Ocmulgee Fields — Macon',32.838,-83.602,'Bartram crossed the Ocmulgee and described the ancient fields, mounds, terraces, and remains of a capital town.','documented'],
  ['Stony Creek and Tobesofkee corridor',32.72,-83.88,'The caravan passed Stony Creek and Great and Little Tobesofkee, where Bartram observed oakleaf hydrangea. The plotted point is approximate.','probable'],
  ['Flint River crossing — old Creek Agency vicinity',32.66,-84.13,'The party forded the Flint on July 5 near the later Creek Agency; the precise eighteenth-century crossing is approximate.','probable'],
- ['Chattahoochee crossing / Yuchi Town vicinity',32.33,-85.02,'Bartram reached the Lower Creek towns and crossed the Chattahoochee below present-day Columbus before continuing toward Mobile.','probable']
+ ['Chattahoochee crossing / Yuchi Town vicinity',32.33,-85.02,'Bartram reached the Lower Creek towns and crossed the Chattahoochee below present-day Columbus before continuing toward Mobile.','probable'],
+ ['Apalachukla / Lower Creek capital vicinity',32.43,-85.35,'Bartram visited the Creek capital after crossing the Chattahoochee. The eighteenth-century town site is approximate.','probable'],
+ ['Tallassee',32.54,-85.89,'The party followed an Indian trading path to Tallassee on the Tallapoosa River.','probable'],
+ ['Alabama prairie and Federal Road corridor',32.27,-86.27,'Bartram crossed the Black Belt prairies and continued southwest through the future Montgomery region.','probable'],
+ ['Burnt Corn corridor',31.55,-87.17,'The caravan followed the trading-path corridor south toward the Mobile–Tensaw country.','probable'],
+ ['Mobile',30.695,-88.039,'Bartram reached Mobile in July 1775 and used it as his base for river and Gulf Coast excursions.','documented'],
+ ['Taensa / Major Farmer plantation',31.04,-87.94,'From Mobile, Bartram traveled upriver to Major Farmer’s plantation in the Mobile–Tensaw Delta.','probable'],
+ ['Mobile and Tombigbee confluence country',31.18,-87.98,'Bartram reached the junction of the Alabama and Tombigbee arms and then entered the Tombigbee.','documented'],
+ ['Lower Tombigbee / McIntosh Bluff vicinity',31.23,-87.99,'Bartram ascended the lower Tombigbee and examined bluffs, old fields, forests, and river plants.','probable'],
+ ['Pensacola',30.421,-87.216,'A short sailing excursion east from Mobile brought Bartram unexpectedly to Pensacola before he returned to Mobile.','documented'],
+ ['Dauphin Island and Pass au Oleron',30.25,-88.08,'Bartram passed between Dauphin Island and the mainland when departing Mobile Bay for the west.','documented'],
+ ['Mississippi Sound and Biloxi coast',30.39,-88.89,'His vessel followed the Gulf Coast past Pascagoula, Biloxi, Ship Island, and Bay St. Louis; the connecting line is approximate.','probable'],
+ ['Pearl River / Favre plantation vicinity',30.17,-89.74,'Ill with a severe eye disorder, Bartram reached a French interpreter’s plantation on the Pearl River.','probable'],
+ ['Pearl Island / Rumsey residence vicinity',30.18,-89.59,'Bartram recovered for several weeks at Mr. Rumsey’s home in the Pearl River–Rigolets country. The exact site is debated.','conjectural'],
+ ['Lake Pontchartrain',30.20,-90.13,'After recovering, Bartram traveled west by boat along the north shore of Lake Pontchartrain.','documented'],
+ ['Lake Maurepas and Amite River',30.32,-90.56,'He crossed Lake Maurepas and ascended the Amite River toward the Mississippi.','documented'],
+ ['Manchac and the Mississippi River',30.00,-90.99,'Bartram reached Manchac and recorded his first direct view of the Mississippi River.','documented'],
+ ['Baton Rouge / New Richmond',30.45,-91.12,'He traveled more than forty miles upriver from Manchac to the Baton Rouge settlement.','documented'],
+ ['Point Coupée',30.82,-91.22,'This French settlement was the northernmost point of Bartram’s Mississippi River excursion before he returned to Mobile.','documented']
 ]}
 };
 let markerNumber=1;

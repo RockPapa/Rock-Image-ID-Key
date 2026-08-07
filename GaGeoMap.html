@@ -212,28 +212,6 @@ body.map-only #stage {
   max-width: none;
   max-height: none;
 }
-  #mapKeyHint {
-    display: none;
-  }
-  body.map-only #mapKeyHint {
-    position: absolute;
-    left: 50%;
-    bottom: max(12px, env(safe-area-inset-bottom));
-    z-index: 5;
-    display: block;
-    box-sizing: border-box;
-    max-width: calc(100% - 24px);
-    padding: 7px 12px;
-    transform: translateX(-50%);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.72);
-    color: #fff;
-    font-size: clamp(12px, 2.5vw, 16px);
-    font-weight: 800;
-    text-align: center;
-    white-space: nowrap;
-    pointer-events: none;
-  }
 
   #rockIndexOverlay {
     position: fixed;
@@ -299,24 +277,13 @@ body.map-only #stage {
     pointer-events: none;
   }
   .loadingCard {
-    box-sizing: border-box;
-    width: min(520px, calc(100vw - 32px));
+    width: min(520px, 88vw);
     padding: 30px 28px 26px;
     border: 1px solid rgba(255,255,255,0.24);
     border-radius: 18px;
     background: rgba(7, 29, 70, 0.92);
     box-shadow: 0 24px 70px rgba(0,0,0,0.45);
     text-align: center;
-  }
-  @media (max-width: 480px) {
-    .loadingCard {
-      width: calc(100vw - 24px);
-      padding: 24px 16px 22px;
-    }
-    .loadingCard #loadingTrack {
-      height: 18px;
-      margin-top: 18px;
-    }
   }
   #loadingTitle {
     margin: 0;
@@ -434,7 +401,6 @@ body.map-only #stage {
 <div id="stage" tabindex="0">
   <canvas id="map"></canvas>
   <canvas id="overlay"></canvas>
-  <div id="mapKeyHint">F KEY=ZOOM IN; R KEY=ZOOM OUT</div>
 
   <!-- Popup lives INSIDE stage so it moves/clips nicely -->
   <div id="popup">
@@ -454,6 +420,7 @@ body.map-only #stage {
   <iframe id="rockIndexFrame" title="Rock Index"></iframe>
 </div>
 
+<script src="PROJECT_FILES_FAST/generated_polygon_patches.js"></script>
 <script>
 (() => {
   const loadBtn = document.getElementById("loadBtn");
@@ -556,12 +523,84 @@ body.map-only #stage {
   // ===== OPTIONAL: GEO INFO LOOKUP (EDIT ME LATER) =====
   // key is unitId (filename-derived), values are whatever you want.
   const GEO_INFO = {
-    // example:
-    // "chickamauga_group": {
-    //   age: "Ordovician",
-    //   lithology: "Limestone & shale",
-    //   notes: "Classic Valley & Ridge carbonate platform strata."
-    // }
+    "neogene_undifferentiated": {
+      age: "Neogene",
+      lithology: "Unconsolidated to poorly consolidated sand, clay, gravel, and local residuum",
+      notes: "Georgia Coastal Plain; boundary follows the GGS/Macrostrat map unit."
+    },
+    "generated_patch_biotite_gneiss_amphibolite": {
+      lithology: "Biotite gneiss with amphibolite"
+    },
+    "generated_patch_granitic_gneiss_undifferentiated": {
+      lithology: "Undifferentiated granitic gneiss"
+    },
+    "generated_patch_biotitic_gneiss_mica_schist_amphibolite": {
+      lithology: "Biotitic gneiss, mica schist, and amphibolite"
+    },
+    "generated_patch_granite_gneiss_granite": {
+      lithology: "Granite gneiss and granite"
+    },
+    "generated_patch_granite_gneiss_amphibolite": {
+      lithology: "Granite gneiss with amphibolite"
+    },
+    "generated_patch_granite_undifferentiated": {
+      lithology: "Undifferentiated granite"
+    },
+    "generated_patch_newala_limestone": {
+      age: "Ordovician",
+      lithology: "Limestone, locally dolomitic"
+    },
+    "generated_patch_pleistocene_pliocene_sands_and_gravels": {
+      age: "Pliocene–Pleistocene",
+      lithology: "Unconsolidated sand and gravel"
+    },
+    "generated_patch_stream_alluvium": {
+      age: "Quaternary",
+      lithology: "Stream-channel and floodplain alluvium"
+    },
+    "generated_patch_miccosukee_formation": {
+      age: "Miocene–Pliocene",
+      lithology: "Sand, clay, gravel, and locally mottled sediments"
+    },
+    "generated_patch_biotite_granite_gneiss_feldspathic_biotite_gneiss_amphibolite_hornblende_gneiss": {
+      lithology: "Biotite granite gneiss, feldspathic biotite gneiss, amphibolite, and hornblende gneiss"
+    },
+    "generated_patch_biotitic_gneiss_mica_schist_amphibolite_residual": {
+      lithology: "Biotitic gneiss, mica schist, and amphibolite"
+    },
+    "generated_patch_biotite_gneiss": {
+      lithology: "Biotite gneiss"
+    },
+    "generated_patch_mica_schist_metasiltstone": {
+      lithology: "Mica schist and metasiltstone"
+    },
+    "generated_patch_blufftown_formation": {
+      age: "Late Cretaceous",
+      lithology: "Marine sand, clay, and locally calcareous sediment"
+    },
+    "generated_patch_tuscaloosa_formation": {
+      age: "Late Cretaceous",
+      lithology: "Sand, gravel, clay, and kaolinitic sediment"
+    },
+    "generated_patch_hornblende_gneiss_amphibolite_granite_gneiss": {
+      lithology: "Hornblende gneiss, amphibolite, and granite gneiss"
+    },
+    "generated_patch_ripley_formation": {
+      age: "Late Cretaceous",
+      lithology: "Marine sand, clay, marl, and locally fossiliferous sediment"
+    },
+    "generated_patch_mica_schist_amphibolite": {
+      lithology: "Mica schist and amphibolite"
+    },
+    "generated_patch_graphite_schist": {
+      lithology: "Graphitic schist"
+    },
+    "generated_patch_biotite_gneiss_amphibolite_residual": {
+      lithology: "Biotite gneiss and amphibolite"
+    },
+    "generated_patch_biotitic_gneiss_undifferentiated": {
+      lithology: "Undifferentiated biotitic gneiss"
+    }
   };
 
   // =====================================================
@@ -955,12 +994,39 @@ polygons loaded: ${polygons.length}`);
 }
 
   function findHit(wx, wy){
+    installGeneratedPatches();
     for (let i = polygons.length - 1; i >= 0; i--){
       const p = polygons[i], b = p.box;
       if (wx < b.minX || wx > b.maxX || wy < b.minY || wy > b.maxY) continue;
-      if (inside(wx, wy, p.pts)) return p;
+      if (!inside(wx, wy, p.pts)) continue;
+      if (Array.isArray(p.holes) && p.holes.some(hole => inside(wx, wy, hole))) continue;
+      return p;
     }
     return null;
+  }
+
+  let generatedPatchesInstalled = false;
+  function installGeneratedPatches(){
+    if (generatedPatchesInstalled) return;
+    const patches = window.GA_GENERATED_PATCH_POLYGONS;
+    if (!Array.isArray(patches)) return;
+    const existing = new Set(polygons.map(p => `${p.fileName}|${p.polyIndexInFile}`));
+    for (let i = 0; i < patches.length; i++){
+      const poly = patches[i];
+      const fileName = poly.fileName || "generated_polygon_patches.js";
+      const polyIndexInFile = Number.isFinite(poly.polyIndexInFile) ? poly.polyIndexInFile : i;
+      if (existing.has(`${fileName}|${polyIndexInFile}`)) continue;
+      const pts = (poly.pts || []).map(pt => ({ x:+pt.x, y:+pt.y }))
+        .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.y));
+      if (pts.length < 3) continue;
+      const holes = Array.isArray(poly.holes) ? poly.holes.map(ring => ring
+        .map(pt => ({ x:+pt.x, y:+pt.y }))
+        .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.y)))
+        .filter(ring => ring.length >= 3) : [];
+      const unitId = unitFromFile(fileName);
+      polygons.push({ unitId, name:poly.unitName || pretty(unitId), pts, holes, box:bbox(pts), fileName, polyIndexInFile });
+    }
+    generatedPatchesInstalled = true;
   }
 
   function hidePopup(){
@@ -1068,13 +1134,9 @@ polygons loaded: ${polygons.length}`);
     } catch(_e) {}
   }
 
-  const nearbyTitle = Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY)
-    ? forcedRockNameNearPoint(hit._clickWX, hit._clickWY)
-    : "";
-
-  const title = sampledColor
-    ? nearbyTitle || forcedRockNameFromColor(sampledColor.r, sampledColor.g, sampledColor.b) || hit.name
-    : hit.name;
+  // A traced polygon is more specific and reliable than the raster-color
+  // fallback. RGB identification is used only when findHit() returns nothing.
+  const title = hit.name;
 
   popupTitle.textContent = displayRockName(title);
 
@@ -1212,8 +1274,15 @@ function resetView(){
 
   async function loadBundledPolygonsFromGitHub(bundlePath){
     const bundleUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${bundlePath.split("/").map(encodeURIComponent).join("/")}`;
-    const response = await fetch(bundleUrl);
-    if (!response.ok) throw new Error(`Bundle HTTP ${response.status}`);
+    const candidates = location.protocol === "file:" ? [bundleUrl] : [bundlePath, bundleUrl];
+    let response = null;
+    for (const candidate of candidates){
+      try {
+        const attempt = await fetch(candidate);
+        if (attempt.ok){ response = attempt; break; }
+      } catch(_e) {}
+    }
+    if (!response) throw new Error("Bundled polygons could not be loaded locally or from GitHub");
 
     const data = await response.json();
     if (!data || !Array.isArray(data.polys)) throw new Error("Bundle missing polys array");
@@ -1230,6 +1299,13 @@ function resetView(){
       if (rawPts.length < 3) continue;
 
       const pts = simplifyPolygonPts(rawPts);
+      const holes = Array.isArray(poly.holes)
+        ? poly.holes.map(ring => ring
+            .map(pt => Array.isArray(pt) ? ({ x: +pt[0], y: +pt[1] }) : ({ x: +pt.x, y: +pt.y }))
+            .filter(pt => Number.isFinite(pt.x) && Number.isFinite(pt.y)))
+          .filter(ring => ring.length >= 3)
+          .map(ring => simplifyPolygonPts(ring))
+        : [];
       const fileName = poly.fileName || "all_polygons.json";
       const unitId = unitFromFile(fileName);
 
@@ -1237,6 +1313,7 @@ function resetView(){
         unitId,
         name: poly.unitName || pretty(unitId),
         pts,
+        holes,
         box: bbox(pts),
         fileName,
         polyIndexInFile: Number.isFinite(poly.polyIndexInFile) ? poly.polyIndexInFile : i

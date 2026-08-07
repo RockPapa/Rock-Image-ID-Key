@@ -78,6 +78,25 @@
   }
   #overlay { position:absolute; left:0; top:0; }
 
+  #zoomKeyHint {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    z-index: 8;
+    padding: 7px 10px;
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 8px;
+    background: rgba(0,0,0,0.72);
+    color: #fff;
+    font-size: clamp(12px, 1.7vw, 16px);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    pointer-events: none;
+    user-select: none;
+    text-shadow: 0 1px 2px #000;
+  }
+
   /* ===== POPUP CARD ===== */
   #popup {
     position: absolute;
@@ -401,6 +420,7 @@ body.map-only #stage {
 <div id="stage" tabindex="0">
   <canvas id="map"></canvas>
   <canvas id="overlay"></canvas>
+  <div id="zoomKeyHint" aria-hidden="true">TAP F TO ZOOM IN; R TO ZOOM OUT</div>
 
   <!-- Popup lives INSIDE stage so it moves/clips nicely -->
   <div id="popup">

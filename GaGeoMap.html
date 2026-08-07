@@ -620,6 +620,86 @@ body.map-only #stage {
     },
     "generated_patch_biotitic_gneiss_undifferentiated": {
       lithology: "Undifferentiated biotitic gneiss"
+    },
+    "generated_patch_tallulah_falls_quartzite": {
+      age: "Late Precambrian–early Paleozoic (broad map assignment)",
+      lithology: "Quartzite, locally micaceous, feldspathic, and interlayered with schist",
+      notes: "Quartzite member within the Tallulah Falls dome; boundary follows the GGS/Macrostrat map unit."
+    },
+    "generated_patch_northeast_ga_metagraywacke_mica_schist": {
+      lithology: "Metagraywacke and mica schist"
+    },
+    "generated_patch_northeast_ga_sericite_schist_amphibolite": {
+      lithology: "Sericite schist and amphibolite"
+    },
+    "generated_patch_northeast_ga_biotitic_gneiss_mica_schist_amphibolite": {
+      lithology: "Biotitic gneiss, mica schist, and amphibolite"
+    },
+    "generated_patch_northeast_ga_amphibolite": {
+      lithology: "Amphibolite"
+    },
+    "generated_patch_east_ellijay_cross_biotite_schist": {
+      lithology: "Cross-biotite schist (biotite porphyroblastic schist)",
+      notes: "Small lenses within the broader mica-schist/gneiss unit; boundaries follow the GGS/Macrostrat map polygons."
+    },
+    "generated_patch_braselton_granitic_gneiss_undifferentiated": {
+      lithology: "Undifferentiated granitic gneiss"
+    },
+    "generated_patch_braselton_hornblende_gneiss_amphibolite_granite_gneiss": {
+      lithology: "Hornblende gneiss, amphibolite, and granite gneiss"
+    },
+    "generated_patch_braselton_granite_gneiss_amphibolite": {
+      lithology: "Granite gneiss and amphibolite"
+    },
+    "generated_patch_carnesville_hornblende_gneiss": {
+      lithology: "Hornblende gneiss",
+      notes: "Narrow northeast-trending body through the Carnesville area; boundary follows the GGS/Macrostrat polygon."
+    },
+    "generated_patch_sillimanite_schist_gneiss_amphibolite_athens": {
+      lithology: "Sillimanite schist, gneiss, and amphibolite",
+      notes: "Pale mapped lenses in the Athens–Ila–Nicholson belt; restored from the original hand-traced map boundaries."
+    },
+    "generated_patch_brevard_aluminous_schist": {
+      lithology: "Aluminous mica schist, commonly garnetiferous and locally containing staurolite, kyanite, or sillimanite",
+      notes: "Sandy Springs Group fault slice along the Brevard fault zone."
+    },
+    "generated_patch_brevard_chattahoochee_palisades_quartzite": {
+      age: "Cambrian?",
+      lithology: "Chattahoochee Palisades Quartzite; recrystallized quartzite with local mica, garnet, graphite, and aluminosilicate minerals",
+      notes: "Exceptionally thin, continuous fault-zone strand southwest of Atlanta."
+    },
+    "generated_patch_brevard_mica_schist": {
+      lithology: "Mica schist"
+    },
+    "generated_patch_brevard_biotitic_gneiss_mica_schist_amphibolite_a": {
+      lithology: "Biotitic gneiss, mica schist, and amphibolite"
+    },
+    "generated_patch_brevard_biotitic_gneiss_mica_schist_amphibolite_b": {
+      lithology: "Biotitic gneiss, mica schist, and amphibolite"
+    },
+    "generated_patch_brevard_granitic_gneiss_gneissic_granite": {
+      lithology: "Granitic gneiss and gneissic granite, locally augen-bearing or porphyritic"
+    },
+    "generated_patch_brevard_granitic_gneiss_undifferentiated_vinings": {
+      lithology: "Undifferentiated granitic gneiss"
+    },
+    "generated_patch_fortsonia_granite_gneissic_biotite_granite": {
+      lithology: "Granite and gneissic biotite granite"
+    },
+    "generated_patch_fortsonia_granite_biotite_granite_amphibolite": {
+      lithology: "Granite, biotite granite, and amphibolite"
+    },
+    "generated_patch_fortsonia_amphibolite_biotitic_gneiss_quartz_sericite_schist": {
+      lithology: "Amphibolite, biotitic gneiss, and quartz-sericite schist"
+    },
+    "generated_patch_fortsonia_undifferentiated_metavolcanics_sericite_phyllite_meta_argillite_quartz_mica_schist": {
+      lithology: "Undifferentiated metavolcanic rocks, sericite phyllite, meta-argillite, and quartz-mica schist"
+    },
+    "generated_patch_fortsonia_metadacite": {
+      lithology: "Metadacite"
+    },
+    "generated_patch_fortsonia_ultramafic_rocks_undifferentiated": {
+      lithology: "Undifferentiated ultramafic rocks"
     }
   };
 
@@ -699,6 +779,117 @@ body.map-only #stage {
       g + 18 < r &&
       g + 18 < b
     );
+  }
+
+  // The 1:500,000 GGS source depicts several small amphibolite lenses near
+  // Chatsworth and between East Ellijay and McCaysville as dark-purple bodies.
+  // Rockd/Macrostrat generalizes these into their surrounding mixed-rock units,
+  // so retain the more detailed raster information in these two limited areas.
+  // Requiring a cluster of purple pixels avoids treating a thin map line or
+  // isolated compression artifact as amphibolite.
+  function isVerifiedNorthwestGaAmphiboliteSpot(wx, wy){
+    const lon = wx / 832 - 85.89;
+    const lat = 35.06 - wy / 890;
+    const inChatsworthCluster = lon >= -84.75 && lon <= -84.69 && lat >= 34.73 && lat <= 34.84;
+    const inEllijayCluster = lon >= -84.63 && lon <= -84.39 && lat >= 34.70 && lat <= 35.03;
+    if (!inChatsworthCluster && !inEllijayCluster) return false;
+
+    let pixels;
+    try {
+      pixels = sampleNearbyPixels(wx, wy, 4);
+    } catch(_e) {
+      return false;
+    }
+    return pixels.filter(p =>
+      isColorInRanges(p.r, p.g, p.b, AMPHIBOLITE_COLOR_RANGES) ||
+      isDarkPurpleAmphibolite(p.r, p.g, p.b) ||
+      // Some interiors became darker during WebP compression but retain the
+      // diagnostic purple relationship (red and blue well above green).
+      (p.r >= 30 && p.r <= 190 && p.g <= 125 && p.b >= 50 && p.b <= 210 &&
+       p.r > p.g + 15 && p.b > p.g + 25)
+    ).length >= 7;
+  }
+
+  function isVerifiedDahlonegaUltramaficSpot(wx, wy){
+    const lon = wx / 832 - 85.89;
+    const lat = 35.06 - wy / 890;
+    // Two elongated bodies northwest of Dahlonega. The tight bounds exclude
+    // the nearby red circular mineral-locality symbols.
+    const inWesternBody = lon >= -84.225 && lon <= -84.212 && lat >= 34.606 && lat <= 34.617;
+    const inNorthernBody = lon >= -84.204 && lon <= -84.186 && lat >= 34.650 && lat <= 34.662;
+    if (!inWesternBody && !inNorthernBody) return false;
+    let pixels;
+    try {
+      pixels = sampleNearbyPixels(wx, wy, 4);
+    } catch(_e) {
+      return false;
+    }
+    return pixels.filter(p => isColorInRanges(p.r, p.g, p.b, ULTRAMAFIC_COLOR_RANGES)).length >= 3;
+  }
+
+  function isVerifiedBowersvilleGraniteGneissSpot(wx, wy){
+    const lon = wx / 832 - 85.89;
+    const lat = 35.06 - wy / 890;
+    const inWesternSlivers = lon >= -83.125 && lon <= -83.010 && lat >= 34.305 && lat <= 34.412;
+    const inEasternSliver = lon >= -83.018 && lon <= -82.965 && lat >= 34.285 && lat <= 34.345;
+    if (!inWesternSlivers && !inEasternSliver) return false;
+    let pixels;
+    try {
+      pixels = sampleNearbyPixels(wx, wy, 4);
+    } catch(_e) {
+      return false;
+    }
+    return pixels.filter(p =>
+      p.r >= 145 && p.r <= 225 &&
+      p.g >= 100 && p.g <= 195 &&
+      p.b >= 190 && p.b <= 255 &&
+      p.b > p.r + 8 && p.b > p.g + 35
+    ).length >= 5;
+  }
+
+  function isVerifiedDewyRoseGraniteGneissSpot(wx, wy){
+    const lon = wx / 832 - 85.89;
+    const lat = 35.06 - wy / 890;
+    const inNorthernSliver = lon >= -82.875 && lon <= -82.845 && lat >= 34.225 && lat <= 34.245;
+    const inSouthernSliver = lon >= -82.835 && lon <= -82.805 && lat >= 34.202 && lat <= 34.225;
+    if (!inNorthernSliver && !inSouthernSliver) return false;
+    let pixels;
+    try {
+      pixels = sampleNearbyPixels(wx, wy, 4);
+    } catch(_e) {
+      return false;
+    }
+    return pixels.filter(p =>
+      p.r >= 140 && p.r <= 235 &&
+      p.g >= 135 && p.g <= 235 &&
+      p.b >= 180 && p.b <= 255 &&
+      p.b > p.r + 8 && p.b > p.g + 6
+    ).length >= 5;
+  }
+
+  function isVerifiedRayleMetadaciteFelsicSliver(wx, wy){
+    const lon = wx / 832 - 85.89;
+    const lat = 35.06 - wy / 890;
+    const windows = [
+      [-83.065, -83.035, 33.790, 33.835],
+      [-83.030, -82.995, 33.755, 33.795],
+      [-82.815, -82.790, 33.890, 33.935],
+      [-82.790, -82.755, 33.865, 33.900],
+      [-82.710, -82.675, 33.900, 33.940]
+    ];
+    if (!windows.some(([w,e,s,n]) => lon >= w && lon <= e && lat >= s && lat <= n)) return false;
+    let pixels;
+    try {
+      pixels = sampleNearbyPixels(wx, wy, 4);
+    } catch(_e) {
+      return false;
+    }
+    return pixels.filter(p =>
+      p.r >= 170 && p.r <= 255 &&
+      p.g >= 115 && p.g <= 235 &&
+      p.b >= 170 && p.b <= 255 &&
+      p.b + 20 >= p.r
+    ).length >= 3;
   }
 
   function forcedRockNameFromColor(r, g, b){
@@ -1015,14 +1206,23 @@ polygons loaded: ${polygons.length}`);
 
   function findHit(wx, wy){
     installGeneratedPatches();
+    let best = null;
+    let bestArea = Infinity;
     for (let i = polygons.length - 1; i >= 0; i--){
       const p = polygons[i], b = p.box;
       if (wx < b.minX || wx > b.maxX || wy < b.minY || wy > b.maxY) continue;
       if (!inside(wx, wy, p.pts)) continue;
       if (Array.isArray(p.holes) && p.holes.some(hole => inside(wx, wy, hole))) continue;
-      return p;
+      // Overlapping broad regional polygons must not swallow a smaller body.
+      // Selecting the smallest containing polygon preserves the user's detailed
+      // outlines while still allowing generated patches to fill true gaps.
+      const area = Math.max(0, b.maxX - b.minX) * Math.max(0, b.maxY - b.minY);
+      if (area < bestArea){
+        best = p;
+        bestArea = area;
+      }
     }
-    return null;
+    return best;
   }
 
   let generatedPatchesInstalled = false;
@@ -1116,7 +1316,15 @@ polygons loaded: ${polygons.length}`);
     }catch(_e){
       return;
     }
-    const match = forcedRockNameNearPoint(wx, wy) || forcedRockNameFromColor(pix.r, pix.g, pix.b) || identifyRock(pix.r, pix.g, pix.b);
+    const match = isVerifiedRayleMetadaciteFelsicSliver(wx, wy)
+      ? "Granite / Gneissic Biotite Granite"
+      : (isVerifiedBowersvilleGraniteGneissSpot(wx, wy) || isVerifiedDewyRoseGraniteGneissSpot(wx, wy))
+      ? "Granite Gneiss"
+      : isVerifiedDahlonegaUltramaficSpot(wx, wy)
+      ? "Ultramafic Rock"
+      : isVerifiedNorthwestGaAmphiboliteSpot(wx, wy)
+      ? "Amphibolite"
+      : (forcedRockNameNearPoint(wx, wy) || forcedRockNameFromColor(pix.r, pix.g, pix.b) || identifyRock(pix.r, pix.g, pix.b));
     prioritizeRockPolygon(match);
 
     popupTitle.textContent = displayRockName(match);
@@ -1156,11 +1364,36 @@ polygons loaded: ${polygons.length}`);
 
   // A traced polygon is more specific and reliable than the raster-color
   // fallback. RGB identification is used only when findHit() returns nothing.
-  const title = hit.name;
+  const northwestGaAmphibolite =
+    Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY) &&
+    isVerifiedNorthwestGaAmphiboliteSpot(hit._clickWX, hit._clickWY);
+  const dahlonegaUltramafic =
+    Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY) &&
+    isVerifiedDahlonegaUltramaficSpot(hit._clickWX, hit._clickWY);
+  const verifiedGraniteGneiss =
+    Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY) &&
+    (isVerifiedBowersvilleGraniteGneissSpot(hit._clickWX, hit._clickWY) ||
+     isVerifiedDewyRoseGraniteGneissSpot(hit._clickWX, hit._clickWY));
+  const rayleFelsicSliver =
+    Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY) &&
+    isVerifiedRayleMetadaciteFelsicSliver(hit._clickWX, hit._clickWY);
+  const title = rayleFelsicSliver
+    ? "Granite / Gneissic Biotite Granite"
+    : verifiedGraniteGneiss
+    ? "Granite Gneiss"
+    : (dahlonegaUltramafic ? "Ultramafic Rock" : (northwestGaAmphibolite ? "Amphibolite" : hit.name));
 
   popupTitle.textContent = displayRockName(title);
 
-  const info = GEO_INFO[hit.unitId] || {};
+  const info = rayleFelsicSliver
+    ? { lithology: "Granite and gneissic biotite granite (small felsic sliver within the metavolcanic/metadacite belt)" }
+    : verifiedGraniteGneiss
+    ? { lithology: "Granite gneiss (small mapped body within the surrounding metamorphic units)" }
+    : dahlonegaUltramafic
+    ? { lithology: "Ultramafic rock (small mapped body within a broader metamorphic host unit)" }
+    : northwestGaAmphibolite
+      ? { lithology: "Amphibolite (small mapped lens within a broader metamorphic host unit)" }
+      : (GEO_INFO[hit.unitId] || {});
   const lith = info.lithology ? "Rock type: " + info.lithology : "";
   popupMeta.textContent = lith;
   popupBody.textContent = "";

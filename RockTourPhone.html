@@ -181,6 +181,22 @@
       border: 2px solid rgba(0, 0, 0, 0.25);
       cursor: pointer;
     }
+
+    /* Touch devices keep the JavaScript opacity and show instructions only. */
+    body.touchDevice .hud {
+      width: min(78vw, 250px);
+      min-height: 0;
+      padding: 9px 11px;
+    }
+
+    body.touchDevice .hudNote {
+      margin-bottom: 0;
+    }
+
+    body.touchDevice .hudRow,
+    body.touchDevice .hudSlider {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -193,7 +209,7 @@
     </div>
 
     <div class="hud" id="hud" aria-label="Satellite controls">
-      <div class="hudNote">DRAG AND ZOOM. TAP A RED STAR</div>
+      <div class="hudNote" id="hudNote">DRAG AND ZOOM. TAP A RED STAR</div>
       <div class="hudRow">
         <strong>Satellite Opacity Slider</strong>
       </div>
@@ -213,6 +229,16 @@
     const opacityValue = document.getElementById("opacityValue");
     const starHotspots = document.getElementById("starHotspots");
     const satelliteStars = document.getElementById("satelliteStars");
+    const hudNote = document.getElementById("hudNote");
+
+    const isTouchDevice = navigator.maxTouchPoints > 0 ||
+      window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+    const phonePortrait = window.matchMedia("(max-width: 600px) and (orientation: portrait)");
+
+    if (isTouchDevice) {
+      document.body.classList.add("touchDevice");
+      hudNote.textContent = "TAP A RED STAR • USE TWO FINGERS TO ZOOM";
+    }
 
     // Matched to existing project stop mapping (index.html / index Grayscale.html):
     // S1->Quartz1, S2->Granite1, S3->Schist1, S4->Amphibolite2, S5->PinkGranite,
@@ -244,9 +270,40 @@
     const pointers = new Map();
     let panStart = null;
     let pinchStart = null;
+    let userHasMovedMap = false;
 
     function applyTransform() {
       mapFrame.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+    }
+
+    function setInitialMapLayout(force = false) {
+      if (userHasMovedMap && !force) return;
+
+      if (isTouchDevice && phonePortrait.matches) {
+        // Use the star map's native aspect ratio and letterbox it so the complete
+        // locked map stack is visible when a phone opens in portrait orientation.
+        const mapAspect = 10153 / 6659;
+        const frameWidth = stage.clientWidth;
+        const frameHeight = frameWidth / mapAspect;
+
+        mapFrame.style.inset = "auto";
+        mapFrame.style.width = frameWidth + "px";
+        mapFrame.style.height = frameHeight + "px";
+        state.tx = 0;
+        state.ty = (stage.clientHeight - frameHeight) / 2;
+        state.scale = 1;
+        state.minScale = 1;
+      } else {
+        mapFrame.style.inset = "0";
+        mapFrame.style.width = "100%";
+        mapFrame.style.height = "100%";
+        state.tx = 0;
+        state.ty = 0;
+        state.scale = 1;
+        state.minScale = 0.5;
+      }
+
+      applyTransform();
     }
 
     function clamp(value, min, max) {
@@ -342,6 +399,7 @@
       if (event.target.closest(".mapStar")) return;
 
       const p = getLocalPoint(event.clientX, event.clientY);
+      userHasMovedMap = true;
       pointers.set(event.pointerId, { id: event.pointerId, x: p.x, y: p.y });
       stage.setPointerCapture(event.pointerId);
 
@@ -433,14 +491,18 @@
       opacityValue.textContent = clamped + "%";
     }
 
-    opacitySlider.addEventListener("input", (event) => {
-      setOpacity(event.target.value);
-    });
+    if (!isTouchDevice) {
+      opacitySlider.addEventListener("input", (event) => {
+        setOpacity(event.target.value);
+      });
+    }
+
+    window.addEventListener("resize", () => setInitialMapLayout());
 
     renderSatelliteStars();
     renderStars();
     setOpacity(opacitySlider.value);
-    applyTransform();
+    setInitialMapLayout(true);
   </script>
 </body>
 </html>

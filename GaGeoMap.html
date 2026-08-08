@@ -942,12 +942,37 @@ body.map-only #stage {
     return "";
   }
 
+  function isDarkPurpleAmphiboliteSpot(wx, wy){
+    let pixels;
+    try {
+      pixels = sampleNearbyPixels(wx, wy, 3);
+    } catch(_e) {
+      return false;
+    }
+
+    const isAmphibolitePixel = p =>
+      isColorInRanges(p.r, p.g, p.b, AMPHIBOLITE_COLOR_RANGES) ||
+      isDarkPurpleAmphibolite(p.r, p.g, p.b);
+    const centerX = Math.round(wx);
+    const centerY = Math.round(wy);
+    const center = pixels.find(p => p.ix === centerX && p.iy === centerY);
+
+    // A directly tapped purple pixel is sufficient. The small cluster test also
+    // makes narrow amphibolite bodies easier to select near an anti-aliased edge.
+    return Boolean(center && isAmphibolitePixel(center)) ||
+      pixels.filter(isAmphibolitePixel).length >= 5;
+  }
+
   function forcedRockNameNearPoint(wx, wy){
     let pixels;
     try {
       pixels = sampleNearbyPixels(wx, wy, 4);
     } catch(_e) {
       return "";
+    }
+
+    if (isDarkPurpleAmphiboliteSpot(wx, wy)) {
+      return "Amphibolite";
     }
 
     if (pixels.some(p => isColorInRanges(p.r, p.g, p.b, ULTRAMAFIC_COLOR_RANGES))) {
@@ -1412,11 +1437,19 @@ polygons loaded: ${polygons.length}`);
     } catch(_e) {}
   }
 
-  // A traced polygon is more specific and reliable than the raster-color
-  // fallback. RGB identification is used only when findHit() returns nothing.
+  // Traced polygons normally supply the most specific label. Amphibolite and
+  // ultramafic raster colors are exceptions: the detailed raster contains small
+  // bodies that some broader source polygons classify only as mixed rock.
   const northwestGaAmphibolite =
     Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY) &&
     isVerifiedNorthwestGaAmphiboliteSpot(hit._clickWX, hit._clickWY);
+  const darkPurpleAmphibolite =
+    Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY) &&
+    isDarkPurpleAmphiboliteSpot(hit._clickWX, hit._clickWY);
+  const forcedRasterRock =
+    Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY)
+      ? forcedRockNameNearPoint(hit._clickWX, hit._clickWY)
+      : "";
   const dahlonegaUltramafic =
     Number.isFinite(hit._clickWX) && Number.isFinite(hit._clickWY) &&
     isVerifiedDahlonegaUltramaficSpot(hit._clickWX, hit._clickWY);
@@ -1431,7 +1464,13 @@ polygons loaded: ${polygons.length}`);
     ? "Granite / Gneissic Biotite Granite"
     : verifiedGraniteGneiss
     ? "Granite Gneiss"
-    : (dahlonegaUltramafic ? "Ultramafic Rock" : (northwestGaAmphibolite ? "Amphibolite" : hit.name));
+    : dahlonegaUltramafic
+    ? "Ultramafic Rock"
+    : (northwestGaAmphibolite || darkPurpleAmphibolite || forcedRasterRock === "Amphibolite")
+    ? "Amphibolite"
+    : forcedRasterRock === "Ultramafic Rock"
+    ? "Ultramafic Rock"
+    : hit.name;
 
   popupTitle.textContent = displayRockName(title);
 
@@ -1441,8 +1480,10 @@ polygons loaded: ${polygons.length}`);
     ? { lithology: "Granite gneiss (small mapped body within the surrounding metamorphic units)" }
     : dahlonegaUltramafic
     ? { lithology: "Ultramafic rock (small mapped body within a broader metamorphic host unit)" }
-    : northwestGaAmphibolite
+    : (northwestGaAmphibolite || darkPurpleAmphibolite || forcedRasterRock === "Amphibolite")
       ? { lithology: "Amphibolite (small mapped lens within a broader metamorphic host unit)" }
+      : forcedRasterRock === "Ultramafic Rock"
+      ? { lithology: "Ultramafic rock (mapped raster unit within a broader source polygon)" }
       : (GEO_INFO[hit.unitId] || {});
   const lith = info.lithology ? "Rock type: " + info.lithology : "";
   popupMeta.textContent = lith;

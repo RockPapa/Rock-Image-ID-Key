@@ -97,6 +97,35 @@
     text-shadow: 0 1px 2px #000;
   }
 
+  #roadControls {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 9;
+    display: grid;
+    grid-template-columns: auto minmax(92px, 150px) auto;
+    gap: 7px 9px;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid rgba(255,255,255,0.85);
+    border-radius: 10px;
+    background: rgba(12,18,27,0.84);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 750;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    user-select: none;
+  }
+  #roadControls label { display:flex; gap:6px; align-items:center; white-space:nowrap; }
+  #roadControls input[type="range"] { width: 100%; accent-color: #ffd03b; }
+  #roadControls input[type="checkbox"] { width:18px; height:18px; accent-color:#ffd03b; }
+  #roadOpacityValue { min-width: 3ch; text-align:right; font-variant-numeric:tabular-nums; }
+  #roadAttribution { grid-column: 1 / -1; font-size: 10px; font-weight: 500; opacity: 0.78; }
+  @media (max-width: 560px) {
+    #roadControls { grid-template-columns:auto 92px auto; padding:6px 8px; font-size:12px; }
+    #roadAttribution { display:none; }
+  }
+
   /* ===== POPUP CARD ===== */
   #popup {
     position: absolute;
@@ -420,6 +449,12 @@ body.map-only #stage {
 <div id="stage" tabindex="0">
   <canvas id="map"></canvas>
   <canvas id="overlay"></canvas>
+  <div id="roadControls" role="group" aria-label="Road overlay controls">
+    <label><input type="checkbox" id="roadsToggle" checked> Roads</label>
+    <input type="range" id="roadOpacity" min="0" max="100" value="65" aria-label="Road overlay opacity">
+    <output id="roadOpacityValue" for="roadOpacity">65%</output>
+    <div id="roadAttribution">Roads: U.S. Census TIGER/Line 2025</div>
+  </div>
   <div id="zoomKeyHint" aria-hidden="true">TAP F TO ZOOM IN; R TO ZOOM OUT</div>
 
   <!-- Popup lives INSIDE stage so it moves/clips nicely -->
@@ -448,6 +483,10 @@ body.map-only #stage {
   const mapCanvas = document.getElementById("map");
   const overlayCanvas = document.getElementById("overlay");
   const stage = document.getElementById("stage");
+  const roadControls = document.getElementById("roadControls");
+  const roadsToggle = document.getElementById("roadsToggle");
+  const roadOpacityInput = document.getElementById("roadOpacity");
+  const roadOpacityValue = document.getElementById("roadOpacityValue");
 
   const mapCtx = mapCanvas.getContext("2d");
   const overlayCtx = overlayCanvas.getContext("2d"); // kept, but we won't draw polygons now
@@ -478,6 +517,9 @@ body.map-only #stage {
   const rockIndexBack = document.getElementById("rockIndexBack");
 
   let img = null;
+  let roadImg = null;
+  let roadsVisible = true;
+  let roadOpacity = 0.65;
 
   // polygons: { unitId, name, pts:[{x,y}], box:{minX,maxX,minY,maxY} }
   let polygons = [];
@@ -517,6 +559,8 @@ body.map-only #stage {
   // ===== YOUR ROCK ID KEY LINK (EDIT ME) =====
   // Put your real URL here:
   const ROCK_KEY_URL = "RockIndex.html";
+  const ROAD_OVERLAY_URL = "PROJECT_FILES_FAST/georgia_roads_major_secondary.png";
+  const ROAD_PREF_KEY = "gaGeoMapRoadOverlayV1";
 
   // ===== GitHub source (edit these to your repo) =====
   const GITHUB_OWNER = "RockPapa";
@@ -1191,6 +1235,12 @@ function enterMapOnlyMode(options = {}){
     clearCanvas(mapCtx);
     applyView(mapCtx);
     mapCtx.drawImage(img, 0, 0);
+    if (roadImg && roadsVisible && roadOpacity > 0){
+      mapCtx.save();
+      mapCtx.globalAlpha = roadOpacity;
+      mapCtx.drawImage(roadImg, 0, 0, img.width, img.height);
+      mapCtx.restore();
+    }
 
     // overlay (kept clear)
     clearCanvas(overlayCtx);
@@ -1475,6 +1525,62 @@ function resetView(){
     try { if (im.decode) await im.decode(); } catch(_e) {}
     return im;
   }
+
+  function saveRoadPreferences(){
+    try {
+      localStorage.setItem(ROAD_PREF_KEY, JSON.stringify({ visible: roadsVisible, opacity: roadOpacity }));
+    } catch(_e) {}
+  }
+
+  function updateRoadControls(){
+    roadsToggle.checked = roadsVisible;
+    roadOpacityInput.value = String(Math.round(roadOpacity * 100));
+    roadOpacityValue.value = `${Math.round(roadOpacity * 100)}%`;
+    roadOpacityInput.disabled = !roadsVisible || !roadImg;
+  }
+
+  function restoreRoadPreferences(){
+    try {
+      const saved = JSON.parse(localStorage.getItem(ROAD_PREF_KEY) || "null");
+      if (saved && typeof saved.visible === "boolean") roadsVisible = saved.visible;
+      if (saved && Number.isFinite(saved.opacity)) roadOpacity = Math.max(0, Math.min(1, saved.opacity));
+    } catch(_e) {}
+    updateRoadControls();
+  }
+
+  async function loadRoadOverlay(){
+    restoreRoadPreferences();
+    try {
+      roadImg = await loadImageFromUrl(ROAD_OVERLAY_URL);
+      updateRoadControls();
+      redraw();
+    } catch(_e) {
+      roadImg = null;
+      roadsVisible = false;
+      roadsToggle.checked = false;
+      roadsToggle.disabled = true;
+      roadOpacityInput.disabled = true;
+      roadOpacityValue.value = "N/A";
+      roadControls.title = "Road overlay image is unavailable.";
+    }
+  }
+
+  for (const eventName of ["pointerdown", "pointerup", "click", "dblclick", "wheel"]){
+    roadControls.addEventListener(eventName, event => event.stopPropagation());
+  }
+  roadsToggle.addEventListener("change", () => {
+    roadsVisible = roadsToggle.checked;
+    updateRoadControls();
+    saveRoadPreferences();
+    redraw();
+  });
+  roadOpacityInput.addEventListener("input", () => {
+    roadOpacity = Number(roadOpacityInput.value) / 100;
+    updateRoadControls();
+    saveRoadPreferences();
+    redraw();
+  });
+  loadRoadOverlay();
 
 
   async function listProjectJsonEntriesFromGitHub(projectFolder = GITHUB_PROJECT_FOLDER){

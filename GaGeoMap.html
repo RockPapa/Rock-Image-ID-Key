@@ -126,6 +126,28 @@
     #roadAttribution { display:none; }
   }
 
+  #labelTools {
+    position:absolute;
+    left:12px;
+    top:12px;
+    z-index:12;
+    display:none;
+    width:min(230px,calc(100% - 24px));
+    padding:9px;
+    border:2px solid #ffd03b;
+    border-radius:10px;
+    background:rgba(12,18,27,0.92);
+    color:#fff;
+    box-shadow:0 5px 18px rgba(0,0,0,0.38);
+    font:700 12px/1.3 system-ui,-apple-system,Segoe UI,Roboto,Arial;
+  }
+  #labelTools.active { display:block; }
+  #labelTools .labelModeTitle { margin-bottom:7px; color:#ffd03b; font-size:13px; }
+  #labelTools .labelButtons { display:flex; flex-wrap:wrap; gap:5px; }
+  #labelTools button { padding:6px 8px; border-radius:7px; font-size:12px; }
+  #labelTools button.selected { background:#ffd03b; border-color:#ffd03b; color:#151515; }
+  #labelTools .labelHelp { margin-top:7px; font-weight:500; opacity:0.9; }
+
   /* ===== POPUP CARD ===== */
   #popup {
     position: absolute;
@@ -455,6 +477,23 @@ body.map-only #stage {
     <output id="roadOpacityValue" for="roadOpacity">65%</output>
     <div id="roadAttribution">Roads: U.S. Census TIGER/Line 2025</div>
   </div>
+  <div id="labelTools" role="group" aria-label="Owner map-label tools">
+    <div class="labelModeTitle">LABEL EDITING ON — press L to close</div>
+    <div class="labelButtons">
+      <button type="button" data-label-tool="text">Text</button>
+      <button type="button" data-label-tool="line">Line</button>
+      <button type="button" data-label-tool="polygon">Polygon</button>
+      <button type="button" data-label-tool="edit">Edit / erase</button>
+      <button type="button" id="finishLabelShape">Finish polygon</button>
+      <button type="button" id="undoLabel">Undo last</button>
+      <button type="button" id="exportLabels">Export</button>
+      <button type="button" id="importLabels">Import</button>
+      <button type="button" id="cleanMapView">Clean map view</button>
+      <button type="button" id="clearLabels">Clear all</button>
+    </div>
+    <div class="labelHelp" id="labelHelp">Choose Text, Line, or Polygon.</div>
+    <input type="file" id="labelImportFile" accept="application/json,.json" hidden>
+  </div>
   <div id="zoomKeyHint" aria-hidden="true">TAP F TO ZOOM IN; R TO ZOOM OUT</div>
 
   <!-- Popup lives INSIDE stage so it moves/clips nicely -->
@@ -487,6 +526,15 @@ body.map-only #stage {
   const roadsToggle = document.getElementById("roadsToggle");
   const roadOpacityInput = document.getElementById("roadOpacity");
   const roadOpacityValue = document.getElementById("roadOpacityValue");
+  const labelTools = document.getElementById("labelTools");
+  const labelHelp = document.getElementById("labelHelp");
+  const finishLabelShape = document.getElementById("finishLabelShape");
+  const undoLabel = document.getElementById("undoLabel");
+  const exportLabels = document.getElementById("exportLabels");
+  const importLabels = document.getElementById("importLabels");
+  const cleanMapView = document.getElementById("cleanMapView");
+  const clearLabels = document.getElementById("clearLabels");
+  const labelImportFile = document.getElementById("labelImportFile");
 
   const mapCtx = mapCanvas.getContext("2d");
   const overlayCtx = overlayCanvas.getContext("2d"); // kept, but we won't draw polygons now
@@ -533,7 +581,7 @@ body.map-only #stage {
 
   let githubLoadInFlight = false;
 
-  const MAP_CONTROL_HINT = "Drag to pan • Pinch or Ctrl+wheel to zoom • Click/tap map for popup • Keys: ←↑→↓ pan, F zoom in, R zoom out";
+  const MAP_CONTROL_HINT = "Drag to pan • Pinch or Ctrl+wheel to zoom • Click/tap map for popup • L owner labels • Keys: ←↑→↓ pan, F zoom in, R zoom out";
   const FOLDER_HINT = "Loading PROJECT_FILES from GitHub (main branch)…";
   const MIN_SCALE = 0.02;
   const MAX_SCALE = 9.0;
@@ -561,6 +609,18 @@ body.map-only #stage {
   const ROCK_KEY_URL = "RockIndex.html";
   const ROAD_OVERLAY_URL = "PROJECT_FILES_FAST/georgia_roads_major_secondary.png";
   const ROAD_PREF_KEY = "gaGeoMapRoadOverlayV1";
+  const MAP_LABELS_KEY = "gaGeoMapOwnerLabelsV1";
+  const MAP_LABEL_PIN_KEY = "gaGeoMapOwnerLabelPinV1";
+  const LABEL_TEXT_COLOR = "#17120b";
+  const LABEL_LINE_COLOR = "#b21f2d";
+  const LABEL_FILL_COLOR = "rgba(255,208,59,0.20)";
+  const LABEL_FONT_PX = 17;
+  const LABEL_LINE_PX = 4;
+  let labelMode = false;
+  let cleanLabelsView = false;
+  let labelTool = null;
+  let mapLabels = [];
+  let pendingLabelPoints = [];
 
   // ===== GitHub source (edit these to your repo) =====
   const GITHUB_OWNER = "RockPapa";
@@ -1226,6 +1286,94 @@ function enterMapOnlyMode(options = {}){
     ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
   }
 
+  function saveMapLabels(){
+    try { localStorage.setItem(MAP_LABELS_KEY, JSON.stringify(mapLabels)); } catch(_e) {}
+  }
+
+  function restoreMapLabels(){
+    try {
+      const saved = JSON.parse(localStorage.getItem(MAP_LABELS_KEY) || "[]");
+      if (Array.isArray(saved)) mapLabels = saved;
+    } catch(_e) { mapLabels = []; }
+  }
+
+  function drawPointPath(ctx, points, closePath=false){
+    if (!Array.isArray(points) || !points.length) return false;
+    ctx.beginPath();
+    ctx.moveTo(points[0].x,points[0].y);
+    for (let index=1; index<points.length; index++) ctx.lineTo(points[index].x,points[index].y);
+    if (closePath) ctx.closePath();
+    return true;
+  }
+
+  function distanceToSegment(px,py,a,b){
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const lengthSq = dx * dx + dy * dy;
+    if (!lengthSq) return Math.hypot(px - a.x,py - a.y);
+    const amount = Math.max(0,Math.min(1,((px - a.x) * dx + (py - a.y) * dy) / lengthSq));
+    return Math.hypot(px - (a.x + amount * dx),py - (a.y + amount * dy));
+  }
+
+  function findEditableMapLabel(wx,wy){
+    const dpr = Math.min(3,window.devicePixelRatio || 1);
+    const lineTolerance = 14 * dpr / scale;
+    const textTolerance = 42 * dpr / scale;
+    for (let index=mapLabels.length - 1; index>=0; index--){
+      const item = mapLabels[index];
+      if (item.type === "text" && Math.hypot(wx - item.x,wy - item.y) <= textTolerance) return {item,index};
+      if (!Array.isArray(item.points) || item.points.length < 2) continue;
+      if (item.type === "polygon" && item.points.length >= 3 && inside(wx,wy,item.points)) return {item,index};
+      const segmentCount = item.type === "polygon" ? item.points.length : item.points.length - 1;
+      for (let pointIndex=0; pointIndex<segmentCount; pointIndex++){
+        const nextIndex = (pointIndex + 1) % item.points.length;
+        if (distanceToSegment(wx,wy,item.points[pointIndex],item.points[nextIndex]) <= lineTolerance) return {item,index};
+      }
+    }
+    return null;
+  }
+
+  function drawMapLabels(){
+    if (cleanLabelsView) return;
+    const dpr = Math.min(3,window.devicePixelRatio || 1);
+    applyView(overlayCtx);
+    overlayCtx.lineJoin = "round";
+    overlayCtx.lineCap = "round";
+    overlayCtx.lineWidth = LABEL_LINE_PX * dpr / scale;
+    overlayCtx.strokeStyle = LABEL_LINE_COLOR;
+    overlayCtx.fillStyle = LABEL_FILL_COLOR;
+
+    for (const item of mapLabels){
+      if (item.type === "text" && Number.isFinite(item.x) && Number.isFinite(item.y)){
+        const fontSize = LABEL_FONT_PX * dpr / scale;
+        overlayCtx.font = `800 ${fontSize}px system-ui,-apple-system,Segoe UI,Roboto,Arial`;
+        overlayCtx.textAlign = "center";
+        overlayCtx.textBaseline = "bottom";
+        overlayCtx.lineWidth = 4 * dpr / scale;
+        overlayCtx.strokeStyle = "rgba(255,255,255,0.94)";
+        overlayCtx.strokeText(String(item.text || ""),item.x,item.y);
+        overlayCtx.fillStyle = LABEL_TEXT_COLOR;
+        overlayCtx.fillText(String(item.text || ""),item.x,item.y);
+        overlayCtx.lineWidth = LABEL_LINE_PX * dpr / scale;
+        overlayCtx.strokeStyle = LABEL_LINE_COLOR;
+        overlayCtx.fillStyle = LABEL_FILL_COLOR;
+      }else if (item.type === "line" && drawPointPath(overlayCtx,item.points,false)){
+        overlayCtx.stroke();
+      }else if (item.type === "polygon" && drawPointPath(overlayCtx,item.points,true)){
+        overlayCtx.fill();
+        overlayCtx.stroke();
+      }
+    }
+
+    if (pendingLabelPoints.length){
+      drawPointPath(overlayCtx,pendingLabelPoints,labelTool === "polygon" && pendingLabelPoints.length > 2);
+      overlayCtx.setLineDash([9 * dpr / scale,7 * dpr / scale]);
+      overlayCtx.strokeStyle = "#ffffff";
+      overlayCtx.stroke();
+      overlayCtx.setLineDash([]);
+    }
+  }
+
   function clampView(){
     if (!img) return;
 
@@ -1267,8 +1415,9 @@ function enterMapOnlyMode(options = {}){
       mapCtx.restore();
     }
 
-    // overlay (kept clear)
+    // owner labels and drawings
     clearCanvas(overlayCtx);
+    drawMapLabels();
 
     setDebug(`view: scale=${scale.toFixed(3)} offsetX=${offsetX.toFixed(1)} offsetY=${offsetY.toFixed(1)}
 polygons loaded: ${polygons.length}`);
@@ -1608,6 +1757,7 @@ function resetView(){
 
   for (const eventName of ["pointerdown", "pointerup", "click", "dblclick", "wheel"]){
     roadControls.addEventListener(eventName, event => event.stopPropagation());
+    labelTools.addEventListener(eventName, event => event.stopPropagation());
   }
   roadsToggle.addEventListener("change", () => {
     roadsVisible = roadsToggle.checked;
@@ -1622,6 +1772,127 @@ function resetView(){
     redraw();
   });
   loadRoadOverlay();
+
+  function updateLabelToolButtons(){
+    for (const button of labelTools.querySelectorAll("[data-label-tool]")){
+      button.classList.toggle("selected",button.dataset.labelTool === labelTool);
+    }
+    if (!labelTool) labelHelp.textContent = "Choose Text, Line, or Polygon.";
+    else if (labelTool === "text") labelHelp.textContent = "Click the map, then type the label.";
+    else if (labelTool === "line") labelHelp.textContent = pendingLabelPoints.length ? "Click the line end point." : "Click the line start point.";
+    else if (labelTool === "polygon") labelHelp.textContent = "Click each polygon corner, then Finish polygon.";
+    else labelHelp.textContent = "Click text to rename/delete, or a line/polygon to erase it.";
+  }
+
+  function setLabelTool(tool){
+    labelTool = tool;
+    pendingLabelPoints = [];
+    updateLabelToolButtons();
+    redraw();
+  }
+
+  function toggleLabelMode(){
+    if (!labelMode){
+      let savedPin = "";
+      try { savedPin = localStorage.getItem(MAP_LABEL_PIN_KEY) || ""; } catch(_e) {}
+      if (!savedPin){
+        const newPin = prompt("First use: create your private map-label PIN (4 or more characters):","");
+        if (!newPin || newPin.length < 4){
+          if (newPin !== null) alert("The label PIN must contain at least four characters.");
+          return;
+        }
+        try { localStorage.setItem(MAP_LABEL_PIN_KEY,newPin); } catch(_e) {}
+      }else{
+        const enteredPin = prompt("Enter the owner PIN to turn on label editing:","");
+        if (enteredPin !== savedPin){
+          if (enteredPin !== null) alert("Incorrect label PIN.");
+          return;
+        }
+      }
+      cleanLabelsView = false;
+    }
+    labelMode = !labelMode;
+    labelTools.classList.toggle("active",labelMode);
+    pendingLabelPoints = [];
+    if (!labelMode) labelTool = null;
+    updateLabelToolButtons();
+    hidePopup();
+    setStatus(
+      labelMode ? "Owner label editing is ON." : "Owner label editing is OFF.",
+      labelMode ? "Choose Text, Line, or Polygon. Press L again to close." : MAP_CONTROL_HINT
+    );
+    redraw();
+  }
+
+  function finishPendingPolygon(){
+    if (labelTool !== "polygon" || pendingLabelPoints.length < 3){
+      labelHelp.textContent = "A polygon needs at least three corners.";
+      return;
+    }
+    mapLabels.push({type:"polygon",points:pendingLabelPoints.slice()});
+    pendingLabelPoints = [];
+    saveMapLabels();
+    updateLabelToolButtons();
+    redraw();
+  }
+
+  for (const button of labelTools.querySelectorAll("[data-label-tool]")){
+    button.addEventListener("click",() => setLabelTool(button.dataset.labelTool));
+  }
+  finishLabelShape.addEventListener("click",finishPendingPolygon);
+  undoLabel.addEventListener("click",() => {
+    if (pendingLabelPoints.length) pendingLabelPoints.pop();
+    else mapLabels.pop();
+    saveMapLabels();
+    updateLabelToolButtons();
+    redraw();
+  });
+  clearLabels.addEventListener("click",() => {
+    if (!mapLabels.length && !pendingLabelPoints.length) return;
+    if (!confirm("Delete all locally saved map labels, lines, and polygons?")) return;
+    mapLabels = [];
+    pendingLabelPoints = [];
+    saveMapLabels();
+    redraw();
+  });
+  exportLabels.addEventListener("click",() => {
+    const blob = new Blob([JSON.stringify({version:1,labels:mapLabels},null,2)],{type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `ga-geo-map-labels-${new Date().toISOString().slice(0,10)}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url),1000);
+  });
+  importLabels.addEventListener("click",() => labelImportFile.click());
+  cleanMapView.addEventListener("click",() => {
+    cleanLabelsView = true;
+    labelMode = false;
+    labelTool = null;
+    pendingLabelPoints = [];
+    labelTools.classList.remove("active");
+    setStatus("Clean map view is ON; annotations are hidden and locked.","Press L and enter your owner PIN to restore label editing.");
+    redraw();
+  });
+  labelImportFile.addEventListener("change",async () => {
+    const file = labelImportFile.files && labelImportFile.files[0];
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text());
+      const imported = Array.isArray(data) ? data : data.labels;
+      if (!Array.isArray(imported)) throw new Error("No labels array found");
+      mapLabels = imported;
+      pendingLabelPoints = [];
+      saveMapLabels();
+      redraw();
+      labelHelp.textContent = `Imported ${mapLabels.length} items.`;
+    } catch(error) {
+      alert(`Could not import labels: ${error.message || error}`);
+    } finally {
+      labelImportFile.value = "";
+    }
+  });
+  restoreMapLabels();
 
 
   async function listProjectJsonEntriesFromGitHub(projectFolder = GITHUB_PROJECT_FOLDER){
@@ -2188,6 +2459,48 @@ function resetView(){
     const stageY = e.clientY - stageRect.top;
 
     const { wx, wy } = screenToWorld(e.clientX, e.clientY);
+    if (labelMode){
+      if (!labelTool){
+        labelHelp.textContent = "Choose Text, Line, or Polygon first.";
+        return;
+      }
+      if (labelTool === "edit"){
+        const found = findEditableMapLabel(wx,wy);
+        if (!found){
+          labelHelp.textContent = "No annotation found there. Click closer to it.";
+          return;
+        }
+        if (found.item.type === "text"){
+          const revised = prompt("Change this label. Leave it blank to delete it:",String(found.item.text || ""));
+          if (revised === null) return;
+          if (revised.trim()) found.item.text = revised.trim();
+          else mapLabels.splice(found.index,1);
+        }else{
+          const shapeName = found.item.type === "polygon" ? "polygon" : "line";
+          if (!confirm(`Erase this ${shapeName}? You can then redraw it correctly.`)) return;
+          mapLabels.splice(found.index,1);
+        }
+        saveMapLabels();
+      }else if (labelTool === "text"){
+        const text = prompt("Type the map label:","");
+        if (text && text.trim()){
+          mapLabels.push({type:"text",text:text.trim(),x:wx,y:wy});
+          saveMapLabels();
+        }
+      }else if (labelTool === "line"){
+        pendingLabelPoints.push({x:wx,y:wy});
+        if (pendingLabelPoints.length === 2){
+          mapLabels.push({type:"line",points:pendingLabelPoints.slice()});
+          pendingLabelPoints = [];
+          saveMapLabels();
+        }
+      }else if (labelTool === "polygon"){
+        pendingLabelPoints.push({x:wx,y:wy});
+      }
+      updateLabelToolButtons();
+      redraw();
+      return;
+    }
     const hit = findHit(wx, wy);
 
     if (hit){
@@ -2346,7 +2659,20 @@ overlayCanvas.addEventListener("pointercancel", stopDrag);
 
   // Keyboard pan/zoom (and hide popup so it doesn't "float wrong")
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") { hidePopup(); return; }
+    if (e.key === "l" || e.key === "L"){
+      e.preventDefault();
+      toggleLabelMode();
+      return;
+    }
+    if (e.key === "Escape") {
+      hidePopup();
+      if (pendingLabelPoints.length){
+        pendingLabelPoints = [];
+        updateLabelToolButtons();
+        redraw();
+      }
+      return;
+    }
     if (!img) return;
 
     let changed = false;

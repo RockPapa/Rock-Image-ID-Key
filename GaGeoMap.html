@@ -121,6 +121,15 @@
   #roadControls input[type="checkbox"] { width:18px; height:18px; accent-color:#ffd03b; }
   #roadOpacityValue { min-width: 3ch; text-align:right; font-variant-numeric:tabular-nums; }
   #roadAttribution { grid-column: 1 / -1; font-size: 10px; font-weight: 500; opacity: 0.78; }
+  #mapVersionBtn {
+    grid-column: 1 / -1;
+    padding: 7px 10px;
+    border-color: #ffd03b;
+    background: #ffd03b;
+    color: #151515;
+    font-size: 12px;
+    font-weight: 850;
+  }
   @media (max-width: 560px) {
     #roadControls { grid-template-columns:auto 92px auto; padding:6px 8px; font-size:12px; }
     #roadAttribution { display:none; }
@@ -472,6 +481,7 @@ body.map-only #stage {
   <canvas id="map"></canvas>
   <canvas id="overlay"></canvas>
   <div id="roadControls" role="group" aria-label="Road overlay controls">
+    <button type="button" id="mapVersionBtn">Show Edited Map</button>
     <label><input type="checkbox" id="roadsToggle" checked> Roads</label>
     <input type="range" id="roadOpacity" min="0" max="100" value="65" aria-label="Road overlay opacity">
     <output id="roadOpacityValue" for="roadOpacity">65%</output>
@@ -526,6 +536,7 @@ body.map-only #stage {
   const roadsToggle = document.getElementById("roadsToggle");
   const roadOpacityInput = document.getElementById("roadOpacity");
   const roadOpacityValue = document.getElementById("roadOpacityValue");
+  const mapVersionBtn = document.getElementById("mapVersionBtn");
   const labelTools = document.getElementById("labelTools");
   const labelHelp = document.getElementById("labelHelp");
   const finishLabelShape = document.getElementById("finishLabelShape");
@@ -565,6 +576,9 @@ body.map-only #stage {
   const rockIndexBack = document.getElementById("rockIndexBack");
 
   let img = null;
+  let uneditedImg = null;
+  let editedImg = null;
+  let editedMapVisible = false;
   let roadImg = null;
   let roadsVisible = true;
   let roadOpacity = 0.65;
@@ -628,6 +642,7 @@ body.map-only #stage {
   const GITHUB_BRANCH = "main";
   const GITHUB_FAST_PROJECT_FOLDER = "PROJECT_FILES_FAST";
   const GITHUB_FAST_MAP_PATH = "PROJECT_FILES_FAST/map.q92.webp";
+  const GITHUB_EDITED_MAP_PATH = "PROJECT_FILES_FAST/map.edited.webp";
   const GITHUB_FAST_BUNDLE_PATH = "PROJECT_FILES_FAST/all_polygons.json";
   const GITHUB_PROJECT_FOLDER = "PROJECT_FILES";
   const GITHUB_MAP_PATH = "PROJECT_FILES/map.webp";
@@ -1423,6 +1438,34 @@ function enterMapOnlyMode(options = {}){
 polygons loaded: ${polygons.length}`);
   }
 
+  async function toggleMapVersion(){
+    if (!uneditedImg || !img) return;
+    mapVersionBtn.disabled = true;
+    try {
+      if (!editedMapVisible) {
+        if (!editedImg) {
+          mapVersionBtn.textContent = "Loading Edited Map…";
+          editedImg = await loadImageFromUrl(GITHUB_EDITED_MAP_PATH);
+        }
+        img = editedImg;
+        editedMapVisible = true;
+        mapVersionBtn.textContent = "Show Unedited Map";
+      } else {
+        img = uneditedImg;
+        editedMapVisible = false;
+        mapVersionBtn.textContent = "Show Edited Map";
+      }
+      setCanvasSizes();
+      rebuildSampler();
+      redraw();
+    } catch (err) {
+      mapVersionBtn.textContent = "Show Edited Map";
+      setStatus("Edited map is unavailable.", String(err && err.message || err));
+    } finally {
+      mapVersionBtn.disabled = false;
+    }
+  }
+
   function screenToWorld(clientX, clientY){
   const { sx, sy } = getCanvasPoint(clientX, clientY);
   return { wx: (sx - offsetX) / scale, wy: (sy - offsetY) / scale, sx, sy };
@@ -2196,6 +2239,9 @@ function resetView(){
             const cachedMapPath = cached.mapPath || activeMapPath;
             const cachedMapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${cachedMapPath.split("/").map(encodeURIComponent).join("/")}`;
             img = await loadImageFromUrl(cachedMapUrl);
+            uneditedImg = img;
+            editedMapVisible = false;
+            mapVersionBtn.textContent = "Show Edited Map";
             polygons = cached.polygons;
             setCanvasSizes();
             rebuildSampler();
@@ -2224,12 +2270,18 @@ function resetView(){
       try{
         const mapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${activeMapPath.split("/").map(encodeURIComponent).join("/")}`;
         img = await loadImageFromUrl(mapUrl);
+        uneditedImg = img;
+        editedMapVisible = false;
+        mapVersionBtn.textContent = "Show Edited Map";
       }catch(err){
         activeProjectFolder = GITHUB_PROJECT_FOLDER;
         activeMapPath = GITHUB_MAP_PATH;
         try {
           const fallbackMapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${activeMapPath.split("/").map(encodeURIComponent).join("/")}`;
           img = await loadImageFromUrl(fallbackMapUrl);
+          uneditedImg = img;
+          editedMapVisible = false;
+          mapVersionBtn.textContent = "Show Edited Map";
         } catch(fallbackErr) {
           setStatus("Failed to load map image from GitHub.", String(fallbackErr && fallbackErr.message || fallbackErr));
           setProgress(0, 1, "Map image failed to load.");
@@ -2443,6 +2495,7 @@ function resetView(){
 
   // ===== Load Project Files =====
   loadBtn.addEventListener("click", () => loadProjectFilesFromGitHub({ preferCache: false }));
+  mapVersionBtn.addEventListener("click", toggleMapVersion);
 
 
 

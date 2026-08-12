@@ -577,8 +577,11 @@ body.map-only #stage {
 
   let img = null;
   let uneditedImg = null;
-  let editedImg = null;
-  let editedMapVisible = false;
+  // The "edited" map is the normal working geology raster with the owner's
+  // text/line/polygon annotations drawn on the overlay canvas.  Do not swap in
+  // a second baked raster: map.edited.webp contains polygon artwork that is
+  // not meant to be visible in this comparison.
+  let editedMapVisible = true;
   let roadImg = null;
   let roadsVisible = true;
   let roadOpacity = 0.65;
@@ -642,7 +645,6 @@ body.map-only #stage {
   const GITHUB_BRANCH = "main";
   const GITHUB_FAST_PROJECT_FOLDER = "PROJECT_FILES_FAST";
   const GITHUB_FAST_MAP_PATH = "PROJECT_FILES_FAST/map.q92.webp";
-  const GITHUB_EDITED_MAP_PATH = "PROJECT_FILES_FAST/map.edited.webp";
   const GITHUB_FAST_BUNDLE_PATH = "PROJECT_FILES_FAST/all_polygons.json";
   const GITHUB_PROJECT_FOLDER = "PROJECT_FILES";
   const GITHUB_MAP_PATH = "PROJECT_FILES/map.webp";
@@ -1438,32 +1440,12 @@ function enterMapOnlyMode(options = {}){
 polygons loaded: ${polygons.length}`);
   }
 
-  async function toggleMapVersion(){
-    if (!uneditedImg || !img) return;
-    mapVersionBtn.disabled = true;
-    try {
-      if (!editedMapVisible) {
-        if (!editedImg) {
-          mapVersionBtn.textContent = "Loading Edited Map…";
-          editedImg = await loadImageFromUrl(GITHUB_EDITED_MAP_PATH);
-        }
-        img = editedImg;
-        editedMapVisible = true;
-        mapVersionBtn.textContent = "Show Unedited Map";
-      } else {
-        img = uneditedImg;
-        editedMapVisible = false;
-        mapVersionBtn.textContent = "Show Edited Map";
-      }
-      setCanvasSizes();
-      rebuildSampler();
-      redraw();
-    } catch (err) {
-      mapVersionBtn.textContent = "Show Edited Map";
-      setStatus("Edited map is unavailable.", String(err && err.message || err));
-    } finally {
-      mapVersionBtn.disabled = false;
-    }
+  function toggleMapVersion(){
+    if (!img) return;
+    editedMapVisible = !editedMapVisible;
+    cleanLabelsView = !editedMapVisible;
+    mapVersionBtn.textContent = editedMapVisible ? "Show Unedited Map" : "Show Edited Map";
+    redraw();
   }
 
   function screenToWorld(clientX, clientY){
@@ -2240,8 +2222,9 @@ function resetView(){
             const cachedMapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${cachedMapPath.split("/").map(encodeURIComponent).join("/")}`;
             img = await loadImageFromUrl(cachedMapUrl);
             uneditedImg = img;
-            editedMapVisible = false;
-            mapVersionBtn.textContent = "Show Edited Map";
+            editedMapVisible = true;
+            cleanLabelsView = false;
+            mapVersionBtn.textContent = "Show Unedited Map";
             polygons = cached.polygons;
             setCanvasSizes();
             rebuildSampler();
@@ -2271,8 +2254,9 @@ function resetView(){
         const mapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${activeMapPath.split("/").map(encodeURIComponent).join("/")}`;
         img = await loadImageFromUrl(mapUrl);
         uneditedImg = img;
-        editedMapVisible = false;
-        mapVersionBtn.textContent = "Show Edited Map";
+        editedMapVisible = true;
+        cleanLabelsView = false;
+        mapVersionBtn.textContent = "Show Unedited Map";
       }catch(err){
         activeProjectFolder = GITHUB_PROJECT_FOLDER;
         activeMapPath = GITHUB_MAP_PATH;
@@ -2280,8 +2264,9 @@ function resetView(){
           const fallbackMapUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${encodeURIComponent(GITHUB_BRANCH)}/${activeMapPath.split("/").map(encodeURIComponent).join("/")}`;
           img = await loadImageFromUrl(fallbackMapUrl);
           uneditedImg = img;
-          editedMapVisible = false;
-          mapVersionBtn.textContent = "Show Edited Map";
+          editedMapVisible = true;
+          cleanLabelsView = false;
+          mapVersionBtn.textContent = "Show Unedited Map";
         } catch(fallbackErr) {
           setStatus("Failed to load map image from GitHub.", String(fallbackErr && fallbackErr.message || fallbackErr));
           setProgress(0, 1, "Map image failed to load.");

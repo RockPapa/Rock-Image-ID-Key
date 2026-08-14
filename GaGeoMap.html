@@ -155,6 +155,9 @@
   #labelTools .labelButtons { display:flex; flex-wrap:wrap; gap:5px; }
   #labelTools button { padding:6px 8px; border-radius:7px; font-size:12px; }
   #labelTools button.selected { background:#ffd03b; border-color:#ffd03b; color:#151515; }
+  #labelTools .labelColors { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
+  #labelTools .labelColorControl { display:grid; grid-template-columns:1fr 34px; align-items:center; gap:6px; font-weight:600; }
+  #labelTools input[type="color"] { width:34px; height:28px; padding:1px; border:1px solid rgba(255,255,255,0.55); border-radius:6px; background:transparent; cursor:pointer; }
   #labelTools .labelHelp { margin-top:7px; font-weight:500; opacity:0.9; }
 
   /* ===== POPUP CARD ===== */
@@ -501,6 +504,10 @@ body.map-only #stage {
       <button type="button" id="cleanMapView">Clean map view</button>
       <button type="button" id="clearLabels">Clear all</button>
     </div>
+    <div class="labelColors">
+      <label class="labelColorControl">Line color <input type="color" id="labelLineColor" value="#b21f2d"></label>
+      <label class="labelColorControl">Text color <input type="color" id="labelTextColor" value="#17120b"></label>
+    </div>
     <div class="labelHelp" id="labelHelp">Choose Text, Line, or Polygon.</div>
     <input type="file" id="labelImportFile" accept="application/json,.json" hidden>
   </div>
@@ -540,6 +547,8 @@ body.map-only #stage {
   const labelTools = document.getElementById("labelTools");
   const labelHelp = document.getElementById("labelHelp");
   const finishLabelShape = document.getElementById("finishLabelShape");
+  const labelLineColor = document.getElementById("labelLineColor");
+  const labelTextColor = document.getElementById("labelTextColor");
   const undoLabel = document.getElementById("undoLabel");
   const exportLabels = document.getElementById("exportLabels");
   const importLabels = document.getElementById("importLabels");
@@ -628,6 +637,7 @@ body.map-only #stage {
   const ROAD_PREF_KEY = "gaGeoMapRoadOverlayV1";
   const MAP_LABELS_KEY = "gaGeoMapOwnerLabelsV1";
   const MAP_LABEL_PIN_KEY = "gaGeoMapOwnerLabelPinV1";
+  const MAP_LABEL_COLORS_KEY = "gaGeoMapOwnerLabelColorsV1";
   const LABEL_TEXT_COLOR = "#17120b";
   const LABEL_LINE_COLOR = "#b21f2d";
   const LABEL_FILL_COLOR = "rgba(255,208,59,0.20)";
@@ -638,6 +648,8 @@ body.map-only #stage {
   let labelTool = null;
   let mapLabels = [];
   let pendingLabelPoints = [];
+  let selectedLabelLineColor = LABEL_LINE_COLOR;
+  let selectedLabelTextColor = LABEL_TEXT_COLOR;
 
   // ===== GitHub source (edit these to your repo) =====
   const GITHUB_OWNER = "RockPapa";
@@ -1314,6 +1326,25 @@ function enterMapOnlyMode(options = {}){
     } catch(_e) { mapLabels = []; }
   }
 
+  function saveMapLabelColors(){
+    try {
+      localStorage.setItem(MAP_LABEL_COLORS_KEY,JSON.stringify({
+        line:selectedLabelLineColor,
+        text:selectedLabelTextColor
+      }));
+    } catch(_e) {}
+  }
+
+  function restoreMapLabelColors(){
+    try {
+      const saved = JSON.parse(localStorage.getItem(MAP_LABEL_COLORS_KEY) || "{}");
+      if (/^#[0-9a-f]{6}$/i.test(saved.line || "")) selectedLabelLineColor = saved.line;
+      if (/^#[0-9a-f]{6}$/i.test(saved.text || "")) selectedLabelTextColor = saved.text;
+    } catch(_e) {}
+    labelLineColor.value = selectedLabelLineColor;
+    labelTextColor.value = selectedLabelTextColor;
+  }
+
   function drawPointPath(ctx, points, closePath=false){
     if (!Array.isArray(points) || !points.length) return false;
     ctx.beginPath();
@@ -1369,14 +1400,16 @@ function enterMapOnlyMode(options = {}){
         overlayCtx.lineWidth = 4 * dpr / scale;
         overlayCtx.strokeStyle = "rgba(255,255,255,0.94)";
         overlayCtx.strokeText(String(item.text || ""),item.x,item.y);
-        overlayCtx.fillStyle = LABEL_TEXT_COLOR;
+        overlayCtx.fillStyle = item.textColor || LABEL_TEXT_COLOR;
         overlayCtx.fillText(String(item.text || ""),item.x,item.y);
         overlayCtx.lineWidth = LABEL_LINE_PX * dpr / scale;
-        overlayCtx.strokeStyle = LABEL_LINE_COLOR;
+        overlayCtx.strokeStyle = item.lineColor || LABEL_LINE_COLOR;
         overlayCtx.fillStyle = LABEL_FILL_COLOR;
       }else if (item.type === "line" && drawPointPath(overlayCtx,item.points,false)){
+        overlayCtx.strokeStyle = item.lineColor || LABEL_LINE_COLOR;
         overlayCtx.stroke();
       }else if (item.type === "polygon" && drawPointPath(overlayCtx,item.points,true)){
+        overlayCtx.strokeStyle = item.lineColor || LABEL_LINE_COLOR;
         overlayCtx.fill();
         overlayCtx.stroke();
       }
@@ -1385,7 +1418,7 @@ function enterMapOnlyMode(options = {}){
     if (pendingLabelPoints.length){
       drawPointPath(overlayCtx,pendingLabelPoints,labelTool === "polygon" && pendingLabelPoints.length > 2);
       overlayCtx.setLineDash([9 * dpr / scale,7 * dpr / scale]);
-      overlayCtx.strokeStyle = "#ffffff";
+      overlayCtx.strokeStyle = selectedLabelLineColor;
       overlayCtx.stroke();
       overlayCtx.setLineDash([]);
     }
@@ -1854,7 +1887,7 @@ function resetView(){
       labelHelp.textContent = "A polygon needs at least three corners.";
       return;
     }
-    mapLabels.push({type:"polygon",points:pendingLabelPoints.slice()});
+    mapLabels.push({type:"polygon",points:pendingLabelPoints.slice(),lineColor:selectedLabelLineColor});
     pendingLabelPoints = [];
     saveMapLabels();
     updateLabelToolButtons();
@@ -1864,6 +1897,15 @@ function resetView(){
   for (const button of labelTools.querySelectorAll("[data-label-tool]")){
     button.addEventListener("click",() => setLabelTool(button.dataset.labelTool));
   }
+  labelLineColor.addEventListener("input",() => {
+    selectedLabelLineColor = labelLineColor.value;
+    saveMapLabelColors();
+    redraw();
+  });
+  labelTextColor.addEventListener("input",() => {
+    selectedLabelTextColor = labelTextColor.value;
+    saveMapLabelColors();
+  });
   finishLabelShape.addEventListener("click",finishPendingPolygon);
   undoLabel.addEventListener("click",() => {
     if (pendingLabelPoints.length) pendingLabelPoints.pop();
@@ -1918,6 +1960,7 @@ function resetView(){
     }
   });
   restoreMapLabels();
+  restoreMapLabelColors();
 
 
   async function listProjectJsonEntriesFromGitHub(projectFolder = GITHUB_PROJECT_FOLDER){
@@ -2511,7 +2554,10 @@ function resetView(){
         if (found.item.type === "text"){
           const revised = prompt("Change this label. Leave it blank to delete it:",String(found.item.text || ""));
           if (revised === null) return;
-          if (revised.trim()) found.item.text = revised.trim();
+          if (revised.trim()) {
+            found.item.text = revised.trim();
+            found.item.textColor = selectedLabelTextColor;
+          }
           else mapLabels.splice(found.index,1);
         }else{
           const shapeName = found.item.type === "polygon" ? "polygon" : "line";
@@ -2522,13 +2568,13 @@ function resetView(){
       }else if (labelTool === "text"){
         const text = prompt("Type the map label:","");
         if (text && text.trim()){
-          mapLabels.push({type:"text",text:text.trim(),x:wx,y:wy});
+          mapLabels.push({type:"text",text:text.trim(),x:wx,y:wy,textColor:selectedLabelTextColor});
           saveMapLabels();
         }
       }else if (labelTool === "line"){
         pendingLabelPoints.push({x:wx,y:wy});
         if (pendingLabelPoints.length === 2){
-          mapLabels.push({type:"line",points:pendingLabelPoints.slice()});
+          mapLabels.push({type:"line",points:pendingLabelPoints.slice(),lineColor:selectedLabelLineColor});
           pendingLabelPoints = [];
           saveMapLabels();
         }

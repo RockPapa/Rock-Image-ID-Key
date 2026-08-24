@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Common Native Shrubs of the Southeast</title>
+  <style>
+    :root{font-family:Arial,Helvetica,sans-serif;color-scheme:dark}
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;background:#2f61eb;color:white}
+    button{font:inherit}
+    main{width:min(760px,100%);min-height:100vh;margin:auto;padding:54px 28px 80px}
+    h1{margin:0 0 48px;font-size:clamp(2.25rem,8vw,4rem);line-height:1.05;text-align:center}
+    .category{margin:0 0 68px}
+    .regions{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:0 auto 52px;width:min(680px,100%)}
+    .region-button{min-height:62px;padding:9px 6px;border:3px solid white;border-radius:13px;background:#204dce;color:white;font-weight:850;font-size:clamp(.88rem,3vw,1.15rem);cursor:pointer}
+    .region-button.active{background:white;color:#234fcf;box-shadow:0 4px 12px #12379499}
+    .category h2{margin:0 0 22px;font-size:clamp(2rem,7vw,3.25rem);line-height:1.08;text-align:center}
+    .species-list{display:grid;gap:12px;width:min(580px,100%);margin:auto}
+    .species-button{min-height:68px;padding:12px 14px;border:3px solid #ffffff;border-radius:14px;background:#204dce;color:#fff;font-weight:800;font-size:clamp(1.05rem,4vw,1.35rem);cursor:pointer;box-shadow:0 4px 10px #12379488}
+    .species-button:hover,.species-button:focus-visible{background:#fff;color:#234fcf;outline:4px solid #ffe56a;outline-offset:3px}
+    .latin{display:block;margin-top:4px;font:italic 600 .78em Georgia,serif;opacity:.86}
+    .flower-clue{display:block;margin:8px auto 0;color:#dce6ff;font-size:.68em;font-weight:600;line-height:1.25}
+    .leaf-clue{display:block;margin:6px auto 0;padding-top:6px;border-top:1px solid #ffffff55;color:#d7f4df;font-size:.68em;font-weight:600;line-height:1.25}
+    .clue-label{color:#fff0a6;font-weight:900;text-transform:uppercase;letter-spacing:.035em}
+    .species-button:hover .flower-clue,.species-button:focus-visible .flower-clue{color:#3151a8}
+    .species-button:hover .leaf-clue,.species-button:focus-visible .leaf-clue{color:#285e3d;border-top-color:#3151a855}
+    .species-button:hover .clue-label,.species-button:focus-visible .clue-label{color:#8a5900}
+    .empty{text-align:center;color:#d9e2ff;font-size:1rem;font-style:italic}
+    .gallery-view{display:none}
+    .gallery-view.active{display:block}
+    .index-view.hidden{display:none}
+    .topbar{position:sticky;z-index:5;top:0;display:flex;justify-content:flex-start;width:100%;margin:-18px 0 28px;padding:12px 0;background:#2f61ebee;backdrop-filter:blur(6px)}
+    .back{min-height:46px;padding:8px 18px;border:2px solid white;border-radius:999px;background:#173f9d;color:white;font-weight:800;cursor:pointer}
+    .gallery-title{margin:0;font-size:clamp(2.2rem,9vw,4.5rem);text-align:center}
+    .gallery-latin{margin:8px 0 28px;font:italic clamp(1.1rem,4vw,1.45rem) Georgia,serif;text-align:center;color:#dfe8ff}
+    .gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:16px}
+    .gallery img{display:block;width:100%;height:330px;object-fit:contain;border-radius:14px;background:#153a9a;box-shadow:0 5px 18px #11307799}
+    .flower-profile{max-width:620px;margin:0 auto 24px;color:#eef3ff;font-size:1.08rem;line-height:1.5;text-align:center}
+    .no-images{grid-column:1/-1;padding:42px 20px;border:3px dashed #b8c9ff;border-radius:16px;color:#e1e9ff;font-size:1.1rem;text-align:center}
+    .image-search-link{display:block;width:min(280px,90%);margin:20px auto 0;padding:12px 18px;border:3px solid white;border-radius:999px;background:#fff;color:#234fcf;font-weight:900;text-decoration:none}
+    .image-search-link:hover,.image-search-link:focus-visible{outline:4px solid #ffe56a;outline-offset:3px;background:#204dce;color:white}
+    .note{margin-top:45px;color:#d9e2ff;font-size:.85rem;text-align:center}
+    @media(max-width:520px){main{padding:42px 18px 60px}.category{margin-bottom:58px}.gallery img{height:285px}}
+  </style>
+</head>
+<body>
+<main>
+  <section id="index" class="index-view">
+    <h1>Common Native Shrubs<br>of the Southeast</h1>
+    <nav class="regions" aria-label="Georgia region">
+      <button class="region-button" data-region="mountains">Mountains</button>
+      <button class="region-button" data-region="piedmont">Piedmont</button>
+      <button class="region-button active" data-region="coastal">Coastal Plain</button>
+    </nav>
+    <div id="flowerGroups"></div>
+    <p class="note">Select a species for identification clues and a browser image search.</p>
+  </section>
+  <section id="galleryView" class="gallery-view">
+    <div class="topbar"><button class="back" id="back">← Categories</button></div>
+    <h2 class="gallery-title" id="galleryTitle"></h2>
+    <div class="gallery-latin" id="galleryLatin"></div>
+    <p class="flower-profile" id="flowerProfile"></p>
+    <div class="gallery" id="gallery"></div>
+    <button class="back restart" id="backBottom">← Back to key</button>
+  </section>
+</main>
+<script>
+const species=[
+ {name:'Scentless Mock-orange',latin:'Philadelphus inodorus',regions:['mountains','piedmont'],group:'large',flower:'Large white flowers, solitary or only a few together; 4 broad petals.',leaf:'Simple, opposite, toothed leaves.'},
+ {name:'Silky Camellia',latin:'Stewartia malacodendron',regions:['piedmont','coastal'],group:'large',flower:'Large solitary white saucer, 5 petals and a striking center of purple stamens.',leaf:'Simple, alternate, finely toothed leaves.'},
+ {name:'Buttonbush',latin:'Cephalanthus occidentalis',regions:['mountains','piedmont','coastal'],group:'ball',flower:'Dense white spherical head with projecting styles—a pincushion.',leaf:'Simple, opposite or whorled, toothless leaves.'},
+ {name:'Dwarf Fothergilla',latin:'Fothergilla gardenii',regions:['coastal'],group:'brush',flower:'White bottlebrush made of long stamens; no showy petals.',leaf:'Simple, alternate leaves, toothed mostly toward the tip.',folder:'Fothergilli',images:['Screenshot 2026-08-24 at 1.50.51 PM.png','Screenshot 2026-08-24 at 1.39.20 PM.png','Screenshot 2026-08-24 at 1.39.30 PM.png','Screenshot 2026-08-24 at 1.39.07 PM.png']},
+ {name:'Georgia Plume',latin:'Elliottia racemosa',regions:['piedmont','coastal'],group:'brush',flower:'Airy terminal plume; each flower has 4 long, narrow petals.',leaf:'Simple, alternate, mostly toothless leaves.',folder:'Elliottii',images:['Screenshot 2026-08-24 at 9.08.58 AM.png','Screenshot 2026-08-24 at 1.46.56 PM.png','Screenshot 2026-08-24 at 9.09.30 AM.png','Screenshot 2026-08-24 at 9.08.16 AM.png']},
+ {name:'Florida Doghobble / Agarista',latin:'Agarista populifolia',regions:['piedmont','coastal'],group:'bells',flower:'Small fragrant white urns hanging in axillary clusters below the foliage.',leaf:'Evergreen; simple, alternate, glossy, finely toothed leaves.'},
+ {name:'Fetterbush',latin:'Lyonia lucida',regions:['coastal'],group:'bells',flower:'Small white or pinkish urn-shaped flowers in compact clusters.',leaf:'Evergreen; simple, alternate, glossy, mostly toothless leaves.',folder:'Lyonia',images:['Screenshot 2026-08-24 at 1.53.19 PM.png','Screenshot 2026-08-24 at 9.05.02 AM.png','Screenshot 2026-08-24 at 9.05.43 AM.png']},
+ {name:'Mountain Doghobble',latin:'Leucothoe fontanesiana',regions:['mountains','piedmont'],group:'bells',flower:'Long drooping chains of white urn-shaped flowers beneath arching stems.',leaf:'Evergreen; simple, alternate, glossy, finely toothed leaves.',folder:'Leucothe',images:['Screenshot 2026-08-24 at 8.56.30 AM.png','Screenshot 2026-08-24 at 8.56.57 AM.png','Screenshot 2026-08-24 at 8.56.46 AM.png','Screenshot 2026-08-24 at 1.52.36 PM.png']},
+ {name:'American Snowbell',latin:'Styrax americanus',regions:['piedmont','coastal'],group:'bells',flower:'Single or clusters of 1–4 nodding white bells with 5 reflexed petals.',leaf:'Deciduous; simple, alternate, finely toothed leaves.'},
+ {name:'American Bladdernut',latin:'Staphylea trifolia',regions:['mountains','piedmont'],group:'bells',flower:'Small greenish-white bells in nodding branched clusters.',leaf:'Opposite, compound leaves with 3 toothed leaflets.'},
+ {name:'Virginia Sweetspire',latin:'Itea virginica',regions:['mountains','piedmont','coastal'],group:'racemes',flower:'Slender, often arching racemes of tiny 5-petaled flowers.',leaf:'Simple, alternate, finely toothed leaves.',folder:'Itea',images:['Screenshot 2026-08-24 at 1.51.45 PM.png','Screenshot 2026-08-24 at 9.00.06 AM.png','Screenshot 2026-08-24 at 8.59.44 AM.png','Screenshot 2026-08-24 at 8.59.59 AM.png']},
+ {name:'Swamp Cyrilla / Red Titi',latin:'Cyrilla racemiflora',regions:['coastal'],group:'racemes',flower:'Many narrow racemes of tiny open, 5-petaled flowers.',leaf:'Simple, alternate, glossy, mostly toothless leaves.',folder:'Cyrillia',images:['Screenshot 2026-08-24 at 1.47.41 PM.png','Screenshot 2026-08-24 at 1.49.04 PM.png','Screenshot 2026-08-24 at 1.49.20 PM.png','Screenshot 2026-08-24 at 1.49.13 PM.png']},
+ {name:'Mountain Pepperbush',latin:'Clethra acuminata',regions:['mountains'],group:'racemes',flower:'Dense, upright, fuzzy-looking spikes of tiny white flowers.',leaf:'Simple, alternate, coarsely toothed leaves.',folder:'Clethra',images:['Screenshot 2026-08-24 at 9.03.11 AM.png','Screenshot 2026-08-24 at 9.02.50 AM.png','Screenshot 2026-08-24 at 9.02.40 AM.png','Screenshot 2026-08-24 at 1.45.08 PM.png']},
+ {name:'Common Ninebark',latin:'Physocarpus opulifolius',regions:['mountains','piedmont'],group:'rounded',flower:'Rounded clusters of small open white or pinkish 5-petaled flowers.',leaf:'Simple, alternate, toothed and usually 3-lobed leaves.'},
+ {name:'Leatherwood',latin:'Dirca palustris',regions:['mountains','piedmont'],group:'small',flower:'Tiny pale-yellow tubular flowers in clusters before the leaves.',leaf:'Simple, alternate, toothless leaves; exceptionally flexible twigs.'},
+ {name:'Devilwood',latin:'Osmanthus americanus',regions:['piedmont','coastal'],group:'small',flower:'Small fragrant greenish-white flowers in short axillary clusters.',leaf:'Evergreen; simple, opposite, mostly toothless leaves.'},
+ {name:'Common Hoptree',latin:'Ptelea trifoliata',regions:['mountains','piedmont','coastal'],group:'small',flower:'Small greenish-white flowers in broad branched terminal clusters.',leaf:'Alternate, compound leaves with 3 leaflets; foliage pungent when crushed.'},
+ {name:'Florida Soapberry',latin:'Sapindus marginatus',regions:['coastal'],group:'small',flower:'Tiny whitish flowers in large, loose, branched terminal panicles.',leaf:'Alternate, pinnately compound leaves with several leaflets.'},
+ {name:'Tough Bumelia',latin:'Sideroxylon tenax',regions:['coastal'],group:'small',flower:'Tiny fragrant white flowers crowded in leaf axils.',leaf:'Simple, alternate, toothless leaves; thorny twigs and milky sap.'},
+ {name:'Gallberry',latin:'Ilex glabra',regions:['piedmont','coastal'],group:'small',flower:'Tiny white flowers, solitary or in small axillary clusters.',leaf:'Evergreen; simple, alternate leaves with a few teeth near the tip.'},
+ {name:'American Beautyberry',latin:'Callicarpa americana',regions:['mountains','piedmont','coastal'],group:'small',flower:'Small pale-pink flowers in tight axillary clusters around the stem.',leaf:'Deciduous; simple, opposite, toothed leaves; vivid purple fruit clusters are diagnostic.'},
+ {name:'Sweetshrub / Carolina Allspice',latin:'Calycanthus floridus',regions:['mountains','piedmont','coastal'],group:'large',flower:'Large solitary maroon flowers with many narrow strap-like tepals; often spicy-fragrant.',leaf:'Deciduous; simple, opposite, toothless leaves; twigs and foliage aromatic.'},
+ {name:'Spicebush',latin:'Lindera benzoin',regions:['mountains','piedmont'],group:'small',flower:'Tiny yellow flowers in rounded clusters on bare twigs before the leaves.',leaf:'Deciduous; simple, alternate, toothless aromatic leaves and twigs.'},
+ {name:'Strawberry-bush / Hearts-a-bustin',latin:'Euonymus americanus',regions:['mountains','piedmont','coastal'],group:'small',flower:'Small greenish-purple 5-petaled flowers on slender axillary stalks.',leaf:'Deciduous; simple, opposite, finely toothed leaves; warty green twigs and red splitting fruit.'},
+ {name:'Oakleaf Hydrangea',latin:'Hydrangea quercifolia',regions:['piedmont','coastal'],group:'showyclusters',flower:'Large upright conical panicles with showy white sterile flowers, aging pink and brown.',leaf:'Deciduous; simple, opposite, coarsely toothed and deeply lobed leaves.'},
+ {name:'Mountain Laurel',latin:'Kalmia latifolia',regions:['mountains','piedmont'],group:'showyclusters',flower:'Rounded clusters of pink or white, saucer-shaped flowers with pocketed petals.',leaf:'Evergreen; simple, alternate or appearing whorled, leathery, toothless leaves.'},
+ {name:'Rosebay Rhododendron',latin:'Rhododendron maximum',regions:['mountains'],group:'showyclusters',flower:'Large terminal trusses of white to pink funnel-shaped flowers with spotted throats.',leaf:'Evergreen; simple, alternate, leathery, toothless leaves clustered near twig tips.'},
+ {name:'Native Deciduous Azaleas',latin:'Rhododendron spp.',regions:['mountains','piedmont','coastal'],group:'showyclusters',flower:'Showy terminal clusters of tubular or funnel-shaped flowers with long projecting stamens.',leaf:'Deciduous; simple, alternate, toothless leaves; species identification needs flower color, hairs and range.'},
+ {name:'Bottlebrush Buckeye',latin:'Aesculus parviflora',regions:['piedmont','coastal'],group:'brush',flower:'Long upright white bottlebrush panicles with conspicuously projecting stamens.',leaf:'Deciduous; opposite, palmately compound leaves with 5–7 leaflets.'},
+ {name:'American Elderberry',latin:'Sambucus canadensis',regions:['mountains','piedmont','coastal'],group:'rounded',flower:'Broad, flat-topped clusters packed with tiny white flowers.',leaf:'Deciduous; opposite, pinnately compound leaves with toothed leaflets.'},
+ {name:'Arrowwood Viburnum',latin:'Viburnum dentatum',regions:['mountains','piedmont'],group:'rounded',flower:'Flat-topped rounded clusters of small creamy-white flowers.',leaf:'Deciduous; simple, opposite, coarsely toothed leaves.'},
+ {name:'Winterberry',latin:'Ilex verticillata',regions:['mountains','piedmont','coastal'],group:'small',flower:'Tiny greenish-white flowers in clusters at the leaf axils.',leaf:'Deciduous; simple, alternate, toothed leaves; female plants bear bright red fruit.'},
+ {name:'Southern Wax Myrtle',latin:'Morella cerifera',regions:['piedmont','coastal'],group:'small',flower:'Very small, inconspicuous flowers in short catkin-like clusters.',leaf:'Evergreen or semi-evergreen; simple, alternate, aromatic leaves, often toothed near the tip.'},
+ {name:'Common Witch-hazel',latin:'Hamamelis virginiana',regions:['mountains','piedmont'],group:'small',flower:'Small yellow flowers with 4 long ribbon-like petals, opening in autumn.',leaf:'Deciduous; simple, alternate, wavy-toothed leaves with an uneven base.'},
+ {name:'Highbush Blueberry',latin:'Vaccinium corymbosum',regions:['mountains','piedmont','coastal'],group:'bells',flower:'Clusters of small white or pinkish urn-shaped flowers.',leaf:'Deciduous; simple, alternate leaves, usually finely toothed; blue berries follow.'},
+ {name:'Florida Anise',latin:'Illicium floridanum',regions:['coastal'],group:'large',flower:'Solitary dark-red to maroon flowers with many narrow strap-like tepals.',leaf:'Evergreen; simple, alternate, leathery, toothless, strongly aromatic leaves.'},
+ {name:'Winged Sumac',latin:'Rhus copallinum',regions:['mountains','piedmont','coastal'],group:'small',flower:'Dense upright terminal panicles of many tiny greenish-yellow flowers.',leaf:'Deciduous; alternate, pinnately compound leaves with a winged central rachis.'},
+ {name:'Yellowroot',latin:'Xanthorhiza simplicissima',regions:['mountains','piedmont'],group:'racemes',flower:'Small brownish-purple starry flowers in drooping branched racemes.',leaf:'Deciduous; alternate, pinnately compound leaves; roots and inner bark bright yellow.'},
+ {name:'Physic Nut — identity to confirm',latin:'Scientific name needed',regions:['mountains','piedmont','coastal'],group:'small',flower:'Provisional placement: likely small flowers in a branched cluster.',leaf:'The common name refers to several different plants; confirm before relying on this entry.',provisional:true}
+];
+const groups=[
+ ['large','Large, Showy Flowers','Single or only a few flowers together'],
+ ['ball','Round Flower Heads','Many tiny flowers packed into a ball'],
+ ['brush','Bottlebrushes & Plumes','Long stamens or narrow petals create a brushy effect'],
+ ['showyclusters','Large Showy Clusters','Conical panicles, rounded trusses or terminal clusters'],
+ ['bells','Bells & Urns','Flowers nodding, bell-shaped or urn-shaped'],
+ ['racemes','Long Racemes & Spikes','Many small flowers arranged along an elongated axis'],
+ ['rounded','Rounded Clusters','Small open flowers in a rounded or flat-topped cluster'],
+ ['small','Small Clusters & Panicles','Flowers inconspicuous, axillary or on branched panicles']
+];
+const index=document.getElementById('index');
+const galleryView=document.getElementById('galleryView');
+let selectedRegion='coastal';
+function renderSpecies(){document.getElementById('flowerGroups').innerHTML=groups.map(g=>{const matches=species.map((s,i)=>({s,i})).filter(x=>x.s.group===g[0]&&x.s.regions.includes(selectedRegion));if(!matches.length)return'';return`<section class="category"><h2>${g[1]}</h2><p class="empty">${g[2]}</p><div class="species-list">${matches.map(x=>`<button class="species-button" data-i="${x.i}">${x.s.name}<span class="latin">${x.s.latin}</span><span class="flower-clue"><span class="clue-label">Flowers:</span> ${x.s.flower}</span><span class="leaf-clue"><span class="clue-label">Leaves:</span> ${x.s.leaf}</span></button>`).join('')}</div></section>`}).join('');document.querySelectorAll('.species-button').forEach(button=>button.onclick=()=>showSpecies(species[+button.dataset.i]))}
+document.querySelectorAll('.region-button').forEach(button=>button.onclick=()=>{selectedRegion=button.dataset.region;document.querySelectorAll('.region-button').forEach(b=>b.classList.toggle('active',b===button));renderSpecies()});
+renderSpecies();
+function showSpecies(s){
+  document.getElementById('galleryTitle').textContent=s.name;
+  document.getElementById('galleryLatin').textContent=s.latin;
+  document.getElementById('flowerProfile').innerHTML=`<strong>Flowers:</strong> ${s.flower}<br><strong>Leaves:</strong> ${s.leaf}`;
+  const imageSearch=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${s.name} ${s.latin} identification`)}`;
+  document.getElementById('gallery').innerHTML=`<div class="no-images">${s.provisional?'Identity still needs confirmation. Use search results cautiously.':'Open photographs and identification examples in your browser.'}<a class="image-search-link" href="${imageSearch}" target="_blank" rel="noopener noreferrer">Browser Image Search</a></div>`;
+  index.classList.add('hidden');
+  galleryView.classList.add('active');
+  window.scrollTo(0,0);
+}
+document.getElementById('back').onclick=()=>{
+  galleryView.classList.remove('active');
+  index.classList.remove('hidden');
+  window.scrollTo(0,0);
+};
+document.getElementById('backBottom').onclick=()=>document.getElementById('back').click();
+</script>
+</body>
+</html>

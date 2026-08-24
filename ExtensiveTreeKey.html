@@ -78,6 +78,31 @@ button, a { -webkit-tap-highlight-color: transparent; }
   outline-offset: 3px;
 }
 
+.az-button {
+  position: fixed;
+  z-index: 19;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  min-width: 62px;
+  min-height: 52px;
+  padding: 8px 13px;
+  border: 3px solid var(--white);
+  border-radius: 999px;
+  background: var(--orange);
+  color: var(--blue-dark);
+  font-size: 1.05rem;
+  font-weight: 900;
+  box-shadow: 0 5px 16px rgb(0 0 0 / 42%);
+  cursor: pointer;
+}
+
+.az-button:hover,
+.az-button:focus-visible {
+  outline: 4px solid #fff36d;
+  outline-offset: 3px;
+  background: var(--white);
+}
+
 .key-button:hover,
 .key-button:focus-visible,
 .species-button:hover,
@@ -654,6 +679,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
       <span>SCROLL FOR MORE</span>
       <span class="scroll-arrow" aria-hidden="true">⌄</span>
     </button>
+    <button class="az-button" id="azButton" type="button" aria-label="Open alphabetical tree and shrub search">A–Z</button>
   </main>
 
   <noscript>This Tree ID key requires JavaScript to display its linked pages.</noscript>
@@ -8552,6 +8578,7 @@ window.TREE_ID_DATA = {
   const regionButton = document.getElementById("regionButton");
   const habitatButton = document.getElementById("habitatButton");
   const skipButton = document.getElementById("skipButton");
+  const azButton = document.getElementById("azButton");
   const scrollHint = document.getElementById("scrollHint");
   const history = [];
   let activeRegion = "all";
@@ -9228,6 +9255,10 @@ window.TREE_ID_DATA = {
   regionButton.addEventListener("click", () => navigate({ type: "region" }));
   habitatButton.addEventListener("click", () => navigate({ type: "habitat" }));
   skipButton.addEventListener("click", () => navigate({ type: "region" }));
+  azButton.addEventListener("click", () => {
+    if (current.type !== "search") navigate({ type: "search" });
+    else document.getElementById("treeSearch")?.focus();
+  });
   scrollHint.addEventListener("click", () => {
     window.scrollBy({ top: Math.round(window.innerHeight * 0.72), behavior: "smooth" });
   });

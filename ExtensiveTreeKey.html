@@ -78,31 +78,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   outline-offset: 3px;
 }
 
-.az-button {
-  position: fixed;
-  z-index: 19;
-  right: max(14px, env(safe-area-inset-right));
-  bottom: max(16px, env(safe-area-inset-bottom));
-  min-width: 62px;
-  min-height: 52px;
-  padding: 8px 13px;
-  border: 3px solid var(--white);
-  border-radius: 999px;
-  background: var(--orange);
-  color: var(--blue-dark);
-  font-size: 1.05rem;
-  font-weight: 900;
-  box-shadow: 0 5px 16px rgb(0 0 0 / 42%);
-  cursor: pointer;
-}
-
-.az-button:hover,
-.az-button:focus-visible {
-  outline: 4px solid #fff36d;
-  outline-offset: 3px;
-  background: var(--white);
-}
-
 .key-button:hover,
 .key-button:focus-visible,
 .species-button:hover,
@@ -679,7 +654,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
       <span>SCROLL FOR MORE</span>
       <span class="scroll-arrow" aria-hidden="true">⌄</span>
     </button>
-    <button class="az-button" id="azButton" type="button" aria-label="Open alphabetical tree and shrub search">A–Z</button>
   </main>
 
   <noscript>This Tree ID key requires JavaScript to display its linked pages.</noscript>
@@ -947,6 +921,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Weak association—sometimes grows in rich or base-rich woods, but is too broadly tolerant to serve as a reliable calcium indicator.",
           "wikipedia": "https://en.wikipedia.org/wiki/Chionanthus_virginicus",
           "search": "https://www.google.com/search?tbm=isch&q=Fringetree+Chionanthus+virginicus+tree+identification",
           "category_id": "category-1",
@@ -1414,6 +1389,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Strong tendency—favors fertile, mesic soils with relatively high base saturation and is often associated with calcium-rich coves.",
           "wikipedia": "https://en.wikipedia.org/wiki/Acer_saccharum",
           "search": "https://www.google.com/search?tbm=isch&q=Sugar+maple+Acer+saccharum+tree+identification",
           "category_id": "category-3",
@@ -1435,6 +1411,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate association—often favors base-rich, rocky woods and mafic soils, but is not confined to them.",
           "wikipedia": "https://en.wikipedia.org/wiki/Acer_leucoderme",
           "search": "https://www.google.com/search?tbm=isch&q=Chalk+maple+Acer+leucoderme+tree+identification",
           "category_id": "category-3",
@@ -1457,6 +1434,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Strong tendency—most characteristic of fertile, base-rich to calcareous mesic woods.",
           "wikipedia": "https://en.wikipedia.org/wiki/Acer_floridanum",
           "search": "https://www.google.com/search?tbm=isch&q=Southern+sugar+maple+/+Florida+maple+Acer+floridanum+tree+identification",
           "category_id": "category-3",
@@ -2381,6 +2359,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate to strong association—often abundant in rich, relatively high-calcium floodplains and lower slopes, though not restricted to them.",
           "wikipedia": "https://en.wikipedia.org/wiki/Asimina_triloba",
           "search": "https://www.google.com/search?tbm=isch&q=Pawpaw+Asimina+triloba+tree+identification",
           "category_id": "category-4",
@@ -2402,6 +2381,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate to strong association—frequent on limestone, mafic rock, and other base-rich soils; useful as a supporting calcium indicator.",
           "wikipedia": "https://en.wikipedia.org/wiki/Cercis_canadensis",
           "search": "https://www.google.com/search?tbm=isch&q=Eastern+redbud+Cercis+canadensis+tree+identification",
           "category_id": "category-4",
@@ -3618,6 +3598,7 @@ window.TREE_ID_DATA = {
           "variable": true,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate association—favors rich, moist, circumneutral soils and is frequent on calcareous or mafic sites.",
           "wikipedia": "https://en.wikipedia.org/wiki/Morus_rubra",
           "search": "https://www.google.com/search?tbm=isch&q=Red+mulberry+Morus+rubra+tree+identification",
           "category_id": "category-5",
@@ -3713,6 +3694,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate to strong association—often favors rich, circumneutral to calcareous woods and bottomlands.",
           "wikipedia": "https://en.wikipedia.org/wiki/Ulmus_rubra",
           "search": "https://www.google.com/search?tbm=isch&q=Slippery+elm+Ulmus+rubra+tree+identification",
           "category_id": "category-5",
@@ -3865,6 +3847,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Strong association—characteristic of fertile, high-base and commonly calcareous soils.",
           "wikipedia": "https://en.wikipedia.org/wiki/Celtis_occidentalis",
           "search": "https://www.google.com/search?tbm=isch&q=Hackberry+Celtis+occidentalis+tree+identification",
           "category_id": "category-5",
@@ -3983,6 +3966,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Strong association—typically favors rich, rocky, circumneutral to calcareous woods and can indicate base-rich soil.",
           "wikipedia": "https://en.wikipedia.org/wiki/Frangula_caroliniana",
           "search": "https://www.google.com/search?tbm=isch&q=Carolina+buckthorn+Frangula+caroliniana+tree+identification",
           "category_id": "category-5",
@@ -4279,6 +4263,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Strong association—favors rich, mesic, base-rich soils and is a useful supporting indicator of elevated calcium.",
           "wikipedia": "https://en.wikipedia.org/wiki/Tilia_americana",
           "search": "https://www.google.com/search?tbm=isch&q=American+basswood+Tilia+americana+tree+identification",
           "category_id": "category-5",
@@ -4566,6 +4551,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Strong calciphile—one of the clearest tree indicators of limestone or otherwise calcium-rich, high-base soil.",
           "wikipedia": "https://en.wikipedia.org/wiki/Quercus_muehlenbergii",
           "search": "https://www.google.com/search?tbm=isch&q=Chinkapin+oak+Quercus+muehlenbergii+tree+identification",
           "category_id": "category-5",
@@ -5277,6 +5263,7 @@ window.TREE_ID_DATA = {
           "variable": true,
           "whorled": false,
           "note": "leaflets may be nearly entire or finely toothed",
+          "calcium": "Moderate to strong association—often favors fertile, well-drained, base-rich soils, though it is not restricted to calcareous sites.",
           "wikipedia": "https://en.wikipedia.org/wiki/Fraxinus_americana",
           "search": "https://www.google.com/search?tbm=isch&q=White+ash+Fraxinus+americana+tree+identification",
           "category_id": "category-7",
@@ -5354,6 +5341,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": "Georgia range: Walker County, Georgia",
+          "calcium": "Strong association—favors deep, fertile, base-rich soils and is often linked with limestone or mafic substrates.",
           "wikipedia": "https://en.wikipedia.org/wiki/Aesculus_glabra",
           "search": "https://www.google.com/search?tbm=isch&q=Ohio+Buckeye,+Fetid+Buckeye+Aesculus+glabra+tree+identification",
           "category_id": "category-8",
@@ -5442,6 +5430,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate association—often occupies rich, moist, base-rich mountain coves, but is not a strict calciphile.",
           "wikipedia": "https://en.wikipedia.org/wiki/Aesculus_flava",
           "search": "https://www.google.com/search?tbm=isch&q=Yellow+buckeye+Aesculus+flava+tree+identification",
           "category_id": "category-8",
@@ -5462,6 +5451,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Weak to moderate association—can occur on mafic or otherwise base-rich Piedmont soils, but is not a dependable calcium indicator alone.",
           "wikipedia": "https://en.wikipedia.org/wiki/Aesculus_sylvatica",
           "search": "https://www.google.com/search?tbm=isch&q=Painted+buckeye+Aesculus+sylvatica+tree+identification",
           "category_id": "category-8",
@@ -5502,6 +5492,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate association—often occurs on circumneutral or mildly calcareous bluffs, but also tolerates acidic soil.",
           "wikipedia": "https://en.wikipedia.org/wiki/Aesculus_parviflora",
           "search": "https://www.google.com/search?tbm=isch&q=Bottlebrush+buckeye+Aesculus+parviflora+tree+identification",
           "category_id": "category-8",
@@ -6189,6 +6180,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate association—often favors fertile, relatively base-rich soils, including mafic and calcareous sites, but also occurs elsewhere.",
           "wikipedia": "https://en.wikipedia.org/wiki/Carya_ovata",
           "search": "https://www.google.com/search?tbm=isch&q=Shagbark+hickory+Carya+ovata+tree+identification",
           "category_id": "category-11",
@@ -6211,6 +6203,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate association—favors rich, moist soils with comparatively high base status; supportive rather than decisive as a calcium indicator.",
           "wikipedia": "https://en.wikipedia.org/wiki/Carya_cordiformis",
           "search": "https://www.google.com/search?tbm=isch&q=Bitternut+hickory+Carya+cordiformis+tree+identification",
           "category_id": "category-11",
@@ -6421,6 +6414,7 @@ window.TREE_ID_DATA = {
           "variable": false,
           "whorled": false,
           "note": null,
+          "calcium": "Moderate association—very common on limestone and other base-rich shallow soils, but too widespread to be diagnostic by itself.",
           "wikipedia": "https://en.wikipedia.org/wiki/Juniperus_virginiana",
           "search": "https://www.google.com/search?tbm=isch&q=Eastern+redcedar+Juniperus+virginiana+tree+identification",
           "category_id": "special-needles-or-scale-like-leaves",
@@ -8578,7 +8572,6 @@ window.TREE_ID_DATA = {
   const regionButton = document.getElementById("regionButton");
   const habitatButton = document.getElementById("habitatButton");
   const skipButton = document.getElementById("skipButton");
-  const azButton = document.getElementById("azButton");
   const scrollHint = document.getElementById("scrollHint");
   const history = [];
   let activeRegion = "all";
@@ -8888,6 +8881,22 @@ window.TREE_ID_DATA = {
     return habitatChoices[activeHabitat]?.title || habitatChoices.all.title;
   }
 
+  function abundanceRating(species) {
+    const configured = species.abundance;
+    if (configured && typeof configured === "object") {
+      return configured[activeRegion] || configured.all || "Not rated";
+    }
+    if (typeof configured === "string") return configured;
+
+    const range = String(species.georgia_range || species.note || "").toLowerCase();
+    if (/\b(rare|infrequent(?:ly)?|very limited|highly localized)\b/.test(range)) return "Rare";
+    if (/\b(occasional(?:ly)?|scattered|localized|restricted|uncommon)\b/.test(range)) return "Occasional";
+    if (/\b(common(?:ly)?|abundant|widespread|widely planted)\b/.test(range)) return "Abundant";
+
+    // A conservative default: a stated range proves presence, not abundance.
+    return range ? "Occasional" : "Not rated";
+  }
+
   function resetScroll() {
     if (document.documentElement) document.documentElement.scrollTop = 0;
     if (document.body) document.body.scrollTop = 0;
@@ -9158,6 +9167,8 @@ window.TREE_ID_DATA = {
         </div>
         ${gallery}
         ${species.georgia_range ? `<p class="georgia-range"><strong>Georgia range:</strong> ${escapeHtml(species.georgia_range)}</p>` : ""}
+        <p class="abundance-note"><strong>Estimated field abundance${activeRegion !== "all" ? ` — ${escapeHtml(regionLabel())}` : ""}:</strong> ${escapeHtml(abundanceRating(species))}</p>
+        ${species.calcium ? `<p class="calcium-note"><strong>Calcium affinity:</strong> ${escapeHtml(species.calcium)}</p>` : ""}
         ${notes.map(note => `<p>${escapeHtml(note)}</p>`).join("")}
         <div class="external-links">
           ${localImageButton}
@@ -9255,10 +9266,6 @@ window.TREE_ID_DATA = {
   regionButton.addEventListener("click", () => navigate({ type: "region" }));
   habitatButton.addEventListener("click", () => navigate({ type: "habitat" }));
   skipButton.addEventListener("click", () => navigate({ type: "region" }));
-  azButton.addEventListener("click", () => {
-    if (current.type !== "search") navigate({ type: "search" });
-    else document.getElementById("treeSearch")?.focus();
-  });
   scrollHint.addEventListener("click", () => {
     window.scrollBy({ top: Math.round(window.innerHeight * 0.72), behavior: "smooth" });
   });

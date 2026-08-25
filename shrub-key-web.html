@@ -105,7 +105,7 @@ const species=[
  {name:'Florida Anise',latin:'Illicium floridanum',regions:['coastal'],group:'large',flower:'Solitary dark-red to maroon flowers with many narrow strap-like tepals.',leaf:'Evergreen; simple, alternate, leathery, toothless, strongly aromatic leaves.'},
  {name:'Winged Sumac',latin:'Rhus copallinum',regions:['mountains','piedmont','coastal'],group:'small',flower:'Dense upright terminal panicles of many tiny greenish-yellow flowers.',leaf:'Deciduous; alternate, pinnately compound leaves with a winged central rachis.'},
  {name:'Yellowroot',latin:'Xanthorhiza simplicissima',regions:['mountains','piedmont'],group:'racemes',flower:'Small brownish-purple starry flowers in drooping branched racemes.',leaf:'Deciduous; alternate, pinnately compound leaves; roots and inner bark bright yellow.'},
- {name:'Physic Nut — identity to confirm',latin:'Scientific name needed',regions:['mountains','piedmont','coastal'],group:'small',flower:'Provisional placement: likely small flowers in a branched cluster.',leaf:'The common name refers to several different plants; confirm before relying on this entry.',provisional:true}
+ {name:'Physic-nut / Indian Olive',latin:'Nestronia umbellula',regions:['mountains','piedmont','coastal'],group:'small',flower:'Tiny pale yellow-green flowers without petals; female flowers solitary, male flowers in small axillary clusters.',leaf:'Deciduous; simple, opposite, toothless leaves; a low colony-forming shrub with rare yellow-green olive-like fruit.'}
 ];
 const groups=[
  ['large','Large, Showy Flowers','Single or only a few flowers together'],
@@ -117,16 +117,61 @@ const groups=[
  ['rounded','Rounded Clusters','Small open flowers in a rounded or flat-topped cluster'],
  ['small','Small Clusters & Panicles','Flowers inconspicuous, axillary or on branched panicles']
 ];
+const habitats={
+ 'Philadelphus inodorus':'Dry, rocky woods, bluffs and wooded slopes, especially over calcareous rock.',
+ 'Stewartia malacodendron':'Moist, acidic wooded ravines, stream slopes and sheltered creek banks.',
+ 'Cephalanthus occidentalis':'Wet ground at pond, swamp and marsh edges; streambanks and floodplains.',
+ 'Fothergilla gardenii':'Moist to wet acidic pocosins, savannas, bay margins and pine flatwoods.',
+ 'Elliottia racemosa':'Moist acidic slopes, stream ravines and open pine-oak woods, often in disturbed openings.',
+ 'Agarista populifolia':'Moist acidic hammocks, wooded ravines, streambanks and swamp margins.',
+ 'Lyonia lucida':'Wet acidic pocosins, bay swamps, pond margins and pine flatwoods.',
+ 'Leucothoe fontanesiana':'Cool, moist mountain ravines and shaded streambanks, often in rhododendron thickets.',
+ 'Styrax americanus':'Swamps, wet woods, pond margins and streambanks, usually on acidic soils.',
+ 'Staphylea trifolia':'Rich, moist woods, wooded slopes, ravines and streambanks, often over basic soils.',
+ 'Itea virginica':'Swamps, wet woods, streambanks and pond margins; often forms colonies.',
+ 'Cyrilla racemiflora':'Acidic swamps, pocosins, wet flatwoods and pond or stream margins.',
+ 'Clethra acuminata':'Cool, moist Appalachian coves, ravines and rocky streambanks.',
+ 'Physocarpus opulifolius':'Rocky streambanks, river bluffs and moist thickets, often on exposed rock.',
+ 'Dirca palustris':'Rich, shaded, moist woods and coves, commonly on calcareous slopes.',
+ 'Osmanthus americanus':'Moist hammocks, swamp margins and mesic forests on the Coastal Plain.',
+ 'Ptelea trifoliata':'Dry rocky woods, limestone bluffs, dunes and woodland edges.',
+ 'Sapindus marginatus':'Coastal hammocks, maritime woods, shell mounds and sandy calcareous sites.',
+ 'Sideroxylon tenax':'Dry sandy maritime woods, dunes, scrub and shell-rich coastal hammocks.',
+ 'Ilex glabra':'Acidic pine flatwoods, pocosins, savannas and swamp margins, often in wet sandy soil.',
+ 'Callicarpa americana':'Open woods, woodland edges, thickets and disturbed sites; most common in moist, well-drained ground.',
+ 'Calycanthus floridus':'Rich, moist deciduous woods, coves, ravines and streambanks.',
+ 'Lindera benzoin':'Moist, rich woods, bottomlands, wooded ravines and streambanks.',
+ 'Euonymus americanus':'Moist woods, ravines, floodplains and streambanks, usually in partial shade.',
+ 'Hydrangea quercifolia':'Rocky wooded slopes, ravines and stream bluffs, especially on calcareous soils.',
+ 'Kalmia latifolia':'Acidic mountain slopes, rocky ridges, bluffs and woodland edges; often forms dense thickets.',
+ 'Rhododendron maximum':'Cool, moist acidic coves, shaded ravines and streambanks; often forms dense thickets.',
+ 'Rhododendron spp.':'Acidic woods, slopes, streambanks, bog margins or sandhills, depending on the species.',
+ 'Aesculus parviflora':'Rich, moist woods, ravines, bluff bases and streambanks, often over calcareous soil.',
+ 'Sambucus canadensis':'Moist open ground, ditches, floodplains, streambanks and woodland edges.',
+ 'Viburnum dentatum':'Moist woods, swamp margins, floodplains and thickets; also occurs on drier uplands.',
+ 'Ilex verticillata':'Swamps, bog margins, wet thickets, pond edges and streambanks in acidic soil.',
+ 'Morella cerifera':'Maritime thickets, dunes, pine flatwoods, wetland margins and disturbed coastal ground.',
+ 'Hamamelis virginiana':'Dry to mesic deciduous woods, rocky slopes, ravines and stream valleys.',
+ 'Vaccinium corymbosum':'Acidic swamps, bog margins, wet woods and streambanks.',
+ 'Illicium floridanum':'Shaded, moist ravines, seepage slopes and streambanks in acidic woods.',
+ 'Rhus copallinum':'Dry open woods, sandy fields, roadsides and woodland edges; often abundant after disturbance.',
+ 'Xanthorhiza simplicissima':'Shaded streambanks, seepage areas and moist wooded floodplains; often forms colonies.',
+ 'Nestronia umbellula':'Dry to mesic, open oak-hickory-pine woods, especially in the Piedmont and upper Coastal Plain.'
+};
 const index=document.getElementById('index');
 const galleryView=document.getElementById('galleryView');
 let selectedRegion='coastal';
-function renderSpecies(){document.getElementById('flowerGroups').innerHTML=groups.map(g=>{const matches=species.map((s,i)=>({s,i})).filter(x=>x.s.group===g[0]&&x.s.regions.includes(selectedRegion));if(!matches.length)return'';return`<section class="category"><h2>${g[1]}</h2><p class="empty">${g[2]}</p><div class="species-list">${matches.map(x=>`<button class="species-button" data-i="${x.i}">${x.s.name}<span class="latin">${x.s.latin}</span><span class="flower-clue"><span class="clue-label">Flowers:</span> ${x.s.flower}</span><span class="leaf-clue"><span class="clue-label">Leaves:</span> ${x.s.leaf}</span></button>`).join('')}</div></section>`}).join('');document.querySelectorAll('.species-button').forEach(button=>button.onclick=()=>showSpecies(species[+button.dataset.i]))}
+let indexScrollPosition=0;
+let selectedSpeciesIndex=null;
+function renderSpecies(){document.getElementById('flowerGroups').innerHTML=groups.map(g=>{const matches=species.map((s,i)=>({s,i})).filter(x=>x.s.group===g[0]&&x.s.regions.includes(selectedRegion));if(!matches.length)return'';return`<section class="category"><h2>${g[1]}</h2><p class="empty">${g[2]}</p><div class="species-list">${matches.map(x=>`<button class="species-button" data-i="${x.i}">${x.s.name}<span class="latin">${x.s.latin}</span><span class="flower-clue"><span class="clue-label">Flowers:</span> ${x.s.flower}</span><span class="leaf-clue"><span class="clue-label">Leaves:</span> ${x.s.leaf}</span></button>`).join('')}</div></section>`}).join('');document.querySelectorAll('.species-button').forEach(button=>button.onclick=()=>showSpecies(species[+button.dataset.i],+button.dataset.i))}
 document.querySelectorAll('.region-button').forEach(button=>button.onclick=()=>{selectedRegion=button.dataset.region;document.querySelectorAll('.region-button').forEach(b=>b.classList.toggle('active',b===button));renderSpecies()});
 renderSpecies();
-function showSpecies(s){
+function showSpecies(s,speciesIndex){
+  indexScrollPosition=window.scrollY;
+  selectedSpeciesIndex=speciesIndex;
   document.getElementById('galleryTitle').textContent=s.name;
   document.getElementById('galleryLatin').textContent=s.latin;
-  document.getElementById('flowerProfile').innerHTML=`<strong>Flowers:</strong> ${s.flower}<br><strong>Leaves:</strong> ${s.leaf}`;
+  document.getElementById('flowerProfile').innerHTML=`<strong>Flowers:</strong> ${s.flower}<br><strong>Leaves:</strong> ${s.leaf}<br><strong>Favored habitat:</strong> ${habitats[s.latin]||'Habitat information not yet available.'}`;
   const imageSearch=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${s.name} ${s.latin} identification`)}`;
   document.getElementById('gallery').innerHTML=`<div class="no-images">${s.provisional?'Identity still needs confirmation. Use search results cautiously.':'Open photographs and identification examples in your browser.'}<a class="image-search-link" href="${imageSearch}" target="_blank" rel="noopener noreferrer">Browser Image Search</a></div>`;
   index.classList.add('hidden');
@@ -136,7 +181,11 @@ function showSpecies(s){
 document.getElementById('back').onclick=()=>{
   galleryView.classList.remove('active');
   index.classList.remove('hidden');
-  window.scrollTo(0,0);
+  requestAnimationFrame(()=>{
+    const selectedButton=document.querySelector(`.species-button[data-i="${selectedSpeciesIndex}"]`);
+    if(selectedButton)selectedButton.focus({preventScroll:true});
+    window.scrollTo(0,indexScrollPosition);
+  });
 };
 document.getElementById('backBottom').onclick=()=>document.getElementById('back').click();
 </script>

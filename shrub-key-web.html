@@ -67,7 +67,7 @@
 </main>
 <script>
 const species=[
- {name:'Scentless Mock-orange',latin:'Philadelphus inodorus',regions:['mountains','piedmont'],group:'large',flower:'Large white flowers, solitary or only a few together; 4 broad petals.',leaf:'Simple, opposite, toothed leaves.'},
+ {name:'Scentless Mock-orange',latin:'Philadelphus inodorus',regions:['mountains','piedmont'],group:'large',flower:'Large white flowers, solitary or only a few together; 4 broad petals.',leaf:'Simple, opposite, toothed leaves.',calcium:'Strong association—often grows over calcium-rich or mafic rock.'},
  {name:'Silky Camellia',latin:'Stewartia malacodendron',regions:['piedmont','coastal'],group:'large',flower:'Large solitary white saucer, 5 petals and a striking center of purple stamens.',leaf:'Simple, alternate, finely toothed leaves.'},
  {name:'Buttonbush',latin:'Cephalanthus occidentalis',regions:['mountains','piedmont','coastal'],group:'ball',flower:'Dense white spherical head with projecting styles—a pincushion.',leaf:'Simple, opposite or whorled, toothless leaves.'},
  {name:'Dwarf Fothergilla',latin:'Fothergilla gardenii',regions:['coastal'],group:'brush',flower:'White bottlebrush made of long stamens; no showy petals.',leaf:'Simple, alternate leaves, toothed mostly toward the tip.',folder:'Fothergilli',images:['Screenshot 2026-08-24 at 1.50.51 PM.png','Screenshot 2026-08-24 at 1.39.20 PM.png','Screenshot 2026-08-24 at 1.39.30 PM.png','Screenshot 2026-08-24 at 1.39.07 PM.png']},
@@ -76,28 +76,29 @@ const species=[
  {name:'Fetterbush',latin:'Lyonia lucida',regions:['coastal'],group:'bells',flower:'Small white or pinkish urn-shaped flowers in compact clusters.',leaf:'Evergreen; simple, alternate, glossy, mostly toothless leaves.',folder:'Lyonia',images:['Screenshot 2026-08-24 at 1.53.19 PM.png','Screenshot 2026-08-24 at 9.05.02 AM.png','Screenshot 2026-08-24 at 9.05.43 AM.png']},
  {name:'Mountain Doghobble',latin:'Leucothoe fontanesiana',regions:['mountains','piedmont'],group:'bells',flower:'Long drooping chains of white urn-shaped flowers beneath arching stems.',leaf:'Evergreen; simple, alternate, glossy, finely toothed leaves.',folder:'Leucothe',images:['Screenshot 2026-08-24 at 8.56.30 AM.png','Screenshot 2026-08-24 at 8.56.57 AM.png','Screenshot 2026-08-24 at 8.56.46 AM.png','Screenshot 2026-08-24 at 1.52.36 PM.png']},
  {name:'American Snowbell',latin:'Styrax americanus',regions:['piedmont','coastal'],group:'bells',flower:'Single or clusters of 1–4 nodding white bells with 5 reflexed petals.',leaf:'Deciduous; simple, alternate, finely toothed leaves.'},
- {name:'American Bladdernut',latin:'Staphylea trifolia',regions:['mountains','piedmont'],group:'bells',flower:'Small greenish-white bells in nodding branched clusters.',leaf:'Opposite, compound leaves with 3 toothed leaflets.'},
+ {name:'American Bladdernut',latin:'Staphylea trifolia',regions:['mountains','piedmont'],group:'bells',flower:'Small greenish-white bells in nodding branched clusters.',leaf:'Opposite, compound leaves with 3 toothed leaflets.',calcium:'Strong calciphile—favors rich, circumneutral to calcareous soils.'},
  {name:'Virginia Sweetspire',latin:'Itea virginica',regions:['mountains','piedmont','coastal'],group:'racemes',flower:'Slender, often arching racemes of tiny 5-petaled flowers.',leaf:'Simple, alternate, finely toothed leaves.',folder:'Itea',images:['Screenshot 2026-08-24 at 1.51.45 PM.png','Screenshot 2026-08-24 at 9.00.06 AM.png','Screenshot 2026-08-24 at 8.59.44 AM.png','Screenshot 2026-08-24 at 8.59.59 AM.png']},
  {name:'Swamp Cyrilla / Red Titi',latin:'Cyrilla racemiflora',regions:['coastal'],group:'racemes',flower:'Many narrow racemes of tiny open, 5-petaled flowers.',leaf:'Simple, alternate, glossy, mostly toothless leaves.',folder:'Cyrillia',images:['Screenshot 2026-08-24 at 1.47.41 PM.png','Screenshot 2026-08-24 at 1.49.04 PM.png','Screenshot 2026-08-24 at 1.49.20 PM.png','Screenshot 2026-08-24 at 1.49.13 PM.png']},
  {name:'Mountain Pepperbush',latin:'Clethra acuminata',regions:['mountains'],group:'racemes',flower:'Dense, upright, fuzzy-looking spikes of tiny white flowers.',leaf:'Simple, alternate, coarsely toothed leaves.',folder:'Clethra',images:['Screenshot 2026-08-24 at 9.03.11 AM.png','Screenshot 2026-08-24 at 9.02.50 AM.png','Screenshot 2026-08-24 at 9.02.40 AM.png','Screenshot 2026-08-24 at 1.45.08 PM.png']},
- {name:'Common Ninebark',latin:'Physocarpus opulifolius',regions:['mountains','piedmont'],group:'rounded',flower:'Rounded clusters of small open white or pinkish 5-petaled flowers.',leaf:'Simple, alternate, toothed and usually 3-lobed leaves.'},
- {name:'Leatherwood',latin:'Dirca palustris',regions:['mountains','piedmont'],group:'small',flower:'Tiny pale-yellow tubular flowers in clusters before the leaves.',leaf:'Simple, alternate, toothless leaves; exceptionally flexible twigs.'},
+ {name:'Common Ninebark',latin:'Physocarpus opulifolius',regions:['mountains','piedmont'],group:'rounded',flower:'Rounded clusters of small open white or pinkish 5-petaled flowers.',leaf:'Simple, alternate, toothed and usually 3-lobed leaves.',calcium:'In the Piedmont, often marks rocky mafic or other base-rich sites.'},
+ {name:'Leatherwood',latin:'Dirca palustris',regions:['mountains','piedmont'],group:'small',flower:'Tiny pale-yellow tubular flowers in clusters before the leaves.',leaf:'Simple, alternate, toothless leaves; exceptionally flexible twigs.',calcium:'Strong tendency—most characteristic of rich, calcium-bearing woods.'},
  {name:'Devilwood',latin:'Osmanthus americanus',regions:['piedmont','coastal'],group:'small',flower:'Small fragrant greenish-white flowers in short axillary clusters.',leaf:'Evergreen; simple, opposite, mostly toothless leaves.'},
- {name:'Common Hoptree',latin:'Ptelea trifoliata',regions:['mountains','piedmont','coastal'],group:'small',flower:'Small greenish-white flowers in broad branched terminal clusters.',leaf:'Alternate, compound leaves with 3 leaflets; foliage pungent when crushed.'},
- {name:'Florida Soapberry',latin:'Sapindus marginatus',regions:['coastal'],group:'small',flower:'Tiny whitish flowers in large, loose, branched terminal panicles.',leaf:'Alternate, pinnately compound leaves with several leaflets.'},
- {name:'Tough Bumelia',latin:'Sideroxylon tenax',regions:['coastal'],group:'small',flower:'Tiny fragrant white flowers crowded in leaf axils.',leaf:'Simple, alternate, toothless leaves; thorny twigs and milky sap.'},
+ {name:'Common Hoptree',latin:'Ptelea trifoliata',regions:['mountains','piedmont','coastal'],group:'small',flower:'Small greenish-white flowers in broad branched terminal clusters.',leaf:'Alternate, compound leaves with 3 leaflets; foliage pungent when crushed.',calcium:'Strong association—often favors calcareous or mafic rocky soil.'},
+ {name:'Florida Soapberry',latin:'Sapindus marginatus',regions:['coastal'],group:'small',flower:'Tiny whitish flowers in large, loose, branched terminal panicles.',leaf:'Alternate, pinnately compound leaves with several leaflets.',calcium:'Often favors calcium-rich coastal hammocks, shell deposits and bluffs.'},
+ {name:'Tough Bumelia',latin:'Sideroxylon tenax',regions:['coastal'],group:'small',flower:'Tiny fragrant white flowers crowded in leaf axils.',leaf:'Simple, alternate, toothless leaves; thorny twigs and milky sap.',calcium:'Strong coastal association with shell-rich, calcareous sand.'},
  {name:'Gallberry',latin:'Ilex glabra',regions:['piedmont','coastal'],group:'small',flower:'Tiny white flowers, solitary or in small axillary clusters.',leaf:'Evergreen; simple, alternate leaves with a few teeth near the tip.'},
  {name:'American Beautyberry',latin:'Callicarpa americana',regions:['mountains','piedmont','coastal'],group:'small',flower:'Small pale-pink flowers in tight axillary clusters around the stem.',leaf:'Deciduous; simple, opposite, toothed leaves; vivid purple fruit clusters are diagnostic.'},
  {name:'Sweetshrub / Carolina Allspice',latin:'Calycanthus floridus',regions:['mountains','piedmont','coastal'],group:'large',flower:'Large solitary maroon flowers with many narrow strap-like tepals; often spicy-fragrant.',leaf:'Deciduous; simple, opposite, toothless leaves; twigs and foliage aromatic.'},
  {name:'Spicebush',latin:'Lindera benzoin',regions:['mountains','piedmont'],group:'small',flower:'Tiny yellow flowers in rounded clusters on bare twigs before the leaves.',leaf:'Deciduous; simple, alternate, toothless aromatic leaves and twigs.'},
  {name:'Strawberry-bush / Hearts-a-bustin',latin:'Euonymus americanus',regions:['mountains','piedmont','coastal'],group:'small',flower:'Small greenish-purple 5-petaled flowers on slender axillary stalks.',leaf:'Deciduous; simple, opposite, finely toothed leaves; warty green twigs and red splitting fruit.'},
- {name:'Oakleaf Hydrangea',latin:'Hydrangea quercifolia',regions:['piedmont','coastal'],group:'showyclusters',flower:'Large upright conical panicles with showy white sterile flowers, aging pink and brown.',leaf:'Deciduous; simple, opposite, coarsely toothed and deeply lobed leaves.'},
+ {name:'Oakleaf Hydrangea',latin:'Hydrangea quercifolia',regions:['piedmont','coastal'],group:'showyclusters',flower:'Large upright conical panicles with showy white sterile flowers, aging pink and brown.',leaf:'Deciduous; simple, opposite, coarsely toothed and deeply lobed leaves.',calcium:'Frequently found on calcareous bluffs, but also tolerates non-calcareous soil.'},
  {name:'Mountain Laurel',latin:'Kalmia latifolia',regions:['mountains','piedmont'],group:'showyclusters',flower:'Rounded clusters of pink or white, saucer-shaped flowers with pocketed petals.',leaf:'Evergreen; simple, alternate or appearing whorled, leathery, toothless leaves.'},
  {name:'Rosebay Rhododendron',latin:'Rhododendron maximum',regions:['mountains'],group:'showyclusters',flower:'Large terminal trusses of white to pink funnel-shaped flowers with spotted throats.',leaf:'Evergreen; simple, alternate, leathery, toothless leaves clustered near twig tips.'},
  {name:'Native Deciduous Azaleas',latin:'Rhododendron spp.',regions:['mountains','piedmont','coastal'],group:'showyclusters',flower:'Showy terminal clusters of tubular or funnel-shaped flowers with long projecting stamens.',leaf:'Deciduous; simple, alternate, toothless leaves; species identification needs flower color, hairs and range.'},
- {name:'Bottlebrush Buckeye',latin:'Aesculus parviflora',regions:['piedmont','coastal'],group:'brush',flower:'Long upright white bottlebrush panicles with conspicuously projecting stamens.',leaf:'Deciduous; opposite, palmately compound leaves with 5–7 leaflets.'},
+ {name:'Bottlebrush Buckeye',latin:'Aesculus parviflora',regions:['piedmont','coastal'],group:'brush',flower:'Long upright white bottlebrush panicles with conspicuously projecting stamens.',leaf:'Deciduous; opposite, palmately compound leaves with 5–7 leaflets.',calcium:'Often occurs on circumneutral or mildly calcareous bluffs, but tolerates acidic soil.'},
  {name:'American Elderberry',latin:'Sambucus canadensis',regions:['mountains','piedmont','coastal'],group:'rounded',flower:'Broad, flat-topped clusters packed with tiny white flowers.',leaf:'Deciduous; opposite, pinnately compound leaves with toothed leaflets.'},
  {name:'Arrowwood Viburnum',latin:'Viburnum dentatum',regions:['mountains','piedmont'],group:'rounded',flower:'Flat-topped rounded clusters of small creamy-white flowers.',leaf:'Deciduous; simple, opposite, coarsely toothed leaves.'},
+ {name:'Northern Wild Raisin',latin:'Viburnum cassinoides',regions:['mountains'],group:'rounded',flower:'Flat-topped clusters of small creamy-white flowers; fruit changes from pink to blue-black as it ripens.',leaf:'Deciduous; simple, opposite, dull to slightly shiny leaves with shallow, irregular rounded teeth.'},
  {name:'Winterberry',latin:'Ilex verticillata',regions:['mountains','piedmont','coastal'],group:'small',flower:'Tiny greenish-white flowers in clusters at the leaf axils.',leaf:'Deciduous; simple, alternate, toothed leaves; female plants bear bright red fruit.'},
  {name:'Southern Wax Myrtle',latin:'Morella cerifera',regions:['piedmont','coastal'],group:'small',flower:'Very small, inconspicuous flowers in short catkin-like clusters.',leaf:'Evergreen or semi-evergreen; simple, alternate, aromatic leaves, often toothed near the tip.'},
  {name:'Common Witch-hazel',latin:'Hamamelis virginiana',regions:['mountains','piedmont'],group:'small',flower:'Small yellow flowers with 4 long ribbon-like petals, opening in autumn.',leaf:'Deciduous; simple, alternate, wavy-toothed leaves with an uneven base.'},
@@ -105,7 +106,7 @@ const species=[
  {name:'Florida Anise',latin:'Illicium floridanum',regions:['coastal'],group:'large',flower:'Solitary dark-red to maroon flowers with many narrow strap-like tepals.',leaf:'Evergreen; simple, alternate, leathery, toothless, strongly aromatic leaves.'},
  {name:'Winged Sumac',latin:'Rhus copallinum',regions:['mountains','piedmont','coastal'],group:'small',flower:'Dense upright terminal panicles of many tiny greenish-yellow flowers.',leaf:'Deciduous; alternate, pinnately compound leaves with a winged central rachis.'},
  {name:'Yellowroot',latin:'Xanthorhiza simplicissima',regions:['mountains','piedmont'],group:'racemes',flower:'Small brownish-purple starry flowers in drooping branched racemes.',leaf:'Deciduous; alternate, pinnately compound leaves; roots and inner bark bright yellow.'},
- {name:'Physic-nut / Indian Olive',latin:'Nestronia umbellula',regions:['mountains','piedmont','coastal'],group:'small',flower:'Tiny pale yellow-green flowers without petals; female flowers solitary, male flowers in small axillary clusters.',leaf:'Deciduous; simple, opposite, toothless leaves; a low colony-forming shrub with rare yellow-green olive-like fruit.'}
+ {name:'Physic-nut / Indian Olive',latin:'Nestronia umbellula',regions:['mountains','piedmont','coastal'],group:'small',flower:'Tiny pale yellow-green flowers without petals; female flowers solitary, male flowers in small axillary clusters.',leaf:'Deciduous; simple, opposite, toothless leaves; a low colony-forming shrub with rare yellow-green olive-like fruit.',calcium:'Strong indicator in the Piedmont—often associated with mafic, base-rich soil.'}
 ];
 const groups=[
  ['large','Large, Showy Flowers','Single or only a few flowers together'],
@@ -149,6 +150,7 @@ const habitats={
  'Aesculus parviflora':'Rich, moist woods, ravines, bluff bases and streambanks, often over calcareous soil.',
  'Sambucus canadensis':'Moist open ground, ditches, floodplains, streambanks and woodland edges.',
  'Viburnum dentatum':'Moist woods, swamp margins, floodplains and thickets; also occurs on drier uplands.',
+ 'Viburnum cassinoides':'Cool, moist high-elevation forests, bogs, rocky woods, outcrops and heath balds.',
  'Ilex verticillata':'Swamps, bog margins, wet thickets, pond edges and streambanks in acidic soil.',
  'Morella cerifera':'Maritime thickets, dunes, pine flatwoods, wetland margins and disturbed coastal ground.',
  'Hamamelis virginiana':'Dry to mesic deciduous woods, rocky slopes, ravines and stream valleys.',
@@ -157,6 +159,48 @@ const habitats={
  'Rhus copallinum':'Dry open woods, sandy fields, roadsides and woodland edges; often abundant after disturbance.',
  'Xanthorhiza simplicissima':'Shaded streambanks, seepage areas and moist wooded floodplains; often forms colonies.',
  'Nestronia umbellula':'Dry to mesic, open oak-hickory-pine woods, especially in the Piedmont and upper Coastal Plain.'
+};
+const abundance={
+ 'Philadelphus inodorus':{mountains:'Occasional',piedmont:'Rare'},
+ 'Stewartia malacodendron':{piedmont:'Rare',coastal:'Rare'},
+ 'Cephalanthus occidentalis':{mountains:'Occasional',piedmont:'Abundant',coastal:'Abundant'},
+ 'Fothergilla gardenii':{coastal:'Occasional'},
+ 'Elliottia racemosa':{piedmont:'Rare',coastal:'Rare'},
+ 'Agarista populifolia':{piedmont:'Occasional',coastal:'Abundant'},
+ 'Lyonia lucida':{coastal:'Abundant'},
+ 'Leucothoe fontanesiana':{mountains:'Abundant',piedmont:'Occasional'},
+ 'Styrax americanus':{piedmont:'Occasional',coastal:'Occasional'},
+ 'Staphylea trifolia':{mountains:'Occasional',piedmont:'Rare'},
+ 'Itea virginica':{mountains:'Occasional',piedmont:'Occasional',coastal:'Abundant'},
+ 'Cyrilla racemiflora':{coastal:'Abundant'},
+ 'Clethra acuminata':{mountains:'Occasional'},
+ 'Physocarpus opulifolius':{mountains:'Occasional',piedmont:'Rare'},
+ 'Dirca palustris':{mountains:'Rare',piedmont:'Rare'},
+ 'Osmanthus americanus':{piedmont:'Occasional',coastal:'Occasional'},
+ 'Ptelea trifoliata':{mountains:'Rare',piedmont:'Rare',coastal:'Rare'},
+ 'Sapindus marginatus':{coastal:'Rare'},
+ 'Sideroxylon tenax':{coastal:'Occasional'},
+ 'Ilex glabra':{piedmont:'Occasional',coastal:'Abundant'},
+ 'Callicarpa americana':{mountains:'Occasional',piedmont:'Abundant',coastal:'Abundant'},
+ 'Calycanthus floridus':{mountains:'Abundant',piedmont:'Occasional',coastal:'Occasional'},
+ 'Lindera benzoin':{mountains:'Abundant',piedmont:'Abundant'},
+ 'Euonymus americanus':{mountains:'Occasional',piedmont:'Abundant',coastal:'Occasional'},
+ 'Hydrangea quercifolia':{piedmont:'Occasional',coastal:'Rare'},
+ 'Kalmia latifolia':{mountains:'Abundant',piedmont:'Occasional'},
+ 'Rhododendron maximum':{mountains:'Abundant'},
+ 'Rhododendron spp.':{mountains:'Abundant',piedmont:'Occasional',coastal:'Occasional'},
+ 'Aesculus parviflora':{piedmont:'Rare',coastal:'Rare'},
+ 'Sambucus canadensis':{mountains:'Occasional',piedmont:'Abundant',coastal:'Abundant'},
+ 'Viburnum dentatum':{mountains:'Occasional',piedmont:'Occasional'},
+ 'Viburnum cassinoides':{mountains:'Rare'},
+ 'Ilex verticillata':{mountains:'Occasional',piedmont:'Occasional',coastal:'Occasional'},
+ 'Morella cerifera':{piedmont:'Occasional',coastal:'Abundant'},
+ 'Hamamelis virginiana':{mountains:'Abundant',piedmont:'Occasional'},
+ 'Vaccinium corymbosum':{mountains:'Occasional',piedmont:'Occasional',coastal:'Abundant'},
+ 'Illicium floridanum':{coastal:'Rare'},
+ 'Rhus copallinum':{mountains:'Abundant',piedmont:'Abundant',coastal:'Abundant'},
+ 'Xanthorhiza simplicissima':{mountains:'Abundant',piedmont:'Occasional'},
+ 'Nestronia umbellula':{mountains:'Rare',piedmont:'Rare',coastal:'Rare'}
 };
 const index=document.getElementById('index');
 const galleryView=document.getElementById('galleryView');
@@ -171,7 +215,8 @@ function showSpecies(s,speciesIndex){
   selectedSpeciesIndex=speciesIndex;
   document.getElementById('galleryTitle').textContent=s.name;
   document.getElementById('galleryLatin').textContent=s.latin;
-  document.getElementById('flowerProfile').innerHTML=`<strong>Flowers:</strong> ${s.flower}<br><strong>Leaves:</strong> ${s.leaf}<br><strong>Favored habitat:</strong> ${habitats[s.latin]||'Habitat information not yet available.'}`;
+  const regionalAbundance=abundance[s.latin]?.[selectedRegion]||'Not rated';
+  document.getElementById('flowerProfile').innerHTML=`<strong>Flowers:</strong> ${s.flower}<br><strong>Leaves:</strong> ${s.leaf}<br><strong>Favored habitat:</strong> ${habitats[s.latin]||'Habitat information not yet available.'}<br><strong>Estimated field abundance:</strong> ${regionalAbundance}${s.calcium?`<br><strong>Calcium:</strong> ${s.calcium}`:''}`;
   const imageSearch=`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(`${s.name} ${s.latin} identification`)}`;
   document.getElementById('gallery').innerHTML=`<div class="no-images">${s.provisional?'Identity still needs confirmation. Use search results cautiously.':'Open photographs and identification examples in your browser.'}<a class="image-search-link" href="${imageSearch}" target="_blank" rel="noopener noreferrer">Browser Image Search</a></div>`;
   index.classList.add('hidden');

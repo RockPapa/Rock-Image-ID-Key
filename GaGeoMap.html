@@ -660,10 +660,6 @@ body.map-only #stage {
   const GITHUB_FAST_BUNDLE_PATH = "PROJECT_FILES_FAST/all_polygons.json";
   const GITHUB_PROJECT_FOLDER = "PROJECT_FILES";
   const GITHUB_MAP_PATH = "PROJECT_FILES/map.webp";
-  const MACROSTRAT_MAP_API = "https://macrostrat.org/api/v2/geologic_units/map";
-  const MACROSTRAT_GA_SOURCE_ID = 133;
-  const macrostratClickCache = new Map();
-  let macrostratLookupToken = 0;
   const PROJECT_CACHE_DB = "ga-geo-map-cache-v1";
   const PROJECT_CACHE_STORE = "project";
   const PROJECT_CACHE_KEY = [
@@ -1236,7 +1232,6 @@ function enterMapOnlyMode(options = {}){
       .replace(/\.json$/,"")
       .replace(/^(valley_ridge|valley_and_ridge|eastern_blueridge|eastern_bleridge|western_blueridge|westyern_blueridge|inner_piedmont|carolina_terrane|carolina_twrrane|carolina_yerrane|caroliona_terrane|caroloina_terrane|coastal_plain|coasgtal_plain|cat_square)_?/,"")
       .replace(/pl\.ocene/g,"pliocene")
-      .replace(/silliminite/g,"sillimanite")
       .replace(/shorline/g,"shoreline")
       .replace(/_\d+json$/,"")
       .replace(/_\d+$/,"")
@@ -1595,89 +1590,6 @@ polygons loaded: ${polygons.length}`);
     }
   }
 
-  function worldToLonLat(wx, wy){
-    return {
-      lon: wx / 832 - 85.89,
-      lat: 35.06 - wy / 890
-    };
-  }
-
-  function friendlyMacrostratLithology(value){
-    return String(value || "")
-      .replace(/^Major:\{/i, "")
-      .replace(/\}$/g, "")
-      .replace(/,/g, ", ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  function isDocumentedRasterDetail(wx, wy){
-    return isVerifiedRayleMetadaciteFelsicSliver(wx, wy) ||
-      isVerifiedBowersvilleGraniteGneissSpot(wx, wy) ||
-      isVerifiedDewyRoseGraniteGneissSpot(wx, wy) ||
-      isVerifiedDahlonegaUltramaficSpot(wx, wy) ||
-      isVerifiedNorthwestGaAmphiboliteSpot(wx, wy);
-  }
-
-  async function macrostratGeorgiaUnitAt(wx, wy){
-    const { lon, lat } = worldToLonLat(wx, wy);
-    const key = `${lat.toFixed(5)},${lon.toFixed(5)}`;
-    if (macrostratClickCache.has(key)) return macrostratClickCache.get(key);
-
-    const request = fetch(`${MACROSTRAT_MAP_API}?lat=${encodeURIComponent(lat.toFixed(5))}&lng=${encodeURIComponent(lon.toFixed(5))}`)
-      .then(response => {
-        if (!response.ok) throw new Error(`Macrostrat request failed (${response.status})`);
-        return response.json();
-      })
-      .then(data => {
-        const rows = data && data.success && Array.isArray(data.success.data)
-          ? data.success.data
-          : [];
-        return rows.find(row => Number(row.source_id) === MACROSTRAT_GA_SOURCE_ID) || null;
-      });
-
-    macrostratClickCache.set(key, request);
-    try {
-      return await request;
-    } catch (error) {
-      macrostratClickCache.delete(key);
-      throw error;
-    }
-  }
-
-  async function verifyPopupWithRockd(wx, wy, localTitle, localLithology){
-    const token = ++macrostratLookupToken;
-    const preserveRasterDetail = isDocumentedRasterDetail(wx, wy);
-    popupBody.textContent = "Checking Rockd / Macrostrat…";
-
-    try {
-      const row = await macrostratGeorgiaUnitAt(wx, wy);
-      if (token !== macrostratLookupToken || getComputedStyle(popup).display === "none") return;
-      if (!row) {
-        popupBody.textContent = "Local map identification · Georgia source unavailable at this point";
-        return;
-      }
-
-      const rockdTitle = displayRockName(row.name || localTitle);
-      const rockdLithology = friendlyMacrostratLithology(row.lith);
-      const age = row.best_int_name || row.t_int_name || row.b_int_name || "";
-
-      if (preserveRasterDetail) {
-        popupTitle.textContent = displayRockName(localTitle);
-        popupMeta.textContent = localLithology ? `Rock type: ${localLithology}` : "";
-        popupBody.textContent = `Detailed Georgia raster identification · Rockd surrounding unit: ${rockdTitle}`;
-      } else {
-        popupTitle.textContent = rockdTitle;
-        popupMeta.textContent = rockdLithology ? `Rock type: ${rockdLithology}` : "";
-        popupBody.textContent = `Rockd / Macrostrat · Georgia Geological Survey 1:500,000${age ? ` · ${age}` : ""}`;
-        keyLink.href = rockIndexUrlFor(rockdTitle);
-      }
-    } catch (_error) {
-      if (token !== macrostratLookupToken || getComputedStyle(popup).display === "none") return;
-      popupBody.textContent = "Offline local identification · Rockd verification unavailable";
-    }
-  }
-
   function showColorOnlyPopupAtStageXY(stageX, stageY, wx, wy){
     // Color-only popup when click is OUTSIDE all polygons
     let pix;
@@ -1720,7 +1632,6 @@ polygons loaded: ${polygons.length}`);
 
     popup.style.left = x + "px";
     popup.style.top  = y + "px";
-    verifyPopupWithRockd(wx, wy, match, "");
   }
 
 
@@ -1806,7 +1717,6 @@ polygons loaded: ${polygons.length}`);
 
   popup.style.left = x + "px";
   popup.style.top  = y + "px";
-  verifyPopupWithRockd(hit._clickWX, hit._clickWY, title, info.lithology || "");
 }
   function setCanvasSizes(){
   const dpr = Math.min(3, window.devicePixelRatio || 1);
@@ -1962,7 +1872,12 @@ function resetView(){
     labelMode = !labelMode;
     labelTools.classList.toggle("active",labelMode);
     pendingLabelPoints = [];
-    if (!labelMode) labelTool = null;
+    if (!labelMode){
+      labelTool = null;
+      // Return to the annotation visibility selected by the map-version
+      // button. Edited Map shows every saved label; Unedited Map hides them.
+      cleanLabelsView = !editedMapVisible;
+    }
     updateLabelToolButtons();
     hidePopup();
     setStatus(

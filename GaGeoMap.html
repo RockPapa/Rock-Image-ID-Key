@@ -1493,12 +1493,28 @@ polygons loaded: ${polygons.length}`);
   return { wx: (sx - offsetX) / scale, wy: (sy - offsetY) / scale, sx, sy };
 }
 
+  function isWesternBlueRidgeAt(wx, wy){
+    const { lon, lat } = worldToLonLat(wx, wy);
+    // Approximate the northwest-Georgia Blue Ridge front between the Tennessee
+    // line and the Chatsworth/Fort Mountain area.  East of this line is
+    // Western Blue Ridge; Valley-and-Ridge polygons must not spill across it.
+    if (lat < 34.60 || lat > 35.08) return false;
+    const blueRidgeFrontLon = -84.82 + (35.00 - lat) * 0.40;
+    return lon >= blueRidgeFrontLon;
+  }
+
+  function isValleyAndRidgePolygon(poly){
+    return /^(valley_and_ridge|valley_ridge)_/i.test(String(poly && poly.fileName || ""));
+  }
+
   function findHit(wx, wy){
     installGeneratedPatches();
     let best = null;
     let bestArea = Infinity;
+    const westernBlueRidgePoint = isWesternBlueRidgeAt(wx, wy);
     for (let i = polygons.length - 1; i >= 0; i--){
       const p = polygons[i], b = p.box;
+      if (westernBlueRidgePoint && isValleyAndRidgePolygon(p)) continue;
       if (wx < b.minX || wx > b.maxX || wy < b.minY || wy > b.maxY) continue;
       if (!inside(wx, wy, p.pts)) continue;
       if (Array.isArray(p.holes) && p.holes.some(hole => inside(wx, wy, hole))) continue;
